@@ -121,12 +121,6 @@ Testing this web part end-to-end is more involved than typical SPFx components b
 core feature — showing a guest user's sponsors — requires the signed-in user to actually be
 a guest in the target tenant, with sponsors assigned.
 
-### Local workbench (`https://localhost:4321/temp/workbench.html`)
-
-No SharePoint tenant is required. However, `pageContext.user.loginName` is empty in the
-local workbench, so the web part cannot detect a guest user and will not make any Graph
-calls. Useful for iterating on layout, styles, and React component structure only.
-
 ### Hosted workbench — as a regular member
 
 Set `SPFX_TENANT` in your `.env` file and run `./scripts/start.sh`. SPFx serves the local
@@ -160,7 +154,7 @@ This is the practical substitute for integration testing when a guest-enabled se
 is not available. Run the tests after every change to `SponsorService.ts` or the main
 component.
 
-### Demo mode (local-workbench development)
+### Demo mode
 
 The web part includes a **Demo mode** toggle in the property pane (edit the web part →
 property pane → "Demo mode (mock data)"). When enabled:
@@ -168,8 +162,8 @@ property pane → "Demo mode (mock data)"). When enabled:
 - The user is treated as a guest regardless of the actual login name.
 - Two fictitious sponsor records from `MockSponsorService.ts` are rendered without any
   Graph calls.
-- The local workbench (`https://localhost:4321/temp/workbench.html`) shows fully styled
-  sponsor cards — no tenant, no authentication, no API permissions required.
+- Useful for visual review of sponsor card layout and styles on the hosted workbench
+  without needing a genuine guest account with sponsors assigned.
 
 Demo mode is intended for development and visual review only. It is not a security
 boundary; disable it before deploying to production. The property is stored in the web

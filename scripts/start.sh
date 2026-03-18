@@ -4,18 +4,19 @@
 # Usage:
 #   scripts/start.sh
 #
-# The SharePoint tenant domain is read from a local .env file (not committed).
-# Copy .env.example to .env and fill in your tenant domain:
+# Requires SPFX_TENANT to be set — either in a local .env file or as an
+# environment variable. Copy .env.example to .env and fill in your tenant:
 #   cp .env.example .env
 #
-# The SPFx workbench then opens at:
-#   https://localhost:4321/temp/workbench.html
+# NOTE: The local workbench (/temp/workbench.html) was removed in SPFx 1.17.
+# The dev server only serves the JS bundle; testing requires the hosted
+# workbench on a real SharePoint Online tenant.
 #
-# To test with real Microsoft Graph data, open the hosted workbench:
+# The hosted workbench URL is printed on startup:
 #   https://<your-tenant>.sharepoint.com/_layouts/15/workbench.aspx
 #
 # Prerequisites: accept the dev certificate warning in your browser the first
-# time, or run: npx heft dev-cert trust
+# time by navigating to https://localhost:4321 and confirming the certificate.
 
 set -euo pipefail
 
@@ -29,28 +30,30 @@ fi
 SPFX_TENANT="${SPFX_TENANT:-}"
 
 if [[ -z "${SPFX_TENANT}" ]]; then
-  echo "WARNING: SPFX_TENANT is not set."
-  echo "  Copy .env.example to .env and set your tenant domain."
-  echo "  The local workbench will open but Graph API calls will not work."
+  echo "ERROR: SPFX_TENANT is not set."
+  echo "  The local workbench was removed in SPFx 1.17."
+  echo "  A SharePoint Online tenant is required to test the web part."
   echo ""
-else
-  # Patch serve.json with the configured tenant domain, then restore the
-  # original on exit so the {tenantDomain} placeholder stays intact in git.
-  SERVE_JSON="config/serve.json"
-  SERVE_ORIG=$(cat "${SERVE_JSON}")
-  restore_serve() { printf '%s\n' "${SERVE_ORIG}" > "${SERVE_JSON}"; }
-  trap restore_serve EXIT INT TERM
-
-  TMP=$(mktemp)
-  sed "s|{tenantDomain}|${SPFX_TENANT}|g" "${SERVE_JSON}" > "${TMP}"
-  cp "${TMP}" "${SERVE_JSON}"
-  rm "${TMP}"
-  echo "Tenant: ${SPFX_TENANT}"
+  echo "  Copy .env.example to .env and fill in your tenant domain:"
+  echo "    cp .env.example .env"
+  exit 1
 fi
 
+# Patch serve.json with the configured tenant domain, then restore the
+# original on exit so the {tenantDomain} placeholder stays intact in git.
+SERVE_JSON="config/serve.json"
+SERVE_ORIG=$(cat "${SERVE_JSON}")
+restore_serve() { printf '%s\n' "${SERVE_ORIG}" > "${SERVE_JSON}"; }
+trap restore_serve EXIT INT TERM
+TMP=$(mktemp)
+sed "s|{tenantDomain}|${SPFX_TENANT}|g" "${SERVE_JSON}" > "${TMP}"
+cp "${TMP}" "${SERVE_JSON}"
+rm "${TMP}"
+
+echo "Tenant: ${SPFX_TENANT}"
 echo "Starting local development server..."
-echo "Local workbench: https://localhost:4321/temp/workbench.html"
-[[ -n "${SPFX_TENANT}" ]] && echo "Hosted workbench: https://${SPFX_TENANT}/_layouts/15/workbench.aspx"
+echo "Hosted workbench: https://${SPFX_TENANT}/_layouts/15/workbench.aspx"
+echo "  → Accept the certificate at https://localhost:4321 first (once per browser)"
 echo ""
 echo "Press Ctrl+C to stop."
 echo ""

@@ -14,7 +14,7 @@ Always validate your changes before considering a task done:
 3. **Build** — run `npm run build` only when the packaging artifact (`.sppkg`) is relevant,
    e.g. before a release. Not needed for regular development changes.
 
-For interactive development use `npm start` (local workbench with hot-reload).
+For interactive development use `npm start` (hosted workbench with hot-reload; requires `SPFX_TENANT` in `.env`).
 For a CI-style clean build from scratch use `./scripts/build.sh` (runs `npm ci` first).
 
 If any lint errors or test failures appear after your changes, fix them before finishing.

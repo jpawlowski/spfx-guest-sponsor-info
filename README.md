@@ -81,12 +81,16 @@ The packaged solution is written to `sharepoint/solution/guest-sponsor-info.sppk
 ### Local development
 
 ```bash
-cp .env.example .env          # then fill in SPFX_TENANT
-./scripts/start.sh            # starts local workbench with hot-reload
+cp .env.example .env          # fill in SPFX_TENANT=<your-tenant>.sharepoint.com
+./scripts/start.sh            # starts dev server with hot-reload
 ```
 
+The dev server bundles your code locally and serves it to the **hosted workbench** on your
+SharePoint Online tenant. Accept the certificate warning at `https://localhost:4321` once
+per browser session, then open the hosted workbench URL printed on startup.
+
 See [docs/architecture.md](docs/architecture.md) for the different testing scenarios
-(local workbench vs. hosted workbench vs. full guest integration test).
+(hosted workbench as member vs. guest vs. full integration test).
 
 ## All Build Commands
 
@@ -94,7 +98,7 @@ See [docs/architecture.md](docs/architecture.md) for the different testing scena
 |---|---|
 | `npm run build` | Full production build + unit tests + packaging |
 | `npm test` | Compile and run unit tests |
-| `npm start` | Start local workbench (development mode) |
+| `npm start` | Start dev server (hot-reload, hosted workbench) |
 | `npm run clean` | Delete all build output |
 | `npm run lint` | Run all linters (TypeScript · SCSS · Markdown) |
 
