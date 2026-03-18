@@ -36,12 +36,24 @@ interface ISponsorCardProps {
 
 const SponsorCard: React.FC<ISponsorCardProps> = ({ sponsor, hostTenantId }) => {
   const [showDetails, setShowDetails] = React.useState(false);
+  const [popupStyle, setPopupStyle] = React.useState<React.CSSProperties>({});
+  const cardRef = React.useRef<HTMLDivElement>(null);
   const hideTimeout = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const initials = getInitials(sponsor.displayName);
   const bgColor = getInitialsColor(sponsor.displayName);
 
   const openDetails = (): void => {
     if (hideTimeout.current) { clearTimeout(hideTimeout.current); hideTimeout.current = null; }
+    if (cardRef.current) {
+      const rect = cardRef.current.getBoundingClientRect();
+      const popupWidth = 280;
+      const spaceRight = window.innerWidth - rect.right;
+      const left = spaceRight >= popupWidth + 12
+        ? rect.right + 8
+        : rect.left - popupWidth - 8;
+      const top = Math.min(rect.top, window.innerHeight - 280); // clamp bottom
+      setPopupStyle({ position: 'fixed', top, left, width: popupWidth, zIndex: 9999 });
+    }
     setShowDetails(true);
   };
   const scheduleClose = (): void => {
@@ -53,6 +65,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({ sponsor, hostTenantId }) => 
 
   return (
     <div
+      ref={cardRef}
       className={styles.card}
       onMouseEnter={openDetails}
       onMouseLeave={scheduleClose}
@@ -83,6 +96,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({ sponsor, hostTenantId }) => 
       {showDetails && (
         <div
           className={styles.detailsCard}
+          style={popupStyle}
           role="tooltip"
           onMouseEnter={openDetails}
           onMouseLeave={scheduleClose}
