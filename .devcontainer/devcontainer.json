@@ -63,18 +63,17 @@
       "extensions": [
         "Anthropic.claude-code",
         "DavidAnson.vscode-markdownlint",
-        "DavidAnson.vscode-markdownlint",
         "dbaeumer.vscode-eslint",
-        "dbaeumer.vscode-eslint",
-        "EditorConfig.EditorConfig",
         "EditorConfig.EditorConfig",
         "esbenp.prettier-vscode",
         "GitHub.copilot-chat",
         "github.vscode-github-actions",
+        "ms-azuretools.vscode-azurefunctions",
         "ms-azuretools.vscode-docker",
+        "ms-vscode.powershell",
+        "ms-vscode.vscode-bicep",
         "openai.chatgpt",
         "SharePoint.deployToSPOnline",
-        "stylelint.vscode-stylelint",
         "stylelint.vscode-stylelint",
         "vivaxy.vscode-conventional-commits"
       ]
