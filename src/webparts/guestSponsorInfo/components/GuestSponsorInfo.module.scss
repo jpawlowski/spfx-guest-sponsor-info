@@ -336,6 +336,8 @@
 .richActionIcon {
   font-size: 20px;
   line-height: 1;
+  color: "[theme:themePrimary, default: #0078d4]";
+  color: var(--themePrimary, #0078d4);
 }
 
 .richActionLabel {
@@ -382,6 +384,8 @@
   width: 20px;
   text-align: center;
   margin-top: 3px;
+  color: "[theme:neutralSecondary, default: #666666]";
+  color: var(--neutralSecondary);
 }
 
 .richInfoMeta {

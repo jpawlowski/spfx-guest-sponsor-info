@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Callout, DirectionalHint } from '@fluentui/react';
+import { Callout, DirectionalHint, Icon } from '@fluentui/react';
 import { ISponsor } from '../services/ISponsor';
 import styles from './GuestSponsorInfo.module.scss';
 
@@ -188,7 +188,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
                     rel="noreferrer noopener"
                     title="Chat via your home Teams account"
                   >
-                    <span className={styles.richActionIcon} aria-hidden="true">💬</span>
+                    <Icon iconName="TeamsLogo" className={styles.richActionIcon} aria-hidden="true" />
                     <span className={styles.richActionLabel}>Chat</span>
                   </a>
                 )}
@@ -200,7 +200,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
                     rel="noreferrer noopener"
                     title="Chat as guest in sponsor's tenant"
                   >
-                    <span className={styles.richActionIcon} aria-hidden="true">💬</span>
+                    <Icon iconName="Chat" className={styles.richActionIcon} aria-hidden="true" />
                     <span className={styles.richActionLabel}>Chat (guest)</span>
                   </a>
                 )}
@@ -210,7 +210,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
                     className={styles.richAction}
                     title="Send email"
                   >
-                    <span className={styles.richActionIcon} aria-hidden="true">✉️</span>
+                    <Icon iconName="Mail" className={styles.richActionIcon} aria-hidden="true" />
                     <span className={styles.richActionLabel}>Email</span>
                   </a>
                 )}
@@ -220,7 +220,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
                     className={styles.richAction}
                     title="Call"
                   >
-                    <span className={styles.richActionIcon} aria-hidden="true">📞</span>
+                    <Icon iconName="Phone" className={styles.richActionIcon} aria-hidden="true" />
                     <span className={styles.richActionLabel}>Call</span>
                   </a>
                 )}
@@ -232,7 +232,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
             <div className={styles.richSection}>
               {sponsor.mail && (
                 <a href={`mailto:${sponsor.mail}`} className={styles.richInfoRow}>
-                  <span className={styles.richInfoIcon} aria-hidden="true">✉️</span>
+                  <Icon iconName="Mail" className={styles.richInfoIcon} aria-hidden="true" />
                   <div>
                     <div className={styles.richInfoMeta}>Email</div>
                     <div className={styles.richInfoValue}>{sponsor.mail}</div>
@@ -241,7 +241,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
               )}
               {sponsor.businessPhones?.map(phone => (
                 <a key={phone} href={`tel:${phone}`} className={styles.richInfoRow}>
-                  <span className={styles.richInfoIcon} aria-hidden="true">📞</span>
+                  <Icon iconName="Phone" className={styles.richInfoIcon} aria-hidden="true" />
                   <div>
                     <div className={styles.richInfoMeta}>Work phone</div>
                     <div className={styles.richInfoValue}>{phone}</div>
@@ -250,7 +250,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
               ))}
               {sponsor.mobilePhone && (
                 <a href={`tel:${sponsor.mobilePhone}`} className={styles.richInfoRow}>
-                  <span className={styles.richInfoIcon} aria-hidden="true">📱</span>
+                  <Icon iconName="CellPhone" className={styles.richInfoIcon} aria-hidden="true" />
                   <div>
                     <div className={styles.richInfoMeta}>Mobile</div>
                     <div className={styles.richInfoValue}>{sponsor.mobilePhone}</div>
@@ -259,7 +259,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
               )}
               {sponsor.officeLocation && (
                 <div className={styles.richInfoRow}>
-                  <span className={styles.richInfoIcon} aria-hidden="true">📍</span>
+                  <Icon iconName="MapPin" className={styles.richInfoIcon} aria-hidden="true" />
                   <div>
                     <div className={styles.richInfoMeta}>Work location</div>
                     <div className={styles.richInfoValue}>{sponsor.officeLocation}</div>

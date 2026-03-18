@@ -8,6 +8,10 @@ jest.mock('@fluentui/react', () => ({
     <div role={role ?? 'dialog'}>{children}</div>
   ),
   DirectionalHint: { rightTopEdge: 0, leftTopEdge: 1 },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  Icon: ({ iconName, className }: { iconName: string; className?: string }) => (
+    <i className={className} data-icon-name={iconName} />
+  ),
 }));
 
 import * as React from 'react';
