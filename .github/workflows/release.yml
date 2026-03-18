@@ -1,0 +1,58 @@
+name: Release
+
+# Triggered by SemVer tags, e.g. v1.2.3
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+
+# The GITHUB_TOKEN needs write access to create the release and upload assets.
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build & publish .sppkg
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Full git history required by git-cliff
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          # Pin to the major version required by the engines field in package.json.
+          node-version: "22"
+          cache: "npm"
+
+      # Extract the semver string from the tag (strip the leading "v").
+      - name: Extract version
+        id: ver
+        run: echo "semver=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      # Generate structured release notes from Conventional Commit history.
+      # The script reads GIT_CLIFF_VERSION from scripts/release-notes.sh and
+      # auto-installs the git-cliff binary on first run — no separate action needed.
+      - name: Generate release notes
+        run: ./scripts/release-notes.sh --latest > RELEASE_NOTES.md
+
+      # Stamp the version into package.json and config/package-solution.json.
+      - name: Stamp version
+        run: ./scripts/set-version.sh "${{ github.ref_name }}"
+
+      # Full production build: npm ci → compile/bundle/test → package .sppkg
+      - name: Build and package
+        run: ./scripts/build.sh
+
+      # Create the GitHub Release and attach the .sppkg as a downloadable asset.
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --title "v${{ steps.ver.outputs.semver }}" \
+            --notes-file RELEASE_NOTES.md \
+            sharepoint/solution/guest-sponsor-info.sppkg

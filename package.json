@@ -1,0 +1,79 @@
+{
+  "name": "guest-sponsor-info",
+  "version": "0.0.1",
+  "description": "SharePoint Online web part that shows the Microsoft Entra sponsors of the signed-in guest user",
+  "license": "MIT",
+  "author": {
+    "name": "Julian Pawlowski",
+    "url": "https://github.com/jpawlowski"
+  },
+  "keywords": [
+    "sharepoint",
+    "spfx",
+    "sharepoint-framework",
+    "microsoft-entra",
+    "guest",
+    "sponsor",
+    "microsoft-graph",
+    "webpart"
+  ],
+  "private": true,
+  "engines": {
+    "node": ">=22.14.0 < 23.0.0"
+  },
+  "scripts": {
+    "build": "heft test --clean --production && heft package-solution --production",
+    "test": "heft test --clean",
+    "start": "heft start --clean",
+    "clean": "heft clean",
+    "eject-webpack": "heft eject-webpack",
+    "lint:ts": "eslint src --ext .ts,.tsx",
+    "lint:scss": "stylelint \"src/**/*.scss\"",
+    "lint:md": "markdownlint-cli2 --config .markdownlint.json README.md docs/**/*.md .github/copilot-instructions.md",
+    "lint": "npm run lint:ts && npm run lint:scss && npm run lint:md",
+    "prepare": "husky"
+  },
+  "dependencies": {
+    "@fluentui/react": "^8.106.4",
+    "@microsoft/sp-component-base": "1.22.2",
+    "@microsoft/sp-core-library": "1.22.2",
+    "@microsoft/sp-http": "1.22.2",
+    "@microsoft/sp-lodash-subset": "1.22.2",
+    "@microsoft/sp-office-ui-fabric-core": "1.22.2",
+    "@microsoft/sp-property-pane": "1.22.2",
+    "@microsoft/sp-webpart-base": "1.22.2",
+    "react": "17.0.1",
+    "react-dom": "17.0.1",
+    "tslib": "2.3.1"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "20.5.0",
+    "@commitlint/config-conventional": "20.5.0",
+    "@microsoft/eslint-config-spfx": "1.22.2",
+    "@microsoft/eslint-plugin-spfx": "1.22.2",
+    "@microsoft/sp-module-interfaces": "1.22.2",
+    "@microsoft/spfx-heft-plugins": "1.22.2",
+    "@microsoft/spfx-web-build-rig": "1.22.2",
+    "@rushstack/eslint-config": "4.5.2",
+    "@rushstack/heft": "1.1.2",
+    "@types/heft-jest": "1.0.2",
+    "@types/react": "17.0.45",
+    "@types/react-dom": "17.0.17",
+    "@types/webpack-env": "~1.15.2",
+    "@typescript-eslint/parser": "8.46.2",
+    "css-loader": "~7.1.2",
+    "eslint": "8.57.1",
+    "eslint-plugin-react-hooks": "4.3.0",
+    "husky": "9.1.7",
+    "markdownlint-cli2": "0.21.0",
+    "stylelint": "17.4.0",
+    "stylelint-config-standard-scss": "17.0.0",
+    "typescript": "~5.8.0"
+  },
+  "overrides": {
+    "@rushstack/heft": "1.1.2"
+  },
+  "resolutions": {
+    "@types/react": "17.0.45"
+  }
+}

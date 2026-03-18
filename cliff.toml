@@ -1,0 +1,51 @@
+# git-cliff configuration
+# Generates structured release notes from Conventional Commit messages.
+# Used automatically by the release GitHub Actions workflow.
+# Docs: https://git-cliff.org/docs/configuration
+
+[changelog]
+header = ""
+body = """
+{% if version -%}
+## What's changed in {{ version | trim_start_matches(pat="v") }}
+{% else -%}
+## Unreleased
+{% endif -%}
+{% for group, commits in commits | group_by(attribute="group") %}
+### {{ group }}
+{% for commit in commits -%}
+- {% if commit.breaking %}💥 **Breaking:** {% endif %}{{ commit.message | upper_first }}
+{% endfor %}
+{% endfor %}
+"""
+footer = """
+---
+
+### Deployment
+
+1. Download `guest-sponsor-info.sppkg` from the assets below.
+2. Upload it to **SharePoint Admin Center → More features → Apps → App Catalog**.
+3. In **SharePoint Admin Center → Advanced → API access**, approve:
+   - `User.Read` — read the signed-in user's own sponsor list
+   - `User.ReadBasic.All` — read profile details and photos of sponsor accounts
+4. Add the **Guest Sponsor Info** web part to any SharePoint Online page.
+"""
+trim = true
+
+[git]
+conventional_commits = true
+filter_unconventional = true
+split_commits = false
+commit_parsers = [
+  { message = "^feat", group = "Features" },
+  { message = "^fix", group = "Bug Fixes" },
+  { message = "^perf", group = "Performance improvements" },
+  { message = "^refactor", group = "Refactoring" },
+  { message = "^chore\\(deps\\)", group = "Dependency updates" },
+  # All other types (docs, style, test, chore, ci, build) are internal
+  # and not shown in release notes.
+  { message = ".*", skip = true },
+]
+filter_commits = false
+tag_pattern = "v[0-9]*"
+sort_commits = "oldest"

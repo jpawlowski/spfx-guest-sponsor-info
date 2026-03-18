@@ -1,0 +1,51 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
+  "solution": {
+    "name": "guest-sponsor-info-client-side-solution",
+    "id": "6cdf9494-9c67-40af-8ac8-7b36be245848",
+    "version": "1.0.0.0",
+    "includeClientSideAssets": true,
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "iconPath": "images/icon.png",
+    "developer": {
+      "name": "Julian Pawlowski",
+      "websiteUrl": "",
+      "privacyUrl": "",
+      "termsOfUseUrl": "",
+      "mpnId": ""
+    },
+    "metadata": {
+      "shortDescription": {
+        "default": "Shows the Microsoft Entra sponsors of the signed-in guest user on a SharePoint landing page."
+      },
+      "longDescription": {
+        "default": "The Guest Sponsor Info web part displays the sponsor cards for the currently signed-in Microsoft Entra guest user. Each card shows the sponsor's photo (or an initials fallback), display name, and job title. Hovering or focusing a card reveals the sponsor's email address, phone number, office location, and department. The web part is invisible to member (non-guest) users in view mode and shows a lightweight placeholder in edit mode so page authors can place and configure it without being a guest themselves. Sponsor availability is determined via Microsoft Graph using the least-privilege User.ReadBasic.All permission."
+      },
+      "screenshotPaths": [],
+      "videoUrl": "",
+      "categories": []
+    },
+    "webApiPermissionRequests": [
+      {
+        "resource": "Microsoft Graph",
+        "scope": "User.Read"
+      },
+      {
+        "resource": "Microsoft Graph",
+        "scope": "User.ReadBasic.All"
+      }
+    ],
+    "features": [
+      {
+        "title": "guest-sponsor-info Feature",
+        "description": "The feature that activates elements of the guest-sponsor-info solution.",
+        "id": "b7d00abc-0ce7-45d6-9b8e-ffd7b2139cee",
+        "version": "1.0.0.0"
+      }
+    ]
+  },
+  "paths": {
+    "zippedPackage": "solution/guest-sponsor-info.sppkg"
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "name": "spfx-guest-sponsor-info",
+  // Ensure ~/.gitconfig exists on the host before the bind-mount runs.
+  // The mount makes the host git identity automatically available in the
+  // container — and any 'git config --global' changes persist back to the host.
+  "initializeCommand": {
+    "linux": "[ -f ~/.gitconfig ] || touch ~/.gitconfig",
+    "mac": "[ -f ~/.gitconfig ] || touch ~/.gitconfig",
+    "windows": "powershell -Command \"if (-not (Test-Path $env:USERPROFILE\\\\.gitconfig)) { New-Item -ItemType File -Path $env:USERPROFILE\\\\.gitconfig -Force | Out-Null }\" || $true"
+  },
+  "mounts": [
+    // Expose the host gitconfig as a read-only reference file.
+    // setup-git.sh reads user.name/email from it and writes them into the
+    // container's own global gitconfig — the host file is never modified.
+    // ${localEnv:HOME} resolves on Mac/Linux; ${localEnv:USERPROFILE} on Windows.
+    // In Codespaces neither variable is set but GitHub configures Git automatically.
+    "source=${localEnv:HOME}${localEnv:USERPROFILE}/.gitconfig,target=/home/vscode/.gitconfig.host,type=bind,consistency=cached,readonly"
+  ],
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "..",
+    "args": {
+      "NODE_VERSION": "22.14.0"
+    }
+  },
+  "remoteUser": "vscode",
+  "postCreateCommand": "/bin/bash .devcontainer/post-create.sh",
+  "forwardPorts": [
+    4321
+  ],
+  "containerEnv": {
+    "npm_config_save_exact": "true"
+  },
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "files.eol": "\n",
+        "terminal.integrated.defaultProfile.linux": "bash"
+      },
+      "extensions": [
+        "Anthropic.claude-code",
+        "DavidAnson.vscode-markdownlint",
+        "DavidAnson.vscode-markdownlint",
+        "dbaeumer.vscode-eslint",
+        "dbaeumer.vscode-eslint",
+        "EditorConfig.EditorConfig",
+        "EditorConfig.EditorConfig",
+        "esbenp.prettier-vscode",
+        "GitHub.copilot-chat",
+        "ms-azuretools.vscode-docker",
+        "openai.chatgpt",
+        "SharePoint.deployToSPOnline",
+        "stylelint.vscode-stylelint",
+        "stylelint.vscode-stylelint",
+        "vivaxy.vscode-conventional-commits"
+      ]
+    }
+  }
+}

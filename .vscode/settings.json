@@ -1,0 +1,40 @@
+// Place your settings in this file to overwrite default and user settings.
+{
+  // ── File Explorer ──────────────────────────────────────────────────────────
+  "files.exclude": {
+    "**/.git": true,
+    "**/.DS_Store": true,
+    "**/bower_components": true,
+    "**/coverage": true,
+    "**/jest-output": true,
+    "**/lib-amd": true,
+    "src/**/*.scss.ts": true
+  },
+  // ── TypeScript ─────────────────────────────────────────────────────────────
+  "typescript.tsdk": "./node_modules/typescript/lib",
+  // ── ESLint ─────────────────────────────────────────────────────────────────
+  "eslint.validate": [
+    "typescript",
+    "typescriptreact"
+  ],
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  // ── Stylelint ──────────────────────────────────────────────────────────────
+  "stylelint.validate": [
+    "scss"
+  ],
+  "css.validate": false,
+  "scss.validate": false,
+  // ── Markdownlint ───────────────────────────────────────────────────────────
+  "markdownlint.config": {
+    "extends": ".markdownlint.json"
+  },
+  // ── Editor defaults ────────────────────────────────────────────────────────
+  "editor.formatOnSave": true,
+  "editor.rulers": [
+    120
+  ],
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true
+}

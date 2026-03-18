@@ -1,0 +1,52 @@
+version: 2
+
+updates:
+  # ── npm dependencies ──────────────────────────────────────────────────────
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 10
+    # Group all tooling updates into a single PR to reduce noise.
+    groups:
+      tooling:
+        patterns:
+          - "@commitlint/*"
+          - "eslint*"
+          - "eslint-*"
+          - "husky"
+          - "markdownlint-cli2"
+          - "stylelint"
+          - "stylelint-*"
+          - "typescript"
+    ignore:
+      # The @microsoft/sp-* and @microsoft/spfx-* packages form a tightly
+      # coupled SPFx suite. They must all be upgraded together and only
+      # intentionally — not by automated PRs.
+      - dependency-name: "@microsoft/sp-*"
+      - dependency-name: "@microsoft/spfx-*"
+      - dependency-name: "@microsoft/eslint-*"
+      # @rushstack packages are part of the SPFx Heft build rig and are
+      # coordinated with the SPFx release.
+      - dependency-name: "@rushstack/*"
+      # SPFx ships with React 17 internally; a version mismatch causes subtle
+      # build errors. Upgrade only alongside a full SPFx upgrade.
+      - dependency-name: "react"
+      - dependency-name: "react-dom"
+      - dependency-name: "@types/react"
+      - dependency-name: "@types/react-dom"
+      # @fluentui/react is tightly coupled to the SPFx Fluent UI version.
+      - dependency-name: "@fluentui/react"
+
+  # ── GitHub Actions ────────────────────────────────────────────────────────
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 5
