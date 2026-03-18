@@ -14,6 +14,7 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
   graphClient,
   title,
   mockMode,
+  hostTenantId,
 }) => {
   const [sponsors, setSponsors] = React.useState<ISponsor[]>([]);
   const [allUnavailable, setAllUnavailable] = React.useState(false);
@@ -102,7 +103,7 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
         <ul className={styles.sponsorGrid}>
           {sponsors.map(sponsor => (
             <li key={sponsor.id} className={styles.sponsorItem}>
-              <SponsorCard sponsor={sponsor} />
+              <SponsorCard sponsor={sponsor} hostTenantId={hostTenantId} />
             </li>
           ))}
         </ul>

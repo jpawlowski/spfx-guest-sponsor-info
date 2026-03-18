@@ -30,15 +30,23 @@ function getInitials(name: string): string {
 
 interface ISponsorCardProps {
   sponsor: ISponsor;
+  /** AAD tenant ID of the host tenant — used to build Teams guest-context deep links. */
+  hostTenantId: string;
 }
 
-const SponsorCard: React.FC<ISponsorCardProps> = ({ sponsor }) => {
+const SponsorCard: React.FC<ISponsorCardProps> = ({ sponsor, hostTenantId }) => {
   const [showDetails, setShowDetails] = React.useState(false);
+  const hideTimeout = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const initials = getInitials(sponsor.displayName);
   const bgColor = getInitialsColor(sponsor.displayName);
 
-  const openDetails = (): void => setShowDetails(true);
-  const closeDetails = (): void => setShowDetails(false);
+  const openDetails = (): void => {
+    if (hideTimeout.current) { clearTimeout(hideTimeout.current); hideTimeout.current = null; }
+    setShowDetails(true);
+  };
+  const scheduleClose = (): void => {
+    hideTimeout.current = setTimeout(() => setShowDetails(false), 150);
+  };
 
   const hasPhone =
     (sponsor.businessPhones && sponsor.businessPhones.length > 0) || !!sponsor.mobilePhone;
@@ -47,9 +55,9 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({ sponsor }) => {
     <div
       className={styles.card}
       onMouseEnter={openDetails}
-      onMouseLeave={closeDetails}
+      onMouseLeave={scheduleClose}
       onFocus={openDetails}
-      onBlur={closeDetails}
+      onBlur={scheduleClose}
       tabIndex={0}
       role="article"
       aria-label={sponsor.displayName}
@@ -73,7 +81,12 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({ sponsor }) => {
 
       {/* Contact details panel – rendered on hover or keyboard focus */}
       {showDetails && (
-        <div className={styles.detailsCard} role="tooltip">
+        <div
+          className={styles.detailsCard}
+          role="tooltip"
+          onMouseEnter={openDetails}
+          onMouseLeave={scheduleClose}
+        >
           <div className={styles.detailsName}>{sponsor.displayName}</div>
           {sponsor.jobTitle && (
             <div className={styles.detailsMeta}>{sponsor.jobTitle}</div>
@@ -92,6 +105,30 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({ sponsor }) => {
             >
               {sponsor.mail}
             </a>
+          )}
+          {sponsor.mail && (
+            <div className={styles.teamsChatLinks}>
+              <a
+                href={`https://teams.microsoft.com/l/chat/0/0?users=${encodeURIComponent(sponsor.mail)}`}
+                className={styles.teamsChatLink}
+                target="_blank"
+                rel="noreferrer noopener"
+                tabIndex={-1}
+                title="Chat via your home Teams account"
+              >
+                💬 Chat (home)
+              </a>
+              <a
+                href={`https://teams.microsoft.com/l/chat/0/0?users=${encodeURIComponent(sponsor.mail)}&tenantId=${encodeURIComponent(hostTenantId)}`}
+                className={styles.teamsChatLink}
+                target="_blank"
+                rel="noreferrer noopener"
+                tabIndex={-1}
+                title="Chat as guest in the sponsor's tenant"
+              >
+                💬 Chat (as guest)
+              </a>
+            </div>
           )}
           {hasPhone && (
             <>

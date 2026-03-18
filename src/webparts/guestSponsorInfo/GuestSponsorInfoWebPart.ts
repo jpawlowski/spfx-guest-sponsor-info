@@ -31,6 +31,7 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
         graphClient: this._graphClient, // undefined until onInit resolves
         title: this.properties.title,
         mockMode: this.properties.mockMode ?? false,
+        hostTenantId: this.context.pageContext.aadInfo.tenantId.toString(),
       }
     );
 

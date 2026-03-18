@@ -32,8 +32,8 @@ afterEach(() => {
   container.remove();
 });
 
-function render(sponsor: ISponsor): void {
-  act(() => { ReactDOM.render(<SponsorCard sponsor={sponsor} />, container); });
+function render(sponsor: ISponsor, hostTenantId = 'test-tenant-id'): void {
+  act(() => { ReactDOM.render(<SponsorCard sponsor={sponsor} hostTenantId={hostTenantId} />, container); });
 }
 
 function fireEvent(element: Element, eventName: string): void {
@@ -126,12 +126,18 @@ describe('SponsorCard', () => {
       expect(container.querySelector('[role="tooltip"]')!.textContent).toContain('+49 30 12345678');
     });
 
-    it('disappears on mouseleave', () => {
+    it('disappears on mouseleave after a short delay', () => {
+      jest.useFakeTimers();
       render(BASE_SPONSOR);
       const card = container.querySelector('[role="article"]') as HTMLElement;
-      fireEvent(card, 'mouseenter');
-      fireEvent(card, 'mouseleave');
+      act(() => { fireEvent(card, 'mouseenter'); });
+      act(() => { fireEvent(card, 'mouseleave'); });
+      // Tooltip still visible during the delay
+      expect(container.querySelector('[role="tooltip"]')).not.toBeNull();
+      // Advance past the 150 ms hide delay
+      act(() => { jest.advanceTimersByTime(200); });
       expect(container.querySelector('[role="tooltip"]')).toBeNull();
+      jest.useRealTimers();
     });
 
     it('shows the mobile phone when present and business phones are absent', () => {
@@ -151,6 +157,35 @@ describe('SponsorCard', () => {
       const card = container.querySelector('[role="article"]') as HTMLElement;
       fireEvent(card, 'mouseenter');
       const links = container.querySelectorAll('[role="tooltip"] a[href^="mailto:"]');
+      expect(links).toHaveLength(0);
+    });
+
+    it('renders Teams home-tenant chat link when mail is present', () => {
+      render(BASE_SPONSOR, 'aaaabbbb-0000-0000-0000-000000000001');
+      const card = container.querySelector('[role="article"]') as HTMLElement;
+      fireEvent(card, 'mouseenter');
+      const links = Array.from(container.querySelectorAll('[role="tooltip"] a[href*="teams.microsoft.com"]'));
+      const homeLink = links.find(l => !l.getAttribute('href')!.includes('tenantId'));
+      expect(homeLink).not.toBeNull();
+      expect(homeLink!.getAttribute('href')).toContain(encodeURIComponent('alice@contoso.com'));
+    });
+
+    it('renders Teams guest-tenant chat link with correct tenantId', () => {
+      const tenantId = 'aaaabbbb-0000-0000-0000-000000000001';
+      render(BASE_SPONSOR, tenantId);
+      const card = container.querySelector('[role="article"]') as HTMLElement;
+      fireEvent(card, 'mouseenter');
+      const links = Array.from(container.querySelectorAll('[role="tooltip"] a[href*="teams.microsoft.com"]'));
+      const guestLink = links.find(l => l.getAttribute('href')!.includes('tenantId'));
+      expect(guestLink).not.toBeNull();
+      expect(guestLink!.getAttribute('href')).toContain(encodeURIComponent(tenantId));
+    });
+
+    it('does not render Teams links when mail is absent', () => {
+      render({ ...BASE_SPONSOR, mail: undefined });
+      const card = container.querySelector('[role="article"]') as HTMLElement;
+      fireEvent(card, 'mouseenter');
+      const links = container.querySelectorAll('[role="tooltip"] a[href*="teams.microsoft.com"]');
       expect(links).toHaveLength(0);
     });
   });

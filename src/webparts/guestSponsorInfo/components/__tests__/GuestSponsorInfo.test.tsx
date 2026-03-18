@@ -67,6 +67,7 @@ function renderWebPart(overrides: Partial<IGuestSponsorInfoProps> = {}): void {
     graphClient: {} as never, // The actual client object is irrelevant; getSponsors is mocked.
     title: 'My Sponsors',
     mockMode: false,
+    hostTenantId: 'aaaabbbb-0000-0000-0000-000000000001',
   };
   ReactDOM.render(<GuestSponsorInfo {...defaults} {...overrides} />, container);
 }

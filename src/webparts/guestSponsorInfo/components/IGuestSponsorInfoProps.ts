@@ -16,4 +16,9 @@ export interface IGuestSponsorInfoProps {
    * making live Graph calls.  Intended for local-workbench development only.
    */
   mockMode: boolean;
+  /**
+   * AAD tenant ID of the host tenant (where the sponsors live).
+   * Used to generate Teams deep links that open in the guest-account context.
+   */
+  hostTenantId: string;
 }
