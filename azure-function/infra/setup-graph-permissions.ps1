@@ -199,9 +199,6 @@ foreach ($spAppId in $spWebClientAppIds) {
 }
 
 # Ensure appRoleAssignmentRequired is false on the Service Principal (Enterprise App).
-# If this were true, every user (including guests) would need to be individually assigned
-# to the Enterprise App before they could acquire tokens — even with pre-authorization in place.
-# Ensure the Service Principal (Enterprise App) exists for the EasyAuth App Registration.
 # Normally created on first user sign-in, but since we run this script before any user
 # has consented, we create it explicitly here.
 $sp = Get-MgServicePrincipal -Filter "appId eq '$FunctionAppClientId'" -ErrorAction SilentlyContinue
@@ -212,12 +209,27 @@ if (-not $sp) {
 } else {
     Write-Host "  ✓ Service Principal already exists (Object ID: $($sp.Id))." -ForegroundColor Yellow
 }
+
+# appRoleAssignmentRequired=false: all users (including guests) can acquire tokens without
+# individual assignment — even with pre-authorization in place.
 if ($sp.AppRoleAssignmentRequired) {
     Write-Host "  Disabling appRoleAssignmentRequired on the Enterprise App (was: true) ..." -ForegroundColor Cyan
     Update-MgServicePrincipal -ServicePrincipalId $sp.Id -AppRoleAssignmentRequired:$false -ErrorAction Stop
-    Write-Host "  ✓ appRoleAssignmentRequired set to false — all users (including guests) can acquire tokens without individual assignment." -ForegroundColor Green
+    Write-Host "  ✓ appRoleAssignmentRequired set to false." -ForegroundColor Green
 } else {
     Write-Host "  ✓ appRoleAssignmentRequired is already false — no user assignment needed." -ForegroundColor Yellow
+}
+
+# Hide from My Apps portal (tags: HideApp). This is a backend auth proxy — it should not
+# appear as a launchable app in users' My Apps page.
+$hasHideApp = $sp.Tags -contains 'HideApp'
+if (-not $hasHideApp) {
+    Write-Host "  Hiding Enterprise App from My Apps portal (visible to users: No) ..." -ForegroundColor Cyan
+    $updatedTags = @($sp.Tags) + @('HideApp')
+    Update-MgServicePrincipal -ServicePrincipalId $sp.Id -Tags $updatedTags -ErrorAction Stop
+    Write-Host "  ✓ Enterprise App hidden from My Apps portal." -ForegroundColor Green
+} else {
+    Write-Host "  ✓ Enterprise App is already hidden from My Apps portal." -ForegroundColor Yellow
 }
 
 Write-Host "`nDone. The Managed Identity can now call Microsoft Graph with:" -ForegroundColor Green
