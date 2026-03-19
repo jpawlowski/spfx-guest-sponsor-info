@@ -81,12 +81,12 @@ jobs:
       # Compile the Bicep infra template to ARM JSON for the Deploy-to-Azure button.
       - name: Install Bicep CLI
         run: |
-          curl -sLo /usr/local/bin/bicep https://github.com/Azure/bicep/releases/latest/download/bicep-linux-x64
-          chmod +x /usr/local/bin/bicep
-          bicep --version
+          curl -sLo "$RUNNER_TEMP/bicep" https://github.com/Azure/bicep/releases/latest/download/bicep-linux-x64
+          chmod +x "$RUNNER_TEMP/bicep"
+          "$RUNNER_TEMP/bicep" --version
 
       - name: Compile Bicep to ARM JSON
-        run: bicep build azure-function/infra/main.bicep --outfile azure-function/infra/azuredeploy.json
+        run: "$RUNNER_TEMP/bicep" build azure-function/infra/main.bicep --outfile azure-function/infra/azuredeploy.json
 
       # Create the GitHub Release and attach the .sppkg as a downloadable asset.
       # Delete first if it already exists so the step is idempotent on re-runs
