@@ -53,7 +53,10 @@
           "github": {
             "type": "stdio",
             "command": "npx",
-            "args": ["-y", "@modelcontextprotocol/server-github@latest"],
+            "args": [
+              "-y",
+              "@modelcontextprotocol/server-github@latest"
+            ],
             "env": {
               "GITHUB_PERSONAL_ACCESS_TOKEN": "${localEnv:GITHUB_TOKEN}"
             }
@@ -68,10 +71,14 @@
         "esbenp.prettier-vscode",
         "GitHub.copilot-chat",
         "github.vscode-github-actions",
+        "GitHub.vscode-pull-request-github",
+        "ms-azuretools.azure-dev",
         "ms-azuretools.vscode-azurefunctions",
+        "ms-azuretools.vscode-azureresourcegroups",
+        "ms-azuretools.vscode-azurestorage",
+        "ms-azuretools.vscode-bicep",
         "ms-azuretools.vscode-docker",
         "ms-vscode.powershell",
-        "ms-vscode.vscode-bicep",
         "openai.chatgpt",
         "SharePoint.deployToSPOnline",
         "stylelint.vscode-stylelint",
