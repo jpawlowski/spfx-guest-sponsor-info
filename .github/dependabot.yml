@@ -44,6 +44,19 @@ updates:
       # @fluentui/react is tightly coupled to the SPFx Fluent UI version.
       - dependency-name: "@fluentui/react"
 
+  # ── npm dependencies (Azure Function) ────────────────────────────────────
+  - package-ecosystem: npm
+    directory: /azure-function
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+
   # ── GitHub Actions ────────────────────────────────────────────────────────
   - package-ecosystem: github-actions
     directory: /
