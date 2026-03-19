@@ -139,11 +139,12 @@ describe('GuestSponsorInfo', () => {
       expect(mockGetSponsors).not.toHaveBeenCalled();
     });
 
-    it('shows the loading message while getSponsors is still pending', () => {
+    it('shows the skeleton placeholder while getSponsors is still pending', () => {
       // Return a promise that never resolves so loading state persists throughout the test.
       mockGetSponsors.mockReturnValue(new Promise(() => { /* intentionally pending */ }));
       act(() => { renderWebPart({}); });
-      expect(container.textContent).toContain('Loading your sponsors');
+      // The loading text is replaced by a shimmer skeleton grid (aria-busy="true").
+      expect(container.querySelector('[aria-busy="true"]')).not.toBeNull();
     });
 
     it('calls getSponsors exactly once on first render', async () => {

@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { DisplayMode } from '@microsoft/sp-core-library';
+import { Shimmer, ShimmerElementType, ShimmerElementsGroup } from '@fluentui/react';
 import * as strings from 'GuestSponsorInfoWebPartStrings';
 import styles from './GuestSponsorInfo.module.scss';
 import type { IGuestSponsorInfoProps } from './IGuestSponsorInfoProps';
@@ -42,6 +43,52 @@ const SponsorList: React.FC<{ sponsors: ISponsor[]; hostTenantId: string }> = ({
     </ul>
   );
 };
+
+// Skeleton shimmer for a single sponsor card (136 × 138 px — matches .card exactly).
+// Pixel values: card width 136px, avatar 72px centered, name 90px, job title 68px.
+// Defined once outside the component so it is not recreated on every render.
+const sponsorCardShimmer = (
+  <ShimmerElementsGroup
+    flexWrap
+    width="136px"
+    shimmerElements={[
+      // top padding 12px
+      { type: ShimmerElementType.gap, width: '100%', height: 12 },
+      // avatar row: (136-72)/2 = 32px gap each side
+      { type: ShimmerElementType.gap,    width: 32, height: 72 },
+      { type: ShimmerElementType.circle,            height: 72 },
+      { type: ShimmerElementType.gap,    width: 32, height: 72 },
+      // gap between avatar and name
+      { type: ShimmerElementType.gap, width: '100%', height: 8 },
+      // name line (~90px centered): (136-90)/2 = 23px each side
+      { type: ShimmerElementType.gap,  width: 23, height: 14 },
+      { type: ShimmerElementType.line, width: 90, height: 14 },
+      { type: ShimmerElementType.gap,  width: 23, height: 14 },
+      // gap between name and job title
+      { type: ShimmerElementType.gap, width: '100%', height: 8 },
+      // job title line (~68px centered): (136-68)/2 = 34px each side
+      { type: ShimmerElementType.gap,  width: 34, height: 12 },
+      { type: ShimmerElementType.line, width: 68, height: 12 },
+      { type: ShimmerElementType.gap,  width: 34, height: 12 },
+      // bottom padding 12px
+      { type: ShimmerElementType.gap, width: '100%', height: 12 },
+    ]}
+  />
+);
+
+/**
+ * Renders 3 shimmer placeholder cards in the same grid as the real sponsor list.
+ * Shown instead of a loading text while Graph data is being fetched.
+ */
+const SponsorGridSkeleton: React.FC = () => (
+  <ul className={styles.sponsorGrid} aria-busy="true">
+    {[0, 1, 2].map(i => (
+      <li key={i} className={styles.sponsorItem}>
+        <Shimmer customElementsGroup={sponsorCardShimmer} width="136px" />
+      </li>
+    ))}
+  </ul>
+);
 
 type ProxyStatus = 'checking' | 'ok' | 'error';
 
@@ -212,9 +259,7 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
   return (
     <section className={styles.webPart}>
       {title && <h2 className={styles.title}>{title}</h2>}
-      {loading && (
-        <p className={styles.statusMessage}>{strings.LoadingMessage}</p>
-      )}
+      {loading && <SponsorGridSkeleton />}
       {!loading && error && (
         <p className={styles.statusMessage}>{error}</p>
       )}
