@@ -27,14 +27,18 @@ export function isGuestUser(loginName: string): boolean {
 /**
  * Converts an ArrayBuffer containing JPEG bytes into a base64-encoded data URL.
  * Avoids Blob-URL leaks because data URLs do not require explicit cleanup.
+ *
+ * Uses chunked processing (8 KB at a time) so the main thread is never blocked
+ * by a long loop over tens of thousands of individual bytes.
  */
 function arrayBufferToDataUrl(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
-  let binary = '';
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]);
+  const chunkSize = 8192;
+  const chunks: string[] = [];
+  for (let i = 0; i < bytes.byteLength; i += chunkSize) {
+    chunks.push(String.fromCharCode(...Array.from(bytes.subarray(i, i + chunkSize))));
   }
-  return `data:image/jpeg;base64,${btoa(binary)}`;
+  return `data:image/jpeg;base64,${btoa(chunks.join(''))}`;
 }
 
 /**

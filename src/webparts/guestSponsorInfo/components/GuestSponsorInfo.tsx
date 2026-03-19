@@ -103,6 +103,9 @@ const SponsorGridSkeleton: React.FC = () => (
   </ul>
 );
 
+/** Maximum number of transient-error retries before giving up and showing an error. */
+const MAX_RETRIES = 3;
+
 type ProxyStatus = 'checking' | 'ok' | 'error';
 
 const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
@@ -212,14 +215,14 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
           console.error('[GuestSponsorInfo] getSponsors failed:', err);
           const status = (err as { statusCode?: number }).statusCode;
           const is4xx = status !== undefined && status >= 400 && status < 500;
-          if (is4xx) {
-            // Permanent error (e.g. 401, 403): stop retrying and show the message.
+          if (is4xx || retryCount >= MAX_RETRIES) {
+            // Permanent error (e.g. 401, 403) or retry limit reached:
+            // stop retrying and show the error message so the shimmer disappears.
             setError(strings.ErrorMessage);
             setLoading(false);
           } else {
-            // Transient error: retry with exponential backoff capped at 5 minutes.
-            // Spinner stays visible — the user sees "Loading…" throughout.
-            const delay = Math.min(3000 * Math.pow(3, retryCount), 5 * 60 * 1000);
+            // Transient error: retry with exponential backoff capped at 30 seconds.
+            const delay = Math.min(3000 * Math.pow(3, retryCount), 30 * 1000);
             setTimeout(() => { if (!cancelled) setRetryCount(n => n + 1); }, delay);
           }
         }
