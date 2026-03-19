@@ -3,5 +3,5 @@
   "port": 4321,
   "https": true,
   "hostname": "localhost",
-  "initialPage": "https://{tenantDomain}.sharepoint.com/_layouts/workbench.aspx"
+  "initialPage": "https://{tenantDomain}/_layouts/workbench.aspx"
 }
