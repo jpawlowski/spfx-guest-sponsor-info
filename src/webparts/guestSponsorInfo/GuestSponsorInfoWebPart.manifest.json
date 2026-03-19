@@ -18,8 +18,38 @@
   "preconfiguredEntries": [{
     "groupId": "1edbd9a8-0bfb-4aa2-9afd-14b8c45dd489", // Communication
     "group": { "default": "Communication" },
-    "title": { "default": "Guest Sponsor Info" },
-    "description": { "default": "Shows the sponsors of the signed-in Microsoft Entra guest user" },
+    "title": {
+      "default": "Guest Sponsor Info",
+      "da-dk": "Gæstesponsoroplysninger",
+      "de-de": "Gast-Sponsor-Info",
+      "es-es": "Información del patrocinador invitado",
+      "fi-fi": "Vieraan sponsoritiedot",
+      "fr-fr": "Infos sur le sponsor invité",
+      "it-it": "Info sponsor ospite",
+      "ja-jp": "ゲストスポンサー情報",
+      "nb-no": "Gjestesponsorinformasjon",
+      "nl-nl": "Gastsponsors",
+      "pl-pl": "Informacje o sponsorze gościa",
+      "pt-br": "Informações do Patrocinador Convidado",
+      "sv-se": "Gästsponsorsinfo",
+      "zh-cn": "访客赞助商信息"
+    },
+    "description": {
+      "default": "Shows the sponsors of the signed-in Microsoft Entra guest user",
+      "da-dk": "Viser sponsorerne for den aktuelle Microsoft Entra-gæstebruger",
+      "de-de": "Zeigt die Sponsoren des angemeldeten Microsoft Entra-Gastbenutzers",
+      "es-es": "Muestra los patrocinadores del usuario invitado de Microsoft Entra",
+      "fi-fi": "Näyttää kirjautuneen Microsoft Entra -vieraskäyttäjän sponsorit",
+      "fr-fr": "Affiche les sponsors de l'utilisateur invité Microsoft Entra connecté",
+      "it-it": "Mostra gli sponsor dell'utente ospite Microsoft Entra connesso",
+      "ja-jp": "サインイン済み Microsoft Entra ゲスト ユーザーのスポンサーを表示します",
+      "nb-no": "Viser sponsorer for den innloggede Microsoft Entra-gjestebrukeren",
+      "nl-nl": "Toont de sponsors van de aangemelde Microsoft Entra-gastgebruiker",
+      "pl-pl": "Wyświetla sponsorów zalogowanego użytkownika-gościa Microsoft Entra",
+      "pt-br": "Exibe os patrocinadores do usuário convidado do Microsoft Entra conectado",
+      "sv-se": "Visar sponsorer för den inloggade Microsoft Entra-gästanvändaren",
+      "zh-cn": "显示已登录的 Microsoft Entra 来宾用户的赞助商"
+    },
     "officeFabricIconFontName": "People",
     "properties": {
       "title": "My Sponsors"
