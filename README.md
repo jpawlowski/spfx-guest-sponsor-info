@@ -320,16 +320,24 @@ Fill in the parameters:
 
 After deployment, note the **Managed Identity Object ID** shown in the output.
 
-#### Grant Graph permissions to the Managed Identity
+#### Grant Graph permissions and configure the App Registration
 
 ```powershell
-./azure-function/infra/setup-graph-permissions.ps1 \
-  -ManagedIdentityObjectId "<oid-from-deployment-output>" \
-  -TenantId "<your-tenant-id>"
+./azure-function/infra/setup-graph-permissions.ps1 `
+  -ManagedIdentityObjectId "<oid-from-deployment-output>" `
+  -TenantId "<your-tenant-id>" `
+  -FunctionAppClientId "<client-id-from-pre-step>"
 ```
 
-This grants `User.Read.All` and `Presence.Read.All` application permissions to the
-Function App's system-assigned Managed Identity.
+This script does two things:
+
+1. **Managed Identity Graph permissions**: assigns `User.Read.All` and `Presence.Read.All`
+   (optional; requires Microsoft Teams) to the Function App's system-assigned Managed Identity.
+
+2. **App Registration setup for silent token acquisition**: exposes a `user_impersonation`
+   scope on the EasyAuth App Registration and pre-authorizes *SharePoint Online Web Client
+   Extensibility* to call it. Without this step, the SharePoint web part would trigger full
+   page reloads and MSAL consent errors instead of acquiring tokens silently in the background.
 
 #### Configure the web part
 
