@@ -7,8 +7,9 @@
     After deploying the Azure Function, run this script to:
 
       1. Assign Microsoft Graph application permissions to the Managed Identity:
-           - User.Read.All     (read any user's profile and sponsors)
-           - Presence.Read.All (read sponsor presence status; optional, requires Teams)
+           - User.Read.All          (read any user's profile, sponsors, and accountEnabled status)
+           - Presence.Read.All      (read sponsor presence status; optional, requires Teams)
+           - MailboxSettings.Read   (filter shared/room/equipment mailboxes via userPurpose; optional, function fails open without it)
 
       2. Expose a 'user_impersonation' API scope on the EasyAuth App Registration and
          pre-authorize 'SharePoint Online Web Client Extensibility' to call it.
@@ -67,7 +68,8 @@ if (-not $graphSp) {
 # This avoids hardcoded GUIDs and correctly detects unavailable permissions.
 $requiredRoles = @(
     @{ Name = 'User.Read.All'; Optional = $false }
-    @{ Name = 'Presence.Read.All'; Optional = $true }   # requires Microsoft Teams; function degrades gracefully without it
+    @{ Name = 'Presence.Read.All'; Optional = $true }        # requires Microsoft Teams; function degrades gracefully without it
+    @{ Name = 'MailboxSettings.Read'; Optional = $true }    # optional; filters shared/room/equipment mailboxes via userPurpose; function fails open without it
 )
 
 $assignedRoles = @()

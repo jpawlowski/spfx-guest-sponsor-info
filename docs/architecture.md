@@ -84,13 +84,16 @@ No delegated permissions need to be approved by an admin in the SharePoint API a
 
 | Permission | Context | Why it is needed |
 |---|---|---|
-| `User.Read.All` | Azure Function (application) | Read any user's sponsors, profile data, and photos via `/users/{oid}/sponsors` |
+| `User.Read.All` | Azure Function (application) | Read any user's sponsors, profile data, and `accountEnabled` status via `/users/{oid}/sponsors` and `$batch` |
 | `Presence.Read.All` | Azure Function (application) | Read sponsor presence status via `/communications/getPresencesByUserId` |
+| `MailboxSettings.Read` | Azure Function (application) | **Optional.** Read each sponsor's mailbox `userPurpose` to filter out shared, room, and equipment mailboxes. Detected at runtime from the Managed Identity JWT — the function fails open when this permission is absent. |
 
-These are granted automatically by the `azd up` post-provision hook. They are never
-exposed to the calling guest user. The function enforces server-side that only the
-calling user's own sponsors are returned. It also filters out sponsor and manager accounts
-whose `accountEnabled` flag is `false`.
+All three permissions are assigned by `setup-graph-permissions.ps1` and by the `azd up`
+post-provision hook. They are never exposed to the calling guest user. The function
+enforces server-side that only the calling user's own sponsors are returned. It filters
+out sponsor and manager accounts whose `accountEnabled` flag is `false`, and — when
+`MailboxSettings.Read` is present — sponsors whose mailbox `userPurpose` is not `user`
+or `linked`.
 
 ### Fallback: Direct Graph (legacy)
 
@@ -126,19 +129,21 @@ request (`GET /users/{id}?$select=id`) for each sponsor:
 - **Any other error** → treated as "still exists" so that a transient Graph outage does
   not incorrectly hide a sponsor card.
 
-### Known limitation: disabled-but-not-deleted accounts
+### Known limitation: disabled accounts (fallback direct Graph path only)
 
-A sponsor whose Entra account has been *disabled* (but not yet deleted) will still show
-in the web part, because confirming `accountEnabled === false` on another user's object
-is blocked by the least-privilege boundary above. The account will disappear automatically
-once it is hard-deleted (typically 30 days after disabling, or immediately if
-force-deleted by an admin).
+When the web part operates without the Azure Function proxy (fallback direct Graph path),
+a sponsor whose Entra account has been *disabled* (but not yet deleted) will still show,
+because confirming `accountEnabled === false` on another user requires `User.Read.All` —
+a scope not requested on the delegated path. The account will disappear once hard-deleted
+(typically 30 days after disabling, or immediately if force-deleted by an admin).
 
-If this limitation becomes critical, a future iteration can:
+**This limitation does not apply to the recommended Azure Function proxy path.**
+The proxy requests `accountEnabled` via its `User.Read.All` application permission and
+filters out disabled sponsors before returning results.
 
-- Upgrade to `User.Read.All` and re-introduce the `accountEnabled` check, **or**
-- Use an admin-side automation to remove the sponsor assignment from the guest user
-  object at the time of account deactivation.
+If the direct Graph path must be used and this limitation is critical, use an admin-side
+automation to remove the sponsor assignment from the guest user object at the time of
+account deactivation.
 
 ## Azure Function Proxy
 
@@ -213,6 +218,10 @@ several structural problems:
    and `accountEnabled !== false`.
 - A sponsor that is hard-deleted, soft-deleted, or disabled is excluded and counted in
    `unavailableCount`.
+- A sponsor whose mailbox `userPurpose` is not `user` or `linked` (e.g. shared, room,
+   equipment) is excluded and counted in `unavailableCount` when the `MailboxSettings.Read`
+   application permission is granted. Without that permission the field is not read and all
+   sponsors pass this filter (fail-open behaviour).
 - A manager is returned only when the manager relationship resolves via the active Graph view
    and `accountEnabled !== false`.
 - A soft-deleted manager or sponsor is treated as unavailable through the normal active-user
@@ -221,12 +230,13 @@ several structural problems:
 ### Runtime characteristics
 
 - A guest can have at most 5 sponsors; the function enforces this cap at the Graph query level.
-- The function uses one sponsor lookup, one presence call, one sponsor-detail batch, and one
-   optional manager-photo batch. This keeps network round-trips low while preserving the data
-   needed by the web part.
+- The function makes three concurrent Graph requests per invocation: one sponsor lookup,
+   one presence call, and one `$batch` request with one sub-request per sponsor (manager
+   data is inlined via `$expand=manager` — no separate manager batch needed). Profile photos
+   are not fetched by the function; the SPFx client loads them progressively after the
+   initial render.
 - Timeout values can be tuned via app settings:
-   `SPONSOR_LOOKUP_TIMEOUT_MS`, `BATCH_TIMEOUT_MS`, `PRESENCE_TIMEOUT_MS`,
-   `PHOTO_BATCH_TIMEOUT_MS`.
+   `SPONSOR_LOOKUP_TIMEOUT_MS`, `BATCH_TIMEOUT_MS`, `PRESENCE_TIMEOUT_MS`.
 - Authenticated callers are rate-limited to **20 requests per 60 seconds per user** using an
   in-memory sliding window. Excess requests receive HTTP 429 with a `Retry-After` header.
   The counter is per Function App instance; on a Consumption plan that briefly scales to

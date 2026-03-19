@@ -331,8 +331,10 @@ After deployment, note the **Managed Identity Object ID** shown in the output.
 
 This script does two things:
 
-1. **Managed Identity Graph permissions**: assigns `User.Read.All` and `Presence.Read.All`
-   (optional; requires Microsoft Teams) to the Function App's system-assigned Managed Identity.
+1. **Managed Identity Graph permissions**: assigns `User.Read.All`, `Presence.Read.All`
+   (optional; requires Microsoft Teams), and `MailboxSettings.Read` (optional; enables
+   filtering of shared/room/equipment mailboxes — the function fails open without it)
+   to the Function App's system-assigned Managed Identity.
 
 2. **App Registration setup for silent token acquisition**: exposes a `user_impersonation`
    scope on the EasyAuth App Registration and pre-authorizes *SharePoint Online Web Client
