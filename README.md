@@ -267,12 +267,12 @@ Click the button below to open the Azure Portal with the ARM template pre-loaded
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fgithub.com%2Fjpawlowski%2Fspfx-guest-sponsor-info%2Freleases%2Flatest%2Fdownload%2Fazuredeploy.json)
 
 Alternatively, deploy from [Azure Cloud Shell](https://shell.azure.com) without any local
-tooling — this also works for updates (Bicep deployments are idempotent):
+tooling — this also works for updates (ARM deployments are idempotent):
 
 ```bash
 az deployment group create \
   --resource-group <your-resource-group> \
-  --template-uri https://raw.githubusercontent.com/jpawlowski/spfx-guest-sponsor-info/main/azure-function/infra/main.bicep \
+  --template-uri https://github.com/jpawlowski/spfx-guest-sponsor-info/releases/latest/download/azuredeploy.json \
   --parameters \
       tenantId=<your-tenant-id> \
       tenantName=<your-tenant-name> \
@@ -320,7 +320,7 @@ updates what has changed. From [Azure Cloud Shell](https://shell.azure.com):
 ```bash
 az deployment group create \
   --resource-group <your-resource-group> \
-  --template-uri https://raw.githubusercontent.com/jpawlowski/spfx-guest-sponsor-info/main/azure-function/infra/main.bicep \
+  --template-uri https://github.com/jpawlowski/spfx-guest-sponsor-info/releases/latest/download/azuredeploy.json \
   --parameters \
       tenantId=<your-tenant-id> \
       tenantName=<your-tenant-name> \
