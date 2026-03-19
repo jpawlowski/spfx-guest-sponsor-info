@@ -652,11 +652,10 @@ function corsHeaders(request: HttpRequest): Record<string, string> {
     // CORS
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
     'Access-Control-Allow-Headers': 'Authorization, Content-Type',
-    // Security headers (defence-in-depth even without a WAF)
+    // Minimal security headers for API responses.
+    // HSTS, X-Frame-Options, and other browser-level protections are better handled
+    // by SharePoint Online or Azure Application Gateway, not at the API level.
     'X-Content-Type-Options': 'nosniff',           // Prevent content-type sniffing attacks
-    'X-Frame-Options': 'DENY',                      // Block framing in other sites
-    'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',  // Enforce HTTPS
-    'X-XSS-Protection': '1; mode=block',            // Legacy XSS filter (for older browsers)
   };
 
   if (allowedOrigin && origin === allowedOrigin) {
