@@ -33,8 +33,10 @@ export interface IGuestSponsorInfoProps {
   functionClientId: string | undefined;
   /** Pre-acquired AAD HTTP client scoped to the function App Registration. Undefined when not configured. */
   aadHttpClient: AadHttpClient | undefined;
-  /** Show phone numbers (business + mobile) in the contact card. */
-  showPhones: boolean;
+  /** Show business phone numbers in the contact card. */
+  showBusinessPhones: boolean;
+  /** Show the mobile phone number in the contact card. */
+  showMobilePhone: boolean;
   /** Show the work location field in the contact card. */
   showWorkLocation: boolean;
   /** Show the manager section in the contact card. */

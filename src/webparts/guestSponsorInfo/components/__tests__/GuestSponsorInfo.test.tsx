@@ -72,7 +72,8 @@ function renderWebPart(overrides: Partial<IGuestSponsorInfoProps> = {}): void {
     functionUrl: undefined,
     functionClientId: undefined,
     aadHttpClient: undefined,
-    showPhones: true,
+    showBusinessPhones: true,
+    showMobilePhone: true,
     showWorkLocation: true,
     showManager: true,
   };

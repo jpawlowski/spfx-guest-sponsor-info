@@ -18,12 +18,13 @@ import SponsorCard from './SponsorCard';
 interface ISponsorListProps {
   sponsors: ISponsor[];
   hostTenantId: string;
-  showPhones: boolean;
+  showBusinessPhones: boolean;
+  showMobilePhone: boolean;
   showWorkLocation: boolean;
   showManager: boolean;
 }
 
-const SponsorList: React.FC<ISponsorListProps> = ({ sponsors, hostTenantId, showPhones, showWorkLocation, showManager }) => {
+const SponsorList: React.FC<ISponsorListProps> = ({ sponsors, hostTenantId, showBusinessPhones, showMobilePhone, showWorkLocation, showManager }) => {
   const [activeId, setActiveId] = React.useState<string | null>(null);
   const hideTimeout = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -45,7 +46,8 @@ const SponsorList: React.FC<ISponsorListProps> = ({ sponsors, hostTenantId, show
             isActive={activeId === sponsor.id}
             onActivate={() => activate(sponsor.id)}
             onScheduleDeactivate={scheduleDeactivate}
-            showPhones={showPhones}
+            showBusinessPhones={showBusinessPhones}
+            showMobilePhone={showMobilePhone}
             showWorkLocation={showWorkLocation}
             showManager={showManager}
           />
@@ -113,7 +115,8 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
   hostTenantId,
   functionUrl,
   aadHttpClient,
-  showPhones,
+  showBusinessPhones,
+  showMobilePhone,
   showWorkLocation,
   showManager,
 }) => {
@@ -302,7 +305,7 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
         <p className={styles.statusMessage}>{strings.NoSponsorsMessage}</p>
       )}
       {!loading && !error && sponsors.length > 0 && (
-        <SponsorList sponsors={sponsors} hostTenantId={hostTenantId} showPhones={showPhones} showWorkLocation={showWorkLocation} showManager={showManager} />
+        <SponsorList sponsors={sponsors} hostTenantId={hostTenantId} showBusinessPhones={showBusinessPhones} showMobilePhone={showMobilePhone} showWorkLocation={showWorkLocation} showManager={showManager} />
       )}
     </section>
   );

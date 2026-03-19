@@ -13,7 +13,8 @@ declare interface IGuestSponsorInfoWebPartStrings {
 
   // Display toggles
   DisplayGroupName: string;
-  ShowPhonesFieldLabel: string;
+  ShowBusinessPhonesFieldLabel: string;
+  ShowMobilePhoneFieldLabel: string;
   ShowWorkLocationFieldLabel: string;
   ShowManagerFieldLabel: string;
 

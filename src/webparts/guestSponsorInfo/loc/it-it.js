@@ -46,7 +46,8 @@ define([], function() {
     "CopyLocationAriaLabel": "Copia luogo di lavoro",
 
     "DisplayGroupName": "Visualizzazione",
-    "ShowPhonesFieldLabel": "Mostra numeri di telefono",
+    "ShowBusinessPhonesFieldLabel": "Mostra telefono ufficio",
+    "ShowMobilePhoneFieldLabel": "Mostra numero di cellulare",
     "ShowWorkLocationFieldLabel": "Mostra luogo di lavoro",
     "ShowManagerFieldLabel": "Mostra responsabile",
 

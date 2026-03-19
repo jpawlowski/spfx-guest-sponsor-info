@@ -115,8 +115,10 @@ interface ISponsorCardProps {
   onActivate: () => void;
   /** Called when the mouse/focus leaves this card or its popup. Parent starts the hide timer. */
   onScheduleDeactivate: () => void;
-  /** Show phone numbers (business + mobile) in the contact details section. */
-  showPhones: boolean;
+  /** Show business phone numbers in the contact details section. */
+  showBusinessPhones: boolean;
+  /** Show the mobile phone number in the contact details section. */
+  showMobilePhone: boolean;
   /** Show the work location row in the contact details section. */
   showWorkLocation: boolean;
   /** Show the manager section below the contact details. */
@@ -129,7 +131,8 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
   isActive,
   onActivate,
   onScheduleDeactivate,
-  showPhones,
+  showBusinessPhones,
+  showMobilePhone,
   showWorkLocation,
   showManager,
 }) => {
@@ -242,7 +245,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
             <CopyButton value={sponsor.mail} ariaLabel={strings.CopyEmailAriaLabel} />
           </div>
         )}
-        {showPhones && sponsor.businessPhones?.map(phone => (
+        {showBusinessPhones && sponsor.businessPhones?.map(phone => (
           <div key={phone} className={styles.richInfoRow}>
             <Icon iconName="Phone" className={styles.richInfoIcon} aria-hidden="true" />
             <div className={styles.richInfoText}>
@@ -252,7 +255,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
             <CopyButton value={phone} ariaLabel={strings.CopyWorkPhoneAriaLabel} />
           </div>
         ))}
-        {showPhones && sponsor.mobilePhone && (
+        {showMobilePhone && sponsor.mobilePhone && (
           <div className={styles.richInfoRow}>
             <Icon iconName="CellPhone" className={styles.richInfoIcon} aria-hidden="true" />
             <div className={styles.richInfoText}>

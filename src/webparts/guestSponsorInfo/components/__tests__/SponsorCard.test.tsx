@@ -62,7 +62,8 @@ function render(
   isActive = false,
   onActivate = jest.fn(),
   onScheduleDeactivate = jest.fn(),
-  showPhones = true,
+  showBusinessPhones = true,
+  showMobilePhone = true,
   showWorkLocation = true,
   showManager = true
 ): void {
@@ -74,7 +75,8 @@ function render(
         isActive={isActive}
         onActivate={onActivate}
         onScheduleDeactivate={onScheduleDeactivate}
-        showPhones={showPhones}
+        showBusinessPhones={showBusinessPhones}
+        showMobilePhone={showMobilePhone}
         showWorkLocation={showWorkLocation}
         showManager={showManager}
       />,

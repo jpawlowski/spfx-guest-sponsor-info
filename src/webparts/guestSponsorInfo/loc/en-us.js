@@ -46,7 +46,8 @@ define([], function() {
     "CopyLocationAriaLabel": "Copy work location",
 
     "DisplayGroupName": "Display",
-    "ShowPhonesFieldLabel": "Show phone numbers",
+    "ShowBusinessPhonesFieldLabel": "Show business phone numbers",
+    "ShowMobilePhoneFieldLabel": "Show mobile phone number",
     "ShowWorkLocationFieldLabel": "Show work location",
     "ShowManagerFieldLabel": "Show manager",
 

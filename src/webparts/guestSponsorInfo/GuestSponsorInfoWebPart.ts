@@ -19,8 +19,10 @@ export interface IGuestSponsorInfoWebPartProps {
   mockMode: boolean;
   functionUrl: string;
   functionClientId: string;
-  /** Show phone numbers (business + mobile) in the contact card. Default: true. */
-  showPhones: boolean;
+  /** Show business phone numbers in the contact card. Default: true. */
+  showBusinessPhones: boolean;
+  /** Show the mobile phone number in the contact card. Default: true. */
+  showMobilePhone: boolean;
   /** Show the work location field in the contact card. Default: true. */
   showWorkLocation: boolean;
   /** Show the manager section in the contact card. Default: true. */
@@ -46,7 +48,8 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
         functionUrl: this.properties.functionUrl || undefined,
         functionClientId: this.properties.functionClientId || undefined,
         aadHttpClient: this._aadHttpClient,
-        showPhones: this.properties.showPhones ?? true,
+        showBusinessPhones: this.properties.showBusinessPhones ?? true,
+        showMobilePhone: this.properties.showMobilePhone ?? true,
         showWorkLocation: this.properties.showWorkLocation ?? true,
         showManager: this.properties.showManager ?? true,
       }
@@ -106,9 +109,13 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
             {
               groupName: strings.DisplayGroupName,
               groupFields: [
-                PropertyPaneCheckbox('showPhones', {
-                  text: strings.ShowPhonesFieldLabel,
-                  checked: this.properties.showPhones ?? true,
+                PropertyPaneCheckbox('showBusinessPhones', {
+                  text: strings.ShowBusinessPhonesFieldLabel,
+                  checked: this.properties.showBusinessPhones ?? true,
+                }),
+                PropertyPaneCheckbox('showMobilePhone', {
+                  text: strings.ShowMobilePhoneFieldLabel,
+                  checked: this.properties.showMobilePhone ?? true,
                 }),
                 PropertyPaneCheckbox('showWorkLocation', {
                   text: strings.ShowWorkLocationFieldLabel,
