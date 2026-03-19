@@ -20,8 +20,8 @@ hooks:
       run: azure-function/infra/hooks/pre-provision.ps1
       interactive: true
 
-  # Grants User.Read.All and Presence.Read.All to the Managed Identity that
-  # Bicep created, and prints the web part configuration values.
+  # Grants User.Read.All, Presence.Read.All, and MailboxSettings.Read (optional)
+  # to the Managed Identity that Bicep created, and prints the web part configuration values.
   postprovision:
     posix:
       shell: sh

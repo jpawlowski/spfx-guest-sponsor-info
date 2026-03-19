@@ -333,7 +333,7 @@ This script does two things:
 
 1. **Managed Identity Graph permissions**: assigns `User.Read.All`, `Presence.Read.All`
    (optional; requires Microsoft Teams), and `MailboxSettings.Read` (optional; enables
-   filtering of shared/room/equipment mailboxes — the function fails open without it)
+   filtering of shared/room/equipment mailboxes — without it the filter is simply skipped and everything continues to work)
    to the Function App's system-assigned Managed Identity.
 
 2. **App Registration setup for silent token acquisition**: exposes a `user_impersonation`

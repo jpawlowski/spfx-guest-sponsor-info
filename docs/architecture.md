@@ -86,7 +86,7 @@ No delegated permissions need to be approved by an admin in the SharePoint API a
 |---|---|---|
 | `User.Read.All` | Azure Function (application) | Read any user's sponsors, profile data, and `accountEnabled` status via `/users/{oid}/sponsors` and `$batch` |
 | `Presence.Read.All` | Azure Function (application) | Read sponsor presence status via `/communications/getPresencesByUserId` |
-| `MailboxSettings.Read` | Azure Function (application) | **Optional.** Read each sponsor's mailbox `userPurpose` to filter out shared, room, and equipment mailboxes. Detected at runtime from the Managed Identity JWT — the function fails open when this permission is absent. |
+| `MailboxSettings.Read` | Azure Function (application) | **Optional.** Read each sponsor's mailbox `userPurpose` to filter out shared, room, and equipment mailboxes. Detected at runtime from the Managed Identity JWT — without it the filter is simply skipped and everything continues to work. |
 
 All three permissions are assigned by `setup-graph-permissions.ps1` and by the `azd up`
 post-provision hook. They are never exposed to the calling guest user. The function
@@ -262,10 +262,11 @@ azd up
    and generates a Function App name from the azd environment name.
 2. **Bicep deployment** — provisions the storage account, App Service plan, Function App
    (with system-assigned Managed Identity and EasyAuth), three storage role assignments,
-   and all app settings. No storage account keys are used.
-3. **Post-provision hook** — grants `User.Read.All` and `Presence.Read.All` to the Managed
-   Identity, then prints the Sponsor API URL and Function Client ID to paste into the SPFx
-   web part property pane.
+   a Log Analytics Workspace, an Application Insights component, and all app settings.
+   No storage account keys are used.
+3. **Post-provision hook** — grants `User.Read.All`, `Presence.Read.All` (optional), and
+   `MailboxSettings.Read` (optional) to the Managed Identity, then prints the Sponsor API
+   URL and Function Client ID to paste into the SPFx web part property pane.
 
 > **First-deploy note:** Azure RBAC role assignment propagation can take 1–2 minutes after
 > Bicep completes. If the function returns errors immediately after `azd up`, wait a moment
