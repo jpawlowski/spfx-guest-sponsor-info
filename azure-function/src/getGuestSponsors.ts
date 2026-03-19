@@ -665,8 +665,32 @@ function corsHeaders(request: HttpRequest): Record<string, string> {
   return headers;
 }
 
+/**
+ * Final guard at the function boundary: normalize response status codes and
+ * ensure unexpected exceptions still return a valid HTTP response.
+ */
+async function safeGetGuestSponsors(
+  request: HttpRequest,
+  context: InvocationContext
+): Promise<HttpResponseInit> {
+  try {
+    const response = await getGuestSponsors(request, context);
+    return {
+      ...response,
+      status: getValidHttpStatus(response.status),
+    };
+  } catch (error) {
+    context.error('Unhandled exception in safeGetGuestSponsors:', error);
+    return {
+      status: 500,
+      body: JSON.stringify({ error: 'Failed to retrieve sponsor information.' }),
+      headers: { 'Content-Type': 'application/json', ...corsHeaders(request) },
+    };
+  }
+}
+
 app.http('getGuestSponsors', {
   methods: ['GET', 'OPTIONS'],
   authLevel: 'anonymous', // Authentication is enforced by EasyAuth, not the function key.
-  handler: getGuestSponsors,
+  handler: safeGetGuestSponsors,
 });
