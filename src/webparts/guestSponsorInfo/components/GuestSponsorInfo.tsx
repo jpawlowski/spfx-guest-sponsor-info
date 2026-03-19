@@ -239,7 +239,14 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
     const id = setInterval(() => {
       loadFn()
         .then(result => {
-          setSponsors(result.activeSponsors);
+          // Merge refreshed data with the photos already in state.
+          // loadPhotosProgressively only runs on initial load; the API never
+          // returns photoUrl/managerPhotoUrl, so a plain setSponsors() would
+          // discard the cached photos and show initials until the next reload.
+          setSponsors(prev => {
+            const photoMap = new Map(prev.map(s => [s.id, { photoUrl: s.photoUrl, managerPhotoUrl: s.managerPhotoUrl }]));
+            return result.activeSponsors.map(s => ({ ...s, ...photoMap.get(s.id) }));
+          });
           setAllUnavailable(result.activeSponsors.length === 0 && result.unavailableCount > 0);
         })
         .catch((err: unknown) => {
