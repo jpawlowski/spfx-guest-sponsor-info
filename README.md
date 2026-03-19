@@ -280,6 +280,33 @@ az deployment group create \
       functionClientId=<client-id-from-pre-step>
 ```
 
+<details>
+<summary>Optional: deploy as a Deployment Stack (recommended if you manage this long-term via CLI)</summary>
+
+[Azure Deployment Stacks](https://learn.microsoft.com/azure/azure-resource-manager/bicep/deployment-stacks)
+track all resources as a managed set. When you update the stack, resources that were removed
+from the template are automatically deleted — no manual cleanup required. A clean full teardown
+is also possible with a single command.
+
+```bash
+az stack group create \
+  --name guest-sponsor-info \
+  --resource-group <your-resource-group> \
+  --template-uri https://raw.githubusercontent.com/jpawlowski/spfx-guest-sponsor-info/main/azure-function/infra/azuredeploy.json \
+  --parameters \
+      tenantId=<your-tenant-id> \
+      tenantName=<your-tenant-name> \
+      functionAppName=<globally-unique-name> \
+      functionClientId=<client-id-from-pre-step> \
+  --action-on-unmanage deleteResources \
+  --deny-settings-mode none
+```
+
+The same `az stack group create` command is used for both initial deployment and updates
+(see *Updating the function* below).
+
+</details>
+
 Fill in the parameters:
 
 | Parameter | Description |
@@ -327,6 +354,38 @@ az deployment group create \
       functionAppName=<your-function-app-name> \
       functionClientId=<your-client-id>
 ```
+
+<details>
+<summary>If you deployed as a Deployment Stack: update and teardown</summary>
+
+Re-run the same `az stack group create` command (with your original parameters). The stack
+automatically removes any resources that were deleted from the template in this version.
+
+```bash
+az stack group create \
+  --name guest-sponsor-info \
+  --resource-group <your-resource-group> \
+  --template-uri https://raw.githubusercontent.com/jpawlowski/spfx-guest-sponsor-info/main/azure-function/infra/azuredeploy.json \
+  --parameters \
+      tenantId=<your-tenant-id> \
+      tenantName=<your-tenant-name> \
+      functionAppName=<your-function-app-name> \
+      functionClientId=<your-client-id> \
+  --action-on-unmanage deleteResources \
+  --deny-settings-mode none
+```
+
+To remove all deployed resources:
+
+```bash
+az stack group delete \
+  --name guest-sponsor-info \
+  --resource-group <your-resource-group> \
+  --action-on-unmanage deleteResources \
+  --yes
+```
+
+</details>
 
 Alternatively, update only the function package via the Azure Portal:
 
