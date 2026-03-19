@@ -390,18 +390,15 @@ export async function getGuestSponsors(
 
     const sponsorIds = candidates.map(s => s.id);
 
-    const sponsorBatchRequests: IBatchRequest[] = candidates.flatMap((sponsor, index) => ([
-      {
-        id: `exists-${index}`,
-        method: 'GET',
-        url: `/users/${sponsor.id}?$select=id,accountEnabled,assignedPlans${hasMailboxSettings ? ',mailboxSettings' : ''}`,
-      },
-      {
-        id: `manager-${index}`,
-        method: 'GET',
-        url: `/users/${sponsor.id}/manager?$select=id,displayName,jobTitle,accountEnabled`,
-      },
-    ]));
+    // Each sponsor requires only a single batch sub-request because the manager
+    // object is inlined via $expand instead of fetched through a second request.
+    // This halves the number of batch operations compared to the previous approach
+    // (N requests instead of 2N) and stays well within the Graph $batch limit of 20.
+    const sponsorBatchRequests: IBatchRequest[] = candidates.map((sponsor, index) => ({
+      id: `exists-${index}`,
+      method: 'GET',
+      url: `/users/${sponsor.id}?$select=id,accountEnabled,assignedPlans${hasMailboxSettings ? ',mailboxSettings' : ''}&$expand=manager($select=id,displayName,jobTitle,accountEnabled)`,
+    }));
 
     const [presenceMap, sponsorBatchResults] = await Promise.all([
       fetchPresences(client, sponsorIds, context),
@@ -443,7 +440,10 @@ export async function getGuestSponsors(
 
       const hasTeams = assignedPlansHaveTeams(existsBody?.['assignedPlans']);
 
-      const managerBody = sponsorBatchResults.get(`manager-${index}`)?.body;
+      // Manager is inlined via $expand — read directly from the user body.
+      const managerBody = existsBody !== undefined && existsBody['manager'] !== null
+        ? existsBody['manager'] as Record<string, unknown> | undefined
+        : undefined;
 
       let managerDisplayName: string | undefined;
       let managerJobTitle: string | undefined;
