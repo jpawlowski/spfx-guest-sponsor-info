@@ -79,25 +79,33 @@ jobs:
           npm run package
 
       # Compile the Bicep infra template to ARM JSON for the Deploy-to-Azure button.
-      # The compiled JSON is committed back to main so raw.githubusercontent.com
-      # can serve it (GitHub release asset URLs don't support CORS for the portal).
-      - name: Install Bicep CLI
-        run: |
-          curl -sLo "$RUNNER_TEMP/bicep" https://github.com/Azure/bicep/releases/latest/download/bicep-linux-x64
-          chmod +x "$RUNNER_TEMP/bicep"
-          "$RUNNER_TEMP/bicep" --version
-
-      - name: Compile Bicep to ARM JSON and commit
+      # Normally set-version.sh already does this locally before tagging, so the
+      # committed azuredeploy.json should already be up to date. This step is a
+      # self-healing safety net for tags created directly on GitHub (bypassing the
+      # script). If the file is stale: regenerate, commit to main, move the tag to
+      # the new commit, and exit — the new tag push will trigger a fresh run.
+      - name: Ensure azuredeploy.json is up to date (safety net)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          "$RUNNER_TEMP/bicep" build azure-function/infra/main.bicep --outfile azure-function/infra/azuredeploy.json
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add azure-function/infra/azuredeploy.json
-          if ! git diff --cached --quiet; then
+          curl -sLo "$RUNNER_TEMP/bicep" https://github.com/Azure/bicep/releases/latest/download/bicep-linux-x64
+          chmod +x "$RUNNER_TEMP/bicep"
+          "$RUNNER_TEMP/bicep" build azure-function/infra/main.bicep --outfile "$RUNNER_TEMP/azuredeploy-fresh.json"
+
+          if diff -q "$RUNNER_TEMP/azuredeploy-fresh.json" azure-function/infra/azuredeploy.json > /dev/null 2>&1; then
+            echo "azuredeploy.json is already up to date — no action needed."
+          else
+            echo "azuredeploy.json is stale — regenerating, committing, and moving tag."
+            cp "$RUNNER_TEMP/azuredeploy-fresh.json" azure-function/infra/azuredeploy.json
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add azure-function/infra/azuredeploy.json
             git commit -m "chore(ci): update azuredeploy.json for ${{ github.ref_name }} [skip ci]"
+            git tag -f "${{ github.ref_name }}" -m "Release ${{ github.ref_name }}"
             git push origin HEAD:main
+            git push origin --force "${{ github.ref_name }}"
+            echo "Tag moved to new commit. A fresh workflow run will be triggered."
+            exit 0
           fi
 
       # Create the GitHub Release and attach the .sppkg as a downloadable asset.
