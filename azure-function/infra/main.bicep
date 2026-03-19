@@ -12,9 +12,9 @@ param tenantId string
 @description('Tenant name without domain suffix, e.g. "contoso".')
 param tenantName string
 
-@description('Globally unique name for the Function App (2–60 characters, letters, numbers, and hyphens only).')
+@description('Globally unique name for the Function App (2–58 characters, letters, numbers, and hyphens only).')
 @minLength(2)
-@maxLength(60)
+@maxLength(58)
 param functionAppName string
 
 @description('Client ID of the App Registration created for EasyAuth.')
@@ -28,7 +28,7 @@ param tags object = {}
 
 var storageAccountName = toLower(replace(functionAppName, '-', ''))
 var appServicePlanName = '${functionAppName}-plan'
-var logAnalyticsWorkspaceName = length('${functionAppName}-logs') > 63 ? '${substring(functionAppName, 0, 58)}-logs' : '${functionAppName}-logs'
+var logAnalyticsWorkspaceName = '${functionAppName}-logs'
 var appInsightsName = '${functionAppName}-insights'
 
 // ── Storage Account (required by Azure Functions runtime) ────────────────────
