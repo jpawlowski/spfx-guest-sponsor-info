@@ -57,18 +57,12 @@ updates:
       prefix: "chore"
       include: "scope"
     ignore:
-      # @types/node must stay within the Node.js versions supported by Azure Functions.
-      # The Azure portal currently offers up to Node 24; versions beyond that are not
-      # available as a runtime, so bumping types beyond 24.x would expose APIs that
-      # cannot exist at runtime. Update this ceiling when Azure adds a new LTS runtime.
-      #
-      # IMPORTANT: when Dependabot proposes a @types/node major bump (e.g. 22.x → 24.x),
-      # do NOT merge the PR alone. Also update manually:
-      #   - azure-function/package.json  →  engines.node  (e.g. "^22" → "^24")
-      #   - azure-function/infra/main.bicep + azuredeploy.json
-      #       →  WEBSITE_NODE_DEFAULT_VERSION  (e.g. '~22' → '~24')
+      # @types/node major upgrades require a coordinated change across multiple
+      # files (engines.node in package.json, WEBSITE_NODE_DEFAULT_VERSION in
+      # main.bicep/azuredeploy.json, and the Azure Function runtime setting).
+      # Block major bumps here and do Node runtime upgrades fully manually.
       - dependency-name: "@types/node"
-        versions: [">=25"]
+        update-types: ["version-update:semver-major"]
 
   # ── GitHub Actions ────────────────────────────────────────────────────────
   - package-ecosystem: github-actions
