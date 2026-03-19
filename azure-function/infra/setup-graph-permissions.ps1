@@ -112,7 +112,19 @@ Write-Host "`nConfiguring App Registration for silent token acquisition by the S
 # internally to acquire tokens on behalf of the signed-in user. Pre-authorizing it on the
 # EasyAuth App Registration allows silent token acquisition without user consent prompts
 # or full-page redirects.
-$spWebClientExtensibilityAppId = 'c58637bb-e2e1-4312-8a00-04b5ed6f3516'
+#
+# The actual app IDs vary across SharePoint Online environments. We resolve them dynamically
+# from the tenant rather than hardcoding, then fall back to the two known canonical IDs.
+Write-Host "  Resolving SharePoint Online Web Client Extensibility service principal(s)..." -ForegroundColor Cyan
+$spWebClientSps = Get-MgServicePrincipal -Filter "displayName eq 'SharePoint Online Web Client Extensibility'" -All -ErrorAction SilentlyContinue
+if ($spWebClientSps) {
+    $spWebClientAppIds = @($spWebClientSps | Select-Object -ExpandProperty AppId)
+    Write-Host "  Found $($spWebClientAppIds.Count) SP(s): $($spWebClientAppIds -join ', ')" -ForegroundColor Cyan
+} else {
+    # Fall back to the two well-known first-party Microsoft app IDs used across SharePoint Online environments.
+    $spWebClientAppIds = @('57fb890c-0dab-4253-a5e0-7188c88b2bb4', '08e18876-6177-487e-b8b5-cf950c1e598c')
+    Write-Host "  ⚠ Could not resolve SP by display name — falling back to known app IDs: $($spWebClientAppIds -join ', ')" -ForegroundColor Yellow
+}
 
 $app = Get-MgApplication -Filter "appId eq '$FunctionAppClientId'" -ErrorAction Stop
 if (-not $app) {
@@ -154,24 +166,36 @@ if (-not $existingScope) {
     Write-Host "  ✓ 'user_impersonation' scope already exists (id: $($existingScope.Id))." -ForegroundColor Yellow
 }
 
-# Pre-authorize the SharePoint Online Web Client Extensibility app to call the scope.
+# Pre-authorize the SharePoint Online Web Client Extensibility app(s) to call the scope.
 # This is what makes token acquisition silent — no per-user consent prompt, no page redirect.
-$alreadyPreAuthorized = $app.Api.PreAuthorizedApplications | Where-Object {
-    $_.AppId -eq $spWebClientExtensibilityAppId -and
-    $_.DelegatedPermissionIds -contains $existingScope.Id
-}
-if (-not $alreadyPreAuthorized) {
-    Write-Host "  Pre-authorizing SharePoint Online Web Client Extensibility ($spWebClientExtensibilityAppId) ..." -ForegroundColor Cyan
-    $existingPreAuthorized = $app.Api.PreAuthorizedApplications | Where-Object { $_.AppId -ne $spWebClientExtensibilityAppId }
-    $newPreAuth = @{
-        AppId                  = $spWebClientExtensibilityAppId
-        DelegatedPermissionIds = @($existingScope.Id)
+foreach ($spAppId in $spWebClientAppIds) {
+    $alreadyPreAuthorized = $app.Api.PreAuthorizedApplications | Where-Object {
+        $_.AppId -eq $spAppId -and
+        $_.DelegatedPermissionIds -contains $existingScope.Id
     }
-    $updatedPreAuthorized = @($existingPreAuthorized) + @($newPreAuth)
-    Update-MgApplication -ApplicationId $app.Id -Api @{ PreAuthorizedApplications = $updatedPreAuthorized } -ErrorAction Stop
-    Write-Host "  ✓ SharePoint Online Web Client Extensibility pre-authorized." -ForegroundColor Green
-} else {
-    Write-Host "  ✓ SharePoint Online Web Client Extensibility already pre-authorized." -ForegroundColor Yellow
+    if (-not $alreadyPreAuthorized) {
+        Write-Host "  Pre-authorizing $spAppId ..." -ForegroundColor Cyan
+        # Re-fetch the current state before each update to avoid overwriting parallel changes.
+        $app = Get-MgApplication -Filter "appId eq '$FunctionAppClientId'" -ErrorAction Stop
+        $otherPreAuthorized = $app.Api.PreAuthorizedApplications | Where-Object { $_.AppId -ne $spAppId }
+        $newPreAuth = @{
+            AppId                  = $spAppId
+            DelegatedPermissionIds = @($existingScope.Id)
+        }
+        $updatedPreAuthorized = @($otherPreAuthorized) + @($newPreAuth)
+        try {
+            Update-MgApplication -ApplicationId $app.Id -Api @{ PreAuthorizedApplications = $updatedPreAuthorized } -ErrorAction Stop
+            Write-Host "  ✓ $spAppId pre-authorized." -ForegroundColor Green
+        } catch {
+            if ($_.Exception.Message -like "*cannot be found*") {
+                Write-Host "  ⚠ $spAppId not found in Microsoft's app registry — skipping." -ForegroundColor Yellow
+            } else {
+                throw
+            }
+        }
+    } else {
+        Write-Host "  ✓ $spAppId already pre-authorized." -ForegroundColor Yellow
+    }
 }
 
 # Ensure appRoleAssignmentRequired is false on the Service Principal (Enterprise App).
