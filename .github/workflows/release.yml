@@ -71,6 +71,13 @@ jobs:
       - name: Build and package
         run: ./scripts/build.sh
 
+      # Build the Azure Function ZIP package.
+      - name: Build Azure Function package
+        working-directory: azure-function
+        run: |
+          npm ci
+          npm run package
+
       # Create the GitHub Release and attach the .sppkg as a downloadable asset.
       # Delete first if it already exists so the step is idempotent on re-runs
       # (--clobber was removed from newer gh versions).
@@ -82,4 +89,5 @@ jobs:
           gh release create "${{ github.ref_name }}" \
             --title "v${{ steps.ver.outputs.semver }}" \
             --notes-file RELEASE_NOTES.md \
-            sharepoint/solution/guest-sponsor-info.sppkg
+            sharepoint/solution/guest-sponsor-info.sppkg \
+            azure-function/guest-sponsor-info-function.zip
