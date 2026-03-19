@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.41.2.15936",
-      "templateHash": "7576743013771815159"
+      "templateHash": "7228868959707656257"
     },
     "name": "Guest Sponsor Info – Azure Function Proxy",
     "description": "Deploys an Azure Function App that acts as a Graph API proxy for the Guest Sponsor Info SharePoint web part. Includes a Storage Account, App Service Plan, EasyAuth configuration, Managed Identity role assignments, Log Analytics Workspace, and Application Insights."
@@ -62,7 +62,7 @@
   "variables": {
     "storageAccountName": "[toLower(replace(parameters('functionAppName'), '-', ''))]",
     "appServicePlanName": "[format('{0}-plan', parameters('functionAppName'))]",
-    "logAnalyticsWorkspaceName": "[format('{0}-logs', parameters('functionAppName'))]",
+    "logAnalyticsWorkspaceName": "[if(greater(length(format('{0}-logs', parameters('functionAppName'))), 63), format('{0}-logs', substring(parameters('functionAppName'), 0, 58)), format('{0}-logs', parameters('functionAppName')))]",
     "appInsightsName": "[format('{0}-insights', parameters('functionAppName'))]",
     "storageBlobDataOwnerRoleId": "b7e6dc6d-f1e8-4753-8033-0f276bb0955b",
     "storageQueueDataContributorRoleId": "974c5e8b-45b9-4653-ba55-5f855dd0fb88",
