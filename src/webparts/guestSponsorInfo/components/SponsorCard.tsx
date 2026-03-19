@@ -154,7 +154,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
               </div>
             )}
           </div>
-          {presenceColor && (
+          {presenceColor && sponsor.hasTeams !== false && (
             <span
               className={styles.richPresenceDot}
               style={{ backgroundColor: presenceColor }}
@@ -170,7 +170,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
           {sponsor.department && (
             <div className={styles.richDept}>{sponsor.department}</div>
           )}
-          {presenceLabel && (
+          {presenceLabel && sponsor.hasTeams !== false && (
             <div className={styles.richPresenceLabel} style={{ color: presenceColor }}>
               {presenceLabel}
             </div>
@@ -181,7 +181,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
       {/* ── Action buttons row ───────────────────────────────── */}
       {sponsor.mail && (
         <div className={styles.richActions} role="toolbar" aria-label={strings.ContactActionsAriaLabel}>
-          {sponsor.mail && (
+          {sponsor.hasTeams !== false && sponsor.mail && (
             <TooltipHost content={strings.ChatTitle}>
               <a
                 href={`https://teams.microsoft.com/l/chat/0/0?tenantId=${encodeURIComponent(hostTenantId)}&users=${encodeURIComponent(sponsor.mail)}`}
@@ -205,17 +205,19 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
               </a>
             </TooltipHost>
           )}
-          <TooltipHost content={strings.CallTitle}>
-            <a
-              href={`https://teams.microsoft.com/l/call/0/0?tenantId=${encodeURIComponent(hostTenantId)}&users=${encodeURIComponent(sponsor.mail)}&withVideo=false`}
-              className={styles.richAction}
-              target="_blank"
-              rel="noreferrer noopener"
-            >
-              <Icon iconName="Phone" className={styles.richActionIcon} aria-hidden="true" />
-              <span className={styles.richActionLabel}>{strings.CallLabel}</span>
-            </a>
-          </TooltipHost>
+          {sponsor.hasTeams !== false && (
+            <TooltipHost content={strings.CallTitle}>
+              <a
+                href={`https://teams.microsoft.com/l/call/0/0?tenantId=${encodeURIComponent(hostTenantId)}&users=${encodeURIComponent(sponsor.mail)}&withVideo=false`}
+                className={styles.richAction}
+                target="_blank"
+                rel="noreferrer noopener"
+              >
+                <Icon iconName="Phone" className={styles.richActionIcon} aria-hidden="true" />
+                <span className={styles.richActionLabel}>{strings.CallLabel}</span>
+              </a>
+            </TooltipHost>
+          )}
         </div>
       )}
 
@@ -323,7 +325,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
               </div>
             )}
           </div>
-          {presenceColor && (
+          {presenceColor && sponsor.hasTeams !== false && (
             <span
               className={styles.presenceDot}
               style={{ backgroundColor: presenceColor }}

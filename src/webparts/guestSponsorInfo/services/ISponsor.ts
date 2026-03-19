@@ -31,4 +31,10 @@ export interface ISponsor {
   managerJobTitle?: string;
   /** Data URL (base64-encoded JPEG) of the manager's profile photo. */
   managerPhotoUrl?: string;
+  /**
+   * True when the sponsor has an active Microsoft Teams license.
+   * False when they do not (hide Teams Chat/Call buttons and presence indicator).
+   * Undefined when the license status could not be determined (show everything).
+   */
+  hasTeams?: boolean;
 }

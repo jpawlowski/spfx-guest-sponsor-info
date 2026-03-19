@@ -245,6 +245,18 @@ describe('SponsorCard', () => {
       const links = container.querySelectorAll('[role="dialog"] a[href*="teams.microsoft.com"]');
       expect(links).toHaveLength(0);
     });
+
+    it('does not render Teams Chat or Call links when hasTeams is false', () => {
+      render({ ...BASE_SPONSOR, hasTeams: false }, 'test-tenant-id', true);
+      const links = container.querySelectorAll('[role="dialog"] a[href*="teams.microsoft.com"]');
+      expect(links).toHaveLength(0);
+    });
+
+    it('still renders the Email link when hasTeams is false', () => {
+      render({ ...BASE_SPONSOR, hasTeams: false }, 'test-tenant-id', true);
+      const links = container.querySelectorAll('[role="dialog"] a[href^="mailto:"]');
+      expect(links.length).toBeGreaterThan(0);
+    });
   });
 
   describe('presence indicator', () => {
@@ -261,6 +273,18 @@ describe('SponsorCard', () => {
     it('shows the presence label in the rich card when active', () => {
       render({ ...BASE_SPONSOR, presence: 'Away' }, 'test-tenant-id', true);
       expect(container.querySelector('[role="dialog"]')!.textContent).toContain('Away');
+    });
+
+    it('does not render a presence dot when hasTeams is false', () => {
+      render({ ...BASE_SPONSOR, presence: 'Available', hasTeams: false });
+      expect(container.querySelector('[class="presenceDot"]')).toBeNull();
+    });
+
+    it('does not show presence label in rich card when hasTeams is false', () => {
+      render({ ...BASE_SPONSOR, presence: 'Away', hasTeams: false }, 'test-tenant-id', true);
+      // The presence label text should not appear in the rich card
+      const richPresenceLabels = container.querySelectorAll('[class="richPresenceLabel"]');
+      expect(richPresenceLabels).toHaveLength(0);
     });
   });
 

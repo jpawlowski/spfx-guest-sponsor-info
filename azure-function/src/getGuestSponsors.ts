@@ -125,6 +125,8 @@ interface ISponsor {
   managerDisplayName?: string;
   managerJobTitle?: string;
   managerPhotoUrl?: string;
+  /** True when the sponsor has an active Microsoft Teams license. */
+  hasTeams?: boolean;
 }
 
 /**
@@ -255,6 +257,17 @@ function getBooleanValue(source: Record<string, unknown>, key: string): boolean 
   return typeof value === 'boolean' ? value : undefined;
 }
 
+/**
+ * Returns true when the assignedPlans array contains at least one active Teams plan.
+ * Teams plans are identified by service === 'TeamspaceAPI' with capabilityStatus === 'Enabled'.
+ * Returns false for any non-array input (undefined, null, unexpected type).
+ */
+function assignedPlansHaveTeams(plans: unknown): boolean {
+  if (!Array.isArray(plans)) return false;
+  return (plans as Array<{ service?: unknown; capabilityStatus?: unknown }>)
+    .some(p => p.service === 'TeamspaceAPI' && p.capabilityStatus === 'Enabled');
+}
+
 async function fetchPhoto(
   client: Client,
   userId: string,
@@ -369,7 +382,7 @@ export async function getGuestSponsors(
       {
         id: `exists-${index}`,
         method: 'GET',
-        url: `/users/${sponsor.id}?$select=id,accountEnabled`,
+        url: `/users/${sponsor.id}?$select=id,accountEnabled,assignedPlans`,
       },
       {
         id: `manager-${index}`,
@@ -419,6 +432,8 @@ export async function getGuestSponsors(
       // Treat missing, soft-deleted, or disabled sponsors as unavailable.
       const exists = existsResponse?.status === 404 ? false : sponsorEnabled !== false;
 
+      const hasTeams = assignedPlansHaveTeams(existsBody?.['assignedPlans']);
+
       const managerBody = sponsorBatchResults.get(`manager-${index}`)?.body;
       const { photoUrl, managerPhotoUrl } = perSponsorPhotos[index];
 
@@ -440,6 +455,7 @@ export async function getGuestSponsors(
           managerDisplayName,
           managerJobTitle,
           managerPhotoUrl,
+          hasTeams,
         },
         exists,
       };
@@ -465,6 +481,7 @@ export async function getGuestSponsors(
         if (s.managerDisplayName !== undefined)  out.managerDisplayName = s.managerDisplayName;
         if (s.managerJobTitle !== undefined)     out.managerJobTitle = s.managerJobTitle;
         if (s.managerPhotoUrl !== undefined)     out.managerPhotoUrl = s.managerPhotoUrl;
+        out.hasTeams = s.hasTeams;  // always a boolean from the proxy; undefined only in direct path
         const presence = presenceMap.get(s.id);
         if (presence !== undefined)              out.presence = presence;
         return out;
@@ -495,10 +512,11 @@ function jsonResponse(body: unknown, status: number, request: HttpRequest): Http
 }
 
 /**
- * Returns CORS headers allowing the request's origin when it matches a known pattern.
+ * Returns CORS headers allowing the request's origin when it matches the configured origin.
  * The allowed origin is configured via the CORS_ALLOWED_ORIGIN environment variable
- * (e.g. "https://contoso.sharepoint.com"). Falls back to the Function App CORS settings
- * configured in Azure when the env var is not set.
+ * (e.g. "https://contoso.sharepoint.com"). When the env var is not set, no
+ * Access-Control-Allow-Origin header is emitted — the Azure Function-level CORS
+ * settings (if any) will handle enforcement instead.
  */
 function corsHeaders(request: HttpRequest): Record<string, string> {
   const origin = request.headers.get('origin') ?? '';
@@ -510,9 +528,6 @@ function corsHeaders(request: HttpRequest): Record<string, string> {
   };
 
   if (allowedOrigin && origin === allowedOrigin) {
-    headers['Access-Control-Allow-Origin'] = origin;
-  } else if (!allowedOrigin && origin) {
-    // When no env var is set, echo the origin back (Azure Function CORS handles enforcement).
     headers['Access-Control-Allow-Origin'] = origin;
   }
 
