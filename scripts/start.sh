@@ -43,12 +43,17 @@ fi
 # original on exit so the {tenantDomain} placeholder stays intact in git.
 SERVE_JSON="config/serve.json"
 SERVE_ORIG=$(cat "${SERVE_JSON}")
-restore_serve() { printf '%s\n' "${SERVE_ORIG}" > "${SERVE_JSON}"; }
+restore_serve() {
+  printf '%s\n' "${SERVE_ORIG}" > "${SERVE_JSON}"
+  git update-index --no-skip-worktree "${SERVE_JSON}" 2>/dev/null || true
+}
 trap restore_serve EXIT INT TERM
 TMP=$(mktemp)
 sed "s|{tenantDomain}|${SPFX_TENANT}|g" "${SERVE_JSON}" > "${TMP}"
 cp "${TMP}" "${SERVE_JSON}"
 rm "${TMP}"
+# Hide the patched file from git so accidental staging is impossible.
+git update-index --skip-worktree "${SERVE_JSON}" 2>/dev/null || true
 
 echo "Tenant: ${SPFX_TENANT}"
 echo "Starting local development server..."
