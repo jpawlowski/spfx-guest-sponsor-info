@@ -63,4 +63,10 @@ echo ""
 echo "Press Ctrl+C to stop."
 echo ""
 
+# Node ≥17 resolves 'localhost' to ::1 (IPv6) by default, but the devcontainer
+# port-forwarding tunnel binds to 127.0.0.1 (IPv4). Force IPv4-first DNS
+# ordering so the dev server listens on 127.0.0.1:4321 where VS Code can reach it.
+# This only affects this process and its children — no global IPv6 changes.
+export NODE_OPTIONS="${NODE_OPTIONS:+${NODE_OPTIONS} }--dns-result-order=ipv4first"
+
 npm start
