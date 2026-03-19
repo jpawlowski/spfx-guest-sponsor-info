@@ -119,11 +119,11 @@ interface ISponsor {
   officeLocation?: string;
   businessPhones: string[];
   mobilePhone?: string;
-  photoUrl?: string;
   presence?: string;
   managerDisplayName?: string;
   managerJobTitle?: string;
-  managerPhotoUrl?: string;
+  /** Manager's Entra ID — used by the SPFx client to fetch the manager photo progressively. */
+  managerId?: string;
   /** True when the sponsor has an active Microsoft Teams license. */
   hasTeams?: boolean;
 }
