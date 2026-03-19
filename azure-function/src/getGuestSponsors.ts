@@ -254,7 +254,7 @@ function resolveCallerOid(request: HttpRequest): string | null {
   if (easyAuthOid) return isValidGuid(easyAuthOid) ? easyAuthOid : null;
 
   // Local dev fallback — never accepted in production.
-  if (process.env['NODE_ENV'] !== 'production') {
+  if (process.env.NODE_ENV !== 'production') {
     const devOid = request.headers.get('x-dev-user-oid');
     if (devOid) return isValidGuid(devOid) ? devOid : null;
   }
@@ -358,17 +358,6 @@ function assignedPlansHaveTeams(plans: unknown): boolean {
 }
 
 /**
- * HTTP GET – returns the sponsors of the calling user.
- *
- * Authentication is handled by EasyAuth (Azure App Service Authentication).
- * The function reads the caller OID from the X-MS-CLIENT-PRINCIPAL-ID header
- * that EasyAuth sets after validating the Bearer token.
- *
- * The Managed Identity of the Function App is used to call Microsoft Graph
- * with application permissions (User.Read.All, Presence.Read.All).
- * No client secrets are stored anywhere.
- */
-export /**
  * Validates and normalizes HTTP status codes. Returns a valid HTTP status in the
  * range 200–599; defaults to 500 if the provided code is undefined or out of range.
  * This guards against GraphError or other exceptions providing invalid status codes
@@ -379,7 +368,18 @@ function getValidHttpStatus(code: unknown): number {
   return 500;
 }
 
-async function getGuestSponsors(
+/**
+ * HTTP GET – returns the sponsors of the calling user.
+ *
+ * Authentication is handled by EasyAuth (Azure App Service Authentication).
+ * The function reads the caller OID from the X-MS-CLIENT-PRINCIPAL-ID header
+ * that EasyAuth sets after validating the Bearer token.
+ *
+ * The Managed Identity of the Function App is used to call Microsoft Graph
+ * with application permissions (User.Read.All, Presence.Read.All).
+ * No client secrets are stored anywhere.
+ */
+export async function getGuestSponsors(
   request: HttpRequest,
   context: InvocationContext
 ): Promise<HttpResponseInit> {
@@ -524,10 +524,10 @@ async function getGuestSponsors(
       // missing permission never silently hides sponsors.
       let hasUserMailbox = true;
       if (hasMailboxSettings && existsBody !== undefined) {
-        const mb = existsBody['mailboxSettings'];
+        const mb = existsBody.mailboxSettings;
         if (mb !== null && mb !== undefined) {
-          const userPurpose = typeof (mb as Record<string, unknown>)['userPurpose'] === 'string'
-            ? (mb as Record<string, unknown>)['userPurpose'] as string
+          const userPurpose = typeof (mb as Record<string, unknown>).userPurpose === 'string'
+            ? (mb as Record<string, unknown>).userPurpose as string
             : undefined;
           if (userPurpose !== undefined) {
             hasUserMailbox = userPurpose === 'user' || userPurpose === 'linked';
@@ -538,11 +538,11 @@ async function getGuestSponsors(
       const exists = existsResponse?.status === 404 ? false
         : sponsorEnabled !== false && hasUserMailbox;
 
-      const hasTeams = assignedPlansHaveTeams(existsBody?.['assignedPlans']);
+      const hasTeams = assignedPlansHaveTeams(existsBody?.assignedPlans);
 
       // Manager is inlined via $expand — read directly from the user body.
-      const managerBody = existsBody !== undefined && existsBody['manager'] !== null
-        ? existsBody['manager'] as Record<string, unknown> | undefined
+      const managerBody = existsBody !== undefined && existsBody.manager !== null
+        ? existsBody.manager as Record<string, unknown> | undefined
         : undefined;
 
       let managerDisplayName: string | undefined;
@@ -646,7 +646,7 @@ function jsonResponse(body: unknown, status: number, request: HttpRequest): Http
  */
 function corsHeaders(request: HttpRequest): Record<string, string> {
   const origin = request.headers.get('origin') ?? '';
-  const allowedOrigin = process.env['CORS_ALLOWED_ORIGIN'] ?? '';
+  const allowedOrigin = process.env.CORS_ALLOWED_ORIGIN ?? '';
 
   const headers: Record<string, string> = {
     // CORS
