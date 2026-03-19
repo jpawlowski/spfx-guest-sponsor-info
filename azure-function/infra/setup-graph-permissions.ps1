@@ -69,7 +69,7 @@ if (-not $graphSp) {
 $requiredRoles = @(
     @{ Name = 'User.Read.All'; Optional = $false }
     @{ Name = 'Presence.Read.All'; Optional = $true }        # requires Microsoft Teams; function degrades gracefully without it
-    @{ Name = 'MailboxSettings.Read'; Optional = $true }    # optional; filters shared/room/equipment mailboxes via userPurpose; function fails open without it
+    @{ Name = 'MailboxSettings.Read'; Optional = $true }    # optional; filters shared/room/equipment mailboxes via userPurpose; without it the filter is simply skipped
 )
 
 $assignedRoles = @()

@@ -2,8 +2,12 @@
 # Post-provision hook for Azure Developer CLI (azd).
 # Runs after Bicep deployment to grant the Function App's Managed Identity
 # the required Microsoft Graph application roles:
-#   - User.Read.All     (read any user's sponsors, profile, and photos)
-#   - Presence.Read.All (read sponsor presence status)
+#   - User.Read.All        (required; read any user's sponsors, profile, and photos)
+#   - Presence.Read.All    (optional; requires Microsoft Teams)
+#   - MailboxSettings.Read (optional; filters shared/room/equipment mailboxes)
+#
+# Role GUIDs are resolved dynamically from the Graph service principal so that
+# no hardcoded IDs need to be maintained here.
 #
 # Bicep outputs (managedIdentityObjectId, sponsorApiUrl) are available
 # as environment variables via 'azd env get-values' after provisioning.
@@ -17,14 +21,38 @@ source <(azd env get-values)
 MANAGED_IDENTITY_OBJECT_ID="${MANAGED_IDENTITY_OBJECT_ID:?Bicep output MANAGED_IDENTITY_OBJECT_ID missing — did provisioning succeed?}"
 
 GRAPH_APP_ID="00000003-0000-0000-c000-000000000000"
-ROLE_USER_READ_ALL="df021288-bdef-4463-88db-98f22de89214"
-ROLE_PRESENCE_READ_ALL="9c7a330d-35b3-4aa1-963d-cb2b055962cc"
 
 echo "Resolving Microsoft Graph service principal..."
 GRAPH_SP_ID=$(az ad sp show --id "${GRAPH_APP_ID}" --query "id" -o tsv)
 
-for ROLE_ID in "${ROLE_USER_READ_ALL}" "${ROLE_PRESENCE_READ_ALL}"; do
-  echo "Checking app role ${ROLE_ID}..."
+# Resolve a Graph app role ID by permission name (Application type only).
+resolve_role_id() {
+  az rest \
+    --method GET \
+    --url "https://graph.microsoft.com/v1.0/servicePrincipals/${GRAPH_SP_ID}/appRoles" \
+    --query "value[?value=='${1}' && contains(allowedMemberTypes, 'Application')].id | [0]" \
+    -o tsv 2>/dev/null || true
+}
+
+# Assign a Graph app role to the Managed Identity; skip if already assigned.
+# Usage: assign_role <name> [optional=false]
+assign_role() {
+  local ROLE_NAME="${1}"
+  local OPTIONAL="${2:-false}"
+  local ROLE_ID
+  ROLE_ID=$(resolve_role_id "${ROLE_NAME}")
+
+  if [ -z "${ROLE_ID:-}" ]; then
+    if [ "${OPTIONAL}" = "true" ]; then
+      echo "  ⚠ ${ROLE_NAME} not found in this tenant — skipping (optional)."
+      return
+    else
+      echo "  ✗ Required role ${ROLE_NAME} not found on the Graph service principal." >&2
+      exit 1
+    fi
+  fi
+
+  echo "Checking app role ${ROLE_NAME}..."
   EXISTING=$(az rest \
     --method GET \
     --url "https://graph.microsoft.com/v1.0/servicePrincipals/${MANAGED_IDENTITY_OBJECT_ID}/appRoleAssignments" \
@@ -32,16 +60,20 @@ for ROLE_ID in "${ROLE_USER_READ_ALL}" "${ROLE_PRESENCE_READ_ALL}"; do
     -o tsv 2>/dev/null || true)
 
   if [ -n "${EXISTING:-}" ]; then
-    echo "  Role ${ROLE_ID} already assigned — skipping."
+    echo "  ${ROLE_NAME} already assigned — skipping."
   else
     az rest \
       --method POST \
       --url "https://graph.microsoft.com/v1.0/servicePrincipals/${MANAGED_IDENTITY_OBJECT_ID}/appRoleAssignments" \
       --body "{\"principalId\":\"${MANAGED_IDENTITY_OBJECT_ID}\",\"resourceId\":\"${GRAPH_SP_ID}\",\"appRoleId\":\"${ROLE_ID}\"}" \
       > /dev/null
-    echo "  Role ${ROLE_ID} assigned."
+    echo "  ${ROLE_NAME} assigned."
   fi
-done
+}
+
+assign_role "User.Read.All"
+assign_role "Presence.Read.All" "true"
+assign_role "MailboxSettings.Read" "true"
 
 # ── Print web part configuration values ──────────────────────────────────────
 echo ""
