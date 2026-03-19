@@ -1,6 +1,6 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
 import { ManagedIdentityCredential } from '@azure/identity';
-import { Client, ResponseType } from '@microsoft/microsoft-graph-client';
+import { Client } from '@microsoft/microsoft-graph-client';
 import { TokenCredentialAuthenticationProvider } from '@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials';
 
 /**
@@ -12,7 +12,6 @@ const MAX_SPONSORS = 5;
 const DEFAULT_SPONSOR_LOOKUP_TIMEOUT_MS = 5000;
 const DEFAULT_PRESENCE_TIMEOUT_MS = 2500;
 const DEFAULT_BATCH_TIMEOUT_MS = 4000;
-const DEFAULT_PHOTO_TIMEOUT_MS = 2500;
 
 /**
  * In-memory sliding-window rate limiter (per caller OID, per warm instance).
@@ -139,18 +138,6 @@ interface ISponsorsResult {
 }
 
 /**
- * Converts an ArrayBuffer containing JPEG bytes into a base64-encoded data URL.
- */
-function arrayBufferToDataUrl(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer);
-  let binary = '';
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return `data:image/jpeg;base64,${Buffer.from(bytes).toString('base64')}`;
-}
-
-/**
  * Resolves the OID of the calling user from EasyAuth headers.
  *
  * In production, Azure App Service EasyAuth sets these headers after validating the
@@ -268,24 +255,6 @@ function assignedPlansHaveTeams(plans: unknown): boolean {
     .some(p => p.service === 'TeamspaceAPI' && p.capabilityStatus === 'Enabled');
 }
 
-async function fetchPhoto(
-  client: Client,
-  userId: string,
-  timeoutMs: number,
-  label: string
-): Promise<string | undefined> {
-  try {
-    const buffer: ArrayBuffer = await withTimeout(
-      client.api(`/users/${userId}/photo/$value`).responseType(ResponseType.ARRAYBUFFER).get(),
-      timeoutMs,
-      label
-    );
-    return arrayBufferToDataUrl(buffer);
-  } catch {
-    return undefined;
-  }
-}
-
 /**
  * HTTP GET – returns the sponsors of the calling user.
  *
@@ -391,8 +360,6 @@ export async function getGuestSponsors(
       },
     ]));
 
-    const photoTimeoutMs = getTimeoutMs('PHOTO_TIMEOUT_MS', DEFAULT_PHOTO_TIMEOUT_MS);
-
     const [presenceMap, sponsorBatchResults] = await Promise.all([
       fetchPresences(client, sponsorIds, context),
       executeBatch(
@@ -402,26 +369,6 @@ export async function getGuestSponsors(
         'Graph sponsor detail batch'
       ),
     ]);
-
-    // Graph JSON batching does not support binary endpoints (photo/$value) — responses
-    // for those are returned as raw bytes that cannot be embedded in the JSON envelope.
-    // Fetch sponsor and manager photos individually with ARRAYBUFFER response type instead.
-    const perSponsorPhotos = await Promise.all(
-      candidates.map(async (sponsor, index) => {
-        const managerBody = sponsorBatchResults.get(`manager-${index}`)?.body;
-        const managerId = managerBody !== undefined ? getStringValue(managerBody, 'id') : undefined;
-        const managerEnabled = managerBody !== undefined ? getBooleanValue(managerBody, 'accountEnabled') : undefined;
-        const hasManager = managerId !== undefined && isValidGuid(managerId) && managerEnabled !== false;
-
-        const [photoUrl, managerPhotoUrl] = await Promise.all([
-          fetchPhoto(client, sponsor.id, photoTimeoutMs, `sponsor photo ${index}`),
-          hasManager
-            ? fetchPhoto(client, managerId as string, photoTimeoutMs, `manager photo ${index}`)
-            : Promise.resolve(undefined),
-        ]);
-        return { photoUrl, managerPhotoUrl };
-      })
-    );
 
     const perSponsorResults = candidates.map((sponsor, index) => {
       const existsResponse = sponsorBatchResults.get(`exists-${index}`);
@@ -435,26 +382,27 @@ export async function getGuestSponsors(
       const hasTeams = assignedPlansHaveTeams(existsBody?.['assignedPlans']);
 
       const managerBody = sponsorBatchResults.get(`manager-${index}`)?.body;
-      const { photoUrl, managerPhotoUrl } = perSponsorPhotos[index];
 
       let managerDisplayName: string | undefined;
       let managerJobTitle: string | undefined;
+      let managerId: string | undefined;
 
       if (managerBody !== undefined) {
         const managerEnabled = getBooleanValue(managerBody, 'accountEnabled');
         if (managerEnabled !== false) {
           managerDisplayName = getStringValue(managerBody, 'displayName');
           managerJobTitle = getStringValue(managerBody, 'jobTitle');
+          const mid = getStringValue(managerBody, 'id');
+          if (mid && isValidGuid(mid)) managerId = mid;
         }
       }
 
       return {
         sponsor: {
           ...sponsor,
-          photoUrl,
           managerDisplayName,
           managerJobTitle,
-          managerPhotoUrl,
+          managerId,
           hasTeams,
         },
         exists,
@@ -477,10 +425,9 @@ export async function getGuestSponsors(
         if (s.department !== undefined)          out.department = s.department;
         if (s.officeLocation !== undefined)      out.officeLocation = s.officeLocation;
         if (s.mobilePhone !== undefined)         out.mobilePhone = s.mobilePhone;
-        if (s.photoUrl !== undefined)            out.photoUrl = s.photoUrl;
         if (s.managerDisplayName !== undefined)  out.managerDisplayName = s.managerDisplayName;
         if (s.managerJobTitle !== undefined)     out.managerJobTitle = s.managerJobTitle;
-        if (s.managerPhotoUrl !== undefined)     out.managerPhotoUrl = s.managerPhotoUrl;
+        if (s.managerId !== undefined)           out.managerId = s.managerId;
         out.hasTeams = s.hasTeams;  // always a boolean from the proxy; undefined only in direct path
         const presence = presenceMap.get(s.id);
         if (presence !== undefined)              out.presence = presence;

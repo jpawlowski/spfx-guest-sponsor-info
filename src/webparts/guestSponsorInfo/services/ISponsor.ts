@@ -37,4 +37,10 @@ export interface ISponsor {
    * Undefined when the license status could not be determined (show everything).
    */
   hasTeams?: boolean;
+  /**
+   * Entra object ID of the sponsor's direct manager.
+   * Present only when the manager relationship could be resolved.
+   * Used by the client to progressively load the manager's photo.
+   */
+  managerId?: string;
 }

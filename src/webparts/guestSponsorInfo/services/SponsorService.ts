@@ -104,14 +104,15 @@ async function fetchPresences(
 }
 
 /**
- * Fetches the manager of a user and their profile photo.
+ * Fetches the manager of a user (name and job title only, no photo).
+ * Photo is deferred to loadPhotosProgressively so the card renders immediately.
  * Requires User.ReadBasic.All (delegated).
  * Returns undefined fields when no manager is set or on any error.
  */
 async function fetchManager(
   client: MSGraphClientV3,
   userId: string
-): Promise<{ managerDisplayName?: string; managerJobTitle?: string; managerPhotoUrl?: string }> {
+): Promise<{ managerDisplayName?: string; managerJobTitle?: string; managerId?: string }> {
   try {
     const manager = await client
       .api(`/users/${userId}/manager`)
@@ -120,19 +121,7 @@ async function fetchManager(
     const managerId = manager.id as string | undefined;
     const managerDisplayName = (manager.displayName as string) || undefined;
     const managerJobTitle = (manager.jobTitle as string) || undefined;
-    let managerPhotoUrl: string | undefined;
-    if (managerId) {
-      try {
-        const buffer: ArrayBuffer = await client
-          .api(`/users/${managerId}/photo/$value`)
-          .responseType(ResponseType.ARRAYBUFFER)
-          .get();
-        managerPhotoUrl = arrayBufferToDataUrl(buffer);
-      } catch {
-        // No manager photo — initials fallback.
-      }
-    }
-    return { managerDisplayName, managerJobTitle, managerPhotoUrl };
+    return { managerDisplayName, managerJobTitle, managerId };
   } catch {
     // No manager set (404) or permission error — non-critical.
     return {};
@@ -166,23 +155,11 @@ export async function getSponsors(client: MSGraphClientV3): Promise<ISponsorsRes
     fetchPresences(client, sponsorIds),
     Promise.all(
       candidates.map(async sponsor => {
-        const [exists, photoUrl, managerInfo] = await Promise.all([
+        const [exists, managerInfo] = await Promise.all([
           userExists(client, sponsor.id),
-          (async (): Promise<string | undefined> => {
-            try {
-              const buffer: ArrayBuffer = await client
-                .api(`/users/${sponsor.id}/photo/$value`)
-                .responseType(ResponseType.ARRAYBUFFER)
-                .get();
-              return arrayBufferToDataUrl(buffer);
-            } catch {
-              // No photo available – initials fallback will be used.
-              return undefined;
-            }
-          })(),
           fetchManager(client, sponsor.id),
         ]);
-        return { sponsor: { ...sponsor, photoUrl, ...managerInfo }, exists };
+        return { sponsor: { ...sponsor, ...managerInfo }, exists };
       })
     ),
   ]);
@@ -213,4 +190,64 @@ export async function getSponsorsViaProxy(
     throw err;
   }
   return response.json() as Promise<ISponsorsResult>;
+}
+
+/**
+ * Progressively fetches photos for a list of sponsors and their managers,
+ * calling onUpdate for each sponsor as soon as its photo (or its manager's
+ * photo) arrives.  Errors are silently swallowed — the card stays in its
+ * initials-fallback state.
+ *
+ * Fire-and-forget: the caller does not need to await this.  Each resolved
+ * photo triggers an individual React state update so cards light up one
+ * by one instead of all at once after a long wait.
+ *
+ * @param client    MSGraphClientV3 with User.ReadBasic.All permission.
+ * @param sponsors  The list returned by getSponsors / getSponsorsViaProxy.
+ * @param onUpdate  Called per sponsor once photo data is ready.
+ *                  Receives the sponsor ID plus the two (possibly undefined)
+ *                  data-URL strings so the caller can do a targeted state update.
+ */
+export function loadPhotosProgressively(
+  client: MSGraphClientV3,
+  sponsors: ISponsor[],
+  onUpdate: (sponsorId: string, photoUrl: string | undefined, managerPhotoUrl: string | undefined) => void
+): void {
+  const fetchOne = async (sponsor: ISponsor): Promise<void> => {
+    let photoUrl: string | undefined;
+    let managerPhotoUrl: string | undefined;
+
+    // Fetch sponsor photo and manager photo concurrently.
+    await Promise.all([
+      (async () => {
+        try {
+          const buffer: ArrayBuffer = await client
+            .api(`/users/${sponsor.id}/photo/$value`)
+            .responseType(ResponseType.ARRAYBUFFER)
+            .get();
+          photoUrl = arrayBufferToDataUrl(buffer);
+        } catch {
+          // No photo — initials fallback stays.
+        }
+      })(),
+      (async () => {
+        if (!sponsor.managerId) return;
+        try {
+          const buffer: ArrayBuffer = await client
+            .api(`/users/${sponsor.managerId}/photo/$value`)
+            .responseType(ResponseType.ARRAYBUFFER)
+            .get();
+          managerPhotoUrl = arrayBufferToDataUrl(buffer);
+        } catch {
+          // No manager photo — initials fallback stays.
+        }
+      })(),
+    ]);
+
+    onUpdate(sponsor.id, photoUrl, managerPhotoUrl);
+  };
+
+  for (const sponsor of sponsors) {
+    fetchOne(sponsor).catch(() => undefined);
+  }
 }

@@ -13,7 +13,7 @@
  * credentials as GitHub Actions secrets and add a separate workflow job that
  * runs only on protected branches.
  */
-import { getSponsors, ISponsorsResult } from '../SponsorService';
+import { getSponsors, loadPhotosProgressively, ISponsorsResult } from '../SponsorService';
 
 // ─── Mock Graph client ─────────────────────────────────────────────────────────
 // Each API path is routed to a dedicated handler function so tests can control
@@ -25,7 +25,7 @@ interface PathHandlers {
   /** Handler for GET /users/{id} (existence probe) */
   userExists: (id: string) => () => Promise<unknown>;
   /** Handler for GET /users/{id}/photo/$value */
-  photo: (id: string) => () => Promise<unknown>;
+  photo?: (id: string) => () => Promise<unknown>;
 }
 
 function buildClient(handlers: PathHandlers): unknown {
@@ -37,7 +37,7 @@ function buildClient(handlers: PathHandlers): unknown {
         getImpl = handlers.sponsors;
       } else if (/^\/users\/[^/]+\/photo\/\$value$/.test(path)) {
         const id = path.split('/')[2];
-        getImpl = handlers.photo(id);
+        getImpl = handlers.photo ? handlers.photo(id) : () => Promise.reject(new Error('no photo'));
       } else if (/^\/users\/[^/]+$/.test(path)) {
         const id = path.split('/')[2];
         getImpl = handlers.userExists(id);
@@ -92,7 +92,6 @@ describe('getSponsors', () => {
     const client = buildClient({
       sponsors: () => Promise.resolve(null),
       userExists: () => () => Promise.resolve({ id: 'x' }),
-      photo: () => () => Promise.reject(new Error('no photo')),
     });
 
     const result: ISponsorsResult = await getSponsors(client as never);
@@ -105,7 +104,6 @@ describe('getSponsors', () => {
     const client = buildClient({
       sponsors: () => Promise.resolve({ value: [] }),
       userExists: () => () => Promise.resolve({}),
-      photo: () => () => Promise.reject(new Error('no photo')),
     });
 
     const result = await getSponsors(client as never);
@@ -114,12 +112,10 @@ describe('getSponsors', () => {
     expect(result.unavailableCount).toBe(0);
   });
 
-  it('maps all profile fields of an active sponsor', async () => {
-    const fakePhotoBuffer = new ArrayBuffer(4);
+  it('maps all profile fields of an active sponsor (no photo — deferred to loadPhotosProgressively)', async () => {
     const client = buildClient({
       sponsors: () => Promise.resolve({ value: [SPONSOR_A] }),
       userExists: () => () => Promise.resolve({ id: SPONSOR_A.id }),
-      photo: () => () => Promise.resolve(fakePhotoBuffer),
     });
 
     const result = await getSponsors(client as never);
@@ -135,15 +131,14 @@ describe('getSponsors', () => {
     expect(s.department).toBe('Engineering');
     expect(s.officeLocation).toBe('Berlin');
     expect(s.businessPhones).toEqual(['+49 30 12345678']);
-    // The ArrayBuffer should have been encoded as a base64 data URL.
-    expect(s.photoUrl).toMatch(/^data:image\/jpeg;base64,/);
+    // Photos are no longer fetched inline — deferred to loadPhotosProgressively.
+    expect(s.photoUrl).toBeUndefined();
   });
 
   it('excludes a sponsor whose directory object returns HTTP 404 (hard-deleted account)', async () => {
     const client = buildClient({
       sponsors: () => Promise.resolve({ value: [SPONSOR_A] }),
       userExists: () => () => Promise.reject(graphError(404)),
-      photo: () => () => Promise.reject(new Error('no photo')),
     });
 
     const result = await getSponsors(client as never);
@@ -157,7 +152,6 @@ describe('getSponsors', () => {
     const client = buildClient({
       sponsors: () => Promise.resolve({ value: [SPONSOR_A] }),
       userExists: () => () => Promise.reject(graphError(503)),
-      photo: () => () => Promise.reject(new Error('no photo')),
     });
 
     const result = await getSponsors(client as never);
@@ -170,7 +164,7 @@ describe('getSponsors', () => {
     const client = buildClient({
       sponsors: () => Promise.resolve({ value: [SPONSOR_A] }),
       userExists: () => () => Promise.resolve({ id: SPONSOR_A.id }),
-      photo: () => () => Promise.reject(new Error('forbidden')),
+      // photo handler deliberately omitted — same as a failing photo call
     });
 
     const result = await getSponsors(client as never);
@@ -186,7 +180,6 @@ describe('getSponsors', () => {
         if (id === SPONSOR_B.id) return Promise.reject(graphError(404));
         return Promise.resolve({ id });
       },
-      photo: () => () => Promise.reject(new Error('no photo')),
     });
 
     const result = await getSponsors(client as never);
@@ -200,7 +193,6 @@ describe('getSponsors', () => {
     const client = buildClient({
       sponsors: () => Promise.resolve({ value: [SPONSOR_A, SPONSOR_B] }),
       userExists: () => () => Promise.reject(graphError(404)),
-      photo: () => () => Promise.reject(new Error('no photo')),
     });
 
     const result = await getSponsors(client as never);
@@ -213,12 +205,51 @@ describe('getSponsors', () => {
     const client = buildClient({
       sponsors: () => Promise.resolve({ value: [SPONSOR_B] }),
       userExists: () => () => Promise.resolve({ id: SPONSOR_B.id }),
-      photo: () => () => Promise.reject(new Error('no photo')),
     });
 
     const result = await getSponsors(client as never);
 
     expect(result.activeSponsors[0].mobilePhone).toBe('+1 555 0100');
     expect(result.activeSponsors[0].businessPhones).toEqual([]);
+  });
+});
+
+describe('loadPhotosProgressively', () => {
+  it('calls onUpdate with base64 data URL when photo fetch succeeds', async () => {
+    const fakeBuffer = new ArrayBuffer(4);
+    const client = buildClient({
+      sponsors: () => Promise.resolve({ value: [] }),
+      userExists: () => () => Promise.resolve({}),
+      photo: () => () => Promise.resolve(fakeBuffer),
+    });
+
+    const onUpdate = jest.fn();
+    const sponsors = [{ id: SPONSOR_A.id, displayName: 'Alice', businessPhones: [] }];
+
+    loadPhotosProgressively(client as never, sponsors as never, onUpdate);
+    // Wait for the microtask queue to flush.
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    expect(onUpdate).toHaveBeenCalledTimes(1);
+    const [id, photoUrl] = onUpdate.mock.calls[0];
+    expect(id).toBe(SPONSOR_A.id);
+    expect(photoUrl).toMatch(/^data:image\/jpeg;base64,/);
+  });
+
+  it('calls onUpdate with undefined photoUrl when photo fetch fails (initials fallback)', async () => {
+    const client = buildClient({
+      sponsors: () => Promise.resolve({ value: [] }),
+      userExists: () => () => Promise.resolve({}),
+      photo: () => () => Promise.reject(new Error('no photo')),
+    });
+
+    const onUpdate = jest.fn();
+    const sponsors = [{ id: SPONSOR_A.id, displayName: 'Alice', businessPhones: [] }];
+
+    loadPhotosProgressively(client as never, sponsors as never, onUpdate);
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    expect(onUpdate).toHaveBeenCalledTimes(1);
+    expect(onUpdate.mock.calls[0][1]).toBeUndefined(); // photoUrl
   });
 });

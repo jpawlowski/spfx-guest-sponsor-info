@@ -5,7 +5,7 @@ import * as strings from 'GuestSponsorInfoWebPartStrings';
 import styles from './GuestSponsorInfo.module.scss';
 import type { IGuestSponsorInfoProps } from './IGuestSponsorInfoProps';
 import { ISponsor } from '../services/ISponsor';
-import { isGuestUser, getSponsors, getSponsorsViaProxy } from '../services/SponsorService';
+import { isGuestUser, getSponsors, getSponsorsViaProxy, loadPhotosProgressively } from '../services/SponsorService';
 import { MOCK_SPONSORS } from '../services/MockSponsorService';
 import SponsorCard from './SponsorCard';
 
@@ -157,11 +157,25 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
     loadFn()
       .then(result => {
         if (!cancelled) {
-          setSponsors(result.activeSponsors);
+          const active = result.activeSponsors;
+          setSponsors(active);
           // All unavailable = sponsors were assigned but every account is disabled/deleted.
-          setAllUnavailable(result.activeSponsors.length === 0 && result.unavailableCount > 0);
+          setAllUnavailable(active.length === 0 && result.unavailableCount > 0);
           setLoading(false);
           setRetryCount(0);
+
+          // Phase 2: progressively fetch photos without blocking the initial render.
+          // graphClient is always obtained in onInit regardless of proxy mode,
+          // so it is safe to use here even on the proxy path.
+          if (graphClient && active.length > 0) {
+            loadPhotosProgressively(graphClient, active, (sponsorId, photoUrl, managerPhotoUrl) => {
+              if (!cancelled) {
+                setSponsors(prev => prev.map(s =>
+                  s.id === sponsorId ? { ...s, photoUrl, managerPhotoUrl } : s
+                ));
+              }
+            });
+          }
         }
       })
       .catch((err: unknown) => {
