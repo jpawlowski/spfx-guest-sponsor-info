@@ -222,10 +222,10 @@
   display: flex;
   gap: 14px;
   padding: 20px;
-  background-color: var(--neutralLighter, #f3f2f1);
-  background-color: "[theme:neutralLighter, default: #f3f2f1]";
-  border-bottom: 1px solid var(--neutralLight, #edebe9);
-  border-bottom: 1px solid "[theme:neutralLight, default: #edebe9]";
+  background-color: var(--neutralLight, #edebe9);
+  background-color: "[theme:neutralLight, default: #edebe9]";
+  border-bottom: 1px solid var(--neutralQuaternaryAlt, #e1dfdd);
+  border-bottom: 1px solid "[theme:neutralQuaternaryAlt, default: #e1dfdd]";
 }
 
 .richAvatarWrapper {
