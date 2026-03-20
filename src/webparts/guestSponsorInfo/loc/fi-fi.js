@@ -19,6 +19,11 @@ define([], function() {
     "PresenceBusy": "Varattu",
     "PresenceBusyIdle": "Varattu, poissaoleva",
     "PresenceDoNotDisturb": "\u00c4l\u00e4 h\u00e4iritse",
+    "PresenceInAMeeting": "Kokouksessa",
+    "PresenceInACall": "Puhelussa",
+    "PresencePresenting": "Esitt\u00e4\u00e4",
+    "PresenceFocusing": "Keskittymistilassa",
+    "PresenceOutOfOffice": "Poissa toimistosta",
     "PresenceOffline": "Offline",
 
     "ContactDetailsAriaLabel": "{0} yhteystiedot",

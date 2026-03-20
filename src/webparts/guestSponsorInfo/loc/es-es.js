@@ -19,6 +19,11 @@ define([], function() {
     "PresenceBusy": "Ocupado",
     "PresenceBusyIdle": "Ocupado, inactivo",
     "PresenceDoNotDisturb": "No molestar",
+    "PresenceInAMeeting": "En una reuni\u00f3n",
+    "PresenceInACall": "En una llamada",
+    "PresencePresenting": "Presentando",
+    "PresenceFocusing": "Concentrado",
+    "PresenceOutOfOffice": "Fuera de la oficina",
     "PresenceOffline": "Sin conexi\u00f3n",
 
     "ContactDetailsAriaLabel": "Detalles de contacto de {0}",

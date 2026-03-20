@@ -19,6 +19,11 @@ define([], function() {
     "PresenceBusy": "\u5fd9\u788c",
     "PresenceBusyIdle": "\u5fd9\u788c\uff08\u95f2\u7f6e\uff09",
     "PresenceDoNotDisturb": "\u8bf7\u52ff\u6253\u6270",
+    "PresenceInAMeeting": "\u4f1a\u8bae\u4e2d",
+    "PresenceInACall": "\u901a\u8bdd\u4e2d",
+    "PresencePresenting": "\u6f14\u793a\u4e2d",
+    "PresenceFocusing": "\u4e13\u6ce8\u4e2d",
+    "PresenceOutOfOffice": "\u4e0d\u5728\u529e\u516c\u5ba4",
     "PresenceOffline": "\u8131\u673a",
 
     "ContactDetailsAriaLabel": "{0} \u7684\u8054\u7cfb\u4eba\u8be6\u7ec6\u4fe1\u606f",

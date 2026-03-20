@@ -30,7 +30,7 @@ function getInitials(name: string): string {
   return name.substring(0, 2).toUpperCase();
 }
 
-/** Maps Graph presence availability token → display colour. */
+/** Maps Graph presence availability (and activity) token → display colour. */
 const PRESENCE_COLORS: Record<string, string> = {
   Available:       '#107C10',
   AvailableIdle:   '#107C10',
@@ -39,12 +39,22 @@ const PRESENCE_COLORS: Record<string, string> = {
   Busy:            '#D13438',
   BusyIdle:        '#D13438',
   DoNotDisturb:    '#D13438',
+  Focusing:        '#D13438',
+  InACall:         '#D13438',
+  InAMeeting:      '#D13438',
+  OutOfOffice:     '#F7630C',
+  Presenting:      '#D13438',
   Offline:         '#8A8886',
   PresenceUnknown: '#8A8886',
 };
 
-/** Maps Graph presence availability token → human-readable label. */
+/**
+ * Maps Graph presence availability and activity tokens → localised label.
+ * Activity tokens (InAMeeting, InACall, …) take priority over the base availability token,
+ * matching Microsoft's profile card display behaviour.
+ */
 const PRESENCE_LABELS: Record<string, string> = {
+  // availability tokens
   Available:       strings.PresenceAvailable,
   AvailableIdle:   strings.PresenceAvailableIdle,
   Away:            strings.PresenceAway,
@@ -54,7 +64,50 @@ const PRESENCE_LABELS: Record<string, string> = {
   DoNotDisturb:    strings.PresenceDoNotDisturb,
   Offline:         strings.PresenceOffline,
   PresenceUnknown: '',
+  // activity-specific tokens (refine the base availability label)
+  Focusing:        strings.PresenceFocusing,
+  InACall:         strings.PresenceInACall,
+  InAMeeting:      strings.PresenceInAMeeting,
+  OffWork:         strings.PresenceOffline,
+  OutOfOffice:     strings.PresenceOutOfOffice,
+  Presenting:      strings.PresencePresenting,
 };
+
+/**
+ * Converts a Graph presence activity token (PascalCase, e.g. InAMeeting) into a
+ * localised, human-readable label matching Microsoft's profile card behaviour.
+ * All documented tokens are resolved via PRESENCE_LABELS; unknown tokens fall back
+ * to a generic PascalCase word-splitter (English only).
+ */
+function formatPresenceActivity(activity: string): string {
+  const normalized = activity.trim();
+  if (!normalized || normalized === 'PresenceUnknown') return '';
+
+  // Use the typed map for all documented tokens (also covers availability mirrors).
+  const typed = PRESENCE_LABELS[normalized];
+  if (typed !== undefined) return typed;
+
+  // Fallback for undocumented activity tokens: split PascalCase into words.
+  const words = normalized
+    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (words.length === 0) return '';
+
+  const lowercaseJoiners = new Set([
+    'a', 'an', 'and', 'as', 'at', 'by', 'for', 'from', 'in', 'of', 'on', 'or', 'the', 'to', 'with',
+  ]);
+
+  return words
+    .map((w, index) => {
+      const lower = w.toLowerCase();
+      if (index > 0 && lowercaseJoiners.has(lower)) return lower;
+      return index === 0 ? lower.charAt(0).toUpperCase() + lower.slice(1) : lower;
+    })
+    .join(' ');
+}
 
 /**
  * Small copy-to-clipboard button shown at the trailing edge of each contact row.
@@ -140,7 +193,11 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
   const initials = getInitials(sponsor.displayName);
   const bgColor = getInitialsColor(sponsor.displayName);
   const presenceColor = sponsor.presence ? (PRESENCE_COLORS[sponsor.presence] ?? '#8A8886') : undefined;
-  const presenceLabel = sponsor.presence ? (PRESENCE_LABELS[sponsor.presence] ?? '') : undefined;
+  const presenceLabel = sponsor.presenceActivity
+    ? formatPresenceActivity(sponsor.presenceActivity)
+    : sponsor.presence
+      ? (PRESENCE_LABELS[sponsor.presence] ?? '')
+      : undefined;
   const managerInitials = sponsor.managerDisplayName ? getInitials(sponsor.managerDisplayName) : '';
   const managerBgColor = sponsor.managerDisplayName ? getInitialsColor(sponsor.managerDisplayName) : '#8A8886';
   const isMobile = useIsMobile();

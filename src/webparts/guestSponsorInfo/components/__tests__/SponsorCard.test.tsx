@@ -297,6 +297,71 @@ describe('SponsorCard', () => {
       const richPresenceLabels = container.querySelectorAll('[class="richPresenceLabel"]');
       expect(richPresenceLabels).toHaveLength(0);
     });
+
+    it('shows activity label "In a conference call" instead of the generic busy label', () => {
+      render(
+        { ...BASE_SPONSOR, presence: 'Busy', presenceActivity: 'InAConferenceCall' },
+        'test-tenant-id',
+        true
+      );
+      expect(container.querySelector('[role="dialog"]')!.textContent).toContain('In a conference call');
+      expect(container.querySelector('[role="dialog"]')!.textContent).not.toContain('Busy, Idle');
+    });
+
+    it('shows activity label for UrgentInterruptionsOnly as a dedicated status', () => {
+      render(
+        { ...BASE_SPONSOR, presence: 'DoNotDisturb', presenceActivity: 'UrgentInterruptionsOnly' },
+        'test-tenant-id',
+        true
+      );
+      expect(container.querySelector('[role="dialog"]')!.textContent).toContain('Urgent interruptions only');
+    });
+
+    it('shows localised "In a meeting" label for InAMeeting activity token', () => {
+      render(
+        { ...BASE_SPONSOR, presence: 'Busy', presenceActivity: 'InAMeeting' },
+        'test-tenant-id',
+        true
+      );
+      expect(container.querySelector('[role="dialog"]')!.textContent).toContain('In a meeting');
+      expect(container.querySelector('[role="dialog"]')!.textContent).not.toContain('Busy');
+    });
+
+    it('shows localised "In a call" label for InACall activity token', () => {
+      render(
+        { ...BASE_SPONSOR, presence: 'Busy', presenceActivity: 'InACall' },
+        'test-tenant-id',
+        true
+      );
+      expect(container.querySelector('[role="dialog"]')!.textContent).toContain('In a call');
+    });
+
+    it('shows localised "Presenting" label for Presenting activity token', () => {
+      render(
+        { ...BASE_SPONSOR, presence: 'DoNotDisturb', presenceActivity: 'Presenting' },
+        'test-tenant-id',
+        true
+      );
+      expect(container.querySelector('[role="dialog"]')!.textContent).toContain('Presenting');
+    });
+
+    it('shows localised "Out of office" label for OutOfOffice activity token', () => {
+      render(
+        { ...BASE_SPONSOR, presence: 'Available', presenceActivity: 'OutOfOffice' },
+        'test-tenant-id',
+        true
+      );
+      expect(container.querySelector('[role="dialog"]')!.textContent).toContain('Out of office');
+    });
+
+    it('shows localised "Focusing" label for Focusing activity token', () => {
+      render(
+        { ...BASE_SPONSOR, presence: 'DoNotDisturb', presenceActivity: 'Focusing' },
+        'test-tenant-id',
+        true
+      );
+      expect(container.querySelector('[role="dialog"]')!.textContent).toContain('Focusing');
+    });
   });
 
   describe('manager / organisation section', () => {
