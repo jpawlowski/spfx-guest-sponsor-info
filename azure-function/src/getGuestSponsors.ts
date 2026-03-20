@@ -25,15 +25,6 @@ const RATE_LIMIT_WINDOW_MS = 60_000;
 const rateLimitMap = new Map<string, number[]>();
 
 /**
- * Bot and scanner protection: detect and block suspicious User-Agent headers.
- * Legitimate browser/SPFx clients have recognizable User-Agents; scanners often
- * use minimal or no User-Agent, or use tools like curl, wget, Nmap, sqlmap, etc.
- */
-const SUSPICIOUS_USER_AGENTS = /^(curl|wget|python|nmap|masscan|nikto|sqlmap|dirbuster|burpsuite|zaproxy|metasploit|nessus)|\b(bot|scraper|crawler|spider|scanner|recon)\b|^-?$/i;
-const MAX_HEADER_SIZE_BYTES = 8192;  // Per-header limit; browsers typically send <1KB
-const MAX_BODY_SIZE_BYTES = 1024;    // GET requests have no body; 1KB guards against malformed requests
-
-/**
  * Cached result of permission detection for MailboxSettings.Read.
  * undefined = not yet checked; true/false = result cached for the lifetime
  * of this warm function instance.
@@ -71,7 +62,16 @@ async function detectMailboxSettingsPermission(
         const payloadJson = Buffer.from(token.token.split('.')[1], 'base64url').toString('utf8');
         const payload = JSON.parse(payloadJson) as { roles?: unknown };
         const roles = Array.isArray(payload.roles) ? (payload.roles as string[]) : [];
+        const hasUserReadAll = roles.includes('User.Read.All');
+        const hasUserReadBasicAll = roles.includes('User.ReadBasic.All');
+        const hasPresenceReadAll = roles.includes('Presence.Read.All');
+        const hasDirectoryReadAll = roles.includes('Directory.Read.All');
         const result = roles.includes('MailboxSettings.Read');
+        context.log(
+          `Graph app roles: User.Read.All=${hasUserReadAll}, ` +
+          `User.ReadBasic.All=${hasUserReadBasicAll}, Presence.Read.All=${hasPresenceReadAll}, ` +
+          `Directory.Read.All=${hasDirectoryReadAll}, MailboxSettings.Read=${result}, count=${roles.length}`
+        );
         context.log(`MailboxSettings.Read permission: ${result}`);
         return result;
       } catch (error) {
@@ -146,48 +146,6 @@ function getTimeoutMs(envVarName: string, defaultValue: number): number {
 
 function redactGuid(value: string): string {
   return `${value.slice(0, 8)}...${value.slice(-4)}`;
-}
-
-/**
- * Evaluates whether a request looks suspicious based on User-Agent.
- * Returns true for obvious scanner/bot signatures (curl, wget, nmap, etc.) and
- * requests with missing or clearly malicious User-Agents.
- */
-function isSuspiciousUserAgent(userAgent: string | null): boolean {
-  if (!userAgent || userAgent.trim().length === 0) {
-    return true;  // Missing User-Agent is suspicious in a browser context.
-  }
-  return SUSPICIOUS_USER_AGENTS.test(userAgent);
-}
-
-/**
- * Validates that request headers do not exceed reasonable size (defence against
- * header-injection and Denial of Service attacks via oversized headers).
- */
-function validateRequestSize(headers: Record<string, string | string[]>): { valid: boolean; reason?: string } {
-  for (const [key, value] of Object.entries(headers)) {
-    const headerStr = typeof value === 'string' ? value : value.join(',');
-    if (headerStr.length > MAX_HEADER_SIZE_BYTES) {
-      return { valid: false, reason: `${key} exceeds max header size` };
-    }
-  }
-  return { valid: true };
-}
-
-/**
- * Returns a short, loggable description of suspicious request patterns.
- */
-function describeRequestAnomaly(userAgent: string | null, method: string): string {
-  const parts: string[] = [];
-  if (!userAgent || userAgent.trim().length === 0) {
-    parts.push('missing-user-agent');
-  } else if (SUSPICIOUS_USER_AGENTS.test(userAgent)) {
-    parts.push(`bot-like-ua:${userAgent.substring(0, 30)}`);
-  }
-  if (method !== 'GET' && method !== 'OPTIONS') {
-    parts.push(`non-get-method:${method}`);
-  }
-  return parts.join(' | ') || 'none';
 }
 
 async function withTimeout<T>(
@@ -391,31 +349,6 @@ export async function getGuestSponsors(
     };
   }
 
-  // Reject requests that are clearly not from a real browser/client.
-  const userAgent = request.headers.get('user-agent');
-  if (isSuspiciousUserAgent(userAgent)) {
-    const anomaly = describeRequestAnomaly(userAgent, request.method);
-    context.warn(`Suspicious request rejected. Anomalies: ${anomaly}`);
-    return {
-      status: 403,
-      body: JSON.stringify({ error: 'Forbidden' }),
-      headers: { 'Content-Type': 'application/json', ...corsHeaders(request) },
-    };
-  }
-
-  // Validate request header sizes (defence against injection and DoS via oversized headers).
-  const headerValidation = validateRequestSize(Object.fromEntries(
-    Array.from(request.headers.entries()).map(([k, v]) => [k, v ?? ''])
-  ));
-  if (!headerValidation.valid) {
-    context.warn(`Request validation failed: ${headerValidation.reason}`);
-    return {
-      status: 400,
-      body: JSON.stringify({ error: 'Bad Request' }),
-      headers: { 'Content-Type': 'application/json', ...corsHeaders(request) },
-    };
-  }
-
   const callerOid = resolveCallerOid(request);
   if (!callerOid) {
     context.warn('No caller OID found — EasyAuth may not be configured.');
@@ -451,16 +384,30 @@ export async function getGuestSponsors(
     // (includes auth + default handlers). Passing middleware[0] was invalid and
     // caused runtime failures: "Cannot read properties of undefined (reading 'execute')".
     const client = Client.initWithMiddleware({ authProvider });
-    const response = await withTimeout(
-      client
-        .api(`/users/${callerOid}/sponsors`)
-        .select('id,displayName,mail,jobTitle,department,officeLocation,businessPhones,mobilePhone')
-        // Enforce the cap at the Graph level to avoid fetching more items than we will process.
-        .top(MAX_SPONSORS)
-        .get(),
-      getTimeoutMs('SPONSOR_LOOKUP_TIMEOUT_MS', DEFAULT_SPONSOR_LOOKUP_TIMEOUT_MS),
-      'Graph sponsor lookup'
-    );
+    let response: Record<string, unknown> | undefined;
+    try {
+      response = await withTimeout(
+        client
+          .api(`/users/${callerOid}/sponsors`)
+          .select('id,displayName,mail,jobTitle,department,officeLocation,businessPhones,mobilePhone')
+          // Enforce the cap at the Graph level to avoid fetching more items than we will process.
+          .top(MAX_SPONSORS)
+          .get(),
+        getTimeoutMs('SPONSOR_LOOKUP_TIMEOUT_MS', DEFAULT_SPONSOR_LOOKUP_TIMEOUT_MS),
+        'Graph sponsor lookup'
+      ) as Record<string, unknown>;
+    } catch (error) {
+      if (error instanceof GraphError) {
+        context.error('Graph sponsor lookup failed:', {
+          statusCode: error.statusCode,
+          code: error.code,
+          requestId: error.requestId,
+          message: error.message,
+          callerOid: redactGuid(callerOid),
+        });
+      }
+      throw error;
+    }
 
     if (!response?.value) {
       const result: ISponsorsResult = { activeSponsors: [], unavailableCount: 0 };
