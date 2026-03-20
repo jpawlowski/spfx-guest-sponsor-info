@@ -25,6 +25,12 @@ export interface ISponsor {
    * Requires the Presence.Read.All delegated permission.
    */
   presence?: string;
+  /**
+   * Microsoft Graph presence activity string for this user.
+   * Example values: InAMeeting, InACall, Presenting.
+   * Requires the Presence.Read.All delegated permission.
+   */
+  presenceActivity?: string;
   /** Display name of the sponsor's direct manager. */
   managerDisplayName?: string;
   /** Job title of the sponsor's direct manager. */

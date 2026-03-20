@@ -16,6 +16,11 @@ export interface ISponsorsResult {
   unavailableCount: number;
 }
 
+interface IPresenceSnapshot {
+  availability?: string;
+  activity?: string;
+}
+
 /**
  * Returns true when the SPFx login name belongs to a Microsoft Entra guest account.
  * Guest UPNs always contain the "#EXT#" marker introduced by Entra external identity.
@@ -80,23 +85,29 @@ async function userExists(client: MSGraphClientV3, userId: string): Promise<bool
 /**
  * Fetches presence for a list of user IDs in a single batched Graph call.
  * Requires the Presence.Read.All delegated permission.
- * Returns a map of userId → availability string.
+ * Returns a map of userId → availability/activity strings.
  * Silently returns an empty map on any error (presence is non-critical).
  */
 export async function fetchPresences(
   client: MSGraphClientV3,
   userIds: string[]
-): Promise<Map<string, string>> {
-  const map = new Map<string, string>();
+): Promise<Map<string, IPresenceSnapshot>> {
+  const map = new Map<string, IPresenceSnapshot>();
   if (userIds.length === 0) return map;
   try {
     const response = await client
       .api('/communications/getPresencesByUserId')
       .post({ ids: userIds });
     if (response?.value) {
-      for (const entry of response.value as Array<{ id: string; availability: string }>) {
-        if (entry.id && entry.availability) {
-          map.set(entry.id, entry.availability);
+      for (const entry of response.value as Array<{ id: string; availability?: string; activity?: string }>) {
+        const availability = entry.availability && /^[A-Za-z]+$/.test(entry.availability)
+          ? entry.availability
+          : undefined;
+        const activity = entry.activity && /^[A-Za-z]+$/.test(entry.activity)
+          ? entry.activity
+          : undefined;
+        if (entry.id && (availability || activity)) {
+          map.set(entry.id, { availability, activity });
         }
       }
     }
@@ -170,7 +181,14 @@ export async function getSponsors(client: MSGraphClientV3): Promise<ISponsorsRes
 
   const activeSponsors = perSponsorResults
     .filter(r => r.exists)
-    .map(r => ({ ...r.sponsor, presence: presenceMap.get(r.sponsor.id) }));
+    .map(r => {
+      const presence = presenceMap.get(r.sponsor.id);
+      return {
+        ...r.sponsor,
+        presence: presence?.availability,
+        presenceActivity: presence?.activity,
+      };
+    });
   const unavailableCount = perSponsorResults.filter(r => !r.exists).length;
   return { activeSponsors, unavailableCount };
 }

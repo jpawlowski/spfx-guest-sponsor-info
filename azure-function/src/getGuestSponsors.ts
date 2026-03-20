@@ -180,6 +180,7 @@ interface ISponsor {
   businessPhones: string[];
   mobilePhone?: string;
   presence?: string;
+  presenceActivity?: string;
   managerDisplayName?: string;
   managerJobTitle?: string;
   /** Manager's Entra ID — used by the SPFx client to fetch the manager photo progressively. */
@@ -222,15 +223,15 @@ function resolveCallerOid(request: HttpRequest): string | null {
 
 /**
  * Fetches presence for a list of user IDs in a single batched Graph call.
- * Returns a map of userId → availability string.
+ * Returns a map of userId → availability/activity strings.
  * Silently returns an empty map on any error or timeout (presence is non-critical).
  */
 async function fetchPresences(
   client: Client,
   userIds: string[],
   context: InvocationContext
-): Promise<Map<string, string>> {
-  const map = new Map<string, string>();
+): Promise<Map<string, { availability?: string; activity?: string }>> {
+  const map = new Map<string, { availability?: string; activity?: string }>();
   if (userIds.length === 0) return map;
   // Build a Set of the requested IDs so we can reject any unexpected entries
   // the Graph API might return (defence-in-depth against unexpected response data).
@@ -244,16 +245,21 @@ async function fetchPresences(
       'Graph presence lookup'
     );
     if (response?.value) {
-      for (const entry of response.value as Array<{ id: string; availability: string }>) {
+      for (const entry of response.value as Array<{ id: string; availability?: string; activity?: string }>) {
         // Only accept entries whose ID was in our request and whose availability
         // is a plain alphabetic string (no injection vectors).
+        const availability = entry.availability && /^[A-Za-z]+$/.test(entry.availability)
+          ? entry.availability
+          : undefined;
+        const activity = entry.activity && /^[A-Za-z]+$/.test(entry.activity)
+          ? entry.activity
+          : undefined;
         if (
           entry.id &&
           requestedIds.has(entry.id) &&
-          entry.availability &&
-          /^[A-Za-z]+$/.test(entry.availability)
+          (availability || activity)
         ) {
-          map.set(entry.id, entry.availability);
+          map.set(entry.id, { availability, activity });
         }
       }
     }
@@ -537,7 +543,8 @@ export async function getGuestSponsors(
         if (s.managerId !== undefined)           out.managerId = s.managerId;
         out.hasTeams = s.hasTeams;  // always a boolean from the proxy; undefined only in direct path
         const presence = presenceMap.get(s.id);
-        if (presence !== undefined)              out.presence = presence;
+        if (presence?.availability !== undefined) out.presence = presence.availability;
+        if (presence?.activity !== undefined)     out.presenceActivity = presence.activity;
         return out;
       });
     const unavailableCount = perSponsorResults.filter(r => !r.exists).length;
