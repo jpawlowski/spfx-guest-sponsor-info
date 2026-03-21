@@ -276,20 +276,15 @@ async function withTimeout<T>(
   timeoutMs: number,
   operation: string
 ): Promise<T> {
-  return await new Promise<T>((resolve, reject) => {
-    const timer = setTimeout(() => reject(new TimeoutError(operation, timeoutMs)), timeoutMs);
-
-    void promise.then(
-      value => {
-        clearTimeout(timer);
-        resolve(value);
-      },
-      error => {
-        clearTimeout(timer);
-        reject(error);
-      }
-    );
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new TimeoutError(operation, timeoutMs)), timeoutMs);
   });
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 /** Shape of a sponsor returned by this function (matches ISponsor in SPFx). */
@@ -376,16 +371,16 @@ interface IEasyAuthPrincipal {
  * Parses the EasyAuth principal from X-MS-CLIENT-PRINCIPAL.
  * Header is Base64-encoded JSON emitted only after successful EasyAuth validation.
  */
-function parseEasyAuthPrincipal(request: HttpRequest): IEasyAuthPrincipal | null {
+function parseEasyAuthPrincipal(request: HttpRequest): IEasyAuthPrincipal | undefined {
   const encodedPrincipal = request.headers.get('x-ms-client-principal');
-  if (!encodedPrincipal) return null;
+  if (!encodedPrincipal) return undefined;
 
   try {
     const json = Buffer.from(encodedPrincipal, 'base64').toString('utf8');
     const parsed = JSON.parse(json) as IEasyAuthPrincipal;
     return parsed;
   } catch {
-    return null;
+    return undefined;
   }
 }
 
@@ -478,18 +473,18 @@ function validateClientAuthorization(
  * For local development (EasyAuth absent), the OID can be passed via
  * the X-Dev-User-OID header — only accepted when NODE_ENV !== 'production'.
  */
-function resolveCallerOid(request: HttpRequest): string | null {
+function resolveCallerOid(request: HttpRequest): string | undefined {
   // EasyAuth sets X-MS-CLIENT-PRINCIPAL-ID to the validated caller OID.
   const easyAuthOid = request.headers.get('x-ms-client-principal-id');
-  if (easyAuthOid) return isValidGuid(easyAuthOid) ? easyAuthOid : null;
+  if (easyAuthOid) return isValidGuid(easyAuthOid) ? easyAuthOid : undefined;
 
   // Local dev fallback — never accepted in production.
   if (process.env.NODE_ENV !== 'production') {
     const devOid = request.headers.get('x-dev-user-oid');
-    if (devOid) return isValidGuid(devOid) ? devOid : null;
+    if (devOid) return isValidGuid(devOid) ? devOid : undefined;
   }
 
-  return null;
+  return undefined;
 }
 
 /**
