@@ -5,10 +5,13 @@
     "_generator": {
       "name": "bicep",
       "version": "0.41.2.15936",
-      "templateHash": "2061374383801800991"
+      "templateHash": "4624339753834773339"
     },
     "name": "Guest Sponsor Info – Azure Function Proxy",
-    "description": "Deploys an Azure Function App that acts as a Graph API proxy for the Guest Sponsor Info SharePoint web part. Includes a Storage Account, App Service Plan, EasyAuth configuration, Managed Identity role assignments, Log Analytics Workspace, and Application Insights."
+    "description": "Deploys an Azure Function App that acts as a Graph API proxy for the Guest Sponsor Info SharePoint web part. Includes a Storage Account, App Service Plan, EasyAuth configuration, Managed Identity role assignments, Log Analytics Workspace, and Application Insights.",
+    "repository": "https://github.com/jpawlowski/spfx-guest-sponsor-info",
+    "author": "jpawlowski",
+    "license": "MIT"
   },
   "parameters": {
     "location": {
@@ -44,18 +47,64 @@
         "description": "Client ID of the App Registration created for EasyAuth."
       }
     },
+    "hostingPlan": {
+      "type": "string",
+      "defaultValue": "Consumption",
+      "allowedValues": [
+        "Consumption",
+        "FlexConsumption"
+      ],
+      "metadata": {
+        "description": "Hosting plan for the Function App. \"Consumption\" = Y1/Dynamic (free tier included, cold starts after ~20 min idle, ZIP served directly from GitHub package URL). \"FlexConsumption\" = FC1/Linux-only (no free tier, cold starts greatly reduced — alwaysReadyInstances=1 eliminates them; ZIP is uploaded to blob storage by the provisioning script automatically during ARM deployment; \"Deploy to Azure\" button is supported). Not all Azure regions support Flex Consumption — check https://aka.ms/flex-region before choosing."
+      }
+    },
+    "alwaysReadyInstances": {
+      "type": "int",
+      "defaultValue": 1,
+      "minValue": 0,
+      "metadata": {
+        "description": "Number of always-ready (pre-warmed) instances for the Function App (Flex Consumption plan only). 0 = purely on-demand (cold starts possible). 1 = one instance kept warm — eliminates cold starts (~€2–5/month). Ignored when hostingPlan = \"Consumption\"."
+      }
+    },
+    "maximumFlexInstances": {
+      "type": "int",
+      "defaultValue": 10,
+      "minValue": 1,
+      "maxValue": 1000,
+      "metadata": {
+        "description": "Hard upper bound on the number of instances the Flex Consumption plan may scale out to (Flex Consumption plan only). Acts as a cost ceiling — scale-out stops at this limit regardless of demand. Valid range: 1–1000. Default: 10. Ignored when hostingPlan = \"Consumption\"."
+      }
+    },
+    "instanceMemoryMB": {
+      "type": "int",
+      "defaultValue": 2048,
+      "allowedValues": [
+        512,
+        2048
+      ],
+      "metadata": {
+        "description": "Memory allocated to each Flex Consumption instance in MB (Flex Consumption plan only). Valid values: 512 or 2048. Higher memory allows more concurrent requests per instance but costs more per GB-second. Default: 2048. Ignored when hostingPlan = \"Consumption\"."
+      }
+    },
+    "appVersion": {
+      "type": "string",
+      "defaultValue": "latest",
+      "metadata": {
+        "description": "Function package version to deploy. \"latest\" (default) = always pull the newest GitHub Release at provisioning time. SemVer without \"v\" prefix, e.g. \"1.4.2\" = pin to that specific release. On Consumption: sets the WEBSITE_RUN_FROM_PACKAGE URL. On Flex Consumption: the provisioning script re-runs and re-uploads the ZIP whenever this value changes — set it on each redeployment to trigger a code update."
+      }
+    },
     "packageUrl": {
       "type": "string",
-      "defaultValue": "https://github.com/jpawlowski/spfx-guest-sponsor-info/releases/latest/download/guest-sponsor-info-function.zip",
+      "defaultValue": "",
       "metadata": {
-        "description": "URL to the pre-built function ZIP package (GitHub Release asset)."
+        "description": "Override the computed package ZIP URL. Leave empty (default) to auto-compute from appVersion. Use only when hosting the ZIP at a custom location."
       }
     },
     "tags": {
       "type": "object",
       "defaultValue": {},
       "metadata": {
-        "description": "Resource tags to apply to all deployed resources."
+        "description": "Additional resource tags to apply to all deployed resources. The tags \"managed-by\", \"source\", and \"package-version\" are always set automatically and cannot be overridden."
       }
     },
     "deployAzureMaps": {
@@ -180,7 +229,7 @@
       "defaultValue": 10000,
       "minValue": 0,
       "metadata": {
-        "description": "Azure Consumption plan daily memory-time budget in GB-seconds. When hit, the Function App is suspended until midnight UTC — the primary cost guard. 0 = unlimited (not recommended). Default 10 000 GB-s ≈ 13 000 typical invocations/day, stays within the monthly free tier (400 000 GB-s/month)."
+        "description": "Consumption plan (Y1) daily memory-time budget in GB-seconds. When hit, the Function App is suspended until midnight UTC — the primary cost guard. 0 = unlimited (not recommended). Default 10 000 GB-s ≈ 13 000 typical invocations/day, stays within the monthly free tier (400 000 GB-s/month). Ignored when hostingPlan = \"FlexConsumption\" (Flex has no daily GB-second budget concept)."
       }
     },
     "operationalActionGroupResourceIds": {
@@ -222,7 +271,18 @@
     }
   },
   "variables": {
+    "isFlexConsumption": "[equals(parameters('hostingPlan'), 'FlexConsumption')]",
+    "deploymentContainerName": "app-package",
     "storageAccountName": "[toLower(replace(parameters('functionAppName'), '-', ''))]",
+    "baseReleaseUrl": "https://github.com/jpawlowski/spfx-guest-sponsor-info/releases",
+    "normalizedAppVersion": "[if(startsWith(parameters('appVersion'), 'v'), substring(parameters('appVersion'), 1), parameters('appVersion'))]",
+    "resolvedPackageUrl": "[if(not(empty(parameters('packageUrl'))), parameters('packageUrl'), if(equals(parameters('appVersion'), 'latest'), format('{0}/latest/download/guest-sponsor-info-function.zip', variables('baseReleaseUrl')), format('{0}/download/v{1}/guest-sponsor-info-function.zip', variables('baseReleaseUrl'), variables('normalizedAppVersion'))))]",
+    "builtInTags": {
+      "managed-by": "bicep",
+      "source": "https://github.com/jpawlowski/spfx-guest-sponsor-info",
+      "package-version": "[parameters('appVersion')]"
+    },
+    "effectiveTags": "[union(variables('builtInTags'), parameters('tags'))]",
     "appServicePlanName": "[format('{0}-plan', parameters('functionAppName'))]",
     "logAnalyticsWorkspaceName": "[format('{0}-logs', parameters('functionAppName'))]",
     "appInsightsName": "[format('{0}-insights', parameters('functionAppName'))]",
@@ -236,9 +296,55 @@
     "createDefaultActionGroups": "[not(empty(parameters('defaultAlertNotificationEmail')))]",
     "effectiveOperationalActionGroupResourceIds": "[if(variables('createDefaultActionGroups'), concat(parameters('operationalActionGroupResourceIds'), createArray(resourceId('Microsoft.Insights/actionGroups', format('{0}-ops-ag', parameters('functionAppName'))))), parameters('operationalActionGroupResourceIds'))]",
     "effectiveInfoActionGroupResourceIds": "[if(variables('createDefaultActionGroups'), concat(parameters('infoActionGroupResourceIds'), createArray(resourceId('Microsoft.Insights/actionGroups', format('{0}-info-ag', parameters('functionAppName'))))), parameters('infoActionGroupResourceIds'))]",
+    "deployScriptIdentityResourceId": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-deploy-id', parameters('functionAppName')))]",
+    "consumptionOnlyAppSettings": [
+      {
+        "name": "FUNCTIONS_EXTENSION_VERSION",
+        "value": "~4"
+      },
+      {
+        "name": "FUNCTIONS_WORKER_RUNTIME",
+        "value": "node"
+      },
+      {
+        "name": "WEBSITE_NODE_DEFAULT_VERSION",
+        "value": "~22"
+      },
+      {
+        "name": "WEBSITE_RUN_FROM_PACKAGE",
+        "value": "[variables('resolvedPackageUrl')]"
+      }
+    ],
+    "easyAuthProperties": {
+      "globalValidation": {
+        "requireAuthentication": true,
+        "unauthenticatedClientAction": "Return401"
+      },
+      "identityProviders": {
+        "azureActiveDirectory": {
+          "enabled": true,
+          "registration": {
+            "clientId": "[parameters('functionClientId')]",
+            "openIdIssuer": "[format('https://sts.windows.net/{0}/', parameters('tenantId'))]"
+          },
+          "validation": {
+            "allowedAudiences": [
+              "[format('api://guest-sponsor-info-proxy/{0}', parameters('functionClientId'))]"
+            ]
+          }
+        }
+      },
+      "login": {
+        "tokenStore": {
+          "enabled": false
+        }
+      }
+    },
     "storageBlobDataOwnerRoleId": "b7e6dc6d-f1e8-4753-8033-0f276bb0955b",
     "storageQueueDataContributorRoleId": "974c5e8b-45b9-4653-ba55-5f855dd0fb88",
-    "storageTableDataContributorRoleId": "0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3"
+    "storageTableDataContributorRoleId": "0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3",
+    "functionAppResourceId": "[resourceId('Microsoft.Web/sites', parameters('functionAppName'))]",
+    "functionAppHostName": "[format('{0}.azurewebsites.net', parameters('functionAppName'))]"
   },
   "resources": [
     {
@@ -247,7 +353,7 @@
       "apiVersion": "2023-01-01",
       "name": "[format('{0}-ops-ag', parameters('functionAppName'))]",
       "location": "global",
-      "tags": "[parameters('tags')]",
+      "tags": "[variables('effectiveTags')]",
       "properties": {
         "groupShortName": "[parameters('defaultOperationalActionGroupShortName')]",
         "enabled": true,
@@ -266,7 +372,7 @@
       "apiVersion": "2023-01-01",
       "name": "[format('{0}-info-ag', parameters('functionAppName'))]",
       "location": "global",
-      "tags": "[parameters('tags')]",
+      "tags": "[variables('effectiveTags')]",
       "properties": {
         "groupShortName": "[parameters('defaultInfoActionGroupShortName')]",
         "enabled": true,
@@ -284,7 +390,7 @@
       "apiVersion": "2023-01-01",
       "name": "[if(greater(length(variables('storageAccountName')), 24), substring(variables('storageAccountName'), 0, 24), variables('storageAccountName'))]",
       "location": "[parameters('location')]",
-      "tags": "[parameters('tags')]",
+      "tags": "[variables('effectiveTags')]",
       "sku": {
         "name": "Standard_LRS"
       },
@@ -301,7 +407,7 @@
       "apiVersion": "2022-10-01",
       "name": "[variables('logAnalyticsWorkspaceName')]",
       "location": "[parameters('location')]",
-      "tags": "[parameters('tags')]",
+      "tags": "[variables('effectiveTags')]",
       "properties": {
         "sku": {
           "name": "PerGB2018"
@@ -314,7 +420,7 @@
       "apiVersion": "2020-02-02",
       "name": "[variables('appInsightsName')]",
       "location": "[parameters('location')]",
-      "tags": "[parameters('tags')]",
+      "tags": "[variables('effectiveTags')]",
       "kind": "web",
       "properties": {
         "Application_Type": "web",
@@ -329,11 +435,12 @@
       ]
     },
     {
+      "condition": "[not(variables('isFlexConsumption'))]",
       "type": "Microsoft.Web/serverfarms",
       "apiVersion": "2023-01-01",
       "name": "[variables('appServicePlanName')]",
       "location": "[parameters('location')]",
-      "tags": "[parameters('tags')]",
+      "tags": "[variables('effectiveTags')]",
       "sku": {
         "name": "Y1",
         "tier": "Dynamic"
@@ -341,12 +448,114 @@
       "properties": {}
     },
     {
+      "condition": "[variables('isFlexConsumption')]",
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2023-12-01",
+      "name": "[variables('appServicePlanName')]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('effectiveTags')]",
+      "kind": "functionapp",
+      "sku": {
+        "name": "FC1",
+        "tier": "FlexConsumption"
+      },
+      "properties": {
+        "reserved": true
+      }
+    },
+    {
+      "condition": "[variables('isFlexConsumption')]",
+      "type": "Microsoft.Storage/storageAccounts/blobServices",
+      "apiVersion": "2023-01-01",
+      "name": "[format('{0}/{1}', if(greater(length(variables('storageAccountName')), 24), substring(variables('storageAccountName'), 0, 24), variables('storageAccountName')), 'default')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', if(greater(length(variables('storageAccountName')), 24), substring(variables('storageAccountName'), 0, 24), variables('storageAccountName')))]"
+      ]
+    },
+    {
+      "condition": "[variables('isFlexConsumption')]",
+      "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+      "apiVersion": "2023-01-01",
+      "name": "[format('{0}/{1}/{2}', if(greater(length(variables('storageAccountName')), 24), substring(variables('storageAccountName'), 0, 24), variables('storageAccountName')), 'default', variables('deploymentContainerName'))]",
+      "properties": {
+        "publicAccess": "None"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts/blobServices', if(greater(length(variables('storageAccountName')), 24), substring(variables('storageAccountName'), 0, 24), variables('storageAccountName')), 'default')]"
+      ]
+    },
+    {
+      "condition": "[variables('isFlexConsumption')]",
+      "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+      "apiVersion": "2023-01-31",
+      "name": "[format('{0}-deploy-id', parameters('functionAppName'))]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('effectiveTags')]"
+    },
+    {
+      "condition": "[variables('isFlexConsumption')]",
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[resourceId('Microsoft.Storage/storageAccounts', if(greater(length(variables('storageAccountName')), 24), substring(variables('storageAccountName'), 0, 24), variables('storageAccountName')))]",
+      "name": "[guid(resourceId('Microsoft.Storage/storageAccounts', if(greater(length(variables('storageAccountName')), 24), substring(variables('storageAccountName'), 0, 24), variables('storageAccountName'))), format('{0}-deploy-id', parameters('functionAppName')), 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')]",
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')]",
+        "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-deploy-id', parameters('functionAppName'))), '2023-01-31').principalId]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-deploy-id', parameters('functionAppName')))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', if(greater(length(variables('storageAccountName')), 24), substring(variables('storageAccountName'), 0, 24), variables('storageAccountName')))]"
+      ]
+    },
+    {
+      "condition": "[variables('isFlexConsumption')]",
+      "type": "Microsoft.Resources/deploymentScripts",
+      "apiVersion": "2023-08-01",
+      "name": "[format('{0}-deploy-zip', parameters('functionAppName'))]",
+      "location": "[parameters('location')]",
+      "kind": "AzureCLI",
+      "tags": "[variables('effectiveTags')]",
+      "identity": {
+        "type": "UserAssigned",
+        "userAssignedIdentities": {
+          "[format('{0}', variables('deployScriptIdentityResourceId'))]": {}
+        }
+      },
+      "properties": {
+        "azCliVersion": "2.60.0",
+        "retentionInterval": "PT2H",
+        "forceUpdateTag": "[uniqueString(variables('resolvedPackageUrl'))]",
+        "environmentVariables": [
+          {
+            "name": "STORAGE_ACCOUNT",
+            "value": "[if(greater(length(variables('storageAccountName')), 24), substring(variables('storageAccountName'), 0, 24), variables('storageAccountName'))]"
+          },
+          {
+            "name": "CONTAINER",
+            "value": "[variables('deploymentContainerName')]"
+          },
+          {
+            "name": "PACKAGE_URL",
+            "value": "[variables('resolvedPackageUrl')]"
+          }
+        ],
+        "scriptContent": "      set -euo pipefail\n      curl -sSfL -o /tmp/function.zip \"$PACKAGE_URL\"\n      for attempt in 1 2 3; do\n        az storage blob upload \\\n          --account-name \"$STORAGE_ACCOUNT\" \\\n          --container-name \"$CONTAINER\" \\\n          --name function.zip \\\n          --file /tmp/function.zip \\\n          --auth-mode login \\\n          --overwrite && break || {\n            echo \"Upload attempt $attempt failed — waiting for RBAC propagation\"\n            sleep 30\n          }\n      done\n    "
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts/blobServices/containers', if(greater(length(variables('storageAccountName')), 24), substring(variables('storageAccountName'), 0, 24), variables('storageAccountName')), 'default', variables('deploymentContainerName'))]",
+        "[extensionResourceId(resourceId('Microsoft.Storage/storageAccounts', if(greater(length(variables('storageAccountName')), 24), substring(variables('storageAccountName'), 0, 24), variables('storageAccountName'))), 'Microsoft.Authorization/roleAssignments', guid(resourceId('Microsoft.Storage/storageAccounts', if(greater(length(variables('storageAccountName')), 24), substring(variables('storageAccountName'), 0, 24), variables('storageAccountName'))), format('{0}-deploy-id', parameters('functionAppName')), 'ba92f5b4-2d11-453d-a403-e96b0029c9fe'))]",
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-deploy-id', parameters('functionAppName')))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', if(greater(length(variables('storageAccountName')), 24), substring(variables('storageAccountName'), 0, 24), variables('storageAccountName')))]"
+      ]
+    },
+    {
       "condition": "[parameters('deployAzureMaps')]",
       "type": "Microsoft.Maps/accounts",
       "apiVersion": "2023-06-01",
       "name": "[variables('azureMapsName')]",
       "location": "[parameters('location')]",
-      "tags": "[parameters('tags')]",
+      "tags": "[variables('effectiveTags')]",
       "sku": {
         "name": "G2"
       },
@@ -356,11 +565,12 @@
       }
     },
     {
+      "condition": "[not(variables('isFlexConsumption'))]",
       "type": "Microsoft.Web/sites",
       "apiVersion": "2023-01-01",
       "name": "[parameters('functionAppName')]",
       "location": "[parameters('location')]",
-      "tags": "[parameters('tags')]",
+      "tags": "[variables('effectiveTags')]",
       "kind": "functionapp",
       "identity": {
         "type": "SystemAssigned"
@@ -370,6 +580,56 @@
         "httpsOnly": true,
         "dailyMemoryTimeQuota": "[parameters('dailyMemoryTimeQuotaGBs')]",
         "siteConfig": {
+          "appSettings": "[concat(createArray(createObject('name', 'AzureWebJobsStorage__accountName', 'value', if(greater(length(variables('storageAccountName')), 24), substring(variables('storageAccountName'), 0, 24), variables('storageAccountName'))), createObject('name', 'AzureWebJobsStorage__credential', 'value', 'managedidentity'), createObject('name', 'TENANT_ID', 'value', parameters('tenantId')), createObject('name', 'ALLOWED_AUDIENCE', 'value', format('api://guest-sponsor-info-proxy/{0}', parameters('functionClientId'))), createObject('name', 'CORS_ALLOWED_ORIGIN', 'value', format('https://{0}.sharepoint.com', parameters('tenantName'))), createObject('name', 'SPONSOR_LOOKUP_TIMEOUT_MS', 'value', '5000'), createObject('name', 'BATCH_TIMEOUT_MS', 'value', '4000'), createObject('name', 'PRESENCE_TIMEOUT_MS', 'value', '2500'), createObject('name', 'NODE_ENV', 'value', 'production'), createObject('name', 'APPLICATIONINSIGHTS_CONNECTION_STRING', 'value', reference(resourceId('Microsoft.Insights/components', variables('appInsightsName')), '2020-02-02').ConnectionString), createObject('name', 'APP_VERSION', 'value', parameters('appVersion'))), variables('consumptionOnlyAppSettings'))]",
+          "cors": {
+            "allowedOrigins": [
+              "[format('https://{0}.sharepoint.com', parameters('tenantName'))]"
+            ],
+            "supportCredentials": false
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]",
+        "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', if(greater(length(variables('storageAccountName')), 24), substring(variables('storageAccountName'), 0, 24), variables('storageAccountName')))]"
+      ]
+    },
+    {
+      "condition": "[variables('isFlexConsumption')]",
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2023-12-01",
+      "name": "[parameters('functionAppName')]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('effectiveTags')]",
+      "kind": "functionapp,linux",
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "properties": {
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]",
+        "httpsOnly": true,
+        "functionAppConfig": {
+          "runtime": {
+            "name": "node",
+            "version": "22"
+          },
+          "scaleAndConcurrency": {
+            "maximumInstanceCount": "[parameters('maximumFlexInstances')]",
+            "instanceMemoryMB": "[parameters('instanceMemoryMB')]",
+            "alwaysReady": "[if(greater(parameters('alwaysReadyInstances'), 0), createArray(createObject('name', 'http', 'instanceCount', parameters('alwaysReadyInstances'))), createArray())]"
+          },
+          "deployment": {
+            "storage": {
+              "type": "blobContainer",
+              "value": "[format('{0}{1}', reference(resourceId('Microsoft.Storage/storageAccounts', if(greater(length(variables('storageAccountName')), 24), substring(variables('storageAccountName'), 0, 24), variables('storageAccountName'))), '2023-01-01').primaryEndpoints.blob, variables('deploymentContainerName'))]",
+              "authentication": {
+                "type": "SystemAssignedIdentity"
+              }
+            }
+          }
+        },
+        "siteConfig": {
           "appSettings": [
             {
               "name": "AzureWebJobsStorage__accountName",
@@ -378,22 +638,6 @@
             {
               "name": "AzureWebJobsStorage__credential",
               "value": "managedidentity"
-            },
-            {
-              "name": "FUNCTIONS_EXTENSION_VERSION",
-              "value": "~4"
-            },
-            {
-              "name": "FUNCTIONS_WORKER_RUNTIME",
-              "value": "node"
-            },
-            {
-              "name": "WEBSITE_NODE_DEFAULT_VERSION",
-              "value": "~22"
-            },
-            {
-              "name": "WEBSITE_RUN_FROM_PACKAGE",
-              "value": "[parameters('packageUrl')]"
             },
             {
               "name": "TENANT_ID",
@@ -426,6 +670,10 @@
             {
               "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
               "value": "[reference(resourceId('Microsoft.Insights/components', variables('appInsightsName')), '2020-02-02').ConnectionString]"
+            },
+            {
+              "name": "APP_VERSION",
+              "value": "[parameters('appVersion')]"
             }
           ],
           "cors": {
@@ -439,47 +687,36 @@
       "dependsOn": [
         "[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]",
         "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts/blobServices/containers', if(greater(length(variables('storageAccountName')), 24), substring(variables('storageAccountName'), 0, 24), variables('storageAccountName')), 'default', variables('deploymentContainerName'))]",
         "[resourceId('Microsoft.Storage/storageAccounts', if(greater(length(variables('storageAccountName')), 24), substring(variables('storageAccountName'), 0, 24), variables('storageAccountName')))]"
       ]
     },
     {
+      "condition": "[not(variables('isFlexConsumption'))]",
       "type": "Microsoft.Web/sites/config",
       "apiVersion": "2023-01-01",
       "name": "[format('{0}/{1}', parameters('functionAppName'), 'authsettingsV2')]",
-      "properties": {
-        "globalValidation": {
-          "requireAuthentication": true,
-          "unauthenticatedClientAction": "Return401"
-        },
-        "identityProviders": {
-          "azureActiveDirectory": {
-            "enabled": true,
-            "registration": {
-              "clientId": "[parameters('functionClientId')]",
-              "openIdIssuer": "[format('https://sts.windows.net/{0}/', parameters('tenantId'))]"
-            },
-            "validation": {
-              "allowedAudiences": [
-                "[format('api://guest-sponsor-info-proxy/{0}', parameters('functionClientId'))]"
-              ]
-            }
-          }
-        },
-        "login": {
-          "tokenStore": {
-            "enabled": false
-          }
-        }
-      },
+      "properties": "[variables('easyAuthProperties')]",
       "dependsOn": [
         "[resourceId('Microsoft.Web/sites', parameters('functionAppName'))]"
       ]
     },
     {
+      "condition": "[variables('isFlexConsumption')]",
+      "type": "Microsoft.Web/sites/config",
+      "apiVersion": "2023-12-01",
+      "name": "[format('{0}/{1}', parameters('functionAppName'), 'authsettingsV2')]",
+      "properties": "[variables('easyAuthProperties')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', parameters('functionAppName'))]"
+      ]
+    },
+    {
+      "condition": "[not(variables('isFlexConsumption'))]",
       "type": "Microsoft.Authorization/roleAssignments",
       "apiVersion": "2022-04-01",
       "scope": "[resourceId('Microsoft.Storage/storageAccounts', if(greater(length(variables('storageAccountName')), 24), substring(variables('storageAccountName'), 0, 24), variables('storageAccountName')))]",
-      "name": "[guid(resourceId('Microsoft.Storage/storageAccounts', if(greater(length(variables('storageAccountName')), 24), substring(variables('storageAccountName'), 0, 24), variables('storageAccountName'))), resourceId('Microsoft.Web/sites', parameters('functionAppName')), variables('storageBlobDataOwnerRoleId'))]",
+      "name": "[guid(resourceId('Microsoft.Storage/storageAccounts', if(greater(length(variables('storageAccountName')), 24), substring(variables('storageAccountName'), 0, 24), variables('storageAccountName'))), variables('functionAppResourceId'), variables('storageBlobDataOwnerRoleId'))]",
       "properties": {
         "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('storageBlobDataOwnerRoleId'))]",
         "principalId": "[reference(resourceId('Microsoft.Web/sites', parameters('functionAppName')), '2023-01-01', 'full').identity.principalId]",
@@ -491,10 +728,11 @@
       ]
     },
     {
+      "condition": "[not(variables('isFlexConsumption'))]",
       "type": "Microsoft.Authorization/roleAssignments",
       "apiVersion": "2022-04-01",
       "scope": "[resourceId('Microsoft.Storage/storageAccounts', if(greater(length(variables('storageAccountName')), 24), substring(variables('storageAccountName'), 0, 24), variables('storageAccountName')))]",
-      "name": "[guid(resourceId('Microsoft.Storage/storageAccounts', if(greater(length(variables('storageAccountName')), 24), substring(variables('storageAccountName'), 0, 24), variables('storageAccountName'))), resourceId('Microsoft.Web/sites', parameters('functionAppName')), variables('storageQueueDataContributorRoleId'))]",
+      "name": "[guid(resourceId('Microsoft.Storage/storageAccounts', if(greater(length(variables('storageAccountName')), 24), substring(variables('storageAccountName'), 0, 24), variables('storageAccountName'))), variables('functionAppResourceId'), variables('storageQueueDataContributorRoleId'))]",
       "properties": {
         "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('storageQueueDataContributorRoleId'))]",
         "principalId": "[reference(resourceId('Microsoft.Web/sites', parameters('functionAppName')), '2023-01-01', 'full').identity.principalId]",
@@ -506,13 +744,62 @@
       ]
     },
     {
+      "condition": "[not(variables('isFlexConsumption'))]",
       "type": "Microsoft.Authorization/roleAssignments",
       "apiVersion": "2022-04-01",
       "scope": "[resourceId('Microsoft.Storage/storageAccounts', if(greater(length(variables('storageAccountName')), 24), substring(variables('storageAccountName'), 0, 24), variables('storageAccountName')))]",
-      "name": "[guid(resourceId('Microsoft.Storage/storageAccounts', if(greater(length(variables('storageAccountName')), 24), substring(variables('storageAccountName'), 0, 24), variables('storageAccountName'))), resourceId('Microsoft.Web/sites', parameters('functionAppName')), variables('storageTableDataContributorRoleId'))]",
+      "name": "[guid(resourceId('Microsoft.Storage/storageAccounts', if(greater(length(variables('storageAccountName')), 24), substring(variables('storageAccountName'), 0, 24), variables('storageAccountName'))), variables('functionAppResourceId'), variables('storageTableDataContributorRoleId'))]",
       "properties": {
         "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('storageTableDataContributorRoleId'))]",
         "principalId": "[reference(resourceId('Microsoft.Web/sites', parameters('functionAppName')), '2023-01-01', 'full').identity.principalId]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', parameters('functionAppName'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', if(greater(length(variables('storageAccountName')), 24), substring(variables('storageAccountName'), 0, 24), variables('storageAccountName')))]"
+      ]
+    },
+    {
+      "condition": "[variables('isFlexConsumption')]",
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[resourceId('Microsoft.Storage/storageAccounts', if(greater(length(variables('storageAccountName')), 24), substring(variables('storageAccountName'), 0, 24), variables('storageAccountName')))]",
+      "name": "[guid(resourceId('Microsoft.Storage/storageAccounts', if(greater(length(variables('storageAccountName')), 24), substring(variables('storageAccountName'), 0, 24), variables('storageAccountName'))), variables('functionAppResourceId'), variables('storageBlobDataOwnerRoleId'))]",
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('storageBlobDataOwnerRoleId'))]",
+        "principalId": "[reference(resourceId('Microsoft.Web/sites', parameters('functionAppName')), '2023-12-01', 'full').identity.principalId]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', parameters('functionAppName'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', if(greater(length(variables('storageAccountName')), 24), substring(variables('storageAccountName'), 0, 24), variables('storageAccountName')))]"
+      ]
+    },
+    {
+      "condition": "[variables('isFlexConsumption')]",
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[resourceId('Microsoft.Storage/storageAccounts', if(greater(length(variables('storageAccountName')), 24), substring(variables('storageAccountName'), 0, 24), variables('storageAccountName')))]",
+      "name": "[guid(resourceId('Microsoft.Storage/storageAccounts', if(greater(length(variables('storageAccountName')), 24), substring(variables('storageAccountName'), 0, 24), variables('storageAccountName'))), variables('functionAppResourceId'), variables('storageQueueDataContributorRoleId'))]",
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('storageQueueDataContributorRoleId'))]",
+        "principalId": "[reference(resourceId('Microsoft.Web/sites', parameters('functionAppName')), '2023-12-01', 'full').identity.principalId]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', parameters('functionAppName'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', if(greater(length(variables('storageAccountName')), 24), substring(variables('storageAccountName'), 0, 24), variables('storageAccountName')))]"
+      ]
+    },
+    {
+      "condition": "[variables('isFlexConsumption')]",
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[resourceId('Microsoft.Storage/storageAccounts', if(greater(length(variables('storageAccountName')), 24), substring(variables('storageAccountName'), 0, 24), variables('storageAccountName')))]",
+      "name": "[guid(resourceId('Microsoft.Storage/storageAccounts', if(greater(length(variables('storageAccountName')), 24), substring(variables('storageAccountName'), 0, 24), variables('storageAccountName'))), variables('functionAppResourceId'), variables('storageTableDataContributorRoleId'))]",
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('storageTableDataContributorRoleId'))]",
+        "principalId": "[reference(resourceId('Microsoft.Web/sites', parameters('functionAppName')), '2023-12-01', 'full').identity.principalId]",
         "principalType": "ServicePrincipal"
       },
       "dependsOn": [
@@ -526,7 +813,7 @@
       "apiVersion": "2021-08-01",
       "name": "[format('{0}-service-outage-kql', parameters('functionAppName'))]",
       "location": "[parameters('location')]",
-      "tags": "[parameters('tags')]",
+      "tags": "[variables('effectiveTags')]",
       "properties": {
         "description": "Operational email alert for probable service outage (5xx/504 spike or low success rate).",
         "enabled": true,
@@ -562,7 +849,7 @@
       "apiVersion": "2021-08-01",
       "name": "[format('{0}-auth-config-regression-kql', parameters('functionAppName'))]",
       "location": "[parameters('location')]",
-      "tags": "[parameters('tags')]",
+      "tags": "[variables('effectiveTags')]",
       "properties": {
         "description": "Operational email alert for auth/config regressions (AUTH_CONFIG_* reason codes).",
         "enabled": true,
@@ -598,7 +885,7 @@
       "apiVersion": "2021-08-01",
       "name": "[format('{0}-likely-attack-info-kql', parameters('functionAppName'))]",
       "location": "[parameters('location')]",
-      "tags": "[parameters('tags')]",
+      "tags": "[variables('effectiveTags')]",
       "properties": {
         "description": "Info-only alert for likely attack/noise spikes (high 401/403 from many IPs).",
         "enabled": true,
@@ -635,21 +922,21 @@
       "metadata": {
         "description": "The URL of the deployed Function App."
       },
-      "value": "[format('https://{0}', reference(resourceId('Microsoft.Web/sites', parameters('functionAppName')), '2023-01-01').defaultHostName)]"
+      "value": "[format('https://{0}', variables('functionAppHostName'))]"
     },
     "sponsorApiUrl": {
       "type": "string",
       "metadata": {
         "description": "The function endpoint URL to paste into the SPFx web part property pane."
       },
-      "value": "[format('https://{0}/api/getGuestSponsors', reference(resourceId('Microsoft.Web/sites', parameters('functionAppName')), '2023-01-01').defaultHostName)]"
+      "value": "[format('https://{0}/api/getGuestSponsors', variables('functionAppHostName'))]"
     },
     "managedIdentityObjectId": {
       "type": "string",
       "metadata": {
         "description": "Object ID of the system-assigned Managed Identity — needed for setup-graph-permissions.ps1."
       },
-      "value": "[reference(resourceId('Microsoft.Web/sites', parameters('functionAppName')), '2023-01-01', 'full').identity.principalId]"
+      "value": "[if(variables('isFlexConsumption'), reference(resourceId('Microsoft.Web/sites', parameters('functionAppName')), '2023-12-01', 'full').identity.principalId, reference(resourceId('Microsoft.Web/sites', parameters('functionAppName')), '2023-01-01', 'full').identity.principalId)]"
     },
     "appInsightsName": {
       "type": "string",
@@ -657,6 +944,13 @@
         "description": "Name of the Application Insights component — open in the Azure Portal for live telemetry."
       },
       "value": "[variables('appInsightsName')]"
+    },
+    "hostingPlan": {
+      "type": "string",
+      "metadata": {
+        "description": "The selected hosting plan — included in outputs for operational visibility."
+      },
+      "value": "[parameters('hostingPlan')]"
     },
     "azureMapsAccountName": {
       "type": "string",
@@ -671,6 +965,20 @@
         "description": "Azure CLI command to fetch the Azure Maps primary key (empty when deployAzureMaps=false)."
       },
       "value": "[if(parameters('deployAzureMaps'), format('az maps account keys list -g {0} -n {1} --query primaryKey -o tsv', resourceGroup().name, variables('azureMapsName')), '')]"
+    },
+    "deploymentStorageAccountName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the Storage Account. For Flex Consumption: upload updated ZIPs to the app-package container here to trigger a redeployment (use --auth-mode login). For Consumption: the runtime uses this account for trigger state and blob/queue/table operations."
+      },
+      "value": "[if(greater(length(variables('storageAccountName')), 24), substring(variables('storageAccountName'), 0, 24), variables('storageAccountName'))]"
+    },
+    "deployedAppVersion": {
+      "type": "string",
+      "metadata": {
+        "description": "The function package version deployed. \"latest\" = newest release at provisioning time; otherwise the pinned SemVer tag without \"v\" prefix."
+      },
+      "value": "[parameters('appVersion')]"
     }
   }
 }

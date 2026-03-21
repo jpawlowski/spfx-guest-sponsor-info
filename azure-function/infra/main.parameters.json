@@ -28,6 +28,15 @@
     },
     "defaultInfoActionGroupShortName": {
       "value": "GSIInfo"
+    },
+    "hostingPlan": {
+      "value": "Consumption"
+    },
+    "appVersion": {
+      "value": "latest"
+    },
+    "maximumFlexInstances": {
+      "value": 10
     }
   }
 }
