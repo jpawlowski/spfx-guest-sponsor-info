@@ -156,26 +156,77 @@ function getRateLimitConfig(): { enabled: boolean; maxRequests: number; windowMs
   return { enabled, maxRequests, windowMs };
 }
 
+/**
+ * Memory bounds for the in-process rate-limiter map.
+ *
+ * SOFT_CAP — entry count that triggers an expired-entry sweep.
+ * HARD_CAP — absolute ceiling: when the map is still above this limit after the
+ *            expired-entry sweep, the oldest-accessed (LRU) entries are evicted
+ *            down to SOFT_CAP.  This prevents memory exhaustion under a DDoS
+ *            with many distinct source IPs / user IDs.
+ *
+ *   At ~300 bytes/entry (key + timestamp array + Map overhead),
+ *   10 000 entries ≈ 3 MB — well within the Azure Functions consumption-plan
+ *   per-instance memory budget.
+ *
+ * MIN_GC_INTERVAL_MS — rate-limits the O(n) sweep so it runs at most once per
+ *   second even during a flood, capping CPU overhead under attack.
+ * PERIODIC_GC_MS     — also sweeps every minute when the map is below SOFT_CAP,
+ *   so expired entries from quiet periods don't accumulate indefinitely.
+ */
+const RATE_LIMIT_SOFT_CAP = 5_000;
+const RATE_LIMIT_HARD_CAP = 10_000;
+const RATE_LIMIT_MIN_GC_INTERVAL_MS = 1_000;
+const RATE_LIMIT_PERIODIC_GC_MS = 60_000;
+
+let rlLastGcAt = 0;
+
+/**
+ * Two-phase GC for the rate-limiter map:
+ *   Phase 1 — remove entries whose every recorded timestamp has expired.
+ *   Phase 2 — if still above HARD_CAP, evict the oldest-accessed entries
+ *             (LRU order is maintained by delete-before-set on every access).
+ */
+function rateLimitGc(windowStart: number): void {
+  for (const [key, ts] of rateLimitMap) {
+    if (ts.every(t => t <= windowStart)) rateLimitMap.delete(key);
+  }
+  if (rateLimitMap.size > RATE_LIMIT_HARD_CAP) {
+    let toEvict = rateLimitMap.size - RATE_LIMIT_SOFT_CAP;
+    for (const key of rateLimitMap.keys()) {
+      rateLimitMap.delete(key);
+      if (--toEvict <= 0) break;
+    }
+  }
+}
+
 function checkRateLimit(userId: string, maxRequests: number, windowMs: number): { allowed: boolean; retryAfterSeconds?: number } {
   const now = Date.now();
   const windowStart = now - windowMs;
 
-  // Lazy cleanup: purge entries with no recent timestamps to bound map memory usage.
-  if (rateLimitMap.size > 500) {
-    for (const [key, ts] of rateLimitMap) {
-      if (ts.every(t => t <= windowStart)) rateLimitMap.delete(key);
-    }
+  // GC: sweep when the map is large, or periodically — but at most once per
+  // second so the O(n) pass never becomes a hot path under a DDoS flood.
+  if (
+    (rateLimitMap.size > RATE_LIMIT_SOFT_CAP || now - rlLastGcAt >= RATE_LIMIT_PERIODIC_GC_MS) &&
+    now - rlLastGcAt >= RATE_LIMIT_MIN_GC_INTERVAL_MS
+  ) {
+    rlLastGcAt = now;
+    rateLimitGc(windowStart);
   }
 
   const recent = (rateLimitMap.get(userId) ?? []).filter(t => t > windowStart);
   if (recent.length >= maxRequests) {
     const oldest = Math.min(...recent);
     const retryAfterSeconds = Math.ceil((oldest + windowMs - now) / 1000);
+    // delete-before-set keeps LRU insertion order current for the eviction pass.
+    rateLimitMap.delete(userId);
     rateLimitMap.set(userId, recent);
     return { allowed: false, retryAfterSeconds };
   }
 
   recent.push(now);
+  // delete-before-set keeps LRU insertion order current for the eviction pass.
+  rateLimitMap.delete(userId);
   rateLimitMap.set(userId, recent);
   return { allowed: true };
 }
