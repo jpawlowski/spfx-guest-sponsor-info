@@ -213,8 +213,29 @@ export async function getSponsorsViaProxy(
 ): Promise<ISponsorsResult> {
   const response = await aadHttpClient.get(proxyUrl, AadHttpClient.configurations.v1);
   if (!response.ok) {
-    const err = new Error(`Proxy returned ${response.status}`);
+    let reasonCode: string | undefined;
+    let referenceId: string | undefined;
+    let retryable: boolean | undefined;
+
+    try {
+      const payload = await response.json() as {
+        reasonCode?: string;
+        referenceId?: string;
+        retryable?: boolean;
+      };
+      reasonCode = payload.reasonCode;
+      referenceId = payload.referenceId;
+      retryable = payload.retryable;
+    } catch {
+      // Ignore body parse issues and fall back to status-only error metadata.
+    }
+
+    const correlationFromHeader = response.headers.get('x-correlation-id') ?? undefined;
+    const err = new Error(`Proxy returned ${response.status}${reasonCode ? ` (${reasonCode})` : ''}`);
     (err as { statusCode?: number }).statusCode = response.status;
+    (err as { reasonCode?: string }).reasonCode = reasonCode;
+    (err as { referenceId?: string }).referenceId = referenceId ?? correlationFromHeader;
+    (err as { retryable?: boolean }).retryable = retryable;
     throw err;
   }
   return response.json() as Promise<ISponsorsResult>;

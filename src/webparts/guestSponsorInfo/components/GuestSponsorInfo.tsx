@@ -284,16 +284,26 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
       })
       .catch((err: unknown) => {
         if (!cancelled) {
-          // Log the raw Graph error to the browser console so admins/developers
-          // can see the exact status code and error message without opening the
-          // network tab (useful when the web part is embedded in a guest session).
-          console.error('[GuestSponsorInfo] getSponsors failed:', err);
           const status = (err as { statusCode?: number }).statusCode;
+          const reasonCode = (err as { reasonCode?: string }).reasonCode;
+          const referenceId = (err as { referenceId?: string }).referenceId;
+          const retryable = (err as { retryable?: boolean }).retryable;
+          // Structured console log for first-level operations triage.
+          console.error('[GuestSponsorInfo] getSponsors failed', {
+            status,
+            reasonCode,
+            referenceId,
+            retryable,
+            error: err,
+          });
+
           const is4xx = status !== undefined && status >= 400 && status < 500;
-          if (is4xx || retryCount >= MAX_RETRIES) {
+          const shouldRetry = retryable === true || (!is4xx && retryable !== false);
+          if (!shouldRetry || retryCount >= MAX_RETRIES) {
             // Permanent error (e.g. 401, 403) or retry limit reached:
             // stop retrying and show the error message so the shimmer disappears.
-            setError(fstr('ErrorMessage'));
+            const supportRef = referenceId ? ` (Ref: ${referenceId})` : '';
+            setError(`${fstr('ErrorMessage')}${supportRef}`);
             setLoading(false);
           } else {
             // Transient error: retry with exponential backoff capped at 30 seconds.
