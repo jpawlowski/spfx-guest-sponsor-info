@@ -30,6 +30,21 @@ function getInitials(name: string): string {
   return name.substring(0, 2).toUpperCase();
 }
 
+/**
+ * Returns "givenName surname" when either part is non-empty, otherwise falls
+ * back to displayName. Mirrors how Microsoft renders names in Teams/Outlook.
+ */
+function resolvePersonName(
+  givenName: string | undefined,
+  surname: string | undefined,
+  displayName: string | undefined
+): string {
+  const first = givenName?.trim() ?? '';
+  const last = surname?.trim() ?? '';
+  if (first || last) return [first, last].filter(Boolean).join(' ');
+  return displayName?.trim() ?? '';
+}
+
 /** Maps Graph presence availability (and activity) token → display colour. */
 const PRESENCE_COLORS: Record<string, string> = {
   // Matches Fluent PersonaPresence defaults for v8 (Microsoft).
@@ -214,6 +229,9 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
 }) => {
   const cardRef = React.useRef<HTMLDivElement>(null);
 
+  const resolvedName = resolvePersonName(sponsor.givenName, sponsor.surname, sponsor.displayName);
+  const resolvedManagerName = resolvePersonName(sponsor.managerGivenName, sponsor.managerSurname, sponsor.managerDisplayName);
+
   // Pick informal string variant when the property is enabled and the locale provides one.
   const fstr = <K extends keyof typeof strings>(key: K): string => {
     if (useInformalAddress) {
@@ -224,8 +242,8 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
     return strings[key] as string;
   };
 
-  const initials = getInitials(sponsor.displayName);
-  const bgColor = getInitialsColor(sponsor.displayName);
+  const initials = getInitials(resolvedName);
+  const bgColor = getInitialsColor(resolvedName);
   const isOof = sponsor.presenceActivity === 'OutOfOffice';
   const presenceColor = isOof
     ? PRESENCE_COLORS.OutOfOffice
@@ -244,8 +262,8 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
     if (activity) return formatPresenceActivity(activity);
     return availability ? (PRESENCE_LABELS[availability] ?? '') : undefined;
   }, [sponsor.presence, sponsor.presenceActivity, isOof]);
-  const managerInitials = sponsor.managerDisplayName ? getInitials(sponsor.managerDisplayName) : '';
-  const managerBgColor = sponsor.managerDisplayName ? getInitialsColor(sponsor.managerDisplayName) : '#8A8886';
+  const managerInitials = resolvedManagerName ? getInitials(resolvedManagerName) : '';
+  const managerBgColor = resolvedManagerName ? getInitialsColor(resolvedManagerName) : '#8A8886';
   const isMobile = useIsMobile();
 
   // The rich card body is defined here so it can be placed inside either
@@ -277,7 +295,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
           )}
         </div>
         <div className={styles.richHeaderText}>
-          <div className={styles.richName}>{sponsor.displayName}</div>
+          <div className={styles.richName}>{resolvedName}</div>
           {/* Job title in header, or department as fallback when job title is hidden */}
           {showSponsorJobTitle && sponsor.jobTitle ? (
             <div className={styles.richJobTitle}>{sponsor.jobTitle}</div>
@@ -429,7 +447,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
                 </div>
                 <div className={styles.managerText}>
                   <div className={styles.managerLabel}>{strings.ManagerLabel}</div>
-                  <div className={styles.managerName}>{sponsor.managerDisplayName}</div>
+                  <div className={styles.managerName}>{resolvedManagerName}</div>
                   {/* Manager job title, or department as fallback if job title is hidden */}
                   {showManagerJobTitle && sponsor.managerJobTitle ? (
                     <div className={styles.managerJobTitle}>{sponsor.managerJobTitle}</div>
@@ -462,7 +480,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
         onClick={onActivate}
         tabIndex={0}
         role="button"
-        aria-label={sponsor.displayName}
+        aria-label={resolvedName}
         aria-haspopup="dialog"
         aria-expanded={isActive}
       >
@@ -484,7 +502,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
           )}
         </div>
         <div className={styles.cardName}>
-          {sponsor.displayName}
+          {resolvedName}
         </div>
       </div>
 
@@ -497,7 +515,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
             customWidth="100%"
             isLightDismiss
             hasCloseButton
-            headerText={sponsor.displayName}
+            headerText={resolvedName}
             onDismiss={() => onScheduleDeactivate()}
           >
             {richBody}
@@ -511,7 +529,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
             isBeakVisible={false}
             gapSpace={8}
             role="dialog"
-            aria-label={strings.ContactDetailsAriaLabel.replace('{0}', sponsor.displayName)}
+            aria-label={strings.ContactDetailsAriaLabel.replace('{0}', resolvedName)}
             setInitialFocus={false}
           >
             {richBody}

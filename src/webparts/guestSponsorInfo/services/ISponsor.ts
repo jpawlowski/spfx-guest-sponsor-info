@@ -4,6 +4,10 @@ export interface ISponsor {
   id: string;
   /** Full display name. */
   displayName: string;
+  /** Given (first) name — preferred over displayName for rendering. */
+  givenName?: string;
+  /** Family (last) name — preferred over displayName for rendering. */
+  surname?: string;
   /** Primary SMTP address. */
   mail?: string;
   /** Job title. */
@@ -33,6 +37,10 @@ export interface ISponsor {
   presenceActivity?: string;
   /** Display name of the sponsor's direct manager. */
   managerDisplayName?: string;
+  /** Given (first) name of the sponsor's direct manager. */
+  managerGivenName?: string;
+  /** Family (last) name of the sponsor's direct manager. */
+  managerSurname?: string;
   /** Job title of the sponsor's direct manager. */
   managerJobTitle?: string;
   /** Department of the sponsor's direct manager. */

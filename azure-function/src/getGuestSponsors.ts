@@ -171,6 +171,8 @@ async function withTimeout<T>(
 interface ISponsor {
   id: string;
   displayName: string;
+  givenName?: string;
+  surname?: string;
   mail?: string;
   jobTitle?: string;
   department?: string;
@@ -180,6 +182,8 @@ interface ISponsor {
   presence?: string;
   presenceActivity?: string;
   managerDisplayName?: string;
+  managerGivenName?: string;
+  managerSurname?: string;
   managerJobTitle?: string;
   /** Manager's Entra ID — used by the SPFx client to fetch the manager photo progressively. */
   managerId?: string;
@@ -396,7 +400,7 @@ export async function getGuestSponsors(
       response = await withTimeout(
         client
           .api(`/users/${callerOid}/sponsors`)
-          .select('id,displayName,mail,jobTitle,department,officeLocation,businessPhones,mobilePhone')
+          .select('id,displayName,givenName,surname,mail,jobTitle,department,officeLocation,businessPhones,mobilePhone')
           // Enforce the cap at the Graph level to avoid fetching more items than we will process.
           .top(MAX_SPONSORS)
           .get(),
@@ -430,6 +434,8 @@ export async function getGuestSponsors(
       .map(item => ({
         id: item.id as string,
         displayName: (item.displayName as string) || '',
+        givenName: (item.givenName as string) || undefined,
+        surname: (item.surname as string) || undefined,
         mail: (item.mail as string) || undefined,
         jobTitle: (item.jobTitle as string) || undefined,
         department: (item.department as string) || undefined,
@@ -449,7 +455,7 @@ export async function getGuestSponsors(
     const sponsorBatchRequests: IBatchRequest[] = candidates.map((sponsor, index) => ({
       id: `exists-${index}`,
       method: 'GET',
-      url: `/users/${sponsor.id}?$select=id,accountEnabled,assignedPlans${hasMailboxSettings ? ',mailboxSettings' : ''}&$expand=manager($select=id,displayName,jobTitle,department,accountEnabled)`,
+      url: `/users/${sponsor.id}?$select=id,accountEnabled,assignedPlans${hasMailboxSettings ? ',mailboxSettings' : ''}&$expand=manager($select=id,displayName,givenName,surname,jobTitle,department,accountEnabled)`,
     }));
 
     // When TeamMember.Read.All is granted, add a joinedTeams sub-request to the
@@ -520,6 +526,8 @@ export async function getGuestSponsors(
         : undefined;
 
       let managerDisplayName: string | undefined;
+      let managerGivenName: string | undefined;
+      let managerSurname: string | undefined;
       let managerJobTitle: string | undefined;
       let managerDepartment: string | undefined;
       let managerId: string | undefined;
@@ -528,6 +536,8 @@ export async function getGuestSponsors(
         const managerEnabled = getBooleanValue(managerBody, 'accountEnabled');
         if (managerEnabled !== false) {
           managerDisplayName = getStringValue(managerBody, 'displayName');
+          managerGivenName = getStringValue(managerBody, 'givenName');
+          managerSurname = getStringValue(managerBody, 'surname');
           managerJobTitle = getStringValue(managerBody, 'jobTitle');
           managerDepartment = getStringValue(managerBody, 'department');
           const mid = getStringValue(managerBody, 'id');
@@ -539,6 +549,8 @@ export async function getGuestSponsors(
         sponsor: {
           ...sponsor,
           managerDisplayName,
+          managerGivenName,
+          managerSurname,
           managerJobTitle,
           managerDepartment,
           managerId,
@@ -560,11 +572,15 @@ export async function getGuestSponsors(
           businessPhones: s.businessPhones,
         };
         if (s.mail !== undefined)                out.mail = s.mail;
+        if (s.givenName !== undefined)           out.givenName = s.givenName;
+        if (s.surname !== undefined)             out.surname = s.surname;
         if (s.jobTitle !== undefined)            out.jobTitle = s.jobTitle;
         if (s.department !== undefined)          out.department = s.department;
         if (s.officeLocation !== undefined)      out.officeLocation = s.officeLocation;
         if (s.mobilePhone !== undefined)         out.mobilePhone = s.mobilePhone;
         if (s.managerDisplayName !== undefined)  out.managerDisplayName = s.managerDisplayName;
+        if (s.managerGivenName !== undefined)    out.managerGivenName = s.managerGivenName;
+        if (s.managerSurname !== undefined)      out.managerSurname = s.managerSurname;
         if (s.managerJobTitle !== undefined)     out.managerJobTitle = s.managerJobTitle;
         if (s.managerDepartment !== undefined)   out.managerDepartment = s.managerDepartment;
         if (s.managerId !== undefined)           out.managerId = s.managerId;

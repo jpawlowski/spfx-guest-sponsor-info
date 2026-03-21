@@ -136,17 +136,19 @@ export async function fetchPresences(
 async function fetchManager(
   client: MSGraphClientV3,
   userId: string
-): Promise<{ managerDisplayName?: string; managerJobTitle?: string; managerDepartment?: string; managerId?: string }> {
+): Promise<{ managerDisplayName?: string; managerGivenName?: string; managerSurname?: string; managerJobTitle?: string; managerDepartment?: string; managerId?: string }> {
   try {
     const manager = await client
       .api(`/users/${userId}/manager`)
-      .select('id,displayName,jobTitle,department')
+      .select('id,displayName,givenName,surname,jobTitle,department')
       .get() as Record<string, unknown>;
     const managerId = manager.id as string | undefined;
     const managerDisplayName = (manager.displayName as string) || undefined;
+    const managerGivenName = (manager.givenName as string) || undefined;
+    const managerSurname = (manager.surname as string) || undefined;
     const managerJobTitle = (manager.jobTitle as string) || undefined;
     const managerDepartment = (manager.department as string) || undefined;
-    return { managerDisplayName, managerJobTitle, managerDepartment, managerId };
+    return { managerDisplayName, managerGivenName, managerSurname, managerJobTitle, managerDepartment, managerId };
   } catch {
     // No manager set (404) or permission error — non-critical.
     return {};
@@ -156,7 +158,7 @@ async function fetchManager(
 export async function getSponsors(client: MSGraphClientV3): Promise<ISponsorsResult> {
   const response = await client
     .api('/me/sponsors')
-    .select('id,displayName,mail,jobTitle,department,officeLocation,businessPhones,mobilePhone')
+    .select('id,displayName,givenName,surname,mail,jobTitle,department,officeLocation,businessPhones,mobilePhone')
     .get();
 
   if (!response?.value) return { activeSponsors: [], unavailableCount: 0 };
@@ -165,6 +167,8 @@ export async function getSponsors(client: MSGraphClientV3): Promise<ISponsorsRes
   const candidates: ISponsor[] = items.map(item => ({
     id: item.id as string,
     displayName: (item.displayName as string) || '',
+    givenName: (item.givenName as string) || undefined,
+    surname: (item.surname as string) || undefined,
     mail: (item.mail as string) || undefined,
     jobTitle: (item.jobTitle as string) || undefined,
     department: (item.department as string) || undefined,
