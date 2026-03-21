@@ -68,6 +68,11 @@ define([], function() {
     "FunctionClientIdFieldLabel": "\u30b9\u30dd\u30f3\u30b5\u30fc API \u30af\u30e9\u30a4\u30a2\u30f3\u30c8 ID (Azure \u95a2\u6570\u30a2\u30d7\u30ea\u767b\u9332)",
     "ProxyStatusChecking": "Azure Function \u3092\u78ba\u8a8d\u4e2d\u2026",
     "ProxyStatusOk": "Azure Function \u306b\u63a5\u7d9a\u3067\u304d\u307e\u3059",
-    "ProxyStatusError": "Azure Function \u306b\u63a5\u7d9a\u3067\u304d\u307e\u305b\u3093"
+    "ProxyStatusError": "Azure Function \u306b\u63a5\u7d9a\u3067\u304d\u307e\u305b\u3093",
+    "ShowSponsorJobTitleFieldLabel": "\u30b9\u30dd\u30f3\u30b5\u30fc\u306e\u5f79\u8077\u3092\u8868\u793a",
+    "ShowManagerJobTitleFieldLabel": "\u30de\u30cd\u30fc\u30b8\u30e3\u30fc\u306e\u5f79\u8077\u3092\u8868\u793a",
+    "ShowSponsorDepartmentFieldLabel": "\u30b9\u30dd\u30f3\u30b5\u30fc\u306e\u90e8\u7f72\u3092\u8868\u793a",
+    "ShowManagerDepartmentFieldLabel": "\u30de\u30cd\u30fc\u30b8\u30e3\u30fc\u306e\u90e8\u7f72\u3092\u8868\u793a",
+    "DepartmentLabel": "\u90e8\u7f72"
   }
 });

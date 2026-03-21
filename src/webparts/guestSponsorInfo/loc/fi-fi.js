@@ -68,6 +68,11 @@ define([], function() {
     "FunctionClientIdFieldLabel": "Sponsori-API-asiakas-ID (Azure-funktiosovelluksen rekister\u00f6inti)",
     "ProxyStatusChecking": "Tarkistetaan Azure-funktiota\u2026",
     "ProxyStatusOk": "Azure-funktio tavoitettavissa",
-    "ProxyStatusError": "Azure-funktiota ei l\u00f6ydy"
+    "ProxyStatusError": "Azure-funktiota ei l\u00f6ydy",
+    "ShowSponsorJobTitleFieldLabel": "N\u00e4yt\u00e4 sponsorin teht\u00e4v\u00e4nimike",
+    "ShowManagerJobTitleFieldLabel": "N\u00e4yt\u00e4 esihenkil\u00f6n teht\u00e4v\u00e4nimike",
+    "ShowSponsorDepartmentFieldLabel": "N\u00e4yt\u00e4 sponsorin osasto",
+    "ShowManagerDepartmentFieldLabel": "N\u00e4yt\u00e4 esihenkil\u00f6n osasto",
+    "DepartmentLabel": "Osasto"
   }
 });

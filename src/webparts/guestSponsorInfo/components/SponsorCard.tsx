@@ -177,6 +177,14 @@ interface ISponsorCardProps {
   showWorkLocation: boolean;
   /** Show the manager section below the contact details. */
   showManager: boolean;
+  /** Show the sponsor's job title in the rich card header. */
+  showSponsorJobTitle: boolean;
+  /** Show the manager's job title in the manager row. */
+  showManagerJobTitle: boolean;
+  /** Show the sponsor's department in the Organization section. */
+  showSponsorDepartment: boolean;
+  /** Show the manager's department in the manager row. */
+  showManagerDepartment: boolean;
   /** Use informal address for user-facing tooltips. */
   useInformalAddress: boolean;
   /**
@@ -197,6 +205,10 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
   showMobilePhone,
   showWorkLocation,
   showManager,
+  showSponsorJobTitle,
+  showManagerJobTitle,
+  showSponsorDepartment,
+  showManagerDepartment,
   useInformalAddress,
   guestHasTeamsAccess,
 }) => {
@@ -266,12 +278,12 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
         </div>
         <div className={styles.richHeaderText}>
           <div className={styles.richName}>{sponsor.displayName}</div>
-          {sponsor.jobTitle && (
+          {/* Job title in header, or department as fallback when job title is hidden */}
+          {showSponsorJobTitle && sponsor.jobTitle ? (
             <div className={styles.richJobTitle}>{sponsor.jobTitle}</div>
-          )}
-          {sponsor.department && (
-            <div className={styles.richDept}>{sponsor.department}</div>
-          )}
+          ) : !showSponsorJobTitle && showSponsorDepartment && sponsor.department ? (
+            <div className={styles.richJobTitle}>{sponsor.department}</div>
+          ) : null}
           {presenceLabel && sponsor.hasTeams !== false && (
             <div className={styles.richPresenceLabel} style={{ color: presenceColor }}>
               {presenceLabel}
@@ -386,31 +398,51 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
         )}
       </div>
 
-      {/* ── Organization section (manager) ───────────────────── */}
-      {showManager && sponsor.managerDisplayName && (
+      {/* ── Organization section (department + manager) ─────────────── */}
+      {((showManager && sponsor.managerDisplayName) || (showSponsorDepartment && sponsor.department)) && (
         <>
           <div className={styles.richSectionTitle}>{strings.OrganizationSection}</div>
           <div className={styles.richSection}>
-            <div className={styles.managerRow}>
-              <div className={styles.managerAvatar}>
-                <div
-                  className={styles.initials}
-                  style={{ backgroundColor: managerBgColor, fontSize: '14px' }}
-                >
-                  {managerInitials}
+            {/* Sponsor department row */}
+            {showSponsorDepartment && sponsor.department && (
+              <div className={styles.richInfoRow}>
+                <Icon iconName="Org" className={styles.richInfoIcon} aria-hidden="true" />
+                <div className={styles.richInfoText}>
+                  <div className={styles.richInfoMeta}>{strings.DepartmentLabel}</div>
+                  <div className={styles.departmentValue}>{sponsor.department}</div>
                 </div>
-                {sponsor.managerPhotoUrl && (
-                  <img src={sponsor.managerPhotoUrl} alt="" className={styles.photo} />
-                )}
               </div>
-              <div className={styles.managerText}>
-                <div className={styles.managerLabel}>{strings.ManagerLabel}</div>
-                <div className={styles.managerName}>{sponsor.managerDisplayName}</div>
-                {sponsor.managerJobTitle && (
-                  <div className={styles.managerJobTitle}>{sponsor.managerJobTitle}</div>
-                )}
+            )}
+            {/* Manager row */}
+            {showManager && sponsor.managerDisplayName && (
+              <div className={styles.managerRow}>
+                <div className={styles.managerAvatar}>
+                  <div
+                    className={styles.initials}
+                    style={{ backgroundColor: managerBgColor, fontSize: '14px' }}
+                  >
+                    {managerInitials}
+                  </div>
+                  {sponsor.managerPhotoUrl && (
+                    <img src={sponsor.managerPhotoUrl} alt="" className={styles.photo} />
+                  )}
+                </div>
+                <div className={styles.managerText}>
+                  <div className={styles.managerLabel}>{strings.ManagerLabel}</div>
+                  <div className={styles.managerName}>{sponsor.managerDisplayName}</div>
+                  {/* Manager job title, or department as fallback if job title is hidden */}
+                  {showManagerJobTitle && sponsor.managerJobTitle ? (
+                    <div className={styles.managerJobTitle}>{sponsor.managerJobTitle}</div>
+                  ) : !showManagerJobTitle && showManagerDepartment && sponsor.managerDepartment ? (
+                    <div className={styles.managerJobTitle}>{sponsor.managerDepartment}</div>
+                  ) : null}
+                  {/* Manager department below job title (only when both are shown) */}
+                  {showManagerJobTitle && showManagerDepartment && sponsor.managerDepartment && (
+                    <div className={styles.managerDept}>{sponsor.managerDepartment}</div>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </>
       )}
@@ -451,12 +483,9 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
             />
           )}
         </div>
-        <div className={sponsor.jobTitle ? `${styles.cardName} ${styles.cardNameWithJobTitle}` : styles.cardName}>
+        <div className={styles.cardName}>
           {sponsor.displayName}
         </div>
-        {sponsor.jobTitle && (
-          <div className={styles.cardJobTitle}>{sponsor.jobTitle}</div>
-        )}
       </div>
 
       {/* ── Rich contact card (Panel on mobile, Callout on desktop) ─── */}

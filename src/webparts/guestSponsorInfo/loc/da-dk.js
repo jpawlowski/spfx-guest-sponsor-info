@@ -68,6 +68,11 @@ define([], function() {
     "FunctionClientIdFieldLabel": "Sponsor-API-klient-ID (Azure Function-appregistrering)",
     "ProxyStatusChecking": "Tjekker Azure-funktion\u2026",
     "ProxyStatusOk": "Azure-funktion er tilg\u00e6ngelig",
-    "ProxyStatusError": "Azure-funktion er ikke tilg\u00e6ngelig"
+    "ProxyStatusError": "Azure-funktion er ikke tilg\u00e6ngelig",
+    "ShowSponsorJobTitleFieldLabel": "Vis sponsors jobtitel",
+    "ShowManagerJobTitleFieldLabel": "Vis lederens jobtitel",
+    "ShowSponsorDepartmentFieldLabel": "Vis sponsors afdeling",
+    "ShowManagerDepartmentFieldLabel": "Vis lederens afdeling",
+    "DepartmentLabel": "Afdeling"
   }
 });

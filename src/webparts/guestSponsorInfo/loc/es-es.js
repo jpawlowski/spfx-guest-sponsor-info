@@ -76,6 +76,11 @@ define([], function() {
     "FunctionClientIdFieldLabel": "ID de cliente de la API de patrocinadores (registro de aplicaci\u00f3n de Azure Function)",
     "ProxyStatusChecking": "Comprobando Azure Function\u2026",
     "ProxyStatusOk": "Azure Function accesible",
-    "ProxyStatusError": "Azure Function no accesible"
+    "ProxyStatusError": "Azure Function no accesible",
+    "ShowSponsorJobTitleFieldLabel": "Mostrar cargo del patrocinador",
+    "ShowManagerJobTitleFieldLabel": "Mostrar cargo del responsable",
+    "ShowSponsorDepartmentFieldLabel": "Mostrar departamento del patrocinador",
+    "ShowManagerDepartmentFieldLabel": "Mostrar departamento del responsable",
+    "DepartmentLabel": "Departamento"
   }
 });

@@ -22,13 +22,17 @@ interface ISponsorListProps {
   showMobilePhone: boolean;
   showWorkLocation: boolean;
   showManager: boolean;
+  showSponsorJobTitle: boolean;
+  showManagerJobTitle: boolean;
+  showSponsorDepartment: boolean;
+  showManagerDepartment: boolean;
   useInformalAddress: boolean;
   onActiveCardChange?: (hasActiveCard: boolean) => void;
   /** Propagated from ISponsorsResult — false shows disabled buttons in each card. */
   guestHasTeamsAccess?: boolean;
 }
 
-const SponsorList: React.FC<ISponsorListProps> = ({ sponsors, hostTenantId, showBusinessPhones, showMobilePhone, showWorkLocation, showManager, useInformalAddress, onActiveCardChange, guestHasTeamsAccess }) => {
+const SponsorList: React.FC<ISponsorListProps> = ({ sponsors, hostTenantId, showBusinessPhones, showMobilePhone, showWorkLocation, showManager, showSponsorJobTitle, showManagerJobTitle, showSponsorDepartment, showManagerDepartment, useInformalAddress, onActiveCardChange, guestHasTeamsAccess }) => {
   const [activeId, setActiveId] = React.useState<string | null>(null);
   const hideTimeout = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -65,6 +69,10 @@ const SponsorList: React.FC<ISponsorListProps> = ({ sponsors, hostTenantId, show
             showMobilePhone={showMobilePhone}
             showWorkLocation={showWorkLocation}
             showManager={showManager}
+            showSponsorJobTitle={showSponsorJobTitle}
+            showManagerJobTitle={showManagerJobTitle}
+            showSponsorDepartment={showSponsorDepartment}
+            showManagerDepartment={showManagerDepartment}
             useInformalAddress={useInformalAddress}
             guestHasTeamsAccess={guestHasTeamsAccess}
           />
@@ -74,9 +82,9 @@ const SponsorList: React.FC<ISponsorListProps> = ({ sponsors, hostTenantId, show
   );
 };
 
-// Skeleton shimmer for a single sponsor card (136 × 138 px — matches .card exactly).
-// Pixel values: card width 136px, avatar 72px centered, name 90px, job title 68px.
-// Defined once outside the component so it is not recreated on every render.
+// Skeleton shimmer for a single sponsor card — shows avatar + 2-line name placeholder.
+// Job title is never shown in the grid thumbnail, so only the name area is shimmed.
+// Pixel values: card width 136px, avatar 72px centered, name lines ~96px and ~70px.
 const sponsorCardShimmer = (
   <ShimmerElementsGroup
     flexWrap
@@ -90,16 +98,14 @@ const sponsorCardShimmer = (
       { type: ShimmerElementType.gap,    width: 32, height: 72 },
       // gap between avatar and name
       { type: ShimmerElementType.gap, width: '100%', height: 8 },
-      // name line: 1 line (18px) — matches the single-line truncation used when a job title is present
-      { type: ShimmerElementType.gap,  width: 23, height: 18 },
-      { type: ShimmerElementType.line, width: 90, height: 18 },
-      { type: ShimmerElementType.gap,  width: 23, height: 18 },
-      // gap between name and job title
-      { type: ShimmerElementType.gap, width: '100%', height: 8 },
-      // job title line (~68px centered): (136-68)/2 = 34px each side; height = 12px font × 1.3 line-height ≈ 16px
-      { type: ShimmerElementType.gap,  width: 34, height: 16 },
-      { type: ShimmerElementType.line, width: 68, height: 16 },
-      { type: ShimmerElementType.gap,  width: 34, height: 16 },
+      // name line 1 (~96px): (136-96)/2 = 20px each side
+      { type: ShimmerElementType.gap,  width: 20, height: 18 },
+      { type: ShimmerElementType.line, width: 96, height: 18 },
+      { type: ShimmerElementType.gap,  width: 20, height: 18 },
+      // name line 2 (~70px): (136-70)/2 = 33px each side
+      { type: ShimmerElementType.gap,  width: 33, height: 18 },
+      { type: ShimmerElementType.line, width: 70, height: 18 },
+      { type: ShimmerElementType.gap,  width: 33, height: 18 },
       // bottom padding 12px
       { type: ShimmerElementType.gap, width: '100%', height: 12 },
     ]}
@@ -139,6 +145,10 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
   showMobilePhone,
   showWorkLocation,
   showManager,
+  showSponsorJobTitle,
+  showManagerJobTitle,
+  showSponsorDepartment,
+  showManagerDepartment,
   useInformalAddress,
 }) => {
   // Helper: pick the informal string variant when useInformalAddress is enabled and
@@ -390,6 +400,10 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
           showMobilePhone={showMobilePhone}
           showWorkLocation={showWorkLocation}
           showManager={showManager}
+          showSponsorJobTitle={showSponsorJobTitle}
+          showManagerJobTitle={showManagerJobTitle}
+          showSponsorDepartment={showSponsorDepartment}
+          showManagerDepartment={showManagerDepartment}
           useInformalAddress={useInformalAddress}
           onActiveCardChange={setHasActiveCard}
           guestHasTeamsAccess={guestHasTeamsAccess}

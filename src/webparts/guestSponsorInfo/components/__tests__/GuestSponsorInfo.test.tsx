@@ -77,6 +77,10 @@ function renderWebPart(overrides: Partial<IGuestSponsorInfoProps> = {}): void {
     showWorkLocation: true,
     showManager: true,
     useInformalAddress: false,
+    showSponsorJobTitle: true,
+    showManagerJobTitle: true,
+    showSponsorDepartment: false,
+    showManagerDepartment: false,
   };
   ReactDOM.render(<GuestSponsorInfo {...defaults} {...overrides} />, container);
 }

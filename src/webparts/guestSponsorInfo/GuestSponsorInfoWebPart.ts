@@ -27,6 +27,14 @@ export interface IGuestSponsorInfoWebPartProps {
   showWorkLocation: boolean;
   /** Show the manager section in the contact card. Default: true. */
   showManager: boolean;
+  /** Show the sponsor's job title. Default: true. */
+  showSponsorJobTitle: boolean;
+  /** Show the manager's job title. Default: true. */
+  showManagerJobTitle: boolean;
+  /** Show the sponsor's department. Default: false. */
+  showSponsorDepartment: boolean;
+  /** Show the manager's department. Default: false. */
+  showManagerDepartment: boolean;
   /** Use informal address ("du"/"tu") instead of formal ("Sie"/"vous"). Default: false. */
   useInformalAddress: boolean;
 }
@@ -54,6 +62,10 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
         showMobilePhone: this.properties.showMobilePhone ?? true,
         showWorkLocation: this.properties.showWorkLocation ?? true,
         showManager: this.properties.showManager ?? true,
+        showSponsorJobTitle: this.properties.showSponsorJobTitle ?? true,
+        showManagerJobTitle: this.properties.showManagerJobTitle ?? true,
+        showSponsorDepartment: this.properties.showSponsorDepartment ?? false,
+        showManagerDepartment: this.properties.showManagerDepartment ?? false,
         useInformalAddress: this.properties.useInformalAddress ?? false,
       }
     );
@@ -148,6 +160,20 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
                 PropertyPaneCheckbox('showManager', {
                   text: strings.ShowManagerFieldLabel,
                   checked: this.properties.showManager ?? true,
+                }),
+                PropertyPaneCheckbox('showSponsorJobTitle', {
+                  text: strings.ShowSponsorJobTitleFieldLabel,
+                  checked: this.properties.showSponsorJobTitle ?? true,
+                }),
+                PropertyPaneCheckbox('showManagerJobTitle', {
+                  text: strings.ShowManagerJobTitleFieldLabel,
+                  checked: this.properties.showManagerJobTitle ?? true,
+                }),
+                PropertyPaneCheckbox('showSponsorDepartment', {
+                  text: strings.ShowSponsorDepartmentFieldLabel,
+                }),
+                PropertyPaneCheckbox('showManagerDepartment', {
+                  text: strings.ShowManagerDepartmentFieldLabel,
                 }),
                 PropertyPaneCheckbox('useInformalAddress', {
                   text: strings.UseInformalAddressFieldLabel,

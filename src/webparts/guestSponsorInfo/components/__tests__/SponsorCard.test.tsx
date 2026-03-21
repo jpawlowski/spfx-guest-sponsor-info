@@ -66,7 +66,11 @@ function render(
   showMobilePhone = true,
   showWorkLocation = true,
   showManager = true,
-  useInformalAddress = false
+  useInformalAddress = false,
+  showSponsorJobTitle = true,
+  showManagerJobTitle = true,
+  showSponsorDepartment = false,
+  showManagerDepartment = false
 ): void {
   act(() => {
     ReactDOM.render(
@@ -81,6 +85,10 @@ function render(
         showWorkLocation={showWorkLocation}
         showManager={showManager}
         useInformalAddress={useInformalAddress}
+        showSponsorJobTitle={showSponsorJobTitle}
+        showManagerJobTitle={showManagerJobTitle}
+        showSponsorDepartment={showSponsorDepartment}
+        showManagerDepartment={showManagerDepartment}
       />,
       container
     );
@@ -110,8 +118,8 @@ describe('SponsorCard', () => {
       expect(container.textContent).toContain('Alice Smith');
     });
 
-    it('renders the job title', () => {
-      render(BASE_SPONSOR);
+    it('renders the job title in the expanded rich card', () => {
+      render(BASE_SPONSOR, 'test-tenant-id', true);
       expect(container.textContent).toContain('Project Manager');
     });
 

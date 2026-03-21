@@ -449,7 +449,7 @@ export async function getGuestSponsors(
     const sponsorBatchRequests: IBatchRequest[] = candidates.map((sponsor, index) => ({
       id: `exists-${index}`,
       method: 'GET',
-      url: `/users/${sponsor.id}?$select=id,accountEnabled,assignedPlans${hasMailboxSettings ? ',mailboxSettings' : ''}&$expand=manager($select=id,displayName,jobTitle,accountEnabled)`,
+      url: `/users/${sponsor.id}?$select=id,accountEnabled,assignedPlans${hasMailboxSettings ? ',mailboxSettings' : ''}&$expand=manager($select=id,displayName,jobTitle,department,accountEnabled)`,
     }));
 
     // When TeamMember.Read.All is granted, add a joinedTeams sub-request to the
@@ -521,6 +521,7 @@ export async function getGuestSponsors(
 
       let managerDisplayName: string | undefined;
       let managerJobTitle: string | undefined;
+      let managerDepartment: string | undefined;
       let managerId: string | undefined;
 
       if (managerBody !== undefined) {
@@ -528,6 +529,7 @@ export async function getGuestSponsors(
         if (managerEnabled !== false) {
           managerDisplayName = getStringValue(managerBody, 'displayName');
           managerJobTitle = getStringValue(managerBody, 'jobTitle');
+          managerDepartment = getStringValue(managerBody, 'department');
           const mid = getStringValue(managerBody, 'id');
           if (mid && isValidGuid(mid)) managerId = mid;
         }
@@ -538,6 +540,7 @@ export async function getGuestSponsors(
           ...sponsor,
           managerDisplayName,
           managerJobTitle,
+          managerDepartment,
           managerId,
           hasTeams,
         },
@@ -563,6 +566,7 @@ export async function getGuestSponsors(
         if (s.mobilePhone !== undefined)         out.mobilePhone = s.mobilePhone;
         if (s.managerDisplayName !== undefined)  out.managerDisplayName = s.managerDisplayName;
         if (s.managerJobTitle !== undefined)     out.managerJobTitle = s.managerJobTitle;
+        if (s.managerDepartment !== undefined)   out.managerDepartment = s.managerDepartment;
         if (s.managerId !== undefined)           out.managerId = s.managerId;
         out.hasTeams = s.hasTeams;  // always a boolean from the proxy; undefined only in direct path
         const presence = presenceMap.get(s.id);

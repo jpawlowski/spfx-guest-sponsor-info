@@ -19,6 +19,13 @@ declare interface IGuestSponsorInfoWebPartStrings {
   ShowManagerFieldLabel: string;
   UseInformalAddressFieldLabel: string;
 
+  // Job title and department toggles
+  ShowSponsorJobTitleFieldLabel: string;
+  ShowManagerJobTitleFieldLabel: string;
+  ShowSponsorDepartmentFieldLabel: string;
+  ShowManagerDepartmentFieldLabel: string;
+  DepartmentLabel: string;
+
   // Azure Function proxy
   FunctionGroupName: string;
   FunctionUrlFieldLabel: string;

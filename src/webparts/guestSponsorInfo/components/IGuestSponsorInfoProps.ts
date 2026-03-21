@@ -41,6 +41,14 @@ export interface IGuestSponsorInfoProps {
   showWorkLocation: boolean;
   /** Show the manager section in the contact card. */
   showManager: boolean;
+  /** Show the sponsor's job title in the contact card. Default: true. */
+  showSponsorJobTitle: boolean;
+  /** Show the manager's job title in the contact card. Default: true. */
+  showManagerJobTitle: boolean;
+  /** Show the sponsor's department in the Organization section. Default: false. */
+  showSponsorDepartment: boolean;
+  /** Show the manager's department below the manager's job title. Default: false. */
+  showManagerDepartment: boolean;
   /** Use informal address ("du"/"tu") instead of formal ("Sie"/"vous"). Default: false. */
   useInformalAddress: boolean;
 }

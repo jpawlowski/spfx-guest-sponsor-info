@@ -35,6 +35,8 @@ export interface ISponsor {
   managerDisplayName?: string;
   /** Job title of the sponsor's direct manager. */
   managerJobTitle?: string;
+  /** Department of the sponsor's direct manager. */
+  managerDepartment?: string;
   /** Data URL (base64-encoded JPEG) of the manager's profile photo. */
   managerPhotoUrl?: string;
   /**

@@ -136,16 +136,17 @@ export async function fetchPresences(
 async function fetchManager(
   client: MSGraphClientV3,
   userId: string
-): Promise<{ managerDisplayName?: string; managerJobTitle?: string; managerId?: string }> {
+): Promise<{ managerDisplayName?: string; managerJobTitle?: string; managerDepartment?: string; managerId?: string }> {
   try {
     const manager = await client
       .api(`/users/${userId}/manager`)
-      .select('id,displayName,jobTitle')
+      .select('id,displayName,jobTitle,department')
       .get() as Record<string, unknown>;
     const managerId = manager.id as string | undefined;
     const managerDisplayName = (manager.displayName as string) || undefined;
     const managerJobTitle = (manager.jobTitle as string) || undefined;
-    return { managerDisplayName, managerJobTitle, managerId };
+    const managerDepartment = (manager.department as string) || undefined;
+    return { managerDisplayName, managerJobTitle, managerDepartment, managerId };
   } catch {
     // No manager set (404) or permission error — non-critical.
     return {};

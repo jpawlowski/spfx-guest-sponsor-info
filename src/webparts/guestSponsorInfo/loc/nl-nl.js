@@ -74,6 +74,11 @@ define([], function() {
     "FunctionClientIdFieldLabel": "Sponsor API-client-ID (Azure-functie-app-registratie)",
     "ProxyStatusChecking": "Azure Function controleren\u2026",
     "ProxyStatusOk": "Azure Function bereikbaar",
-    "ProxyStatusError": "Azure Function niet bereikbaar"
+    "ProxyStatusError": "Azure Function niet bereikbaar",
+    "ShowSponsorJobTitleFieldLabel": "Functietitel van sponsor tonen",
+    "ShowManagerJobTitleFieldLabel": "Functietitel van manager tonen",
+    "ShowSponsorDepartmentFieldLabel": "Afdeling van sponsor tonen",
+    "ShowManagerDepartmentFieldLabel": "Afdeling van manager tonen",
+    "DepartmentLabel": "Afdeling"
   }
 });

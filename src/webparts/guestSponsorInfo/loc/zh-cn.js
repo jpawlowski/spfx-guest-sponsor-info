@@ -68,6 +68,11 @@ define([], function() {
     "FunctionClientIdFieldLabel": "\u53d1\u8d77\u4eba API \u5ba2\u6237\u7aef ID\uff08Azure \u51fd\u6570\u5e94\u7528\u6ce8\u518c\uff09",
     "ProxyStatusChecking": "\u6b63\u5728\u68c0\u67e5 Azure Function\u2026",
     "ProxyStatusOk": "Azure Function \u53ef\u8bbf\u95ee",
-    "ProxyStatusError": "Azure Function \u65e0\u6cd5\u8bbf\u95ee"
+    "ProxyStatusError": "Azure Function \u65e0\u6cd5\u8bbf\u95ee",
+    "ShowSponsorJobTitleFieldLabel": "\u663e\u793a\u62c5\u4fdd\u4eba\u7684\u804c\u4f4d",
+    "ShowManagerJobTitleFieldLabel": "\u663e\u793a\u7ecf\u7406\u7684\u804c\u4f4d",
+    "ShowSponsorDepartmentFieldLabel": "\u663e\u793a\u62c5\u4fdd\u4eba\u7684\u90e8\u95e8",
+    "ShowManagerDepartmentFieldLabel": "\u663e\u793a\u7ecf\u7406\u7684\u90e8\u95e8",
+    "DepartmentLabel": "\u90e8\u95e8"
   }
 });
