@@ -124,11 +124,22 @@ is not self-scoped — GDPR concern). The function sidesteps all of this.
 
 ### Security
 
-- Caller OID comes from the EasyAuth-validated token — callers cannot query other users.
-- CORS restricted to the tenant's SharePoint origin.
-- No secrets stored; Managed Identity for Graph and storage access (RBAC, no keys).
-- Caller OID redacted in function logs.
-- Rate limit: 20 req / 60 s per user (in-memory sliding window, per instance).
+- **User identification:** Caller OID comes from the EasyAuth-validated token — callers cannot
+  query other users. The function never accepts a user ID from the request body or query string.
+- **Client authorization:** In production ( `NODE_ENV === 'production'`), the function validates
+  EasyAuth principal claims (not raw Authorization headers):
+  1. `tid` (tenant ID) — must match our tenant (`TENANT_ID` env var)
+  2. `aud` (audience) — must match our API (`ALLOWED_AUDIENCE` env var)
+  This is defense-in-depth on top of EasyAuth issuer/audience validation.
+- **CORS** restricted to the tenant's SharePoint origin.
+- **No secrets stored;** Managed Identity for Graph and storage access (RBAC, no keys).
+- **Caller OID redacted** in function logs; client validation failures include structured reason
+  codes and diagnostics without exposing full GUIDs.
+- **Rate limit:** Two tiers — anonymous callers (no OID, e.g. dev without EasyAuth) are always
+  rate-limited at 10 req / 60 s per IP. In production EasyAuth blocks anonymous callers at the
+  infra level before function code runs. Authenticated callers are not rate-limited by default;
+  set `RATE_LIMIT_ENABLED=true` (with optional `RATE_LIMIT_MAX_REQUESTS` / `RATE_LIMIT_WINDOW_MS`)
+  to activate per-user limiting as an incident-response measure.
 
 ### Data Filtering
 
@@ -159,14 +170,108 @@ Timeout app settings: `SPONSOR_LOOKUP_TIMEOUT_MS`, `BATCH_TIMEOUT_MS`,
 
 Manual fallback: `infra/setup-app-registration.ps1` + `infra/setup-graph-permissions.ps1`.
 
+### Debugging Client Authorization Failures
+
+When a client authorization failure occurs (HTTP 403), the function logs a structured warning
+containing diagnostic details without exposing sensitive GUIDs. The logs include:
+
+- `reasonCode` — stable machine-readable code for dashboards/alerts
+- Reason — human-readable rejection detail
+- `tid` when available
+- `callerOid` (redacted) — first 8 + last 4 chars of the user OID
+
+Function error responses also include a safe troubleshooting contract for the web part:
+
+- `reasonCode` — machine-readable classification
+- `retryable` — hint whether client retry is reasonable
+- `referenceId` — correlation ID (`x-correlation-id` header) for support tickets
+
+The web part logs these fields in browser console and appends `referenceId` to the user-facing
+error text so operations can jump directly into backend logs without exposing sensitive internals.
+
+In Application Insights, search for `"client-validation-failed"` in the custom dimensions to
+find all authorization rejections.
+
+**Common reasons:**
+
+- `AUTH_PRINCIPAL_MISSING` — EasyAuth principal header missing/invalid
+- `AUTH_CLAIM_MISSING_TID` — principal does not contain tenant claim
+- `AUTH_TENANT_MISMATCH` — token was issued for another tenant
+- `AUTH_CLAIM_MISSING_AUD` — principal does not contain audience claim
+- `AUTH_AUDIENCE_MISMATCH` — token audience does not match `ALLOWED_AUDIENCE`
+- `AUTH_CONFIG_TENANT_MISSING` / `AUTH_CONFIG_AUDIENCE_MISSING` — server misconfiguration
+
+**Operational alerting:** Bicep deploys three optional Azure Monitor Scheduled Query alerts
+(`Microsoft.Insights/scheduledQueryRules`):
+
+- Service outage operational email alert (`enableServiceOutageAlert`)
+- Auth/config regression operational email alert (`enableAuthConfigRegressionAlert`)
+- Likely attack/noise info alert (`enableLikelyAttackInfoAlert`)
+
+Action-group wiring is parameterized via `operationalActionGroupResourceIds` and
+`infoActionGroupResourceIds`.
+
+For small deployments, Bicep can auto-create default action groups when
+`defaultAlertNotificationEmail` is provided. In that case:
+
+- `${functionAppName}-ops-ag` is added to operational email alerts
+- `${functionAppName}-info-ag` is added to info alerts
+
+Short names are configurable via `defaultOperationalActionGroupShortName` and
+`defaultInfoActionGroupShortName`.
+
+### Low-Cost KQL Alert Strategy (No WAF / Front Door)
+
+To reduce false positives, we intentionally do not page on generic 4xx spikes alone.
+Instead, we split alerting by actionability:
+
+1. **Service outage (operational email)**
+2. **Configuration/auth regression (operational email)**
+3. **Likely attack/noise spike (info channel only)**
+
+The implemented Bicep rules follow these design goals:
+
+- **Service outage (operational email):** alerts on clear availability degradation (5xx/504 spike
+  and/or significant success-rate drop).
+- **Config/auth regression (operational email):** alerts when `AUTH_CONFIG_*` reason codes appear,
+  because this indicates deployment/config drift that is immediately actionable.
+- **Likely attack/noise (info):** alerts on strong 401/403 denial patterns from many
+  sources, but routes to a non-paging channel.
+
+Concrete KQL and thresholds are maintained in infrastructure code (`main.bicep`), not in
+this architecture decision document.
+
+This pattern avoids waking admins for events they cannot immediately mitigate without
+edge protection, while still surfacing real service breakages.
+
+**To bypass client validation in development,** set `NODE_ENV` to a value other than `production`
+(e.g., `development`). In that mode, client authorization is skipped entirely, but user
+identification via EasyAuth headers is still enforced.
+
 ### Local Development
 
 ```bash
 cd azure-function
-cp local.settings.json.example local.settings.json  # fill in TENANT_ID etc.
+cp local.settings.json.example local.settings.json  # fill in TENANT_ID, ALLOWED_AUDIENCE etc.
 npm install && npm start
 # Pass guest OID via X-Dev-User-OID header (only accepted when NODE_ENV !== 'production').
+# For bypass (dev mode), ensure NODE_ENV is NOT 'production':
+NODE_ENV=development npm start
 ```
+
+To test client authorization failures, call the deployed Function App (with EasyAuth enabled)
+using a real access token acquired by SharePoint/SPFx:
+
+```curl
+curl -X GET https://<your-function>.azurewebsites.net/api/getGuestSponsors \
+  -H "Authorization: Bearer <your-access-token>"
+```
+
+Do not send `x-ms-client-principal` or `x-ms-client-principal-id` manually.
+In production these headers are emitted by EasyAuth after token validation.
+
+If tenant or audience validation fails, the function returns HTTP 403 with `reasonCode`
+and diagnostic details in logs/Application Insights.
 
 ## App Catalog Guest Access
 
