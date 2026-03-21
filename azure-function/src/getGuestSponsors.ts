@@ -1,4 +1,5 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
+import { randomUUID } from 'crypto';
 import { ManagedIdentityCredential } from '@azure/identity';
 import { Client, GraphError } from '@microsoft/microsoft-graph-client';
 import { TokenCredentialAuthenticationProvider } from '@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials';
@@ -14,14 +15,31 @@ const DEFAULT_PRESENCE_TIMEOUT_MS = 2500;
 const DEFAULT_BATCH_TIMEOUT_MS = 4000;
 
 /**
- * In-memory sliding-window rate limiter (per caller OID, per warm instance).
- * 20 requests / 60 s is generous for legitimate use (one page load = one request)
- * while still capping runaway request loops or unintentional retry storms.
- * Note: on a Consumption plan each instance has its own counter; the effective
- * limit across N concurrent instances is N × 20/min — acceptable for this use case.
+ * In-memory sliding-window rate limiter, keyed by an arbitrary string.
+ *
+ * Two tiers:
+ *
+ * 1. Anonymous / unauthenticated callers (no EasyAuth OID) — always active,
+ *    keyed by client IP (`anon:<ip>`).  In production EasyAuth blocks anonymous
+ *    requests at the infra level before function code runs; this tier protects
+ *    dev environments and acts as a belt-and-suspenders guard should EasyAuth
+ *    ever be misconfigured.
+ *      10 req / 60 s per IP (hardcoded — anonymous callers are not legitimate).
+ *
+ * 2. Authenticated callers (valid OID) — disabled by default to avoid false
+ *    positives when multiple web parts are on one page or the user reloads
+ *    quickly.  Enable only for incident response via:
+ *      RATE_LIMIT_ENABLED=true
+ *      RATE_LIMIT_MAX_REQUESTS=20   (optional, default 20)
+ *      RATE_LIMIT_WINDOW_MS=60000  (optional, default 60 000 ms)
+ *
+ * Note: on a Consumption plan each instance has its own counter.
  */
-const RATE_LIMIT_MAX_REQUESTS = 20;
-const RATE_LIMIT_WINDOW_MS = 60_000;
+const ANON_RATE_LIMIT_MAX_REQUESTS = 10;
+const ANON_RATE_LIMIT_WINDOW_MS = 60_000;
+const DEFAULT_RATE_LIMIT_ENABLED = false;
+const DEFAULT_RATE_LIMIT_MAX_REQUESTS = 20;
+const DEFAULT_RATE_LIMIT_WINDOW_MS = 60_000;
 const rateLimitMap = new Map<string, number[]>();
 
 /** Cached optional-permission flags for MailboxSettings.Read, Presence.Read.All, and TeamMember.Read.All. */
@@ -75,16 +93,72 @@ async function detectOptionalPermissions(
       } catch (error) {
         // If token inspection fails for any reason, degrade gracefully.
         context.warn('Could not inspect token roles — optional features disabled.', error);
-        return { hasMailboxSettings: false, hasPresenceReadAll: false };
+        return { hasMailboxSettings: false, hasPresenceReadAll: false, hasTeamMemberReadAll: false };
       }
     })();
   }
   return cachedOptionalPermissions;
 }
 
-function checkRateLimit(userId: string): { allowed: boolean; retryAfterSeconds?: number } {
+/**
+ * Extracts the best-effort client IP from X-Forwarded-For.
+ * In Azure App Service, the client IP is the first entry added by Azure.
+ * Used only for anonymous rate limiting and partial logging — not for trust decisions.
+ */
+function getClientIp(request: HttpRequest): string {
+  const forwarded = request.headers.get('x-forwarded-for');
+  if (forwarded) {
+    const first = forwarded.split(',')[0].trim();
+    // Strip port: IPv4:port → IPv4, [IPv6]:port → IPv6
+    return first.replace(/(:\d+)$/, '').replace(/^\[(.+)\]$/, '$1');
+  }
+  return 'unknown';
+}
+
+/**
+ * Partially redacts an IP address for logging (GDPR / minimal exposure).
+ * IPv4: keeps the /24 prefix, masks the last octet → "192.168.1.x"
+ * IPv6: keeps the first four groups, masks the rest → "2001:db8:85a3:0:..."
+ */
+function redactIp(ip: string): string {
+  if (ip === 'unknown') return ip;
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(ip)) {
+    return ip.replace(/\.\d+$/, '.x');
+  }
+  const parts = ip.split(':');
+  if (parts.length >= 4) {
+    return `${parts.slice(0, 4).join(':')}:...`;
+  }
+  return 'x.x.x.x';
+}
+
+function isTrue(value: string | undefined): boolean {
+  if (!value) return false;
+  const v = value.trim().toLowerCase();
+  return v === '1' || v === 'true' || v === 'yes' || v === 'on';
+}
+
+function getRateLimitConfig(): { enabled: boolean; maxRequests: number; windowMs: number } {
+  const enabled = process.env.RATE_LIMIT_ENABLED === undefined
+    ? DEFAULT_RATE_LIMIT_ENABLED
+    : isTrue(process.env.RATE_LIMIT_ENABLED);
+
+  const maxRaw = Number(process.env.RATE_LIMIT_MAX_REQUESTS);
+  const maxRequests = Number.isFinite(maxRaw) && maxRaw > 0
+    ? Math.floor(maxRaw)
+    : DEFAULT_RATE_LIMIT_MAX_REQUESTS;
+
+  const windowRaw = Number(process.env.RATE_LIMIT_WINDOW_MS);
+  const windowMs = Number.isFinite(windowRaw) && windowRaw > 0
+    ? Math.floor(windowRaw)
+    : DEFAULT_RATE_LIMIT_WINDOW_MS;
+
+  return { enabled, maxRequests, windowMs };
+}
+
+function checkRateLimit(userId: string, maxRequests: number, windowMs: number): { allowed: boolean; retryAfterSeconds?: number } {
   const now = Date.now();
-  const windowStart = now - RATE_LIMIT_WINDOW_MS;
+  const windowStart = now - windowMs;
 
   // Lazy cleanup: purge entries with no recent timestamps to bound map memory usage.
   if (rateLimitMap.size > 500) {
@@ -94,9 +168,9 @@ function checkRateLimit(userId: string): { allowed: boolean; retryAfterSeconds?:
   }
 
   const recent = (rateLimitMap.get(userId) ?? []).filter(t => t > windowStart);
-  if (recent.length >= RATE_LIMIT_MAX_REQUESTS) {
+  if (recent.length >= maxRequests) {
     const oldest = Math.min(...recent);
-    const retryAfterSeconds = Math.ceil((oldest + RATE_LIMIT_WINDOW_MS - now) / 1000);
+    const retryAfterSeconds = Math.ceil((oldest + windowMs - now) / 1000);
     rateLimitMap.set(userId, recent);
     return { allowed: false, retryAfterSeconds };
   }
@@ -207,6 +281,141 @@ interface ISponsorsResult {
   activeSponsors: ISponsor[];
   unavailableCount: number;
   guestHasTeamsAccess?: boolean;
+}
+
+/**
+ * Logs a structured rejection event with redacted identifiers.
+ * Includes context about why the request was rejected without exposing sensitive data.
+ */
+function logRejection(
+  context: InvocationContext,
+  reasonCode: string,
+  reason: string,
+  details: Record<string, unknown> = {}
+): void {
+  context.warn(`Client validation (${reasonCode}): ${reason}`, {
+    reasonCode,
+    ...details,
+    timestamp: new Date().toISOString(),
+  });
+}
+
+/**
+ * EasyAuth client-principal claim entry.
+ */
+interface IEasyAuthClaim {
+  typ: string;
+  val: string;
+}
+
+/**
+ * EasyAuth client-principal structure.
+ */
+interface IEasyAuthPrincipal {
+  auth_typ?: string;
+  claims?: IEasyAuthClaim[];
+  name_typ?: string;
+  role_typ?: string;
+  userId?: string;
+  userDetails?: string;
+  identityProvider?: string;
+}
+
+/**
+ * Parses the EasyAuth principal from X-MS-CLIENT-PRINCIPAL.
+ * Header is Base64-encoded JSON emitted only after successful EasyAuth validation.
+ */
+function parseEasyAuthPrincipal(request: HttpRequest): IEasyAuthPrincipal | null {
+  const encodedPrincipal = request.headers.get('x-ms-client-principal');
+  if (!encodedPrincipal) return null;
+
+  try {
+    const json = Buffer.from(encodedPrincipal, 'base64').toString('utf8');
+    const parsed = JSON.parse(json) as IEasyAuthPrincipal;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Returns the first claim value that matches any claim type.
+ * Supports both short names (tid, aud) and URI claim types used by Entra/EasyAuth.
+ */
+function getPrincipalClaim(principal: IEasyAuthPrincipal, claimTypes: string[]): string | undefined {
+  if (!Array.isArray(principal.claims)) return undefined;
+  const normalized = claimTypes.map(t => t.toLowerCase());
+
+  for (const claim of principal.claims) {
+    const type = (claim.typ ?? '').toLowerCase();
+    if (normalized.includes(type) || normalized.some(t => type.endsWith(`/${t}`))) {
+      return claim.val;
+    }
+  }
+
+  return undefined;
+}
+
+/**
+ * Validates that the authenticated EasyAuth principal belongs to our tenant and API audience.
+ *
+ * Performs two checks on EasyAuth principal claims:
+ * 1. tid claim matches our tenant ID
+ * 2. aud claim matches our API's audience URI
+ *
+ * @returns validation result with details
+ */
+function validateClientAuthorization(
+  principal: IEasyAuthPrincipal,
+  context: InvocationContext
+): { authorized: boolean; reasonCode?: string; tid?: string; reason?: string } {
+  if (!principal || !Array.isArray(principal.claims)) {
+    return { authorized: false, reasonCode: 'AUTH_PRINCIPAL_MISSING', reason: 'EasyAuth principal missing or invalid' };
+  }
+
+  // Check 1: Tenant ID must match our environment.
+  const tenantId = process.env.TENANT_ID;
+  const tid = getPrincipalClaim(principal, ['tid', 'tenantid', 'http://schemas.microsoft.com/identity/claims/tenantid']);
+  if (!tid) {
+    return { authorized: false, reasonCode: 'AUTH_CLAIM_MISSING_TID', reason: 'Principal missing tid (tenant ID) claim' };
+  }
+  if (!tenantId) {
+    context.error('TENANT_ID environment variable not configured');
+    return { authorized: false, reasonCode: 'AUTH_CONFIG_TENANT_MISSING', reason: 'Server configuration error: TENANT_ID not set' };
+  }
+  if (tid !== tenantId) {
+    return {
+      authorized: false,
+      reasonCode: 'AUTH_TENANT_MISMATCH',
+      tid,
+      reason: 'Principal tenant does not match TENANT_ID',
+    };
+  }
+
+  // Check 2: Audience must be our API URI.
+  const allowedAudience = process.env.ALLOWED_AUDIENCE;
+  if (!allowedAudience) {
+    context.error('ALLOWED_AUDIENCE environment variable not configured');
+    return { authorized: false, reasonCode: 'AUTH_CONFIG_AUDIENCE_MISSING', reason: 'Server configuration error: ALLOWED_AUDIENCE not set' };
+  }
+  const aud = getPrincipalClaim(principal, ['aud']);
+  if (!aud) {
+    return {
+      authorized: false,
+      reasonCode: 'AUTH_CLAIM_MISSING_AUD',
+      reason: 'Principal missing aud (audience) claim',
+    };
+  }
+
+  if (aud !== allowedAudience) {
+    return {
+      authorized: false,
+      reasonCode: 'AUTH_AUDIENCE_MISMATCH',
+      reason: 'Principal audience does not match ALLOWED_AUDIENCE',
+    };
+  }
+
+  return { authorized: true, tid };
 }
 
 /**
@@ -343,6 +552,33 @@ function getValidHttpStatus(code: unknown): number {
   return 500;
 }
 
+function getCorrelationId(request: HttpRequest): string {
+  return request.headers.get('x-correlation-id')
+    ?? request.headers.get('x-ms-request-id')
+    ?? request.headers.get('x-arr-log-id')
+    ?? randomUUID();
+}
+
+function jsonErrorResponse(
+  request: HttpRequest,
+  status: number,
+  correlationId: string,
+  error: string,
+  reasonCode: string,
+  message: string,
+  retryable: boolean
+): HttpResponseInit {
+  return {
+    status,
+    body: JSON.stringify({ error, reasonCode, message, retryable, referenceId: correlationId }),
+    headers: {
+      'Content-Type': 'application/json',
+      'x-correlation-id': correlationId,
+      ...corsHeaders(request),
+    },
+  };
+}
+
 /**
  * HTTP GET – returns the sponsors of the calling user.
  *
@@ -358,35 +594,136 @@ export async function getGuestSponsors(
   request: HttpRequest,
   context: InvocationContext
 ): Promise<HttpResponseInit> {
+  const correlationId = getCorrelationId(request);
+
   // CORS preflight.
   if (request.method === 'OPTIONS') {
     return {
       status: 204,
-      headers: corsHeaders(request),
+      headers: { 'x-correlation-id': correlationId, ...corsHeaders(request) },
+    };
+  }
+
+  // Method guard: only GET is supported. Reject early with 405 to avoid exposing
+  // internal logic to method-probing or accidental non-GET calls.
+  if (request.method !== 'GET') {
+    return {
+      status: 405,
+      body: JSON.stringify({ error: 'Method Not Allowed' }),
+      headers: {
+        'Content-Type': 'application/json',
+        Allow: 'GET, OPTIONS',
+        'x-correlation-id': correlationId,
+        ...corsHeaders(request),
+      },
     };
   }
 
   const callerOid = resolveCallerOid(request);
   if (!callerOid) {
-    context.warn('No caller OID found — EasyAuth may not be configured.');
-    return {
-      status: 401,
-      body: JSON.stringify({ error: 'Unauthorized' }),
-      headers: { 'Content-Type': 'application/json', ...corsHeaders(request) },
-    };
+    // Anonymous / unauthenticated caller — apply strict IP-based rate limiting
+    // before rejecting, to prevent hammering in dev or on EasyAuth misconfiguration.
+    const clientIp = getClientIp(request);
+    const anonLimit = checkRateLimit(`anon:${clientIp}`, ANON_RATE_LIMIT_MAX_REQUESTS, ANON_RATE_LIMIT_WINDOW_MS);
+    if (!anonLimit.allowed) {
+      context.warn('Anonymous caller rate-limited', {
+        reasonCode: 'AUTH_RATE_LIMITED',
+        clientIp: redactIp(clientIp),
+        correlationId,
+      });
+      const resp = jsonErrorResponse(
+        request,
+        429,
+        correlationId,
+        'Too Many Requests',
+        'AUTH_RATE_LIMITED',
+        'Request rate limit exceeded. Retry after the provided delay.',
+        true
+      );
+      resp.headers = {
+        ...(resp.headers ?? {}),
+        'Retry-After': String(anonLimit.retryAfterSeconds ?? 60),
+      };
+      return resp;
+    }
+    context.warn('Anonymous caller rejected — EasyAuth not configured or bypassed', {
+      reasonCode: 'AUTH_CALLER_OID_MISSING',
+      clientIp: redactIp(clientIp),
+      correlationId,
+    });
+    return jsonErrorResponse(
+      request,
+      401,
+      correlationId,
+      'Unauthorized',
+      'AUTH_CALLER_OID_MISSING',
+      'Authenticated caller could not be resolved from EasyAuth headers',
+      false
+    );
   }
 
-  const rateLimitResult = checkRateLimit(callerOid);
-  if (!rateLimitResult.allowed) {
-    return {
-      status: 429,
-      body: JSON.stringify({ error: 'Too Many Requests' }),
-      headers: {
-        'Content-Type': 'application/json',
+  // Validate the EasyAuth principal belongs to our tenant and API audience.
+  // Skip in development mode unless NODE_ENV is explicitly 'production'.
+  if (process.env.NODE_ENV === 'production') {
+    const principal = parseEasyAuthPrincipal(request);
+    if (!principal) {
+      logRejection(context, 'AUTH_PRINCIPAL_MISSING', 'No valid EasyAuth principal header present', {
+        step: 'client-validation-start',
+        correlationId,
+      });
+      return jsonErrorResponse(
+        request,
+        401,
+        correlationId,
+        'Unauthorized',
+        'AUTH_PRINCIPAL_MISSING',
+        'EasyAuth principal header is missing or invalid',
+        false
+      );
+    }
+
+    const validation = validateClientAuthorization(principal, context);
+    if (!validation.authorized) {
+      const reasonCode = validation.reasonCode ?? 'AUTH_VALIDATION_FAILED';
+      logRejection(context, reasonCode, validation.reason ?? 'Unknown authorization failure', {
+        step: 'client-validation-failed',
+        tid: validation.tid,
+        callerOid: redactGuid(callerOid),
+        correlationId,
+      });
+      return jsonErrorResponse(
+        request,
+        403,
+        correlationId,
+        'Forbidden',
+        reasonCode,
+        'Request token failed tenant or audience validation',
+        false
+      );
+    }
+
+    context.log(`Client authorization validated for tenant ${validation.tid}`);
+  }
+
+  const rateLimitConfig = getRateLimitConfig();
+  if (rateLimitConfig.enabled) {
+    const rateLimitResult = checkRateLimit(callerOid, rateLimitConfig.maxRequests, rateLimitConfig.windowMs);
+    if (!rateLimitResult.allowed) {
+      const response = jsonErrorResponse(
+        request,
+        429,
+        correlationId,
+        'Too Many Requests',
+        'AUTH_RATE_LIMITED',
+        'Request rate limit exceeded. Retry after the provided delay.',
+        true
+      );
+      response.headers = {
+        ...(response.headers ?? {}),
         'Retry-After': String(rateLimitResult.retryAfterSeconds ?? 60),
-        ...corsHeaders(request),
-      },
-    };
+      };
+      return response;
+    }
   }
 
   context.log(`Fetching sponsors for caller ${redactGuid(callerOid)}`);
@@ -428,7 +765,7 @@ export async function getGuestSponsors(
 
     if (!response?.value) {
       const result: ISponsorsResult = { activeSponsors: [], unavailableCount: 0 };
-      return jsonResponse(result, 200, request);
+      return jsonResponse(result, 200, request, correlationId);
     }
 
     const items = response.value as Record<string, unknown>[];
@@ -642,7 +979,7 @@ export async function getGuestSponsors(
 
     const result: ISponsorsResult = { activeSponsors, unavailableCount };
     if (guestHasTeamsAccess !== undefined) result.guestHasTeamsAccess = guestHasTeamsAccess;
-    return jsonResponse(result, 200, request);
+    return jsonResponse(result, 200, request, correlationId);
   } catch (error) {
     if (error instanceof GraphError) {
       // GraphError is thrown by the Graph SDK for HTTP-level failures.
@@ -662,19 +999,28 @@ export async function getGuestSponsors(
       : getValidHttpStatus(
         error instanceof GraphError ? error.statusCode : (error as { statusCode?: number }).statusCode
       );
-    return {
+    const retryable = status >= 500 || status === 429;
+    return jsonErrorResponse(
+      request,
       status,
-      body: JSON.stringify({ error: 'Failed to retrieve sponsor information.' }),
-      headers: { 'Content-Type': 'application/json', ...corsHeaders(request) },
-    };
+      correlationId,
+      'Failed to retrieve sponsor information.',
+      status === 504 ? 'SPONSOR_LOOKUP_TIMEOUT' : 'SPONSOR_LOOKUP_FAILED',
+      'Sponsor retrieval failed in backend processing',
+      retryable
+    );
   }
 }
 
-function jsonResponse(body: unknown, status: number, request: HttpRequest): HttpResponseInit {
+function jsonResponse(body: unknown, status: number, request: HttpRequest, correlationId: string): HttpResponseInit {
   return {
     status,
     body: JSON.stringify(body),
-    headers: { 'Content-Type': 'application/json', ...corsHeaders(request) },
+    headers: {
+      'Content-Type': 'application/json',
+      'x-correlation-id': correlationId,
+      ...corsHeaders(request),
+    },
   };
 }
 
@@ -696,6 +1042,7 @@ function corsHeaders(request: HttpRequest): Record<string, string> {
     // CORS
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
     'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+    'Access-Control-Expose-Headers': 'x-correlation-id',
     // Minimal security headers for API responses.
     // HSTS, X-Frame-Options, and other browser-level protections are better handled
     // by SharePoint Online or Azure Application Gateway, not at the API level.
@@ -724,12 +1071,17 @@ async function safeGetGuestSponsors(
       status: getValidHttpStatus(response.status),
     };
   } catch (error) {
+    const correlationId = getCorrelationId(request);
     context.error('Unhandled exception in safeGetGuestSponsors:', error);
-    return {
-      status: 500,
-      body: JSON.stringify({ error: 'Failed to retrieve sponsor information.' }),
-      headers: { 'Content-Type': 'application/json', ...corsHeaders(request) },
-    };
+    return jsonErrorResponse(
+      request,
+      500,
+      correlationId,
+      'Failed to retrieve sponsor information.',
+      'UNHANDLED_EXCEPTION',
+      'Unexpected backend exception occurred',
+      true
+    );
   }
 }
 
