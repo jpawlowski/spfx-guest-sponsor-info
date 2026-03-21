@@ -24,6 +24,7 @@ define([], function() {
     "PresencePresenting": "Presenterer",
     "PresenceFocusing": "Fokuserer",
     "PresenceOutOfOffice": "Utenfor kontoret",
+    "PresenceOutOfOfficeSuffix": ", utenfor kontoret",
     "PresenceOffline": "Frakoblet",
 
     "ContactDetailsAriaLabel": "Kontaktdetaljer for {0}",
@@ -49,6 +50,12 @@ define([], function() {
     "CopyWorkPhoneAriaLabel": "Kopier jobbtelefon",
     "CopyMobileAriaLabel": "Kopier mobilnummer",
     "CopyLocationAriaLabel": "Kopier arbeidssted",
+
+    "DisplayGroupName": "Visning",
+    "ShowBusinessPhonesFieldLabel": "Vis jobbtelefonnumre",
+    "ShowMobilePhoneFieldLabel": "Vis mobilnummer",
+    "ShowWorkLocationFieldLabel": "Vis arbeidssted",
+    "ShowManagerFieldLabel": "Vis leder",
 
     "FunctionGroupName": "Azure-funksjon",
     "FunctionUrlFieldLabel": "Sponsor-API-URL (Azure-funksjon)",

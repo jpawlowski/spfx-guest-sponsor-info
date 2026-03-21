@@ -24,6 +24,7 @@ define([], function() {
     "PresencePresenting": "\u6f14\u793a\u4e2d",
     "PresenceFocusing": "\u4e13\u6ce8\u4e2d",
     "PresenceOutOfOffice": "\u4e0d\u5728\u529e\u516c\u5ba4",
+    "PresenceOutOfOfficeSuffix": "\uff0c\u4e0d\u5728\u529e\u516c\u5ba4",
     "PresenceOffline": "\u8131\u673a",
 
     "ContactDetailsAriaLabel": "{0} \u7684\u8054\u7cfb\u4eba\u8be6\u7ec6\u4fe1\u606f",
@@ -49,6 +50,12 @@ define([], function() {
     "CopyWorkPhoneAriaLabel": "\u590d\u5236\u5de5\u4f5c\u7535\u8bdd",
     "CopyMobileAriaLabel": "\u590d\u5236\u624b\u673a\u53f7\u7801",
     "CopyLocationAriaLabel": "\u590d\u5236\u5de5\u4f5c\u5730\u70b9",
+
+    "DisplayGroupName": "\u663e\u793a",
+    "ShowBusinessPhonesFieldLabel": "\u663e\u793a\u5de5\u4f5c\u7535\u8bdd",
+    "ShowMobilePhoneFieldLabel": "\u663e\u793a\u624b\u673a\u53f7\u7801",
+    "ShowWorkLocationFieldLabel": "\u663e\u793a\u5de5\u4f5c\u5730\u70b9",
+    "ShowManagerFieldLabel": "\u663e\u793a\u4e0a\u7ea7",
 
     "FunctionGroupName": "Azure \u51fd\u6570",
     "FunctionUrlFieldLabel": "\u53d1\u8d77\u4eba API URL\uff08Azure \u51fd\u6570\uff09",

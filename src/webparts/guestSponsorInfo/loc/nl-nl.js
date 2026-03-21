@@ -24,6 +24,7 @@ define([], function() {
     "PresencePresenting": "Aan het presenteren",
     "PresenceFocusing": "Focusmodus",
     "PresenceOutOfOffice": "Niet op kantoor",
+    "PresenceOutOfOfficeSuffix": ", niet op kantoor",
     "PresenceOffline": "Offline",
 
     "ContactDetailsAriaLabel": "Contactgegevens voor {0}",
@@ -49,6 +50,12 @@ define([], function() {
     "CopyWorkPhoneAriaLabel": "Zakelijk telefoonnummer kopi\u00ebren",
     "CopyMobileAriaLabel": "Mobiel nummer kopi\u00ebren",
     "CopyLocationAriaLabel": "Werklocatie kopiëren",
+
+    "DisplayGroupName": "Weergave",
+    "ShowBusinessPhonesFieldLabel": "Zakelijk telefoonnummer weergeven",
+    "ShowMobilePhoneFieldLabel": "Mobiel nummer weergeven",
+    "ShowWorkLocationFieldLabel": "Werklocatie weergeven",
+    "ShowManagerFieldLabel": "Manager weergeven",
 
     "FunctionGroupName": "Azure-functie",
     "FunctionUrlFieldLabel": "Sponsor API-URL (Azure-functie)",

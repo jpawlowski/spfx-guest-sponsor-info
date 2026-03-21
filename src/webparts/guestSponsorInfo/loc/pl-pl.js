@@ -24,6 +24,7 @@ define([], function() {
     "PresencePresenting": "Prezentuje",
     "PresenceFocusing": "W trybie skupienia",
     "PresenceOutOfOffice": "Poza biurem",
+    "PresenceOutOfOfficeSuffix": ", poza biurem",
     "PresenceOffline": "Offline",
 
     "ContactDetailsAriaLabel": "Dane kontaktowe dla {0}",
@@ -49,6 +50,12 @@ define([], function() {
     "CopyWorkPhoneAriaLabel": "Kopiuj telefon s\u0142u\u017cbowy",
     "CopyMobileAriaLabel": "Kopiuj numer telefonu kom\u00f3rkowego",
     "CopyLocationAriaLabel": "Kopiuj lokalizację miejsca pracy",
+
+    "DisplayGroupName": "Wy\u015bwietlanie",
+    "ShowBusinessPhonesFieldLabel": "Poka\u017c telefon s\u0142u\u017cbowy",
+    "ShowMobilePhoneFieldLabel": "Poka\u017c numer telefonu kom\u00f3rkowego",
+    "ShowWorkLocationFieldLabel": "Poka\u017c lokalizacj\u0119 miejsca pracy",
+    "ShowManagerFieldLabel": "Poka\u017c mened\u017cera",
 
     "FunctionGroupName": "Azure Function",
     "FunctionUrlFieldLabel": "Adres URL interfejsu API sponsorów (Azure Function)",

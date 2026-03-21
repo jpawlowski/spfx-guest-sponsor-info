@@ -24,6 +24,7 @@ define([], function() {
     "PresencePresenting": "Esitt\u00e4\u00e4",
     "PresenceFocusing": "Keskittymistilassa",
     "PresenceOutOfOffice": "Poissa toimistosta",
+    "PresenceOutOfOfficeSuffix": ", poissa toimistosta",
     "PresenceOffline": "Offline",
 
     "ContactDetailsAriaLabel": "{0} yhteystiedot",
@@ -49,6 +50,12 @@ define([], function() {
     "CopyWorkPhoneAriaLabel": "Kopioi ty\u00f6puhelin",
     "CopyMobileAriaLabel": "Kopioi matkapuhelinnumero",
     "CopyLocationAriaLabel": "Kopioi työpaikka",
+
+    "DisplayGroupName": "N\u00e4ytt\u00f6",
+    "ShowBusinessPhonesFieldLabel": "N\u00e4yt\u00e4 ty\u00f6puhelin",
+    "ShowMobilePhoneFieldLabel": "N\u00e4yt\u00e4 matkapuhelin",
+    "ShowWorkLocationFieldLabel": "N\u00e4yt\u00e4 ty\u00f6paikka",
+    "ShowManagerFieldLabel": "N\u00e4yt\u00e4 esimies",
 
     "FunctionGroupName": "Azure-funktio",
     "FunctionUrlFieldLabel": "Sponsori-API-URL (Azure-funktio)",

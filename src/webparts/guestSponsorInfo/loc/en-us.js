@@ -24,6 +24,7 @@ define([], function() {
     "PresencePresenting": "Presenting",
     "PresenceFocusing": "Focusing",
     "PresenceOutOfOffice": "Out of office",
+    "PresenceOutOfOfficeSuffix": ", out of office",
     "PresenceOffline": "Offline",
 
     "ContactDetailsAriaLabel": "Contact details for {0}",

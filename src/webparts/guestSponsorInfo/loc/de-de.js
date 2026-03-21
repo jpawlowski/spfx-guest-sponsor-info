@@ -23,6 +23,7 @@ define([], function() {
     "PresencePresenting": "Am Präsentieren",
     "PresenceFocusing": "Fokus-Modus aktiv",
     "PresenceOutOfOffice": "Abwesend",    "PresenceOffline": "Offline",
+    "PresenceOutOfOfficeSuffix": ", abwesend",
 
     "ContactDetailsAriaLabel": "Kontaktdetails f\u00fcr {0}",
     "ContactActionsAriaLabel": "Kontaktaktionen",

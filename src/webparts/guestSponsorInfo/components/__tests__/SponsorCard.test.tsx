@@ -345,13 +345,34 @@ describe('SponsorCard', () => {
       expect(container.querySelector('[role="dialog"]')!.textContent).toContain('Presenting');
     });
 
-    it('shows localised "Out of office" label for OutOfOffice activity token', () => {
+    it('shows "Available, out of office" when availability is Available + activity OutOfOffice', () => {
       render(
         { ...BASE_SPONSOR, presence: 'Available', presenceActivity: 'OutOfOffice' },
         'test-tenant-id',
         true
       );
-      expect(container.querySelector('[role="dialog"]')!.textContent).toContain('Out of office');
+      const text = container.querySelector('[role="dialog"]')!.textContent!;
+      expect(text).toContain('Available, out of office');
+    });
+
+    it('shows "Busy, out of office" when availability is Busy + activity OutOfOffice', () => {
+      render(
+        { ...BASE_SPONSOR, presence: 'Busy', presenceActivity: 'OutOfOffice' },
+        'test-tenant-id',
+        true
+      );
+      const text = container.querySelector('[role="dialog"]')!.textContent!;
+      expect(text).toContain('Busy, out of office');
+    });
+
+    it('shows "Away, out of office" when availability is Away + activity OutOfOffice', () => {
+      render(
+        { ...BASE_SPONSOR, presence: 'Away', presenceActivity: 'OutOfOffice' },
+        'test-tenant-id',
+        true
+      );
+      const text = container.querySelector('[role="dialog"]')!.textContent!;
+      expect(text).toContain('Away, out of office');
     });
 
     it('shows localised "Focusing" label for Focusing activity token', () => {

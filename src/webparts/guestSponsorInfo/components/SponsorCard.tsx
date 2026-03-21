@@ -39,7 +39,7 @@ const PRESENCE_COLORS: Record<string, string> = {
   Busy:            '#D13438',
   BusyIdle:        '#D13438',
   DoNotDisturb:    '#D13438',
-  Focusing:        '#D13438',
+  Focusing:        '#6264A7',
   InACall:         '#D13438',
   InAMeeting:      '#D13438',
   OutOfOffice:     '#F7630C',
@@ -192,12 +192,24 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
   const cardRef = React.useRef<HTMLDivElement>(null);
   const initials = getInitials(sponsor.displayName);
   const bgColor = getInitialsColor(sponsor.displayName);
-  const presenceColor = sponsor.presence ? (PRESENCE_COLORS[sponsor.presence] ?? '#8A8886') : undefined;
-  const presenceLabel = sponsor.presenceActivity
-    ? formatPresenceActivity(sponsor.presenceActivity)
-    : sponsor.presence
-      ? (PRESENCE_LABELS[sponsor.presence] ?? '')
-      : undefined;
+  const isOof = sponsor.presenceActivity === 'OutOfOffice';
+  const presenceColor = isOof
+    ? PRESENCE_COLORS.OutOfOffice
+    : sponsor.presence ? (PRESENCE_COLORS[sponsor.presence] ?? '#8A8886') : undefined;
+  const presenceLabel = React.useMemo(() => {
+    const availability = sponsor.presence;
+    const activity = sponsor.presenceActivity;
+    if (!availability && !activity) return undefined;
+    if (isOof) {
+      // OutOfOffice is a suffix modifier: "Available, out of office"
+      // When availability mirrors a generic state, prepend it.
+      const base = availability ? (PRESENCE_LABELS[availability] ?? '') : '';
+      const suffix = strings.PresenceOutOfOfficeSuffix || ', out of office';
+      return base ? `${base}${suffix}` : (strings.PresenceOutOfOffice || 'Out of office');
+    }
+    if (activity) return formatPresenceActivity(activity);
+    return availability ? (PRESENCE_LABELS[availability] ?? '') : undefined;
+  }, [sponsor.presence, sponsor.presenceActivity, isOof]);
   const managerInitials = sponsor.managerDisplayName ? getInitials(sponsor.managerDisplayName) : '';
   const managerBgColor = sponsor.managerDisplayName ? getInitialsColor(sponsor.managerDisplayName) : '#8A8886';
   const isMobile = useIsMobile();

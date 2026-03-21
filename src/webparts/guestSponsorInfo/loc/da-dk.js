@@ -24,6 +24,7 @@ define([], function() {
     "PresencePresenting": "Pr\u00e6senterer",
     "PresenceFocusing": "Fokuseret",
     "PresenceOutOfOffice": "Uden for kontoret",
+    "PresenceOutOfOfficeSuffix": ", uden for kontoret",
     "PresenceOffline": "Offline",
 
     "ContactDetailsAriaLabel": "Kontaktoplysninger for {0}",
@@ -50,7 +51,13 @@ define([], function() {
     "CopyMobileAriaLabel": "Kopi\u00e9r mobilnummer",
     "CopyLocationAriaLabel": "Kopiér arbejdssted",
 
-    "FunctionGroupName": "Azure-funktion",
+    "DisplayGroupName": "Visning",
+    "ShowBusinessPhonesFieldLabel": "Vis arbejdstelefonnumre",
+    "ShowMobilePhoneFieldLabel": "Vis mobilnummer",
+    "ShowWorkLocationFieldLabel": "Vis arbejdssted",
+    "ShowManagerFieldLabel": "Vis chef",
+
+: "Azure-funktion",
     "FunctionUrlFieldLabel": "Sponsor-API-URL (Azure-funktion)",
     "FunctionClientIdFieldLabel": "Sponsor-API-klient-ID (Azure Function-appregistrering)",
     "ProxyStatusChecking": "Tjekker Azure-funktion\u2026",

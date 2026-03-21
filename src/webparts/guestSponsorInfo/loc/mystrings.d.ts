@@ -39,6 +39,7 @@ declare interface IGuestSponsorInfoWebPartStrings {
   PresencePresenting: string;
   PresenceFocusing: string;
   PresenceOutOfOffice: string;
+  PresenceOutOfOfficeSuffix: string;
   PresenceOffline: string;
 
   // Rich contact card
