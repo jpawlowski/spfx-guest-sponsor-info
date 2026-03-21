@@ -1,1 +1,4 @@
+#!/bin/bash
+set -euo pipefail
+
 npx --no -- commitlint --edit "$1"
