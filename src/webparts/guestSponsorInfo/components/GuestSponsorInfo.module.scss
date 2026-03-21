@@ -180,6 +180,8 @@
 
 .richCard {
   width: 320px;
+  max-height: min(384px, 80vh);
+  overflow-y: auto;
   background-color: var(--white, #fff);
   background-color: "[theme:white, default: #ffffff]";
   border-radius: 4px;

@@ -10,6 +10,7 @@
     "SharePointWebPart"
   ],
   "supportsThemeVariants": true,
+  "mobileViewable": true,
   "preconfiguredEntries": [
     {
       "groupId": "1edbd9a8-0bfb-4aa2-9afd-14b8c45dd489",
