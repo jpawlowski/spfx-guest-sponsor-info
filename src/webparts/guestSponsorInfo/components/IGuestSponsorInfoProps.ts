@@ -43,6 +43,20 @@ export interface IGuestSponsorInfoProps {
   showCity: boolean;
   /** Show the sponsor's country or region. Default: false. */
   showCountry: boolean;
+  /** Enable structured address fields (street/postal code/state). Default: false. */
+  showStructuredAddress: boolean;
+  /** Show the sponsor's street address. Default: false. */
+  showStreetAddress: boolean;
+  /** Show the sponsor's postal code. Default: false. */
+  showPostalCode: boolean;
+  /** Show the sponsor's state or province. Default: false. */
+  showState: boolean;
+  /** Enable inline map preview for address data. */
+  showAddressMap: boolean;
+  /** Optional Azure Maps key used for inline map preview. */
+  azureMapsSubscriptionKey: string | undefined;
+  /** External map provider used for fallback links. */
+  externalMapProvider: 'bing' | 'google' | 'apple' | 'openstreetmap' | 'here';
   /** Show the manager section in the contact card. */
   showManager: boolean;
   /** Show the presence status indicator and label. Default: true. */

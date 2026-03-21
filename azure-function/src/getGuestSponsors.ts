@@ -177,6 +177,9 @@ interface ISponsor {
   jobTitle?: string;
   department?: string;
   officeLocation?: string;
+  streetAddress?: string;
+  postalCode?: string;
+  state?: string;
   city?: string;
   country?: string;
   businessPhones: string[];
@@ -402,7 +405,7 @@ export async function getGuestSponsors(
       response = await withTimeout(
         client
           .api(`/users/${callerOid}/sponsors`)
-          .select('id,displayName,givenName,surname,mail,jobTitle,department,officeLocation,city,country,businessPhones,mobilePhone')
+          .select('id,displayName,givenName,surname,mail,jobTitle,department,officeLocation,streetAddress,postalCode,state,city,country,businessPhones,mobilePhone')
           // Enforce the cap at the Graph level to avoid fetching more items than we will process.
           .top(MAX_SPONSORS)
           .get(),
@@ -442,6 +445,9 @@ export async function getGuestSponsors(
         jobTitle: (item.jobTitle as string) || undefined,
         department: (item.department as string) || undefined,
         officeLocation: (item.officeLocation as string) || undefined,
+        streetAddress: (item.streetAddress as string) || undefined,
+        postalCode: (item.postalCode as string) || undefined,
+        state: (item.state as string) || undefined,
         city: (item.city as string) || undefined,
         country: (item.country as string) || undefined,
         businessPhones: Array.isArray(item.businessPhones)
@@ -581,6 +587,9 @@ export async function getGuestSponsors(
         if (s.jobTitle !== undefined)            out.jobTitle = s.jobTitle;
         if (s.department !== undefined)          out.department = s.department;
         if (s.officeLocation !== undefined)      out.officeLocation = s.officeLocation;
+        if (s.streetAddress !== undefined)       out.streetAddress = s.streetAddress;
+        if (s.postalCode !== undefined)          out.postalCode = s.postalCode;
+        if (s.state !== undefined)               out.state = s.state;
         if (s.city !== undefined)               out.city = s.city;
         if (s.country !== undefined)            out.country = s.country;
         if (s.mobilePhone !== undefined)         out.mobilePhone = s.mobilePhone;

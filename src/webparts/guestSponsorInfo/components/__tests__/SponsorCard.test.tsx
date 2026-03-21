@@ -45,6 +45,7 @@ const BASE_SPONSOR: ISponsor = {
 // ─── DOM helpers ───────────────────────────────────────────────────────────────
 
 let container: HTMLDivElement;
+const originalFetch = globalThis.fetch;
 
 beforeEach(() => {
   container = document.createElement('div');
@@ -54,7 +55,20 @@ beforeEach(() => {
 afterEach(() => {
   act(() => { ReactDOM.unmountComponentAtNode(container); });
   container.remove();
+  if (originalFetch) {
+    globalThis.fetch = originalFetch;
+  } else {
+    // Keep test globals clean when fetch was not defined initially.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    delete (globalThis as any).fetch;
+  }
 });
+
+async function flushAsync(): Promise<void> {
+  await act(async () => {
+    await Promise.resolve();
+  });
+}
 
 function render(
   sponsor: ISponsor,
@@ -67,13 +81,20 @@ function render(
   showWorkLocation = true,
   showCity = false,
   showCountry = false,
+  showStructuredAddress = false,
+  showStreetAddress = false,
+  showPostalCode = false,
+  showState = false,
   showManager = true,
   showPresence = true,
   useInformalAddress = false,
   showSponsorJobTitle = true,
   showManagerJobTitle = true,
   showSponsorDepartment = false,
-  showManagerDepartment = false
+  showManagerDepartment = false,
+  showAddressMap = false,
+  azureMapsSubscriptionKey: string | undefined = undefined,
+  externalMapProvider: 'bing' | 'google' | 'apple' | 'openstreetmap' | 'here' = 'bing'
 ): void {
   act(() => {
     ReactDOM.render(
@@ -88,6 +109,13 @@ function render(
         showWorkLocation={showWorkLocation}
         showCity={showCity}
         showCountry={showCountry}
+        showStructuredAddress={showStructuredAddress}
+        showStreetAddress={showStreetAddress}
+        showPostalCode={showPostalCode}
+        showState={showState}
+        showAddressMap={showAddressMap}
+        azureMapsSubscriptionKey={azureMapsSubscriptionKey}
+        externalMapProvider={externalMapProvider}
         showManager={showManager}
         showPresence={showPresence}
         useInformalAddress={useInformalAddress}
@@ -283,6 +311,232 @@ describe('SponsorCard', () => {
       render({ ...BASE_SPONSOR, hasTeams: false }, 'test-tenant-id', true);
       const links = container.querySelectorAll('[role="dialog"] a[href^="mailto:"]');
       expect(links.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('location rendering', () => {
+    it('combines city and country into a single geographic row and also shows work location separately', () => {
+      render(
+        { ...BASE_SPONSOR, city: 'Munich', country: 'Germany', officeLocation: 'Building 4 / Floor 2' },
+        'test-tenant-id',
+        true,
+        jest.fn(),
+        jest.fn(),
+        true,
+        true,
+        true,
+        true,
+        true
+      );
+
+      const dialog = container.querySelector('[role="dialog"]')!;
+      expect(dialog.textContent).toContain('City / Country');
+      expect(dialog.textContent).toContain('Munich, Germany');
+      expect(dialog.textContent).toContain('Building 4 / Floor 2');
+    });
+
+    it('falls back to office location when no geographic data is available', () => {
+      render(
+        { ...BASE_SPONSOR, city: undefined, country: undefined, officeLocation: 'Building 4 / Floor 2' },
+        'test-tenant-id',
+        true,
+        jest.fn(),
+        jest.fn(),
+        true,
+        true,
+        true,
+        true,
+        true
+      );
+
+      const dialog = container.querySelector('[role="dialog"]')!;
+      expect(dialog.textContent).toContain('Work location');
+      expect(dialog.textContent).toContain('Building 4 / Floor 2');
+    });
+
+    it('shows only the city when country is hidden', () => {
+      render(
+        { ...BASE_SPONSOR, city: 'Munich', country: 'Germany', officeLocation: 'Building 4 / Floor 2' },
+        'test-tenant-id',
+        true,
+        jest.fn(),
+        jest.fn(),
+        true,
+        true,
+        true,
+        true,
+        false
+      );
+
+      const dialog = container.querySelector('[role="dialog"]')!;
+      expect(dialog.textContent).toContain('City');
+      expect(dialog.textContent).toContain('Munich');
+      expect(dialog.textContent).not.toContain('Germany');
+      expect(dialog.textContent).toContain('Building 4 / Floor 2');
+    });
+
+    it('renders structured address rows when enabled', () => {
+      render(
+        {
+          ...BASE_SPONSOR,
+          streetAddress: 'Musterstrasse 10',
+          postalCode: '80331',
+          state: 'Bayern',
+        },
+        'test-tenant-id',
+        true,
+        jest.fn(),
+        jest.fn(),
+        true,
+        true,
+        true,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false
+      );
+
+      const dialog = container.querySelector('[role="dialog"]')!;
+      expect(dialog.textContent).toContain('Street');
+      expect(dialog.textContent).toContain('Musterstrasse 10');
+      expect(dialog.textContent).toContain('ZIP');
+      expect(dialog.textContent).toContain('80331');
+      expect(dialog.textContent).toContain('State');
+      expect(dialog.textContent).toContain('Bayern');
+    });
+
+    it('renders Azure Maps preview image when key is configured and geocoding succeeds', async () => {
+      globalThis.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          results: [{ position: { lat: 48.1371, lon: 11.5754 } }],
+        }),
+      }) as unknown as typeof fetch;
+
+      render(
+        {
+          ...BASE_SPONSOR,
+          streetAddress: 'Musterstrasse 10',
+          city: 'Munich',
+          country: 'Germany',
+        },
+        'test-tenant-id',
+        true,
+        jest.fn(),
+        jest.fn(),
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false,
+        false,
+        false,
+        true,
+        true,
+        false,
+        true,
+        false,
+        false,
+        false,
+        true,
+        'test-azure-maps-key',
+        'bing'
+      );
+
+      await flushAsync();
+
+      expect(globalThis.fetch).toHaveBeenCalled();
+      const preview = container.querySelector('img[src*="atlas.microsoft.com/map/static/png"]');
+      expect(preview).not.toBeNull();
+    });
+
+    it('shows external provider link fallback when Azure Maps key is missing', () => {
+      render(
+        {
+          ...BASE_SPONSOR,
+          streetAddress: 'Musterstrasse 10',
+          city: 'Munich',
+          country: 'Germany',
+        },
+        'test-tenant-id',
+        true,
+        jest.fn(),
+        jest.fn(),
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false,
+        false,
+        false,
+        true,
+        true,
+        false,
+        true,
+        false,
+        false,
+        false,
+        true,
+        undefined,
+        'google'
+      );
+
+      const link = container.querySelector('a[href*="google.com/maps/search"]');
+      expect(link).not.toBeNull();
+      const preview = container.querySelector('img[src*="atlas.microsoft.com/map/static/png"]');
+      expect(preview).toBeNull();
+    });
+
+    it('shows external provider link fallback when geocoding fails', async () => {
+      globalThis.fetch = jest.fn().mockResolvedValue({ ok: false }) as unknown as typeof fetch;
+
+      render(
+        {
+          ...BASE_SPONSOR,
+          streetAddress: 'Musterstrasse 10',
+          city: 'Munich',
+          country: 'Germany',
+        },
+        'test-tenant-id',
+        true,
+        jest.fn(),
+        jest.fn(),
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false,
+        false,
+        false,
+        true,
+        true,
+        false,
+        true,
+        false,
+        false,
+        false,
+        true,
+        'test-azure-maps-key',
+        'here'
+      );
+
+      await flushAsync();
+
+      const link = container.querySelector('a[href*="wego.here.com/search/"]');
+      expect(link).not.toBeNull();
+      const preview = container.querySelector('img[src*="atlas.microsoft.com/map/static/png"]');
+      expect(preview).toBeNull();
     });
   });
 

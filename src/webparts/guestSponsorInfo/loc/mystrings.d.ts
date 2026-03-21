@@ -18,6 +18,24 @@ declare interface IGuestSponsorInfoWebPartStrings {
   ShowWorkLocationFieldLabel: string;
   ShowCityFieldLabel: string;
   ShowCountryFieldLabel: string;
+  ShowStructuredAddressFieldLabel: string;
+  ShowStreetAddressFieldLabel: string;
+  ShowPostalCodeFieldLabel: string;
+  ShowStateFieldLabel: string;
+  ShowAddressMapFieldLabel: string;
+  AzureMapsSubscriptionKeyFieldLabel: string;
+  ExternalMapProviderFieldLabel: string;
+  MapProviderBingOption: string;
+  MapProviderGoogleOption: string;
+  MapProviderAppleOption: string;
+  MapProviderOpenStreetMapOption: string;
+  MapProviderHereOption: string;
+  LocationDisplayHintAddressEnabled: string;
+  LocationDisplayHintSeparateRows: string;
+  LocationDisplayHintHidden: string;
+  AddressMapFallbackHint: string;
+  AdvancedDisplayGroupName: string;
+  ManagerOptionsDisabledHint: string;
   ShowManagerFieldLabel: string;
   ShowPresenceFieldLabel: string;
   UseInformalAddressFieldLabel: string;
@@ -71,6 +89,9 @@ declare interface IGuestSponsorInfoWebPartStrings {
   WorkLocationFieldLabel: string;
   CityFieldLabel: string;
   CountryFieldLabel: string;
+  StreetAddressFieldLabel: string;
+  PostalCodeFieldLabel: string;
+  StateFieldLabel: string;
 
   // Organization section
   OrganizationSection: string;
@@ -84,6 +105,12 @@ declare interface IGuestSponsorInfoWebPartStrings {
   CopyLocationAriaLabel: string;
   CopyCityAriaLabel: string;
   CopyCountryAriaLabel: string;
+  CopyStreetAddressAriaLabel: string;
+  CopyPostalCodeAriaLabel: string;
+  CopyStateAriaLabel: string;
+  AddressMapSectionLabel: string;
+  AddressMapLoadingLabel: string;
+  OpenAddressInMapLabel: string;
 
   // Teams access pending notice
   TeamsAccessPendingTitle: string;

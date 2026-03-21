@@ -45,6 +45,58 @@ function resolvePersonName(
   return displayName?.trim() ?? '';
 }
 
+function resolveGeographicLocation(
+  city: string | undefined,
+  country: string | undefined,
+  showCity: boolean,
+  showCountry: boolean
+): { label?: string; value?: string; copyAriaLabel?: string } {
+  const cityValue = showCity ? city?.trim() : undefined;
+  const countryValue = showCountry ? country?.trim() : undefined;
+  const parts = [cityValue, countryValue].filter((part): part is string => Boolean(part));
+
+  if (parts.length === 0) return {};
+  if (parts.length === 2) {
+    return {
+      label: `${strings.CityFieldLabel} / ${strings.CountryFieldLabel}`,
+      value: parts.join(', '),
+      copyAriaLabel: `${strings.CopyCityAriaLabel} / ${strings.CopyCountryAriaLabel}`,
+    };
+  }
+  if (cityValue) {
+    return {
+      label: strings.CityFieldLabel,
+      value: cityValue,
+      copyAriaLabel: strings.CopyCityAriaLabel,
+    };
+  }
+  return {
+    label: strings.CountryFieldLabel,
+    value: countryValue,
+    copyAriaLabel: strings.CopyCountryAriaLabel,
+  };
+}
+
+function buildExternalMapLink(
+  provider: 'bing' | 'google' | 'apple' | 'openstreetmap' | 'here',
+  address: string
+): string {
+  const query = encodeURIComponent(address);
+  switch (provider) {
+    case 'google':
+      return `https://www.google.com/maps/search/?api=1&query=${query}`;
+    case 'apple':
+      return `https://maps.apple.com/?q=${query}`;
+    case 'openstreetmap':
+      return `https://www.openstreetmap.org/search?query=${query}`;
+    case 'here':
+      return `https://wego.here.com/search/${query}`;
+    case 'bing':
+    default:
+      return `https://www.bing.com/maps?q=${query}`;
+  }
+}
+
 /** Maps Graph presence availability (and activity) token → display colour. */
 const PRESENCE_COLORS: Record<string, string> = {
   // Matches Fluent PersonaPresence defaults for v8 (Microsoft).
@@ -194,6 +246,20 @@ interface ISponsorCardProps {
   showCity: boolean;
   /** Show the sponsor's country or region. */
   showCountry: boolean;
+  /** Enable structured address rows (street/postal code/state). */
+  showStructuredAddress: boolean;
+  /** Show the sponsor's street address. */
+  showStreetAddress: boolean;
+  /** Show the sponsor's postal code. */
+  showPostalCode: boolean;
+  /** Show the sponsor's state or province. */
+  showState: boolean;
+  /** Enable inline map preview for address data. */
+  showAddressMap: boolean;
+  /** Optional Azure Maps subscription key used for inline preview. */
+  azureMapsSubscriptionKey: string | undefined;
+  /** External map provider used for fallback links. */
+  externalMapProvider: 'bing' | 'google' | 'apple' | 'openstreetmap' | 'here';
   /** Show the manager section below the contact details. */
   showManager: boolean;
   /** Show the presence status indicator (dot) and label. */
@@ -227,6 +293,13 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
   showWorkLocation,
   showCity,
   showCountry,
+  showStructuredAddress,
+  showStreetAddress,
+  showPostalCode,
+  showState,
+  showAddressMap,
+  azureMapsSubscriptionKey,
+  externalMapProvider,
   showManager,
   showPresence,
   showSponsorJobTitle,
@@ -274,6 +347,66 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
   const managerInitials = resolvedManagerName ? getInitials(resolvedManagerName) : '';
   const managerBgColor = resolvedManagerName ? getInitialsColor(resolvedManagerName) : '#8A8886';
   const isMobile = useIsMobile();
+  const officeLocation = sponsor.officeLocation?.trim();
+  const streetAddress = sponsor.streetAddress?.trim();
+  const postalCode = sponsor.postalCode?.trim();
+  const state = sponsor.state?.trim();
+  const geographicLocation = resolveGeographicLocation(sponsor.city, sponsor.country, showCity, showCountry);
+  const showGeographicLocation = Boolean(geographicLocation.value);
+  const showOfficeLocation = Boolean(showWorkLocation && officeLocation);
+  const showStreetAddressRow = Boolean(showStructuredAddress && showStreetAddress && streetAddress);
+  const showPostalCodeRow = Boolean(showStructuredAddress && showPostalCode && postalCode);
+  const showStateRow = Boolean(showStructuredAddress && showState && state);
+  const mapAddressParts = [streetAddress, sponsor.city?.trim(), state, postalCode, sponsor.country?.trim(), officeLocation]
+    .filter((part): part is string => Boolean(part));
+  const mapAddress = mapAddressParts.join(', ');
+  const hasAddressForMap = mapAddress.length > 0;
+  const [mapPreviewUrl, setMapPreviewUrl] = React.useState<string | undefined>(undefined);
+  const [mapLoading, setMapLoading] = React.useState(false);
+  const [mapError, setMapError] = React.useState(false);
+  const externalMapLink = hasAddressForMap ? buildExternalMapLink(externalMapProvider, mapAddress) : undefined;
+
+  React.useEffect(() => {
+    if (!isActive || !showAddressMap || !hasAddressForMap || !azureMapsSubscriptionKey) {
+      setMapPreviewUrl(undefined);
+      setMapLoading(false);
+      setMapError(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    setMapLoading(true);
+    setMapError(false);
+
+    const geocodeUrl = `https://atlas.microsoft.com/search/address/json?api-version=1.0&subscription-key=${encodeURIComponent(azureMapsSubscriptionKey)}&query=${encodeURIComponent(mapAddress)}&limit=1`;
+
+    fetch(geocodeUrl, { signal: controller.signal })
+      .then(async response => {
+        if (!response.ok) {
+          throw new Error(`Azure Maps geocode failed: ${response.status}`);
+        }
+        const payload = (await response.json()) as {
+          results?: Array<{ position?: { lat?: number; lon?: number } }>;
+        };
+        const position = payload.results?.[0]?.position;
+        const lat = position?.lat;
+        const lon = position?.lon;
+        if (lat === undefined || lon === undefined) {
+          throw new Error('No map coordinates returned');
+        }
+        const staticMapUrl = `https://atlas.microsoft.com/map/static/png?api-version=1.0&subscription-key=${encodeURIComponent(azureMapsSubscriptionKey)}&center=${lon},${lat}&zoom=14&width=560&height=260&pins=default||${lon}%20${lat}`;
+        setMapPreviewUrl(staticMapUrl);
+        setMapLoading(false);
+      })
+      .catch(error => {
+        if ((error as Error).name === 'AbortError') return;
+        setMapPreviewUrl(undefined);
+        setMapLoading(false);
+        setMapError(true);
+      });
+
+    return () => controller.abort();
+  }, [isActive, showAddressMap, hasAddressForMap, azureMapsSubscriptionKey, mapAddress]);
 
   // The rich card body is defined here so it can be placed inside either
   // a Callout (desktop) or a Panel (mobile) without duplicating the JSX.
@@ -413,34 +546,83 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
             <CopyButton value={sponsor.mobilePhone} ariaLabel={strings.CopyMobileAriaLabel} />
           </div>
         )}
-        {showWorkLocation && sponsor.officeLocation && (
+        {showGeographicLocation && geographicLocation.label && geographicLocation.copyAriaLabel && (
+          <div className={styles.richInfoRow}>
+            <Icon iconName="MapPin" className={styles.richInfoIcon} aria-hidden="true" />
+            <div className={styles.richInfoText}>
+              <div className={styles.richInfoMeta}>{geographicLocation.label}</div>
+              <div className={styles.richInfoValue}>{geographicLocation.value}</div>
+            </div>
+            <CopyButton value={geographicLocation.value!} ariaLabel={geographicLocation.copyAriaLabel} />
+          </div>
+        )}
+        {showOfficeLocation && (
           <div className={styles.richInfoRow}>
             <Icon iconName="MapPin" className={styles.richInfoIcon} aria-hidden="true" />
             <div className={styles.richInfoText}>
               <div className={styles.richInfoMeta}>{strings.WorkLocationFieldLabel}</div>
-              <div className={styles.richInfoValue}>{sponsor.officeLocation}</div>
+              <div className={styles.richInfoValue}>{officeLocation}</div>
             </div>
-            <CopyButton value={sponsor.officeLocation} ariaLabel={strings.CopyLocationAriaLabel} />
+            <CopyButton value={officeLocation!} ariaLabel={strings.CopyLocationAriaLabel} />
           </div>
         )}
-        {showCity && sponsor.city && (
+        {showStreetAddressRow && (
           <div className={styles.richInfoRow}>
-            <Icon iconName="Building" className={styles.richInfoIcon} aria-hidden="true" />
+            <Icon iconName="MapPin" className={styles.richInfoIcon} aria-hidden="true" />
             <div className={styles.richInfoText}>
-              <div className={styles.richInfoMeta}>{strings.CityFieldLabel}</div>
-              <div className={styles.richInfoValue}>{sponsor.city}</div>
+              <div className={styles.richInfoMeta}>{strings.StreetAddressFieldLabel}</div>
+              <div className={styles.richInfoValue}>{streetAddress}</div>
             </div>
-            <CopyButton value={sponsor.city} ariaLabel={strings.CopyCityAriaLabel} />
+            <CopyButton value={streetAddress!} ariaLabel={strings.CopyStreetAddressAriaLabel} />
           </div>
         )}
-        {showCountry && sponsor.country && (
+        {showPostalCodeRow && (
           <div className={styles.richInfoRow}>
-            <Icon iconName="Globe" className={styles.richInfoIcon} aria-hidden="true" />
+            <Icon iconName="MapPin" className={styles.richInfoIcon} aria-hidden="true" />
             <div className={styles.richInfoText}>
-              <div className={styles.richInfoMeta}>{strings.CountryFieldLabel}</div>
-              <div className={styles.richInfoValue}>{sponsor.country}</div>
+              <div className={styles.richInfoMeta}>{strings.PostalCodeFieldLabel}</div>
+              <div className={styles.richInfoValue}>{postalCode}</div>
             </div>
-            <CopyButton value={sponsor.country} ariaLabel={strings.CopyCountryAriaLabel} />
+            <CopyButton value={postalCode!} ariaLabel={strings.CopyPostalCodeAriaLabel} />
+          </div>
+        )}
+        {showStateRow && (
+          <div className={styles.richInfoRow}>
+            <Icon iconName="MapPin" className={styles.richInfoIcon} aria-hidden="true" />
+            <div className={styles.richInfoText}>
+              <div className={styles.richInfoMeta}>{strings.StateFieldLabel}</div>
+              <div className={styles.richInfoValue}>{state}</div>
+            </div>
+            <CopyButton value={state!} ariaLabel={strings.CopyStateAriaLabel} />
+          </div>
+        )}
+        {showAddressMap && hasAddressForMap && (
+          <div className={styles.mapPreviewBlock}>
+            <div className={styles.richInfoMeta}>{strings.AddressMapSectionLabel}</div>
+            {azureMapsSubscriptionKey && mapLoading && (
+              <div className={styles.mapPreviewStatus}>{strings.AddressMapLoadingLabel}</div>
+            )}
+            {azureMapsSubscriptionKey && mapPreviewUrl && (
+              <img
+                src={mapPreviewUrl}
+                alt={strings.AddressMapSectionLabel}
+                className={styles.mapPreviewImage}
+                referrerPolicy="no-referrer"
+              />
+            )}
+            {((azureMapsSubscriptionKey && mapError) || !azureMapsSubscriptionKey) && (
+              <div className={styles.mapPreviewStatus}>{strings.AddressMapFallbackHint}</div>
+            )}
+            {externalMapLink && (
+              <a
+                href={externalMapLink}
+                target="_blank"
+                rel="noreferrer noopener"
+                className={styles.mapPreviewLink}
+              >
+                {strings.OpenAddressInMapLabel}
+              </a>
+            )}
           </div>
         )}
       </div>

@@ -23,6 +23,13 @@ interface ISponsorListProps {
   showWorkLocation: boolean;
   showCity: boolean;
   showCountry: boolean;
+  showStructuredAddress: boolean;
+  showStreetAddress: boolean;
+  showPostalCode: boolean;
+  showState: boolean;
+  showAddressMap: boolean;
+  azureMapsSubscriptionKey: string | undefined;
+  externalMapProvider: 'bing' | 'google' | 'apple' | 'openstreetmap' | 'here';
   showManager: boolean;
   showPresence: boolean;
   showSponsorJobTitle: boolean;
@@ -35,7 +42,7 @@ interface ISponsorListProps {
   guestHasTeamsAccess?: boolean;
 }
 
-const SponsorList: React.FC<ISponsorListProps> = ({ sponsors, hostTenantId, showBusinessPhones, showMobilePhone, showWorkLocation, showCity, showCountry, showManager, showPresence, showSponsorJobTitle, showManagerJobTitle, showSponsorDepartment, showManagerDepartment, useInformalAddress, onActiveCardChange, guestHasTeamsAccess }) => {
+const SponsorList: React.FC<ISponsorListProps> = ({ sponsors, hostTenantId, showBusinessPhones, showMobilePhone, showWorkLocation, showCity, showCountry, showStructuredAddress, showStreetAddress, showPostalCode, showState, showAddressMap, azureMapsSubscriptionKey, externalMapProvider, showManager, showPresence, showSponsorJobTitle, showManagerJobTitle, showSponsorDepartment, showManagerDepartment, useInformalAddress, onActiveCardChange, guestHasTeamsAccess }) => {
   const [activeId, setActiveId] = React.useState<string | null>(null);
   const hideTimeout = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -73,6 +80,13 @@ const SponsorList: React.FC<ISponsorListProps> = ({ sponsors, hostTenantId, show
             showWorkLocation={showWorkLocation}
             showCity={showCity}
             showCountry={showCountry}
+            showStructuredAddress={showStructuredAddress}
+            showStreetAddress={showStreetAddress}
+            showPostalCode={showPostalCode}
+            showState={showState}
+            showAddressMap={showAddressMap}
+            azureMapsSubscriptionKey={azureMapsSubscriptionKey}
+            externalMapProvider={externalMapProvider}
             showManager={showManager}
             showPresence={showPresence}
             showSponsorJobTitle={showSponsorJobTitle}
@@ -152,6 +166,13 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
   showWorkLocation,
   showCity,
   showCountry,
+  showStructuredAddress,
+  showStreetAddress,
+  showPostalCode,
+  showState,
+  showAddressMap,
+  azureMapsSubscriptionKey,
+  externalMapProvider,
   showManager,
   showPresence,
   showSponsorJobTitle,
@@ -410,6 +431,13 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
           showWorkLocation={showWorkLocation}
           showCity={showCity}
           showCountry={showCountry}
+          showStructuredAddress={showStructuredAddress}
+          showStreetAddress={showStreetAddress}
+          showPostalCode={showPostalCode}
+          showState={showState}
+          showAddressMap={showAddressMap}
+          azureMapsSubscriptionKey={azureMapsSubscriptionKey}
+          externalMapProvider={externalMapProvider}
           showManager={showManager}
           showPresence={showPresence}
           showSponsorJobTitle={showSponsorJobTitle}

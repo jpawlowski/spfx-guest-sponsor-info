@@ -16,6 +16,12 @@ export interface ISponsor {
   department?: string;
   /** Office location string. */
   officeLocation?: string;
+  /** Street address. */
+  streetAddress?: string;
+  /** Postal code. */
+  postalCode?: string;
+  /** State or province. */
+  state?: string;
   /** City. */
   city?: string;
   /** Country or region. */
