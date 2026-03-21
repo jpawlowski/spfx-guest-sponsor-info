@@ -4,6 +4,7 @@ import { Version } from '@microsoft/sp-core-library';
 import {
   type IPropertyPaneConfiguration,
   type IPropertyPaneDropdownOption,
+  PropertyPaneHorizontalRule,
   PropertyPaneLabel,
   PropertyPaneTextField,
   PropertyPaneCheckbox,
@@ -198,6 +199,7 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
     return {
       pages: [
         {
+          displayGroupsAsAccordion: true,
           header: {
             description: strings.PropertyPaneDescription
           },
@@ -214,17 +216,31 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
               ]
             },
             {
+              // Card display: what fields appear on the sponsor card itself.
               groupName: strings.DisplayGroupName,
               groupFields: [
                 PropertyPaneCheckbox('showPresence', {
                   text: strings.ShowPresenceFieldLabel,
                   checked: this.properties.showPresence ?? true,
                 }),
+                PropertyPaneCheckbox('showSponsorJobTitle', {
+                  text: strings.ShowSponsorJobTitleFieldLabel,
+                  checked: this.properties.showSponsorJobTitle ?? true,
+                }),
+                PropertyPaneCheckbox('showSponsorDepartment', {
+                  text: strings.ShowSponsorDepartmentFieldLabel,
+                }),
+                PropertyPaneHorizontalRule(),
+                PropertyPaneCheckbox('useInformalAddress', {
+                  text: strings.UseInformalAddressFieldLabel,
+                }),
               ]
             },
             {
               groupName: strings.ContactInfoSection,
+              isCollapsed: true,
               groupFields: [
+                // Phone numbers
                 PropertyPaneCheckbox('showBusinessPhones', {
                   text: strings.ShowBusinessPhonesFieldLabel,
                   checked: this.properties.showBusinessPhones ?? true,
@@ -233,19 +249,23 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
                   text: strings.ShowMobilePhoneFieldLabel,
                   checked: this.properties.showMobilePhone ?? true,
                 }),
+                PropertyPaneHorizontalRule(),
+                // Simple location fields
                 PropertyPaneCheckbox('showCity', {
                   text: strings.ShowCityFieldLabel,
                 }),
                 PropertyPaneCheckbox('showCountry', {
                   text: strings.ShowCountryFieldLabel,
                 }),
-                PropertyPaneLabel('locationDisplayHint', {
-                  text: this._getLocationDisplayHint(),
-                }),
                 PropertyPaneCheckbox('showWorkLocation', {
                   text: strings.ShowWorkLocationFieldLabel,
                   checked: this.properties.showWorkLocation ?? true,
                 }),
+                PropertyPaneLabel('locationDisplayHint', {
+                  text: this._getLocationDisplayHint(),
+                }),
+                PropertyPaneHorizontalRule(),
+                // Structured address (street/ZIP/state)
                 PropertyPaneCheckbox('showStructuredAddress', {
                   text: strings.ShowStructuredAddressFieldLabel,
                   checked: showStructuredAddress,
@@ -264,6 +284,8 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
                     checked: this.properties.showState ?? false,
                   }),
                 ] : []),
+                PropertyPaneHorizontalRule(),
+                // Map preview
                 PropertyPaneCheckbox('showAddressMap', {
                   text: strings.ShowAddressMapFieldLabel,
                   checked: showAddressMap,
@@ -290,37 +312,19 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
                   text: strings.ShowManagerFieldLabel,
                   checked: showManager,
                 }),
-                PropertyPaneCheckbox('showSponsorJobTitle', {
-                  text: strings.ShowSponsorJobTitleFieldLabel,
-                  checked: this.properties.showSponsorJobTitle ?? true,
-                }),
                 ...(showManager ? [
                   PropertyPaneCheckbox('showManagerJobTitle', {
                     text: strings.ShowManagerJobTitleFieldLabel,
                     checked: this.properties.showManagerJobTitle ?? true,
+                  }),
+                  PropertyPaneCheckbox('showManagerDepartment', {
+                    text: strings.ShowManagerDepartmentFieldLabel,
                   }),
                 ] : [
                   PropertyPaneLabel('managerOptionsDisabledHint', {
                     text: strings.ManagerOptionsDisabledHint,
                   }),
                 ]),
-              ]
-            },
-            {
-              groupName: strings.AdvancedDisplayGroupName,
-              isCollapsed: true,
-              groupFields: [
-                PropertyPaneCheckbox('showSponsorDepartment', {
-                  text: strings.ShowSponsorDepartmentFieldLabel,
-                }),
-                ...(showManager ? [
-                  PropertyPaneCheckbox('showManagerDepartment', {
-                    text: strings.ShowManagerDepartmentFieldLabel,
-                  }),
-                ] : []),
-                PropertyPaneCheckbox('useInformalAddress', {
-                  text: strings.UseInformalAddressFieldLabel,
-                }),
               ]
             },
             {

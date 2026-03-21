@@ -447,20 +447,17 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
   const hasAddressForMap = mapAddress.length > 0;
   const [mapPreviewUrl, setMapPreviewUrl] = React.useState<string | undefined>(undefined);
   const [mapLoading, setMapLoading] = React.useState(false);
-  const [mapError, setMapError] = React.useState(false);
   const externalMapLink = hasAddressForMap ? buildExternalMapLink(externalMapProvider, mapAddress) : undefined;
 
   React.useEffect(() => {
     if (!isActive || !showAddressMap || !hasAddressForMap || !azureMapsSubscriptionKey) {
       setMapPreviewUrl(undefined);
       setMapLoading(false);
-      setMapError(false);
       return;
     }
 
     const controller = new AbortController();
     setMapLoading(true);
-    setMapError(false);
 
     const geocodeUrl = `https://atlas.microsoft.com/search/address/json?api-version=1.0&subscription-key=${encodeURIComponent(azureMapsSubscriptionKey)}&query=${encodeURIComponent(mapAddress)}&limit=1`;
 
@@ -486,7 +483,6 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
         if ((error as Error).name === 'AbortError') return;
         setMapPreviewUrl(undefined);
         setMapLoading(false);
-        setMapError(true);
       });
 
     return () => controller.abort();
@@ -663,34 +659,35 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
             <CopyButton value={state!} ariaLabel={strings.CopyStateAriaLabel} />
           </div>
         )}
-        {showAddressMap && hasAddressForMap && (
-          <div className={styles.mapPreviewBlock}>
-            <div className={styles.richInfoMeta}>{strings.AddressMapSectionLabel}</div>
-            {azureMapsSubscriptionKey && mapLoading && (
-              <div className={styles.mapPreviewStatus}>{strings.AddressMapLoadingLabel}</div>
-            )}
-            {azureMapsSubscriptionKey && mapPreviewUrl && (
-              <img
-                src={mapPreviewUrl}
-                alt={strings.AddressMapSectionLabel}
-                className={styles.mapPreviewImage}
-                referrerPolicy="no-referrer"
-              />
-            )}
-            {((azureMapsSubscriptionKey && mapError) || !azureMapsSubscriptionKey) && (
-              <div className={styles.mapPreviewStatus}>{strings.AddressMapFallbackHint}</div>
+        {showAddressMap && hasAddressForMap && azureMapsSubscriptionKey && (
+          <>
+            {(mapLoading || mapPreviewUrl) && (
+              <div className={styles.mapPreviewBlock}>
+                {mapLoading && !mapPreviewUrl && (
+                  <div className={styles.mapPreviewStatus}>{strings.AddressMapLoadingLabel}</div>
+                )}
+                {mapPreviewUrl && (
+                  <img
+                    src={mapPreviewUrl}
+                    alt={strings.AddressMapSectionLabel}
+                    className={styles.mapPreviewImage}
+                    referrerPolicy="no-referrer"
+                  />
+                )}
+              </div>
             )}
             {externalMapLink && (
-              <a
-                href={externalMapLink}
-                target="_blank"
-                rel="noreferrer noopener"
-                className={styles.mapPreviewLink}
-              >
-                {strings.OpenAddressInMapLabel}
-              </a>
+              <div className={styles.richInfoRow}>
+                <Icon iconName="MapPin" className={styles.richInfoIcon} aria-hidden="true" />
+                <div className={styles.richInfoText}>
+                  <div className={styles.richInfoMeta}>{strings.OpenAddressInMapLabel}</div>
+                  <Link href={externalMapLink} target="_blank" rel="noreferrer noopener" className={styles.richInfoValue}>
+                    {mapAddress}
+                  </Link>
+                </div>
+              </div>
             )}
-          </div>
+          </>
         )}
       </div>
 
