@@ -49,13 +49,19 @@ define([], function() {
     "CopyEmailAriaLabel": "Kopioi s\u00e4hk\u00f6postiosoite",
     "CopyWorkPhoneAriaLabel": "Kopioi ty\u00f6puhelin",
     "CopyMobileAriaLabel": "Kopioi matkapuhelinnumero",
-    "CopyLocationAriaLabel": "Kopioi työpaikka",
+    "CopyLocationAriaLabel": "Kopioi ty\u00f6paikka",
+
+    "TeamsAccessPendingTitle": "Microsoft Teamsia ei ole viel\u00e4 m\u00e4\u00e4ritetty",
+    "TeamsAccessPendingMessage": "Vierasoikeuksiasi Microsoft Teamsiin t\u00e4ss\u00e4 organisaatiossa ei ole viel\u00e4 m\u00e4\u00e4ritetty. T\u00e4m\u00e4 ei vaikuta omaan Teams-tiliisi. Pyyd\u00e4 sponsoriasi lis\u00e4\u00e4m\u00e4\u00e4n sinut tiimiin \u2014 sen j\u00e4lkeen Teams-toiminnot kuten chat, puhelut ja kokoukset ovat k\u00e4ytett\u00e4viss\u00e4 t\u00e4\u00e4ll\u00e4.",
+    "TeamsNotReadyChatTooltip": "Chat ei k\u00e4ytett\u00e4viss\u00e4 t\u00e4\u00e4ll\u00e4 \u2014 Teams-vierasoikeuksiasi ei ole viel\u00e4 m\u00e4\u00e4ritetty",
+    "TeamsNotReadyCallTooltip": "Puhelu ei k\u00e4ytett\u00e4viss\u00e4 t\u00e4\u00e4ll\u00e4 \u2014 Teams-vierasoikeuksiasi ei ole viel\u00e4 m\u00e4\u00e4ritetty",
 
     "DisplayGroupName": "N\u00e4ytt\u00f6",
     "ShowBusinessPhonesFieldLabel": "N\u00e4yt\u00e4 ty\u00f6puhelin",
     "ShowMobilePhoneFieldLabel": "N\u00e4yt\u00e4 matkapuhelin",
     "ShowWorkLocationFieldLabel": "N\u00e4yt\u00e4 ty\u00f6paikka",
     "ShowManagerFieldLabel": "N\u00e4yt\u00e4 esimies",
+    "UseInformalAddressFieldLabel": "K\u00e4yt\u00e4 sinuttelumuotoa",
 
     "FunctionGroupName": "Azure-funktio",
     "FunctionUrlFieldLabel": "Sponsori-API-URL (Azure-funktio)",

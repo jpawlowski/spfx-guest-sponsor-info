@@ -49,13 +49,27 @@ define([], function() {
     "CopyEmailAriaLabel": "Copiar direcci\u00f3n de correo electr\u00f3nico",
     "CopyWorkPhoneAriaLabel": "Copiar tel\u00e9fono del trabajo",
     "CopyMobileAriaLabel": "Copiar n\u00famero de m\u00f3vil",
-    "CopyLocationAriaLabel": "Copiar ubicación de trabajo",
+    "CopyLocationAriaLabel": "Copiar ubicaci\u00f3n de trabajo",
+
+    "TeamsAccessPendingTitle": "Microsoft Teams a\u00fan no configurado",
+    "TeamsAccessPendingMessage": "Su acceso como invitado a Microsoft Teams en esta organizaci\u00f3n a\u00fan no se ha configurado. Su propia cuenta de Teams no se ve afectada. Pida a su patrocinador que le agregue a un equipo \u2014 una vez hecho, las funciones de Teams como chat, llamadas y reuniones estar\u00e1n disponibles aqu\u00ed.",
+    "TeamsNotReadyChatTooltip": "Chat no disponible aqu\u00ed \u2014 su acceso de invitado de Teams a\u00fan no se ha configurado",
+    "TeamsNotReadyCallTooltip": "Llamada no disponible aqu\u00ed \u2014 su acceso de invitado de Teams a\u00fan no se ha configurado",
+
+    "LoadingMessageInformal": "Cargando tus patrocinadores\u2026",
+    "NoSponsorsMessageInformal": "No se encontraron patrocinadores para tu cuenta.",
+    "SponsorUnavailableMessageInformal": "Tu patrocinador/propietario ya no est\u00e1 disponible. Ponte en contacto con tu responsable del proyecto para que se te asigne un nuevo patrocinador/propietario.",
+    "ErrorMessageInformal": "No se pudo cargar la informaci\u00f3n del patrocinador. Int\u00e9ntalo de nuevo m\u00e1s tarde.",
+    "TeamsAccessPendingMessageInformal": "Tu acceso como invitado a Microsoft Teams en esta organizaci\u00f3n a\u00fan no se ha configurado. Tu propia cuenta de Teams no se ve afectada. Pide a tu patrocinador que te agregue a un equipo \u2014 una vez hecho, las funciones de Teams como chat, llamadas y reuniones estar\u00e1n disponibles aqu\u00ed.",
+    "TeamsNotReadyChatTooltipInformal": "Chat no disponible aqu\u00ed \u2014 tu acceso de invitado de Teams a\u00fan no se ha configurado",
+    "TeamsNotReadyCallTooltipInformal": "Llamada no disponible aqu\u00ed \u2014 tu acceso de invitado de Teams a\u00fan no se ha configurado",
 
     "DisplayGroupName": "Visualizaci\u00f3n",
     "ShowBusinessPhonesFieldLabel": "Mostrar tel\u00e9fono del trabajo",
     "ShowMobilePhoneFieldLabel": "Mostrar n\u00famero de m\u00f3vil",
     "ShowWorkLocationFieldLabel": "Mostrar ubicaci\u00f3n de trabajo",
     "ShowManagerFieldLabel": "Mostrar responsable",
+    "UseInformalAddressFieldLabel": "Tratamiento informal (t\u00fa)",
 
     "FunctionGroupName": "Azure Function",
     "FunctionUrlFieldLabel": "URL de la API de patrocinadores (Azure Function)",

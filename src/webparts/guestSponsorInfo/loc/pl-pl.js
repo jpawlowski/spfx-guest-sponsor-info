@@ -51,11 +51,17 @@ define([], function() {
     "CopyMobileAriaLabel": "Kopiuj numer telefonu kom\u00f3rkowego",
     "CopyLocationAriaLabel": "Kopiuj lokalizację miejsca pracy",
 
+    "TeamsAccessPendingTitle": "Microsoft Teams nie zosta\u0142 jeszcze skonfigurowany",
+    "TeamsAccessPendingMessage": "Tw\u00f3j dost\u0119p go\u015bcia do Microsoft Teams w tej organizacji nie zosta\u0142 jeszcze skonfigurowany. Twoje w\u0142asne konto Teams nie jest tym dotkni\u0119te. Popro\u015b swojego sponsora o dodanie Ci\u0119 do zespo\u0142u \u2014 po tym funkcje Teams, takie jak czat, po\u0142\u0105czenia i spotkania, b\u0119d\u0105 dost\u0119pne tutaj.",
+    "TeamsNotReadyChatTooltip": "Czat niedost\u0119pny w tej organizacji \u2014 Tw\u00f3j dost\u0119p go\u015bcia Teams nie zosta\u0142 jeszcze skonfigurowany",
+    "TeamsNotReadyCallTooltip": "Po\u0142\u0105czenie niedost\u0119pne w tej organizacji \u2014 Tw\u00f3j dost\u0119p go\u015bcia Teams nie zosta\u0142 jeszcze skonfigurowany",
+
     "DisplayGroupName": "Wy\u015bwietlanie",
     "ShowBusinessPhonesFieldLabel": "Poka\u017c telefon s\u0142u\u017cbowy",
     "ShowMobilePhoneFieldLabel": "Poka\u017c numer telefonu kom\u00f3rkowego",
     "ShowWorkLocationFieldLabel": "Poka\u017c lokalizacj\u0119 miejsca pracy",
     "ShowManagerFieldLabel": "Poka\u017c mened\u017cera",
+    "UseInformalAddressFieldLabel": "Forma nieformalna (ty)",
 
     "FunctionGroupName": "Azure Function",
     "FunctionUrlFieldLabel": "Adres URL interfejsu API sponsorów (Azure Function)",

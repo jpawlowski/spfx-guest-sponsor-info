@@ -51,11 +51,17 @@ define([], function() {
     "CopyMobileAriaLabel": "Copiar n\u00famero de celular",
     "CopyLocationAriaLabel": "Copiar local de trabalho",
 
+    "TeamsAccessPendingTitle": "Microsoft Teams ainda n\u00e3o configurado",
+    "TeamsAccessPendingMessage": "Seu acesso de convidado ao Microsoft Teams nesta organiza\u00e7\u00e3o ainda n\u00e3o foi configurado. Sua pr\u00f3pria conta do Teams n\u00e3o \u00e9 afetada. Pe\u00e7a ao seu patrocinador para adicion\u00e1-lo a uma equipe \u2014 depois disso, recursos do Teams como chat, chamadas e reuni\u00f5es ficar\u00e3o dispon\u00edveis aqui.",
+    "TeamsNotReadyChatTooltip": "Chat indispon\u00edvel aqui \u2014 seu acesso de convidado do Teams ainda n\u00e3o foi configurado",
+    "TeamsNotReadyCallTooltip": "Chamada indispon\u00edvel aqui \u2014 seu acesso de convidado do Teams ainda n\u00e3o foi configurado",
+
     "DisplayGroupName": "Exibi\u00e7\u00e3o",
     "ShowBusinessPhonesFieldLabel": "Mostrar telefone comercial",
     "ShowMobilePhoneFieldLabel": "Mostrar n\u00famero de celular",
     "ShowWorkLocationFieldLabel": "Mostrar local de trabalho",
     "ShowManagerFieldLabel": "Mostrar gerente",
+    "UseInformalAddressFieldLabel": "Tratamento informal",
 
     "FunctionGroupName": "Azure Function",
     "FunctionUrlFieldLabel": "URL da API de patrocinadores (Azure Function)",

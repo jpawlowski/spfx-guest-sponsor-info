@@ -51,11 +51,25 @@ define([], function() {
     "CopyMobileAriaLabel": "Copier le num\u00e9ro de mobile",
     "CopyLocationAriaLabel": "Copier le lieu de travail",
 
+    "TeamsAccessPendingTitle": "Microsoft Teams pas encore configur\u00e9",
+    "TeamsAccessPendingMessage": "Votre acc\u00e8s invit\u00e9 \u00e0 Microsoft Teams dans cette organisation n\u2019a pas encore \u00e9t\u00e9 configur\u00e9. Votre propre compte Teams n\u2019est pas concern\u00e9. Demandez \u00e0 votre sponsor de vous ajouter \u00e0 une \u00e9quipe \u2014 ensuite, les fonctionnalit\u00e9s Teams telles que le chat, les appels et les r\u00e9unions seront disponibles ici.",
+    "TeamsNotReadyChatTooltip": "Chat non disponible ici \u2014 votre acc\u00e8s invit\u00e9 Teams n\u2019a pas encore \u00e9t\u00e9 configur\u00e9",
+    "TeamsNotReadyCallTooltip": "Appel non disponible ici \u2014 votre acc\u00e8s invit\u00e9 Teams n\u2019a pas encore \u00e9t\u00e9 configur\u00e9",
+
+    "LoadingMessageInformal": "Chargement de tes sponsors\u2026",
+    "NoSponsorsMessageInformal": "Aucun sponsor trouv\u00e9 pour ton compte.",
+    "SponsorUnavailableMessageInformal": "Ton sponsor/propri\u00e9taire n\u2019est plus disponible. Contacte ton responsable de projet pour qu\u2019un nouveau sponsor/propri\u00e9taire te soit attribu\u00e9.",
+    "ErrorMessageInformal": "Impossible de charger les informations sur les sponsors. R\u00e9essaie plus tard.",
+    "TeamsAccessPendingMessageInformal": "Ton acc\u00e8s invit\u00e9 \u00e0 Microsoft Teams dans cette organisation n\u2019a pas encore \u00e9t\u00e9 configur\u00e9. Ton propre compte Teams n\u2019est pas concern\u00e9. Demande \u00e0 ton sponsor de t\u2019ajouter \u00e0 une \u00e9quipe \u2014 ensuite, tu pourras utiliser les fonctionnalit\u00e9s Teams comme le chat, les appels et les r\u00e9unions ici.",
+    "TeamsNotReadyChatTooltipInformal": "Chat non disponible ici \u2014 ton acc\u00e8s invit\u00e9 Teams n\u2019a pas encore \u00e9t\u00e9 configur\u00e9",
+    "TeamsNotReadyCallTooltipInformal": "Appel non disponible ici \u2014 ton acc\u00e8s invit\u00e9 Teams n\u2019a pas encore \u00e9t\u00e9 configur\u00e9",
+
     "DisplayGroupName": "Affichage",
     "ShowBusinessPhonesFieldLabel": "Afficher le t\u00e9l\u00e9phone professionnel",
     "ShowMobilePhoneFieldLabel": "Afficher le num\u00e9ro de mobile",
     "ShowWorkLocationFieldLabel": "Afficher le lieu de travail",
     "ShowManagerFieldLabel": "Afficher le responsable",
+    "UseInformalAddressFieldLabel": "Utiliser le tutoiement (tu)",
 
     "FunctionGroupName": "Azure Function",
     "FunctionUrlFieldLabel": "URL de l'API des sponsors (Azure Function)",

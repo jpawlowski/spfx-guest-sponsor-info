@@ -49,13 +49,19 @@ define([], function() {
     "CopyEmailAriaLabel": "Kopi\u00e9r e-mailadresse",
     "CopyWorkPhoneAriaLabel": "Kopi\u00e9r arbejdstelefon",
     "CopyMobileAriaLabel": "Kopi\u00e9r mobilnummer",
-    "CopyLocationAriaLabel": "Kopiér arbejdssted",
+    "CopyLocationAriaLabel": "Kopi\u00e9r arbejdssted",
+
+    "TeamsAccessPendingTitle": "Microsoft Teams er endnu ikke konfigureret",
+    "TeamsAccessPendingMessage": "Din g\u00e6steadgang til Microsoft Teams i denne organisation er endnu ikke konfigureret. Din egen Teams-konto er ikke ber\u00f8rt. Bed din sponsor om at tilf\u00f8je dig til et team \u2014 derefter kan du bruge Teams-funktioner som chat, opkald og m\u00f8der her.",
+    "TeamsNotReadyChatTooltip": "Chat ikke tilg\u00e6ngelig her \u2014 din Teams-g\u00e6steadgang er endnu ikke konfigureret",
+    "TeamsNotReadyCallTooltip": "Opkald ikke tilg\u00e6ngeligt her \u2014 din Teams-g\u00e6steadgang er endnu ikke konfigureret",
 
     "DisplayGroupName": "Visning",
     "ShowBusinessPhonesFieldLabel": "Vis arbejdstelefonnumre",
     "ShowMobilePhoneFieldLabel": "Vis mobilnummer",
     "ShowWorkLocationFieldLabel": "Vis arbejdssted",
     "ShowManagerFieldLabel": "Vis chef",
+    "UseInformalAddressFieldLabel": "Uformel tiltaleform",
 
 : "Azure-funktion",
     "FunctionUrlFieldLabel": "Sponsor-API-URL (Azure-funktion)",

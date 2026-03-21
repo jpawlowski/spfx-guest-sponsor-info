@@ -51,11 +51,17 @@ define([], function() {
     "CopyMobileAriaLabel": "Copy mobile number",
     "CopyLocationAriaLabel": "Copy work location",
 
+    "TeamsAccessPendingTitle": "Microsoft Teams not set up yet",
+    "TeamsAccessPendingMessage": "Your guest access to Microsoft Teams in this organization hasn\u2019t been set up yet. This doesn\u2019t affect your own Teams account. Ask your sponsor to add you to a Team \u2014 once they do, Teams features like chat, calls, and meetings will become available here.",
+    "TeamsNotReadyChatTooltip": "Chat not available in this organization \u2014 your Teams guest access hasn\u2019t been set up yet",
+    "TeamsNotReadyCallTooltip": "Call not available in this organization \u2014 your Teams guest access hasn\u2019t been set up yet",
+
     "DisplayGroupName": "Display",
     "ShowBusinessPhonesFieldLabel": "Show business phone numbers",
     "ShowMobilePhoneFieldLabel": "Show mobile phone number",
     "ShowWorkLocationFieldLabel": "Show work location",
     "ShowManagerFieldLabel": "Show manager",
+    "UseInformalAddressFieldLabel": "Use informal address",
 
     "FunctionGroupName": "Azure Function",
     "FunctionUrlFieldLabel": "Sponsor API URL (Azure Function)",

@@ -51,11 +51,23 @@ define([], function() {
     "CopyMobileAriaLabel": "Mobiel nummer kopi\u00ebren",
     "CopyLocationAriaLabel": "Werklocatie kopiëren",
 
+    "TeamsAccessPendingTitle": "Microsoft Teams is nog niet ingesteld",
+    "TeamsAccessPendingMessage": "Uw gasttoegang tot Microsoft Teams in deze organisatie is nog niet ingesteld. Uw eigen Teams-account wordt hierdoor niet be\u00efnvloed. Vraag uw sponsor om u toe te voegen aan een team \u2014 daarna kunt u hier Teams-functies zoals chat, bellen en vergaderingen gebruiken.",
+    "TeamsNotReadyChatTooltip": "Chat hier niet beschikbaar \u2014 uw Teams-gasttoegang is nog niet ingesteld",
+    "TeamsNotReadyCallTooltip": "Bellen hier niet beschikbaar \u2014 uw Teams-gasttoegang is nog niet ingesteld",
+
+    "NoSponsorsMessageInformal": "Er zijn geen sponsors gevonden voor je account.",
+    "SponsorUnavailableMessageInformal": "Je sponsor/eigenaar is niet langer beschikbaar. Neem contact op met je projectverantwoordelijke om een nieuwe sponsor/eigenaar aan je account te koppelen.",
+    "TeamsAccessPendingMessageInformal": "Je gasttoegang tot Microsoft Teams in deze organisatie is nog niet ingesteld. Je eigen Teams-account wordt hierdoor niet be\u00efnvloed. Vraag je sponsor om je toe te voegen aan een team \u2014 daarna kun je hier Teams-functies zoals chat, bellen en vergaderingen gebruiken.",
+    "TeamsNotReadyChatTooltipInformal": "Chat hier niet beschikbaar \u2014 je Teams-gasttoegang is nog niet ingesteld",
+    "TeamsNotReadyCallTooltipInformal": "Bellen hier niet beschikbaar \u2014 je Teams-gasttoegang is nog niet ingesteld",
+
     "DisplayGroupName": "Weergave",
     "ShowBusinessPhonesFieldLabel": "Zakelijk telefoonnummer weergeven",
     "ShowMobilePhoneFieldLabel": "Mobiel nummer weergeven",
     "ShowWorkLocationFieldLabel": "Werklocatie weergeven",
     "ShowManagerFieldLabel": "Manager weergeven",
+    "UseInformalAddressFieldLabel": "Informeel aanspreken (jij/je)",
 
     "FunctionGroupName": "Azure-functie",
     "FunctionUrlFieldLabel": "Sponsor API-URL (Azure-functie)",

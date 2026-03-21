@@ -51,11 +51,17 @@ define([], function() {
     "CopyMobileAriaLabel": "Kopier mobilnummer",
     "CopyLocationAriaLabel": "Kopier arbeidssted",
 
+    "TeamsAccessPendingTitle": "Microsoft Teams er ikke konfigurert enn\u00e5",
+    "TeamsAccessPendingMessage": "Gjestetilgangen din til Microsoft Teams i denne organisasjonen er ikke konfigurert enn\u00e5. Din egen Teams-konto er ikke ber\u00f8rt. Be sponsoren din om \u00e5 legge deg til i et team \u2014 deretter kan du bruke Teams-funksjoner som chat, samtaler og m\u00f8ter her.",
+    "TeamsNotReadyChatTooltip": "Chat ikke tilgjengelig her \u2014 Teams-gjestetilgangen din er ikke konfigurert enn\u00e5",
+    "TeamsNotReadyCallTooltip": "Samtale ikke tilgjengelig her \u2014 Teams-gjestetilgangen din er ikke konfigurert enn\u00e5",
+
     "DisplayGroupName": "Visning",
     "ShowBusinessPhonesFieldLabel": "Vis jobbtelefonnumre",
     "ShowMobilePhoneFieldLabel": "Vis mobilnummer",
     "ShowWorkLocationFieldLabel": "Vis arbeidssted",
     "ShowManagerFieldLabel": "Vis leder",
+    "UseInformalAddressFieldLabel": "Uformell tiltaleform",
 
     "FunctionGroupName": "Azure-funksjon",
     "FunctionUrlFieldLabel": "Sponsor-API-URL (Azure-funksjon)",

@@ -49,11 +49,24 @@ define([], function() {
     "CopyMobileAriaLabel": "Mobilnummer kopieren",
     "CopyLocationAriaLabel": "Arbeitsort kopieren",
 
+    "TeamsAccessPendingTitle": "Microsoft Teams noch nicht eingerichtet",
+    "TeamsAccessPendingMessage": "Ihr Gastzugang zu Microsoft Teams in dieser Organisation ist noch nicht eingerichtet. Ihr eigenes Teams-Konto ist davon nicht betroffen. Bitten Sie Ihren Sponsor, Sie einem Team hinzuzuf\u00fcgen \u2014 danach k\u00f6nnen Sie hier Teams-Funktionen wie Chat, Anrufe und Besprechungen nutzen.",
+    "TeamsNotReadyChatTooltip": "Chat hier nicht verf\u00fcgbar \u2014 Ihr Teams-Gastzugang ist noch nicht eingerichtet",
+    "TeamsNotReadyCallTooltip": "Anruf hier nicht verf\u00fcgbar \u2014 Ihr Teams-Gastzugang ist noch nicht eingerichtet",
+
+    "NoSponsorsMessageInformal": "F\u00fcr dein Konto wurden keine Sponsoren gefunden.",
+    "SponsorUnavailableMessageInformal": "Dein bisheriger Sponsor/Owner ist nicht mehr verf\u00fcgbar. Bitte k\u00fcmmere dich bei deinem Auftraggeber darum, dass dir ein neuer Sponsor/Owner zugewiesen wird.",
+    "ErrorMessageInformal": "Die Sponsoreninformationen konnten nicht geladen werden. Bitte versuche es sp\u00e4ter erneut.",
+    "TeamsAccessPendingMessageInformal": "Dein Gastzugang zu Microsoft Teams in dieser Organisation ist noch nicht eingerichtet. Dein eigenes Teams-Konto ist davon nicht betroffen. Bitte deinen Sponsor, dich einem Team hinzuzuf\u00fcgen \u2014 danach kannst du hier Teams-Funktionen wie Chat, Anrufe und Besprechungen nutzen.",
+    "TeamsNotReadyChatTooltipInformal": "Chat hier nicht verf\u00fcgbar \u2014 dein Teams-Gastzugang ist noch nicht eingerichtet",
+    "TeamsNotReadyCallTooltipInformal": "Anruf hier nicht verf\u00fcgbar \u2014 dein Teams-Gastzugang ist noch nicht eingerichtet",
+
     "DisplayGroupName": "Anzeige",
     "ShowBusinessPhonesFieldLabel": "Gesch\u00e4ftstelefon anzeigen",
     "ShowMobilePhoneFieldLabel": "Mobiltelefon anzeigen",
     "ShowWorkLocationFieldLabel": "Arbeitsort anzeigen",
     "ShowManagerFieldLabel": "Vorgesetzte(n) anzeigen",
+    "UseInformalAddressFieldLabel": "Informelle Anrede verwenden (du)",
 
     "FunctionGroupName": "Azure-Funktion",
     "FunctionUrlFieldLabel": "Sponsor-API-URL (Azure-Funktion)",

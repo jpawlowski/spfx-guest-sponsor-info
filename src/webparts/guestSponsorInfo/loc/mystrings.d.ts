@@ -17,6 +17,7 @@ declare interface IGuestSponsorInfoWebPartStrings {
   ShowMobilePhoneFieldLabel: string;
   ShowWorkLocationFieldLabel: string;
   ShowManagerFieldLabel: string;
+  UseInformalAddressFieldLabel: string;
 
   // Azure Function proxy
   FunctionGroupName: string;
@@ -69,6 +70,21 @@ declare interface IGuestSponsorInfoWebPartStrings {
   CopyWorkPhoneAriaLabel: string;
   CopyMobileAriaLabel: string;
   CopyLocationAriaLabel: string;
+
+  // Teams access pending notice
+  TeamsAccessPendingTitle: string;
+  TeamsAccessPendingMessage: string;
+  TeamsNotReadyChatTooltip: string;
+  TeamsNotReadyCallTooltip: string;
+
+  // Informal-address overrides (optional — only provided by locales with T-V distinction)
+  LoadingMessageInformal?: string;
+  NoSponsorsMessageInformal?: string;
+  SponsorUnavailableMessageInformal?: string;
+  ErrorMessageInformal?: string;
+  TeamsAccessPendingMessageInformal?: string;
+  TeamsNotReadyChatTooltipInformal?: string;
+  TeamsNotReadyCallTooltipInformal?: string;
 }
 
 declare module 'GuestSponsorInfoWebPartStrings' {
