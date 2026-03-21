@@ -32,18 +32,19 @@ function getInitials(name: string): string {
 
 /** Maps Graph presence availability (and activity) token → display colour. */
 const PRESENCE_COLORS: Record<string, string> = {
-  Available:       '#107C10',
-  AvailableIdle:   '#107C10',
-  Away:            '#F7630C',
-  BeRightBack:     '#F7630C',
-  Busy:            '#D13438',
-  BusyIdle:        '#D13438',
-  DoNotDisturb:    '#D13438',
+  // Matches Fluent PersonaPresence defaults for v8 (Microsoft).
+  Available:       '#6BB700',
+  AvailableIdle:   '#6BB700',
+  Away:            '#FFAA44',
+  BeRightBack:     '#FFAA44',
+  Busy:            '#C43148',
+  BusyIdle:        '#C43148',
+  DoNotDisturb:    '#C50F1F',
   Focusing:        '#6264A7',
-  InACall:         '#D13438',
-  InAMeeting:      '#D13438',
-  OutOfOffice:     '#F7630C',
-  Presenting:      '#D13438',
+  InACall:         '#C43148',
+  InAMeeting:      '#C43148',
+  OutOfOffice:     '#B4009E',
+  Presenting:      '#C43148',
   Offline:         '#8A8886',
   PresenceUnknown: '#8A8886',
 };

@@ -64,20 +64,40 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
     // the "icons re-registered" console warning that occurs when multiple web parts
     // or the SharePoint page itself have already called initializeIcons().
     initializeIcons(undefined, { disableWarnings: true });
-    try {
-      this._graphClient = await this.context.msGraphClientFactory.getClient('3');
-    } catch {
-      // Graph client unavailable – the web part will still render in edit-mode placeholder state.
-    }
-    if (this.properties.functionClientId) {
-      try {
-        this._aadHttpClient = await this.context.aadHttpClientFactory.getClient(
-          this.properties.functionClientId
-        );
-      } catch {
-        // AAD HTTP client unavailable – will fall back to direct Graph path.
-      }
-    }
+    // Acquire Graph and AAD clients in the background — do NOT await them here.
+    // SPFx awaits the onInit() Promise before rendering any web part on the page,
+    // so blocking here would delay the entire page. Instead we resolve immediately
+    // and re-render once clients are ready. The React component already shows a
+    // shimmer while clients are undefined, so there is no visible flash.
+    this._acquireClientsInBackground();
+  }
+
+  /**
+   * Starts Graph and AAD HTTP client acquisition concurrently without blocking
+   * the SPFx page lifecycle. Calls render() once both have settled so the React
+   * component receives real clients in a single props update (avoids triggering
+   * two separate data fetches if both clients resolve close together).
+   * Both sub-promises catch their own errors and always resolve, so Promise.all
+   * is safe to use here without needing Promise.allSettled (ES2020).
+   */
+  private _acquireClientsInBackground(): void {
+    const graphPromise = this.context.msGraphClientFactory.getClient('3')
+      .then(client => { this._graphClient = client; })
+      .catch(() => { /* Graph unavailable — component renders in placeholder state */ });
+
+    const clientId = this.properties.functionClientId;
+    const aadPromise = clientId
+      ? this.context.aadHttpClientFactory.getClient(clientId)
+          .then(client => { this._aadHttpClient = client; })
+          .catch(() => { /* AAD client unavailable — falls back to direct Graph path */ })
+      : Promise.resolve();
+
+    // Both sub-promises have their own .catch() and always resolve — Promise.all is safe here.
+    // The trailing .catch() satisfies @typescript-eslint/no-floating-promises without the
+    // void operator (which no-void disallows). In practice this catch is never reached.
+    Promise.all([graphPromise, aadPromise]).then(() => {
+      this.render();
+    }).catch(() => { /* sub-promises never reject; unreachable */ });
   }
 
   protected onDispose(): void {

@@ -3,6 +3,28 @@
 Project-specific decisions and known limitations.
 For installation and build instructions see the [README](../README.md).
 
+## SPFx Lifecycle and Non-Blocking Initialization
+
+`onInit()` resolves immediately after `super.onInit()` and icon registration.
+Graph and AAD HTTP client acquisition runs in the background via `_acquireClientsInBackground()`.
+
+**Why:** SPFx awaits the `onInit()` Promise before rendering any web part on the page.
+Blocking here with `getClient()` calls would delay the entire page layout, not just this
+web part. By resolving `onInit()` immediately, the page renders all web parts in parallel.
+
+**Render sequence for a guest user (view mode):**
+
+1. SPFx calls `render()` right after `onInit()` resolves — both clients are still `undefined`.
+   The React component initialises `loading = true` and the shimmer is immediately visible.
+2. `_acquireClientsInBackground()` uses `Promise.allSettled` to wait for both clients
+   concurrently, then calls `render()` once — passing real clients in a single props update.
+3. The `useEffect` in `GuestSponsorInfo` detects the new client props and starts the data fetch.
+4. Sponsors load; shimmer replaced by sponsor cards.
+
+For non-guests `render()` returns `null` immediately in both step 1 and step 2 — no visible
+effect. Edit-mode shows the placeholder in step 1 and re-renders with the proxy health-check
+client in step 2.
+
 ## Guest Detection
 
 Combined check: `isGuest = isExternalGuestUser || loginName.includes('#EXT#')`.
@@ -83,7 +105,7 @@ PascalCase word-splitter (English only).
 **OutOfOffice as suffix modifier.** When `activity === 'OutOfOffice'`, the label is the
 base `availability` label plus a localised suffix (e.g. "Available, out of office").
 If no base availability is set, it falls back to the standalone "Out of office" string.
-The dot colour uses the OOF orange (`#F7630C`) regardless of the base availability.
+The dot colour uses the OOF magenta (`#B4009E`) regardless of the base availability.
 
 **Focusing colour.** `Focusing` uses Teams purple (`#6264A7`), not the generic DND red.
 This matches the colour Teams displays for focus sessions.
