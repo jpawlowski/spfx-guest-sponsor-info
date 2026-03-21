@@ -7,15 +7,20 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
+  bat \
   build-essential \
   ca-certificates \
   curl \
+  fd-find \
+  fzf \
   git \
   jq \
   python-is-python3 \
   python3 \
+  ripgrep \
   unzip \
   xz-utils \
+  yq \
   && rm -rf /var/lib/apt/lists/*
 
 RUN arch="${TARGETARCH:-$(dpkg --print-architecture)}" \
