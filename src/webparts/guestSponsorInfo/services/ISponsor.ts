@@ -16,6 +16,10 @@ export interface ISponsor {
   department?: string;
   /** Office location string. */
   officeLocation?: string;
+  /** City. */
+  city?: string;
+  /** Country or region. */
+  country?: string;
   /** Work phone numbers. */
   businessPhones?: string[];
   /** Mobile phone number. */

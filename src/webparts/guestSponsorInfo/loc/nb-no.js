@@ -73,6 +73,12 @@ define([], function() {
     "ShowManagerJobTitleFieldLabel": "Vis lederens stillingstittel",
     "ShowSponsorDepartmentFieldLabel": "Vis sponsors avdeling",
     "ShowManagerDepartmentFieldLabel": "Vis lederens avdeling",
-    "DepartmentLabel": "Avdeling"
+    "DepartmentLabel": "Avdeling",
+    "ShowCityFieldLabel": "Vis by",
+    "ShowCountryFieldLabel": "Vis land",
+    "CityFieldLabel": "By",
+    "CountryFieldLabel": "Land",
+    "CopyCityAriaLabel": "Kopier by",
+    "CopyCountryAriaLabel": "Kopier land"
   }
 });

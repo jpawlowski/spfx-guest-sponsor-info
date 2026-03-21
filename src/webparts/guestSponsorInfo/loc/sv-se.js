@@ -73,6 +73,12 @@ define([], function() {
     "ShowManagerJobTitleFieldLabel": "Visa chefens jobbtitel",
     "ShowSponsorDepartmentFieldLabel": "Visa sponsorns avdelning",
     "ShowManagerDepartmentFieldLabel": "Visa chefens avdelning",
-    "DepartmentLabel": "Avdelning"
+    "DepartmentLabel": "Avdelning",
+    "ShowCityFieldLabel": "Visa stad",
+    "ShowCountryFieldLabel": "Visa land",
+    "CityFieldLabel": "Stad",
+    "CountryFieldLabel": "Land",
+    "CopyCityAriaLabel": "Kopiera stad",
+    "CopyCountryAriaLabel": "Kopiera land"
   }
 });

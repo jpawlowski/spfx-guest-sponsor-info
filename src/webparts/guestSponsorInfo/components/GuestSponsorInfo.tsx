@@ -21,6 +21,8 @@ interface ISponsorListProps {
   showBusinessPhones: boolean;
   showMobilePhone: boolean;
   showWorkLocation: boolean;
+  showCity: boolean;
+  showCountry: boolean;
   showManager: boolean;
   showSponsorJobTitle: boolean;
   showManagerJobTitle: boolean;
@@ -32,7 +34,7 @@ interface ISponsorListProps {
   guestHasTeamsAccess?: boolean;
 }
 
-const SponsorList: React.FC<ISponsorListProps> = ({ sponsors, hostTenantId, showBusinessPhones, showMobilePhone, showWorkLocation, showManager, showSponsorJobTitle, showManagerJobTitle, showSponsorDepartment, showManagerDepartment, useInformalAddress, onActiveCardChange, guestHasTeamsAccess }) => {
+const SponsorList: React.FC<ISponsorListProps> = ({ sponsors, hostTenantId, showBusinessPhones, showMobilePhone, showWorkLocation, showCity, showCountry, showManager, showSponsorJobTitle, showManagerJobTitle, showSponsorDepartment, showManagerDepartment, useInformalAddress, onActiveCardChange, guestHasTeamsAccess }) => {
   const [activeId, setActiveId] = React.useState<string | null>(null);
   const hideTimeout = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -68,6 +70,8 @@ const SponsorList: React.FC<ISponsorListProps> = ({ sponsors, hostTenantId, show
             showBusinessPhones={showBusinessPhones}
             showMobilePhone={showMobilePhone}
             showWorkLocation={showWorkLocation}
+            showCity={showCity}
+            showCountry={showCountry}
             showManager={showManager}
             showSponsorJobTitle={showSponsorJobTitle}
             showManagerJobTitle={showManagerJobTitle}
@@ -144,6 +148,8 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
   showBusinessPhones,
   showMobilePhone,
   showWorkLocation,
+  showCity,
+  showCountry,
   showManager,
   showSponsorJobTitle,
   showManagerJobTitle,
@@ -399,6 +405,8 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
           showBusinessPhones={showBusinessPhones}
           showMobilePhone={showMobilePhone}
           showWorkLocation={showWorkLocation}
+          showCity={showCity}
+          showCountry={showCountry}
           showManager={showManager}
           showSponsorJobTitle={showSponsorJobTitle}
           showManagerJobTitle={showManagerJobTitle}

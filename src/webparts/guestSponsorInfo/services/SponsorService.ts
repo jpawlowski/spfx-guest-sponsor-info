@@ -158,7 +158,7 @@ async function fetchManager(
 export async function getSponsors(client: MSGraphClientV3): Promise<ISponsorsResult> {
   const response = await client
     .api('/me/sponsors')
-    .select('id,displayName,givenName,surname,mail,jobTitle,department,officeLocation,businessPhones,mobilePhone')
+    .select('id,displayName,givenName,surname,mail,jobTitle,department,officeLocation,city,country,businessPhones,mobilePhone')
     .get();
 
   if (!response?.value) return { activeSponsors: [], unavailableCount: 0 };
@@ -173,6 +173,8 @@ export async function getSponsors(client: MSGraphClientV3): Promise<ISponsorsRes
     jobTitle: (item.jobTitle as string) || undefined,
     department: (item.department as string) || undefined,
     officeLocation: (item.officeLocation as string) || undefined,
+    city: (item.city as string) || undefined,
+    country: (item.country as string) || undefined,
     businessPhones: (item.businessPhones as string[]) || [],
     mobilePhone: (item.mobilePhone as string) || undefined,
   }));

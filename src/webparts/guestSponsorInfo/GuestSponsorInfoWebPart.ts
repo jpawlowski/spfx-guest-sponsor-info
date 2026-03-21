@@ -25,6 +25,10 @@ export interface IGuestSponsorInfoWebPartProps {
   showMobilePhone: boolean;
   /** Show the work location field in the contact card. Default: true. */
   showWorkLocation: boolean;
+  /** Show the sponsor's city. Default: false. */
+  showCity: boolean;
+  /** Show the sponsor's country or region. Default: false. */
+  showCountry: boolean;
   /** Show the manager section in the contact card. Default: true. */
   showManager: boolean;
   /** Show the sponsor's job title. Default: true. */
@@ -61,6 +65,8 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
         showBusinessPhones: this.properties.showBusinessPhones ?? true,
         showMobilePhone: this.properties.showMobilePhone ?? true,
         showWorkLocation: this.properties.showWorkLocation ?? true,
+        showCity: this.properties.showCity ?? false,
+        showCountry: this.properties.showCountry ?? false,
         showManager: this.properties.showManager ?? true,
         showSponsorJobTitle: this.properties.showSponsorJobTitle ?? true,
         showManagerJobTitle: this.properties.showManagerJobTitle ?? true,
@@ -156,6 +162,12 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
                 PropertyPaneCheckbox('showWorkLocation', {
                   text: strings.ShowWorkLocationFieldLabel,
                   checked: this.properties.showWorkLocation ?? true,
+                }),
+                PropertyPaneCheckbox('showCity', {
+                  text: strings.ShowCityFieldLabel,
+                }),
+                PropertyPaneCheckbox('showCountry', {
+                  text: strings.ShowCountryFieldLabel,
                 }),
                 PropertyPaneCheckbox('showManager', {
                   text: strings.ShowManagerFieldLabel,

@@ -177,6 +177,8 @@ interface ISponsor {
   jobTitle?: string;
   department?: string;
   officeLocation?: string;
+  city?: string;
+  country?: string;
   businessPhones: string[];
   mobilePhone?: string;
   presence?: string;
@@ -400,7 +402,7 @@ export async function getGuestSponsors(
       response = await withTimeout(
         client
           .api(`/users/${callerOid}/sponsors`)
-          .select('id,displayName,givenName,surname,mail,jobTitle,department,officeLocation,businessPhones,mobilePhone')
+          .select('id,displayName,givenName,surname,mail,jobTitle,department,officeLocation,city,country,businessPhones,mobilePhone')
           // Enforce the cap at the Graph level to avoid fetching more items than we will process.
           .top(MAX_SPONSORS)
           .get(),
@@ -440,6 +442,8 @@ export async function getGuestSponsors(
         jobTitle: (item.jobTitle as string) || undefined,
         department: (item.department as string) || undefined,
         officeLocation: (item.officeLocation as string) || undefined,
+        city: (item.city as string) || undefined,
+        country: (item.country as string) || undefined,
         businessPhones: Array.isArray(item.businessPhones)
           ? (item.businessPhones as unknown[]).filter((p): p is string => typeof p === 'string')
           : [],
@@ -577,6 +581,8 @@ export async function getGuestSponsors(
         if (s.jobTitle !== undefined)            out.jobTitle = s.jobTitle;
         if (s.department !== undefined)          out.department = s.department;
         if (s.officeLocation !== undefined)      out.officeLocation = s.officeLocation;
+        if (s.city !== undefined)               out.city = s.city;
+        if (s.country !== undefined)            out.country = s.country;
         if (s.mobilePhone !== undefined)         out.mobilePhone = s.mobilePhone;
         if (s.managerDisplayName !== undefined)  out.managerDisplayName = s.managerDisplayName;
         if (s.managerGivenName !== undefined)    out.managerGivenName = s.managerGivenName;

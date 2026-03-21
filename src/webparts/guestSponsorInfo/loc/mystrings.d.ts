@@ -16,6 +16,8 @@ declare interface IGuestSponsorInfoWebPartStrings {
   ShowBusinessPhonesFieldLabel: string;
   ShowMobilePhoneFieldLabel: string;
   ShowWorkLocationFieldLabel: string;
+  ShowCityFieldLabel: string;
+  ShowCountryFieldLabel: string;
   ShowManagerFieldLabel: string;
   UseInformalAddressFieldLabel: string;
 
@@ -66,6 +68,8 @@ declare interface IGuestSponsorInfoWebPartStrings {
   WorkPhoneFieldLabel: string;
   MobileFieldLabel: string;
   WorkLocationFieldLabel: string;
+  CityFieldLabel: string;
+  CountryFieldLabel: string;
 
   // Organization section
   OrganizationSection: string;
@@ -77,6 +81,8 @@ declare interface IGuestSponsorInfoWebPartStrings {
   CopyWorkPhoneAriaLabel: string;
   CopyMobileAriaLabel: string;
   CopyLocationAriaLabel: string;
+  CopyCityAriaLabel: string;
+  CopyCountryAriaLabel: string;
 
   // Teams access pending notice
   TeamsAccessPendingTitle: string;

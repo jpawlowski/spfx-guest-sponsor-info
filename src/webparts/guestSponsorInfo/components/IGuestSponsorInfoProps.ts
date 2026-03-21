@@ -39,6 +39,10 @@ export interface IGuestSponsorInfoProps {
   showMobilePhone: boolean;
   /** Show the work location field in the contact card. */
   showWorkLocation: boolean;
+  /** Show the sponsor's city. Default: false. */
+  showCity: boolean;
+  /** Show the sponsor's country or region. Default: false. */
+  showCountry: boolean;
   /** Show the manager section in the contact card. */
   showManager: boolean;
   /** Show the sponsor's job title in the contact card. Default: true. */

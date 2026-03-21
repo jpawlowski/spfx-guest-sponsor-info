@@ -190,6 +190,10 @@ interface ISponsorCardProps {
   showMobilePhone: boolean;
   /** Show the work location row in the contact details section. */
   showWorkLocation: boolean;
+  /** Show the sponsor's city. */
+  showCity: boolean;
+  /** Show the sponsor's country or region. */
+  showCountry: boolean;
   /** Show the manager section below the contact details. */
   showManager: boolean;
   /** Show the sponsor's job title in the rich card header. */
@@ -219,6 +223,8 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
   showBusinessPhones,
   showMobilePhone,
   showWorkLocation,
+  showCity,
+  showCountry,
   showManager,
   showSponsorJobTitle,
   showManagerJobTitle,
@@ -412,6 +418,26 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
               <div className={styles.richInfoValue}>{sponsor.officeLocation}</div>
             </div>
             <CopyButton value={sponsor.officeLocation} ariaLabel={strings.CopyLocationAriaLabel} />
+          </div>
+        )}
+        {showCity && sponsor.city && (
+          <div className={styles.richInfoRow}>
+            <Icon iconName="Building" className={styles.richInfoIcon} aria-hidden="true" />
+            <div className={styles.richInfoText}>
+              <div className={styles.richInfoMeta}>{strings.CityFieldLabel}</div>
+              <div className={styles.richInfoValue}>{sponsor.city}</div>
+            </div>
+            <CopyButton value={sponsor.city} ariaLabel={strings.CopyCityAriaLabel} />
+          </div>
+        )}
+        {showCountry && sponsor.country && (
+          <div className={styles.richInfoRow}>
+            <Icon iconName="Globe" className={styles.richInfoIcon} aria-hidden="true" />
+            <div className={styles.richInfoText}>
+              <div className={styles.richInfoMeta}>{strings.CountryFieldLabel}</div>
+              <div className={styles.richInfoValue}>{sponsor.country}</div>
+            </div>
+            <CopyButton value={sponsor.country} ariaLabel={strings.CopyCountryAriaLabel} />
           </div>
         )}
       </div>

@@ -65,6 +65,8 @@ function render(
   showBusinessPhones = true,
   showMobilePhone = true,
   showWorkLocation = true,
+  showCity = false,
+  showCountry = false,
   showManager = true,
   useInformalAddress = false,
   showSponsorJobTitle = true,
@@ -83,6 +85,8 @@ function render(
         showBusinessPhones={showBusinessPhones}
         showMobilePhone={showMobilePhone}
         showWorkLocation={showWorkLocation}
+        showCity={showCity}
+        showCountry={showCountry}
         showManager={showManager}
         useInformalAddress={useInformalAddress}
         showSponsorJobTitle={showSponsorJobTitle}

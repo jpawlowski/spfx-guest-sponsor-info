@@ -73,6 +73,12 @@ define([], function() {
     "ShowManagerJobTitleFieldLabel": "\u663e\u793a\u7ecf\u7406\u7684\u804c\u4f4d",
     "ShowSponsorDepartmentFieldLabel": "\u663e\u793a\u62c5\u4fdd\u4eba\u7684\u90e8\u95e8",
     "ShowManagerDepartmentFieldLabel": "\u663e\u793a\u7ecf\u7406\u7684\u90e8\u95e8",
-    "DepartmentLabel": "\u90e8\u95e8"
+    "DepartmentLabel": "\u90e8\u95e8",
+    "ShowCityFieldLabel": "\u663e\u793a\u57ce\u5e02",
+    "ShowCountryFieldLabel": "\u663e\u793a\u56fd\u5bb6/\u5730\u533a",
+    "CityFieldLabel": "\u57ce\u5e02",
+    "CountryFieldLabel": "\u56fd\u5bb6/\u5730\u533a",
+    "CopyCityAriaLabel": "\u590d\u5236\u57ce\u5e02",
+    "CopyCountryAriaLabel": "\u590d\u5236\u56fd\u5bb6/\u5730\u533a"
   }
 });

@@ -78,6 +78,12 @@ define([], function() {
     "ShowManagerJobTitleFieldLabel": "Berufsbezeichnung der F\u00fchrungskraft anzeigen",
     "ShowSponsorDepartmentFieldLabel": "Abteilung des Sponsors anzeigen",
     "ShowManagerDepartmentFieldLabel": "Abteilung der F\u00fchrungskraft anzeigen",
-    "DepartmentLabel": "Abteilung"
+    "DepartmentLabel": "Abteilung",
+    "ShowCityFieldLabel": "Stadt anzeigen",
+    "ShowCountryFieldLabel": "Land anzeigen",
+    "CityFieldLabel": "Stadt",
+    "CountryFieldLabel": "Land",
+    "CopyCityAriaLabel": "Stadt kopieren",
+    "CopyCountryAriaLabel": "Land kopieren"
   }
 });

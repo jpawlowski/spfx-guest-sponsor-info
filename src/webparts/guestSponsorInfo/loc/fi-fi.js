@@ -73,6 +73,12 @@ define([], function() {
     "ShowManagerJobTitleFieldLabel": "N\u00e4yt\u00e4 esihenkil\u00f6n teht\u00e4v\u00e4nimike",
     "ShowSponsorDepartmentFieldLabel": "N\u00e4yt\u00e4 sponsorin osasto",
     "ShowManagerDepartmentFieldLabel": "N\u00e4yt\u00e4 esihenkil\u00f6n osasto",
-    "DepartmentLabel": "Osasto"
+    "DepartmentLabel": "Osasto",
+    "ShowCityFieldLabel": "N\u00e4yt\u00e4 kaupunki",
+    "ShowCountryFieldLabel": "N\u00e4yt\u00e4 maa",
+    "CityFieldLabel": "Kaupunki",
+    "CountryFieldLabel": "Maa",
+    "CopyCityAriaLabel": "Kopioi kaupunki",
+    "CopyCountryAriaLabel": "Kopioi maa"
   }
 });
