@@ -38,6 +38,11 @@ jobs:
     name: Package & publish .sppkg
     runs-on: ubuntu-latest
     needs: test
+    env:
+      # Opt into Node.js 24 for action runners now, ahead of the June 2026 forced
+      # migration. Silences deprecation warnings from actions that still ship a
+      # Node 20 runtime (setup-bicep, action-gh-release) until they release updates.
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
     steps:
       - name: Checkout
