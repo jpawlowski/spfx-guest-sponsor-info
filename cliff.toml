@@ -28,6 +28,7 @@ footer = """
 | `guest-sponsor-info.sppkg` | SharePoint web part — upload to App Catalog |
 | `guest-sponsor-info-function.zip` | Azure Function proxy — deploy via ARM template or Azure Portal |
 | `azuredeploy.json` | ARM template for the Azure Function proxy |
+| `main.bicep` | Bicep source template — for customisation before compiling to ARM |
 
 > First time deploying? See the [README](https://github.com/jpawlowski/spfx-guest-sponsor-info#readme) for step-by-step instructions.
 """
