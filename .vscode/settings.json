@@ -41,6 +41,8 @@
   "files.insertFinalNewline": true,
   // ── GitHub Copilot ─────────────────────────────────────────────────────────
   "github.copilot.chat.commitMessageGeneration.instructions": [
-    { "file": ".github/instructions/commit-message.instructions.md" }
+    {
+      "file": ".github/instructions/commit-message.instructions.md"
+    }
   ]
 }

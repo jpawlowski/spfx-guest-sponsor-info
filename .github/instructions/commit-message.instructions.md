@@ -23,14 +23,14 @@ that violate these rules, so generate correct messages from the start.
 
 ## Hard Limits (enforced by commitlint — violations block the commit)
 
-| Part | Rule |
-| ---- | ---- |
-| Header (entire first line) | **≤ 100 characters** |
-| Each body line | **≤ 100 characters** — wrap manually; do NOT let a single line exceed 100 chars |
-| Each footer line | **≤ 100 characters** |
-| Subject case | **lower-case** — never start the subject with a capital letter |
-| Subject trailing period | **not allowed** |
-| Type | must be one of the allowed types below |
+| Part                       | Rule                                                                            |
+| -------------------------- | ------------------------------------------------------------------------------- |
+| Header (entire first line) | **≤ 100 characters**                                                            |
+| Each body line             | **≤ 100 characters** — wrap manually; do NOT let a single line exceed 100 chars |
+| Each footer line           | **≤ 100 characters**                                                            |
+| Subject case               | **lower-case** — never start the subject with a capital letter                  |
+| Subject trailing period    | **not allowed**                                                                 |
+| Type                       | must be one of the allowed types below                                          |
 
 ## Allowed Types
 
