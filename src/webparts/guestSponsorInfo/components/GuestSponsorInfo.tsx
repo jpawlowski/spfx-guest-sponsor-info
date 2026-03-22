@@ -106,13 +106,15 @@ const SponsorList: React.FC<ISponsorListProps> = ({ sponsors, hostTenantId, comp
 };
 
 // Skeleton shimmer for full layout — 136px tile with 72px avatar + 2-line name.
+// Total height: 8 (top) + 72 (avatar) + 8 (gap) + 18 (name×1) + 18 (name×2) + 8 (bottom) = 132px.
+// Matches card padding: 8px equal on all sides (Fluent UI spacingS).
 const sponsorCardShimmerFull = (
   <ShimmerElementsGroup
     flexWrap
     width="136px"
     shimmerElements={[
-      // top padding 12px
-      { type: ShimmerElementType.gap, width: '100%', height: 12 },
+      // top padding 8px
+      { type: ShimmerElementType.gap, width: '100%', height: 8 },
       // avatar row: (136-72)/2 = 32px gap each side
       { type: ShimmerElementType.gap,    width: 32, height: 72 },
       { type: ShimmerElementType.circle,            height: 72 },
@@ -127,8 +129,8 @@ const sponsorCardShimmerFull = (
       { type: ShimmerElementType.gap,  width: 33, height: 18 },
       { type: ShimmerElementType.line, width: 70, height: 18 },
       { type: ShimmerElementType.gap,  width: 33, height: 18 },
-      // bottom padding 12px
-      { type: ShimmerElementType.gap, width: '100%', height: 12 },
+      // bottom padding 8px
+      { type: ShimmerElementType.gap, width: '100%', height: 8 },
     ]}
   />
 );

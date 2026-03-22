@@ -12,7 +12,7 @@
 
 // Reserve minimum height while displaying loading skeletons or error messages
 // to prevent layout shift when transitioning between states.
-// Matches the height of a single shimmer card (~186px) plus title and margins.
+// Conservative cover for: webPart padding (16px) + title (36px) + shimmer (132px) = 184px.
 .webPartContent {
   min-height: 200px;
 }
@@ -111,12 +111,13 @@
 .card {
   position: relative;
   width: 136px;
-  min-height: 130px; // 12 padding + 72 avatar + 8 gap + 26px name (≥1 line) + 12 padding
+  box-sizing: border-box;
+  min-height: 114px; // border-box: 8 padding + 72 avatar + 8 gap + 18px name (≥1 line) + 8 padding
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  padding: 12px 8px;
+  padding: 8px; // equal on all sides — Fluent UI spacingS
   border-radius: 4px;
   cursor: pointer;
   outline: none;
