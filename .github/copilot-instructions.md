@@ -26,7 +26,8 @@ Do not suppress linter rules or skip tests to make the pipeline green.
 
 | Script                                     | Purpose                          |
 | ------------------------------------------ | -------------------------------- |
-| `./scripts/dev.sh`                         | Start local dev server           |
+| `./scripts/dev-webpart.sh`                 | Start SPFx web part dev server   |
+| `./scripts/dev-function.sh`                | Start Azure Function locally     |
 | `./scripts/test.sh`                        | Run tests                        |
 | `./scripts/lint.sh`                        | Run all linters                  |
 | `./scripts/lint-fix.sh`                    | Auto-fix lint issues locally     |
@@ -36,7 +37,7 @@ Do not suppress linter rules or skip tests to make the pipeline green.
 | `./scripts/set-version.sh v1.x.y --commit` | Stamp, commit, and tag a release |
 | `./scripts/upgrade-spfx.sh 1.x.y`          | Guided SPFx upgrade              |
 
-The release workflow is documented for developers in `README.md` → "Publishing a Release".
+The release workflow is documented in `docs/development.md` → "Publishing a Release".
 
 ## Stack constraints
 

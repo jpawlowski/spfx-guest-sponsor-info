@@ -410,7 +410,7 @@ var sharedAppSettings = [
   }
   {
     name: 'ALLOWED_AUDIENCE'
-    value: 'api://guest-sponsor-info-proxy/${functionClientId}'
+    value: functionClientId
   }
   {
     name: 'CORS_ALLOWED_ORIGIN'
@@ -563,7 +563,7 @@ var easyAuthProperties = {
       }
       validation: {
         allowedAudiences: [
-          'api://guest-sponsor-info-proxy/${functionClientId}'
+          functionClientId
         ]
       }
     }

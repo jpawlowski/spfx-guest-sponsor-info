@@ -15,54 +15,66 @@ $envValues = azd env get-values
 
 # ── 1. Derive a default Function App name ────────────────────────────────────
 if ($envValues -notmatch 'AZURE_FUNCTION_APP_NAME=') {
-    $envName = ($envValues | Select-String '^AZURE_ENV_NAME=(.+)$').Matches[0].Groups[1].Value.Trim('"')
-    $defaultAppName = "guest-sponsor-$envName"
-    Write-Host "Function App name not set — using: $defaultAppName"
-    azd env set AZURE_FUNCTION_APP_NAME $defaultAppName
+  $envName = ($envValues | Select-String '^AZURE_ENV_NAME=(.+)$').Matches[0].Groups[1].Value.Trim('"')
+  $defaultAppName = "guest-sponsor-$envName"
+  Write-Host "Function App name not set — using: $defaultAppName"
+  azd env set AZURE_FUNCTION_APP_NAME $defaultAppName
 }
 
 # ── 2. Detect or prompt for SharePoint tenant name ───────────────────────────
 if ($envValues -notmatch 'AZURE_SHAREPOINT_TENANT_NAME=') {
-    $derived = $null
-    try {
-        $raw = az rest `
-            --method GET `
-            --url 'https://graph.microsoft.com/v1.0/organization?$select=verifiedDomains' `
-            --query 'value[0].verifiedDomains[?isDefault].name | [0]' `
-            -o tsv 2>$null
-        $derived = $raw -replace '\.onmicrosoft\.com$', ''
-    } catch { }
+  $derived = $null
+  try {
+    $raw = az rest `
+      --method GET `
+      --url 'https://graph.microsoft.com/v1.0/organization?$select=verifiedDomains' `
+      --query 'value[0].verifiedDomains[?isDefault].name | [0]' `
+      -o tsv 2>$null
+    $derived = $raw -replace '\.onmicrosoft\.com$', ''
+  }
+  catch { }
 
-    if ($derived) {
-        Write-Host "Detected SharePoint tenant name: $derived"
-        azd env set AZURE_SHAREPOINT_TENANT_NAME $derived
-    } else {
-        $tenantName = Read-Host "Enter your SharePoint tenant name (e.g. 'contoso' for contoso.sharepoint.com)"
-        azd env set AZURE_SHAREPOINT_TENANT_NAME $tenantName
-    }
+  if ($derived) {
+    Write-Host "Detected SharePoint tenant name: $derived"
+    azd env set AZURE_SHAREPOINT_TENANT_NAME $derived
+  }
+  else {
+    $tenantName = Read-Host "Enter your SharePoint tenant name (e.g. 'contoso' for contoso.sharepoint.com)"
+    azd env set AZURE_SHAREPOINT_TENANT_NAME $tenantName
+  }
 }
 
 # ── 3. Create or reuse the App Registration ───────────────────────────────────
 Write-Host "Checking for existing App Registration '$APP_DISPLAY_NAME'..."
 $existingClientId = az ad app list `
-    --display-name $APP_DISPLAY_NAME `
-    --query '[0].appId' `
-    -o tsv 2>$null
+  --display-name $APP_DISPLAY_NAME `
+  --query '[0].appId' `
+  -o tsv 2>$null
 
 if ($existingClientId) {
-    Write-Host "App Registration already exists. Client ID: $existingClientId"
-    $clientId = $existingClientId
-} else {
-    Write-Host "Creating App Registration '$APP_DISPLAY_NAME'..."
-    $clientId = az ad app create `
-        --display-name $APP_DISPLAY_NAME `
-        --sign-in-audience 'AzureADMyOrg' `
-        --query 'appId' `
-        -o tsv
+  Write-Host "App Registration already exists. Client ID: $existingClientId"
+  $clientId = $existingClientId
+}
+else {
+  Write-Host "Creating App Registration '$APP_DISPLAY_NAME'..."
+  $clientId = az ad app create `
+    --display-name $APP_DISPLAY_NAME `
+    --sign-in-audience 'AzureADMyOrg' `
+    --query 'appId' `
+    -o tsv
 
-    $appIdUri = "api://guest-sponsor-info-proxy/$clientId"
-    az ad app update --id $clientId --identifier-uris $appIdUri | Out-Null
-    Write-Host "App Registration created. App ID URI: $appIdUri"
+  $appIdUri = "api://guest-sponsor-info-proxy/$clientId"
+  az ad app update --id $clientId --identifier-uris $appIdUri | Out-Null
+  Write-Host "App Registration created. App ID URI: $appIdUri"
+}
+
+# Ensure accessTokenAcceptedVersion is set to 2 (v2 tokens — aud = bare clientId).
+$appObj = az ad app show --id $clientId --query 'api.requestedAccessTokenVersion' -o tsv 2>$null
+if ($appObj -ne '2') {
+  Write-Host "Setting accessTokenAcceptedVersion to 2..."
+  az rest --method PATCH `
+    --url "https://graph.microsoft.com/v1.0/applications(appId='$clientId')" `
+    --body '{"api":{"requestedAccessTokenVersion":2}}' | Out-Null
 }
 
 azd env set AZURE_FUNCTION_CLIENT_ID $clientId

@@ -74,7 +74,7 @@ if [[ ! -f "${SETTINGS_FILE}" ]]; then
   echo "  │                                                             │"
   echo "  │  Required:                                                  │"
   echo "  │    TENANT_ID          — your Entra tenant ID (GUID)         │"
-  echo "  │    ALLOWED_AUDIENCE   — API URI of the app registration     │"
+  echo "  │    ALLOWED_AUDIENCE   — client ID of the app registration   │"
   echo "  │    CORS_ALLOWED_ORIGIN — https://<tenant>.sharepoint.com    │"
   echo "  │                                                             │"
   echo "  │  The file is in .gitignore and will not be committed.       │"

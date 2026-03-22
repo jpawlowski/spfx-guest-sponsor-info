@@ -2,6 +2,8 @@
 
 Project-specific decisions and known limitations.
 For installation and build instructions see the [README](../README.md).
+For deployment details see [deployment.md](deployment.md).
+For development setup see [development.md](development.md).
 
 ## SPFx Lifecycle and Non-Blocking Initialization
 
@@ -129,7 +131,7 @@ is not self-scoped — GDPR concern). The function sidesteps all of this.
 - **Client authorization:** In production ( `NODE_ENV === 'production'`), the function validates
   EasyAuth principal claims (not raw Authorization headers):
   1. `tid` (tenant ID) — must match our tenant (`TENANT_ID` env var)
-  2. `aud` (audience) — must match our API (`ALLOWED_AUDIENCE` env var)
+  2. `aud` (audience) — must match our API client ID (`ALLOWED_AUDIENCE` env var)
   This is defense-in-depth on top of EasyAuth issuer/audience validation.
 - **CORS** restricted to the tenant's SharePoint origin.
 - **No secrets stored;** Managed Identity for Graph and storage access (RBAC, no keys).
@@ -299,7 +301,7 @@ and diagnostic details in logs/Application Insights.
 
 Assets are bundled inside the `.sppkg`. Guest users cannot access re-hosted assets by
 default (HTTP 403). Two solutions — see
-[README – Guest Access Requirements](../README.md#guest-access-requirements):
+[Deployment Guide – Guest Access Requirements](deployment.md#guest-access-requirements):
 
 - **Public CDN (recommended):** Assets served from `publiccdn.sharepointonline.com`,
   no auth needed. Simpler, faster, no ongoing permission management.
@@ -335,7 +337,7 @@ All colours reference SPFx theme tokens via `var()` + `"[theme:]"` dual declarat
 
 ### Hosted workbench
 
-- **As member:** `SPFX_TENANT` in `.env` + `./scripts/dev.sh`. Verifies non-guest path.
+- **As member:** `SPFX_TENANT` in `.env` + `./scripts/dev-webpart.sh`. Verifies non-guest path.
 - **As guest:** Requires a second M365 tenant with your account as guest, sponsors assigned,
   API permissions consented, `.sppkg` deployed or localhost script loading enabled.
 

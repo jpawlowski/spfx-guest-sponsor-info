@@ -64,5 +64,18 @@ else
   echo "App Registration created. App ID URI: ${APP_ID_URI}"
 fi
 
+# Ensure accessTokenAcceptedVersion is set to 2 (v2 tokens — aud = bare clientId).
+CURRENT_VERSION=$(az ad app show \
+  --id "${CLIENT_ID}" \
+  --query "api.requestedAccessTokenVersion" \
+  -o tsv 2>/dev/null || true)
+
+if [ "${CURRENT_VERSION:-}" != "2" ]; then
+  echo "Setting accessTokenAcceptedVersion to 2..."
+  az rest --method PATCH \
+    --url "https://graph.microsoft.com/v1.0/applications(appId='${CLIENT_ID}')" \
+    --body '{"api":{"requestedAccessTokenVersion":2}}'
+fi
+
 azd env set AZURE_FUNCTION_CLIENT_ID "${CLIENT_ID}"
 echo "AZURE_FUNCTION_CLIENT_ID set to ${CLIENT_ID}"

@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.41.2.15936",
-      "templateHash": "13906636065104872224"
+      "templateHash": "1667244082732636370"
     },
     "name": "Guest Sponsor Info – Azure Function Proxy",
     "description": "Deploys an Azure Function App that acts as a Graph API proxy for the Guest Sponsor Info SharePoint web part. Includes a Storage Account, App Service Plan, EasyAuth configuration, Managed Identity role assignments, Log Analytics Workspace, and Application Insights.",
@@ -368,7 +368,7 @@
           },
           "validation": {
             "allowedAudiences": [
-              "[format('api://guest-sponsor-info-proxy/{0}', parameters('functionClientId'))]"
+              "[parameters('functionClientId')]"
             ]
           }
         }
@@ -549,7 +549,7 @@
         "httpsOnly": true,
         "dailyMemoryTimeQuota": "[parameters('dailyMemoryTimeQuotaGBs')]",
         "siteConfig": {
-          "appSettings": "[concat(createArray(createObject('name', 'AzureWebJobsStorage__accountName', 'value', if(greater(length(variables('storageAccountName')), 24), substring(variables('storageAccountName'), 0, 24), variables('storageAccountName'))), createObject('name', 'AzureWebJobsStorage__credential', 'value', 'managedidentity'), createObject('name', 'TENANT_ID', 'value', parameters('tenantId')), createObject('name', 'ALLOWED_AUDIENCE', 'value', format('api://guest-sponsor-info-proxy/{0}', parameters('functionClientId'))), createObject('name', 'CORS_ALLOWED_ORIGIN', 'value', format('https://{0}.sharepoint.com', parameters('tenantName'))), createObject('name', 'SPONSOR_LOOKUP_TIMEOUT_MS', 'value', '5000'), createObject('name', 'BATCH_TIMEOUT_MS', 'value', '4000'), createObject('name', 'PRESENCE_TIMEOUT_MS', 'value', '2500'), createObject('name', 'NODE_ENV', 'value', 'production'), createObject('name', 'APPLICATIONINSIGHTS_CONNECTION_STRING', 'value', reference(resourceId('Microsoft.Resources/deployments', 'monitoring'), '2025-04-01').outputs.appInsightsConnectionString.value), createObject('name', 'APP_VERSION', 'value', parameters('appVersion'))), variables('consumptionOnlyAppSettings'))]",
+          "appSettings": "[concat(createArray(createObject('name', 'AzureWebJobsStorage__accountName', 'value', if(greater(length(variables('storageAccountName')), 24), substring(variables('storageAccountName'), 0, 24), variables('storageAccountName'))), createObject('name', 'AzureWebJobsStorage__credential', 'value', 'managedidentity'), createObject('name', 'TENANT_ID', 'value', parameters('tenantId')), createObject('name', 'ALLOWED_AUDIENCE', 'value', parameters('functionClientId')), createObject('name', 'CORS_ALLOWED_ORIGIN', 'value', format('https://{0}.sharepoint.com', parameters('tenantName'))), createObject('name', 'SPONSOR_LOOKUP_TIMEOUT_MS', 'value', '5000'), createObject('name', 'BATCH_TIMEOUT_MS', 'value', '4000'), createObject('name', 'PRESENCE_TIMEOUT_MS', 'value', '2500'), createObject('name', 'NODE_ENV', 'value', 'production'), createObject('name', 'APPLICATIONINSIGHTS_CONNECTION_STRING', 'value', reference(resourceId('Microsoft.Resources/deployments', 'monitoring'), '2025-04-01').outputs.appInsightsConnectionString.value), createObject('name', 'APP_VERSION', 'value', parameters('appVersion'))), variables('consumptionOnlyAppSettings'))]",
           "cors": {
             "allowedOrigins": [
               "[format('https://{0}.sharepoint.com', parameters('tenantName'))]"
@@ -614,7 +614,7 @@
             },
             {
               "name": "ALLOWED_AUDIENCE",
-              "value": "[format('api://guest-sponsor-info-proxy/{0}', parameters('functionClientId'))]"
+              "value": "[parameters('functionClientId')]"
             },
             {
               "name": "CORS_ALLOWED_ORIGIN",
