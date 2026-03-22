@@ -92,7 +92,7 @@ define([], function() {
     "ManagerOptionsDisabledHint": "Enable \"Show manager\" to configure manager-specific fields.",
 
     "FunctionGroupName": "Azure Function",
-    "FunctionUrlFieldLabel": "Sponsor API URL (Azure Function)",
+    "FunctionUrlFieldLabel": "Azure Function Base URL",
     "FunctionClientIdFieldLabel": "Sponsor API Client ID (Azure Function App Registration)",
     "ProxyStatusChecking": "Checking Azure Function connection…",
     "ProxyStatusOk": "Azure Function reachable",

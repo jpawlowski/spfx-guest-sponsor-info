@@ -92,7 +92,7 @@ define([], function() {
     "AdvancedDisplayGroupName": "Geavanceerde weergaveopties",
     "ManagerOptionsDisabledHint": "Schakel managerweergave in om managerspecifieke velden te configureren.",
     "FunctionGroupName": "Azure-functie",
-    "FunctionUrlFieldLabel": "Sponsor API-URL (Azure-functie)",
+    "FunctionUrlFieldLabel": "Azure-functie basis-URL",
     "FunctionClientIdFieldLabel": "Sponsor API-client-ID (Azure-functie-app-registratie)",
     "ProxyStatusChecking": "Azure Function controleren…",
     "ProxyStatusOk": "Azure Function bereikbaar",

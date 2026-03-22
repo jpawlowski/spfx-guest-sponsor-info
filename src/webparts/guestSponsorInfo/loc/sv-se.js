@@ -86,7 +86,7 @@ define([], function() {
     "AdvancedDisplayGroupName": "Avancerade visningsalternativ",
     "ManagerOptionsDisabledHint": "Aktivera visning av chef för att konfigurera chefspecifika fält.",
     "FunctionGroupName": "Azure-funktion",
-    "FunctionUrlFieldLabel": "Sponsor-API-URL (Azure-funktion)",
+    "FunctionUrlFieldLabel": "Azure-funktion bas-URL",
     "FunctionClientIdFieldLabel": "Sponsor-API-klient-ID (Azure Function-appregistrering)",
     "ProxyStatusChecking": "Kontrollerar Azure Function…",
     "ProxyStatusOk": "Azure Function nåbar",

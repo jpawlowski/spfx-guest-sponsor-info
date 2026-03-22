@@ -86,7 +86,7 @@ define([], function() {
     "AdvancedDisplayGroupName": "詳細な表示オプション",
     "ManagerOptionsDisabledHint": "上司の表示を有効にすると、上司専用の項目を設定できます。",
     "FunctionGroupName": "Azure 関数",
-    "FunctionUrlFieldLabel": "スポンサー API URL (Azure 関数)",
+    "FunctionUrlFieldLabel": "Azure 関数 ベース URL",
     "FunctionClientIdFieldLabel": "スポンサー API クライアント ID (Azure 関数アプリ登録)",
     "ProxyStatusChecking": "Azure Function を確認中…",
     "ProxyStatusOk": "Azure Function に接続できます",

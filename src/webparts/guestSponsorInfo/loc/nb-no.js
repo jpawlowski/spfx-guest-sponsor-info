@@ -86,7 +86,7 @@ define([], function() {
     "AdvancedDisplayGroupName": "Avanserte visningsalternativer",
     "ManagerOptionsDisabledHint": "Aktiver visning av leder for å konfigurere lederspesifikke felt.",
     "FunctionGroupName": "Azure-funksjon",
-    "FunctionUrlFieldLabel": "Sponsor-API-URL (Azure-funksjon)",
+    "FunctionUrlFieldLabel": "Azure-funksjon basis-URL",
     "FunctionClientIdFieldLabel": "Sponsor-API-klient-ID (Azure Function-appregistrering)",
     "ProxyStatusChecking": "Sjekker Azure-funksjon…",
     "ProxyStatusOk": "Azure-funksjon er tilgjengelig",

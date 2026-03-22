@@ -92,7 +92,7 @@ define([], function() {
     "AdvancedDisplayGroupName": "Options d'affichage avancées",
     "ManagerOptionsDisabledHint": "Activez l'affichage du responsable pour configurer les champs spécifiques au responsable.",
     "FunctionGroupName": "Azure Function",
-    "FunctionUrlFieldLabel": "URL de l'API des sponsors (Azure Function)",
+    "FunctionUrlFieldLabel": "URL de base (Azure Function)",
     "FunctionClientIdFieldLabel": "ID de client de l'API des sponsors (inscription d'application Azure Function)",
     "ProxyStatusChecking": "Vérification de la Azure Function…",
     "ProxyStatusOk": "Azure Function accessible",

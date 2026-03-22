@@ -86,7 +86,7 @@ define([], function() {
     "AdvancedDisplayGroupName": "Opções avançadas de exibição",
     "ManagerOptionsDisabledHint": "Ative a exibição do gerente para configurar campos específicos do gerente.",
     "FunctionGroupName": "Azure Function",
-    "FunctionUrlFieldLabel": "URL da API de patrocinadores (Azure Function)",
+    "FunctionUrlFieldLabel": "URL base do Azure Function",
     "FunctionClientIdFieldLabel": "ID do cliente da API de patrocinadores (Registro de aplicativo Azure Function)",
     "ProxyStatusChecking": "Verificando Azure Function…",
     "ProxyStatusOk": "Azure Function acessível",

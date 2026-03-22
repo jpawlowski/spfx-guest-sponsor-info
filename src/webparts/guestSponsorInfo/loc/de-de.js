@@ -101,7 +101,7 @@ define([], function() {
     "ManagerOptionsDisabledHint": "Aktivieren Sie \"Vorgesetzte(n) anzeigen\", um führungsspezifische Felder zu konfigurieren.",
 
     "FunctionGroupName": "Azure-Funktion",
-    "FunctionUrlFieldLabel": "Sponsor-API-URL (Azure-Funktion)",
+    "FunctionUrlFieldLabel": "Azure-Funktion Basis-URL",
     "FunctionClientIdFieldLabel": "Sponsor-API-Client-ID (Azure-Funktion App-Registrierung)",
     "ProxyStatusChecking": "Prüfe Azure-Funktion…",
     "ProxyStatusOk": "Azure-Funktion erreichbar",

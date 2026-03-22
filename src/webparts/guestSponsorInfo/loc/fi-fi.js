@@ -86,7 +86,7 @@ define([], function() {
     "AdvancedDisplayGroupName": "Lisänäyttöasetukset",
     "ManagerOptionsDisabledHint": "Ota esimiehen näyttö käyttöön, jotta voit määrittää esimieskohtaiset kentät.",
     "FunctionGroupName": "Azure-funktio",
-    "FunctionUrlFieldLabel": "Sponsori-API-URL (Azure-funktio)",
+    "FunctionUrlFieldLabel": "Azure-funktion perus-URL",
     "FunctionClientIdFieldLabel": "Sponsori-API-asiakas-ID (Azure-funktiosovelluksen rekisteröinti)",
     "ProxyStatusChecking": "Tarkistetaan Azure-funktiota…",
     "ProxyStatusOk": "Azure-funktio tavoitettavissa",

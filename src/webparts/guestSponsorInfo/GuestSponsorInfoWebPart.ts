@@ -79,7 +79,9 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
         title: this.properties.title,
         mockMode: this.properties.mockMode ?? false,
         hostTenantId: this.context.pageContext.aadInfo.tenantId.toString(),
-        functionUrl: this.properties.functionUrl || undefined,
+        functionUrl: this.properties.functionUrl
+          ? `${this.properties.functionUrl.replace(/\/$/, '')}/api/getGuestSponsors`
+          : undefined,
         functionClientId: this.properties.functionClientId || undefined,
         aadHttpClient: this._aadHttpClient,
         showBusinessPhones: this.properties.showBusinessPhones ?? true,

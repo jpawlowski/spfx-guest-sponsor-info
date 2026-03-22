@@ -86,7 +86,7 @@ define([], function() {
     "AdvancedDisplayGroupName": "Zaawansowane opcje wyświetlania",
     "ManagerOptionsDisabledHint": "Włącz wyświetlanie menedżera, aby skonfigurować pola specyficzne dla menedżera.",
     "FunctionGroupName": "Azure Function",
-    "FunctionUrlFieldLabel": "Adres URL interfejsu API sponsorów (Azure Function)",
+    "FunctionUrlFieldLabel": "Podstawowy adres URL Azure Function",
     "FunctionClientIdFieldLabel": "Identyfikator klienta interfejsu API sponsorów (rejestracja aplikacji Azure Function)",
     "ProxyStatusChecking": "Sprawdzanie Azure Function…",
     "ProxyStatusOk": "Azure Function osiągalna",

@@ -86,7 +86,7 @@ define([], function() {
     "ManagerOptionsDisabledHint": "Aktivér visning af chef for at konfigurere chefrelaterede felter.",
 
   "FunctionGroupName": "Azure-funktion",
-    "FunctionUrlFieldLabel": "Sponsor-API-URL (Azure-funktion)",
+    "FunctionUrlFieldLabel": "Azure-funktion basis-URL",
     "FunctionClientIdFieldLabel": "Sponsor-API-klient-ID (Azure Function-appregistrering)",
     "ProxyStatusChecking": "Tjekker Azure-funktion…",
     "ProxyStatusOk": "Azure-funktion er tilgængelig",

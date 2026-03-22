@@ -86,7 +86,7 @@ define([], function() {
     "AdvancedDisplayGroupName": "高级显示选项",
     "ManagerOptionsDisabledHint": "启用显示上级后，才能配置上级专用字段。",
     "FunctionGroupName": "Azure 函数",
-    "FunctionUrlFieldLabel": "发起人 API URL（Azure 函数）",
+    "FunctionUrlFieldLabel": "Azure 函数基础 URL",
     "FunctionClientIdFieldLabel": "发起人 API 客户端 ID（Azure 函数应用注册）",
     "ProxyStatusChecking": "正在检查 Azure Function…",
     "ProxyStatusOk": "Azure Function 可访问",
