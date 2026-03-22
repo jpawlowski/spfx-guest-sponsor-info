@@ -249,7 +249,21 @@ export async function getSponsorsViaProxy(
     (err as { retryable?: boolean }).retryable = retryable;
     throw err;
   }
-  const result = await response.json() as ISponsorsResult;
+  let result: ISponsorsResult;
+  try {
+    result = await response.json() as ISponsorsResult;
+  } catch (parseError) {
+    // The proxy returned a non-JSON body (e.g. an HTML login-redirect or gateway
+    // error page with a 2xx status).  Wrap it so the caller gets a structured error
+    // with statusCode and retryable set — rather than a bare SyntaxError with no
+    // metadata that leaves all error-handling fields undefined.
+    const err = new Error(
+      `Proxy returned non-JSON response (HTTP ${response.status}): ${(parseError as Error).message}`
+    );
+    (err as { statusCode?: number }).statusCode = response.status;
+    (err as { retryable?: boolean }).retryable = false;
+    throw err;
+  }
   if (functionVersion) result.functionVersion = functionVersion;
   return result;
 }
