@@ -5,7 +5,7 @@ import * as strings from 'GuestSponsorInfoWebPartStrings';
 import styles from './GuestSponsorInfo.module.scss';
 import type { IGuestSponsorInfoProps } from './IGuestSponsorInfoProps';
 import { ISponsor } from '../services/ISponsor';
-import { isGuestUser, getSponsors, getSponsorsViaProxy, loadPhotosProgressively, fetchPresences } from '../services/SponsorService';
+import { isGuestUser, getSponsors, getSponsorsViaProxy, loadPhotosProgressively, fetchPresences, getPresencesViaProxy } from '../services/SponsorService';
 import { MOCK_SPONSORS } from '../services/MockSponsorService';
 import SponsorCard from './SponsorCard';
 
@@ -160,6 +160,7 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
   mockMode,
   hostTenantId,
   functionUrl,
+  presenceUrl,
   aadHttpClient,
   showBusinessPhones,
   showMobilePhone,
@@ -213,6 +214,9 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
   const [hasActiveCard, setHasActiveCard] = React.useState(false);
   const [guestHasTeamsAccess, setGuestHasTeamsAccess] = React.useState<boolean | undefined>(undefined);
   const [versionMismatch, setVersionMismatch] = React.useState(false);
+  // Signed token issued by getGuestSponsors; passed to getPresence so the function
+  // can validate sponsor IDs without server-side state or extra Graph calls.
+  const [presenceToken, setPresenceToken] = React.useState<string | undefined>(undefined);
 
   // Ref that always holds the IDs of currently displayed sponsors.
   // The presence refresh interval reads this without capturing sponsors in its closure.
@@ -270,6 +274,7 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
           // All unavailable = sponsors were assigned but every account is disabled/deleted.
           setAllUnavailable(active.length === 0 && result.unavailableCount > 0);
           setGuestHasTeamsAccess(result.guestHasTeamsAccess);
+          setPresenceToken(result.presenceToken);
           setLoading(false);
           setRetryCount(0);
 
@@ -333,20 +338,29 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
 
   // Presence refresh: poll faster while a card is actively open and the tab is visible,
   // but back off when the tab is hidden to reduce Graph traffic.
-  // Uses graphClient directly for both proxy and direct paths — graphClient is
-  // always acquired in onInit regardless of whether the proxy is configured.
+  //
+  // When presenceUrl is configured (Azure Function proxy) the poll calls the
+  // /api/getPresence endpoint using application permissions (Managed Identity),
+  // which works reliably for guest callers.  Otherwise falls back to the delegated
+  // Graph call, which may silently return empty results for guests on tenants with
+  // restrictive guest-access policies.
   const PRESENCE_REFRESH_ACTIVE_MS = 30 * 1000;
   const PRESENCE_REFRESH_VISIBLE_MS = 2 * 60 * 1000;
   const PRESENCE_REFRESH_HIDDEN_MS = 5 * 60 * 1000;
   React.useEffect(() => {
     if (isEditMode || mockMode || !isGuest || loading || error) return;
-    if (!graphClient) return;
+    const useProxy = !!(presenceUrl && aadHttpClient);
+    if (!useProxy && !graphClient) return;
 
     const refreshPresence = (): void => {
       const ids = sponsorIdsRef.current;
       if (ids.length === 0) return;
-      fetchPresences(graphClient, ids)
-        .then(presenceMap => {
+      const presencePromise = (presenceUrl && aadHttpClient)
+        ? getPresencesViaProxy(presenceUrl, aadHttpClient, ids, presenceToken)
+        : fetchPresences(graphClient!, ids).then(presenceMap => ({ map: presenceMap, presenceToken: undefined }));
+      presencePromise
+        .then(({ map: presenceMap, presenceToken: renewedToken }) => {
+          if (renewedToken) setPresenceToken(renewedToken);
           setSponsors(prev => prev.map(s => {
             const snapshot = presenceMap.get(s.id);
             return {
@@ -391,7 +405,7 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
       clearInterval(id);
       document.removeEventListener('visibilitychange', onVisibilityChange);
     };
-  }, [isEditMode, mockMode, isGuest, loading, error, graphClient, hasActiveCard]);
+  }, [isEditMode, mockMode, isGuest, loading, error, graphClient, hasActiveCard, presenceUrl, aadHttpClient, presenceToken]);
 
   // Edit mode: always show a lightweight placeholder so page authors can position the web part.
   if (isEditMode) {

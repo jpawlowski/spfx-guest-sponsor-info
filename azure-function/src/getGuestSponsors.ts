@@ -1,6 +1,6 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
-import { randomUUID } from 'crypto';
-import { ManagedIdentityCredential } from '@azure/identity';
+import { createHmac, randomUUID, timingSafeEqual } from 'crypto';
+import { DefaultAzureCredential } from '@azure/identity';
 import { Client, GraphError } from '@microsoft/microsoft-graph-client';
 import { TokenCredentialAuthenticationProvider } from '@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials';
 import packageJson from '../package.json';
@@ -46,6 +46,103 @@ const DEFAULT_RATE_LIMIT_MAX_REQUESTS = 20;
 const DEFAULT_RATE_LIMIT_WINDOW_MS = 60_000;
 const rateLimitMap = new Map<string, number[]>();
 
+/**
+ * Presence token — a short-lived HMAC-SHA256-signed string issued by
+ * getGuestSponsors and presented to getPresence on every refresh poll.
+ *
+ * Format:  <base64url(payload)>.<hmac-sha256-hex>
+ * Payload: { oid: callerOid, ids: string[], exp: epochMs }
+ *
+ * The token binds the caller to exactly their set of sponsor IDs, so
+ * getPresence can validate requested IDs without keeping server-side state
+ * or making an extra Graph call per poll.  This prevents an authenticated
+ * tenant member from using the function's Presence.Read.All application
+ * permission to probe presence for arbitrary Entra objects.
+ *
+ * Security properties:
+ *   - Tamper-proof:   altering payload or sig invalidates the token.
+ *   - Caller-bound:   oid is verified against the EasyAuth identity.
+ *   - ID-scoped:      only the exact IDs in the token are accepted.
+ *   - Time-limited:   tokens expire after PRESENCE_TOKEN_TTL_MS.
+ *   - Unique:         jti (UUID) makes every issued token distinct; aids audit logs.
+ *   - Stateless:      works across all Function instances on any hosting plan.
+ *
+ * When PRESENCE_TOKEN_SECRET is not set, token issuance is skipped and
+ * getPresence falls back to a lightweight Graph sponsor lookup for validation.
+ */
+const PRESENCE_TOKEN_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
+
+/**
+ * Creates a signed presence token for the given caller and sponsor IDs.
+ * Returns undefined when PRESENCE_TOKEN_SECRET is not configured.
+ */
+function createPresenceToken(callerOid: string, sponsorIds: string[]): string | undefined {
+  const secret = process.env.PRESENCE_TOKEN_SECRET;
+  if (!secret) return undefined;
+  const payload = JSON.stringify({
+    jti: randomUUID(),
+    oid: callerOid,
+    ids: sponsorIds,
+    iat: Date.now(),
+    exp: Date.now() + PRESENCE_TOKEN_TTL_MS,
+  });
+  const payloadB64 = Buffer.from(payload).toString('base64url');
+  const sig = createHmac('sha256', secret).update(payloadB64).digest('base64url');
+  return `${payloadB64}.${sig}`;
+}
+
+/**
+ * Verifies a presence token and returns the set of authorised sponsor IDs.
+ *
+ * Returns undefined when:
+ *   - PRESENCE_TOKEN_SECRET is not configured
+ *   - The token is missing, malformed, or has an invalid HMAC signature
+ *   - The token has expired
+ *   - The token's oid does not match the current caller
+ *
+ * Uses timingSafeEqual to prevent timing side-channel attacks.
+ */
+function verifyPresenceToken(token: string, callerOid: string): Set<string> | undefined {
+  const secret = process.env.PRESENCE_TOKEN_SECRET;
+  if (!secret) return undefined;
+
+  const dot = token.lastIndexOf('.');
+  if (dot === -1) return undefined;
+
+  const payloadB64 = token.slice(0, dot);
+  const providedSig = token.slice(dot + 1);
+  const expectedSig = createHmac('sha256', secret).update(payloadB64).digest('base64url');
+
+  // Constant-time HMAC comparison — prevents timing side-channel attacks.
+  let sigValid = false;
+  try {
+    const expected = Buffer.from(expectedSig, 'base64url');
+    const provided = Buffer.from(providedSig, 'base64url');
+    sigValid = expected.length === provided.length && timingSafeEqual(expected, provided);
+  } catch {
+    return undefined;
+  }
+  if (!sigValid) return undefined;
+
+  let payload: { jti?: unknown; oid?: unknown; ids?: unknown; iat?: unknown; exp?: unknown };
+  try {
+    payload = JSON.parse(Buffer.from(payloadB64, 'base64url').toString('utf8')) as {
+      jti?: unknown; oid?: unknown; ids?: unknown; iat?: unknown; exp?: unknown;
+    };
+  } catch {
+    return undefined;
+  }
+
+  if (typeof payload.exp !== 'number' || payload.exp < Date.now()) return undefined;
+  if (payload.oid !== callerOid) return undefined;
+  if (!Array.isArray(payload.ids)) return undefined;
+
+  const ids = (payload.ids as unknown[])
+    .filter((id): id is string => typeof id === 'string' && isValidGuid(id))
+    .slice(0, MAX_SPONSORS);
+  return new Set(ids);
+}
+
 /** Cached optional-permission flags for MailboxSettings.Read, Presence.Read.All, and TeamMember.Read.All. */
 interface IOptionalPermissions {
   hasMailboxSettings: boolean;
@@ -56,20 +153,20 @@ interface IOptionalPermissions {
 let cachedOptionalPermissions: Promise<IOptionalPermissions> | undefined;
 
 /**
- * Inspects the JWT access token obtained by the Managed Identity to determine
+ * Inspects the JWT access token obtained by the credential to determine
  * which optional application permissions have been granted.
  *
- * The token is already fetched by the Azure Identity SDK for Graph API calls;
- * calling getToken() here returns the same cached token — no extra network
- * request is made.  The result is cached at module level so the check only
- * runs once per warm function instance.
+ * In Azure the DefaultAzureCredential resolves to ManagedIdentityCredential;
+ * locally it falls back to AzureCliCredential (or EnvironmentCredential when
+ * service-principal env vars are set).  Either way getToken() is cached by the
+ * Azure Identity SDK, so this call adds no extra network request.
  *
  * The result is stored as a Promise so that concurrent invocations during
  * a cold start share a single in-flight token inspection instead of each
  * starting their own (eliminates the require-atomic-updates race pattern).
  */
 async function detectOptionalPermissions(
-  credential: ManagedIdentityCredential,
+  credential: DefaultAzureCredential,
   context: InvocationContext
 ): Promise<IOptionalPermissions> {
   // Assign synchronously before any await so concurrent callers share one promise.
@@ -353,6 +450,12 @@ interface ISponsorsResult {
   activeSponsors: ISponsor[];
   unavailableCount: number;
   guestHasTeamsAccess?: boolean;
+  /**
+   * Short-lived HMAC-signed token that authorizes subsequent getPresence calls
+   * for exactly this caller and these sponsor IDs.  Present only when
+   * PRESENCE_TOKEN_SECRET is configured in the Function App settings.
+   */
+  presenceToken?: string;
 }
 
 /**
@@ -464,7 +567,9 @@ function validateClientAuthorization(
     };
   }
 
-  // Check 2: Audience must be our API URI.
+  // Check 2: Audience must match our client ID.
+  // With accessTokenAcceptedVersion=2 the aud claim is always the bare
+  // client ID (GUID).  ALLOWED_AUDIENCE must be set to the same GUID.
   const allowedAudience = process.env.ALLOWED_AUDIENCE;
   if (!allowedAudience) {
     context.error('ALLOWED_AUDIENCE environment variable not configured');
@@ -659,8 +764,9 @@ function jsonErrorResponse(
  * The function reads the caller OID from the X-MS-CLIENT-PRINCIPAL-ID header
  * that EasyAuth sets after validating the Bearer token.
  *
- * The Managed Identity of the Function App is used to call Microsoft Graph
- * with application permissions (User.Read.All and optionally Presence.Read.All).
+ * DefaultAzureCredential is used to call Microsoft Graph with application
+ * permissions.  In Azure it resolves to ManagedIdentityCredential; locally it
+ * falls back to Azure CLI or environment-variable credentials.
  * No client secrets are stored anywhere.
  */
 export async function getGuestSponsors(
@@ -809,10 +915,66 @@ export async function getGuestSponsors(
     });
   }
 
+  // Mock mode — return realistic demo data without Graph credentials.
+  // Only accepted outside production to prevent accidental use.
+  if (process.env.NODE_ENV !== 'production' && isTrue(process.env.MOCK_MODE)) {
+    context.log('MOCK_MODE active — returning demo sponsor data');
+    const mockResult: ISponsorsResult = {
+      activeSponsors: [
+        {
+          id: '00000000-0000-0000-0000-000000000001',
+          displayName: 'Anna Müller',
+          givenName: 'Anna',
+          surname: 'Müller',
+          mail: 'anna.mueller@contoso.com',
+          jobTitle: 'IT Manager',
+          department: 'Information Technology',
+          officeLocation: 'Berlin',
+          city: 'Berlin',
+          country: 'Germany',
+          businessPhones: ['+49 30 12345678'],
+          presence: 'Available',
+          presenceActivity: 'Available',
+          managerDisplayName: 'Thomas Schneider',
+          managerGivenName: 'Thomas',
+          managerSurname: 'Schneider',
+          managerJobTitle: 'Head of IT',
+          managerId: '00000000-0000-0000-0000-000000000003',
+          hasTeams: true,
+        },
+        {
+          id: '00000000-0000-0000-0000-000000000002',
+          displayName: 'James Anderson',
+          givenName: 'James',
+          surname: 'Anderson',
+          mail: 'james.anderson@contoso.com',
+          jobTitle: 'Project Lead',
+          department: 'Business Development',
+          officeLocation: 'Munich',
+          city: 'Munich',
+          country: 'Germany',
+          businessPhones: [],
+          mobilePhone: '+49 151 98765432',
+          presence: 'Busy',
+          presenceActivity: 'InACall',
+          managerDisplayName: 'Sarah Webb',
+          managerGivenName: 'Sarah',
+          managerSurname: 'Webb',
+          managerJobTitle: 'VP Business Development',
+          managerId: '00000000-0000-0000-0000-000000000004',
+          hasTeams: true,
+        },
+      ],
+      unavailableCount: 0,
+      guestHasTeamsAccess: true,
+    };
+    return jsonResponse(mockResult, 200, request, correlationId);
+  }
+
   context.log(`Fetching sponsors for caller ${redactGuid(callerOid)}`);
 
   try {
-    const credential = new ManagedIdentityCredential();
+    const credential = new DefaultAzureCredential();
     const { hasMailboxSettings, hasPresenceReadAll, hasTeamMemberReadAll } = await detectOptionalPermissions(credential, context);
     const authProvider = new TokenCredentialAuthenticationProvider(credential, {
       scopes: ['https://graph.microsoft.com/.default'],
@@ -1062,6 +1224,12 @@ export async function getGuestSponsors(
 
     const result: ISponsorsResult = { activeSponsors, unavailableCount };
     if (guestHasTeamsAccess !== undefined) result.guestHasTeamsAccess = guestHasTeamsAccess;
+
+    // Issue a signed presence token so subsequent getPresence polls can be
+    // validated without server-side state or extra Graph calls.
+    const presenceToken = createPresenceToken(callerOid, sponsorIds);
+    if (presenceToken !== undefined) result.presenceToken = presenceToken;
+
     return jsonResponse(result, 200, request, correlationId);
   } catch (error) {
     if (error instanceof GraphError) {
@@ -1164,7 +1332,7 @@ function corsHeaders(request: HttpRequest): Record<string, string> {
   const headers: Record<string, string> = {
     // CORS
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
-    'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+    'Access-Control-Allow-Headers': 'Authorization, Content-Type, X-Presence-Token',
     'Access-Control-Expose-Headers': 'x-correlation-id',
     // Minimal security headers for API responses.
     // HSTS, X-Frame-Options, and other browser-level protections are better handled
@@ -1212,4 +1380,330 @@ app.http('getGuestSponsors', {
   methods: ['GET', 'OPTIONS'],
   authLevel: 'anonymous', // Authentication is enforced by EasyAuth, not the function key.
   handler: safeGetGuestSponsors,
+});
+
+/**
+ * HTTP GET – returns Microsoft Teams presence for a list of Entra object IDs.
+ *
+ * Designed to serve presence refresh polls from the SPFx web part after the
+ * initial sponsor load.  Using application permissions (Managed Identity) keeps
+ * presence up-to-date reliably for guest callers — unlike the delegated
+ * Presence.Read.All scope, which may silently return empty results for guests
+ * on tenants with restrictive guest-access policies.
+ *
+ * Query parameter:
+ *   ids  – comma-separated list of up to MAX_SPONSORS Entra object IDs (GUIDs).
+ *
+ * If Presence.Read.All has not been granted to the Managed Identity the endpoint
+ * returns HTTP 200 with an empty presences array and logs a warning.  The caller
+ * should preserve any previously loaded presence data on screen.
+ */
+export async function getPresence(
+  request: HttpRequest,
+  context: InvocationContext
+): Promise<HttpResponseInit> {
+  const correlationId = getCorrelationId(request);
+
+  // CORS preflight.
+  if (request.method === 'OPTIONS') {
+    return {
+      status: 204,
+      headers: { 'x-correlation-id': correlationId, ...corsHeaders(request) },
+    };
+  }
+
+  if (request.method !== 'GET') {
+    return {
+      status: 405,
+      body: JSON.stringify({ error: 'Method Not Allowed' }),
+      headers: {
+        'Content-Type': 'application/json',
+        Allow: 'GET, OPTIONS',
+        'x-correlation-id': correlationId,
+        ...corsHeaders(request),
+      },
+    };
+  }
+
+  // Parse and validate the 'ids' query parameter.
+  const rawIds = request.query.get('ids') ?? '';
+  const ids = rawIds
+    .split(',')
+    .map(s => s.trim())
+    .filter(s => isValidGuid(s))
+    .slice(0, MAX_SPONSORS); // cap to prevent abusive large requests
+
+  if (ids.length === 0) {
+    return jsonErrorResponse(
+      request,
+      400,
+      correlationId,
+      'Bad Request',
+      'INVALID_IDS',
+      'ids must be a comma-separated list of up to 5 valid Entra object ID GUIDs',
+      false
+    );
+  }
+
+  const callerOid = resolveCallerOid(request);
+  if (!callerOid) {
+    const clientIp = getClientIp(request);
+    const anonLimit = checkRateLimit(
+      `anon:${clientIp}`,
+      ANON_RATE_LIMIT_MAX_REQUESTS,
+      ANON_RATE_LIMIT_WINDOW_MS
+    );
+    if (!anonLimit.allowed) {
+      const resp = jsonErrorResponse(
+        request,
+        429,
+        correlationId,
+        'Too Many Requests',
+        'AUTH_RATE_LIMITED',
+        'Request rate limit exceeded. Retry after the provided delay.',
+        true
+      );
+      resp.headers = {
+        ...(resp.headers ?? {}),
+        'Retry-After': String(anonLimit.retryAfterSeconds ?? 60),
+      };
+      return resp;
+    }
+    context.warn('Anonymous caller rejected — EasyAuth not configured or bypassed', {
+      reasonCode: 'AUTH_CALLER_OID_MISSING',
+      clientIp: redactIp(clientIp),
+      correlationId,
+    });
+    return jsonErrorResponse(
+      request,
+      401,
+      correlationId,
+      'Unauthorized',
+      'AUTH_CALLER_OID_MISSING',
+      'Authenticated caller could not be resolved from EasyAuth headers',
+      false
+    );
+  }
+
+  if (process.env.NODE_ENV === 'production') {
+    const principal = parseEasyAuthPrincipal(request);
+    if (!principal) {
+      logRejection(context, 'AUTH_PRINCIPAL_MISSING', 'No valid EasyAuth principal header present', {
+        step: 'client-validation-start',
+        correlationId,
+      });
+      return jsonErrorResponse(
+        request,
+        401,
+        correlationId,
+        'Unauthorized',
+        'AUTH_PRINCIPAL_MISSING',
+        'EasyAuth principal header is missing or invalid',
+        false
+      );
+    }
+
+    const validation = validateClientAuthorization(principal, context);
+    if (!validation.authorized) {
+      const reasonCode = validation.reasonCode ?? 'AUTH_VALIDATION_FAILED';
+      logRejection(context, reasonCode, validation.reason ?? 'Unknown authorization failure', {
+        step: 'client-validation-failed',
+        tid: validation.tid,
+        callerOid: redactGuid(callerOid),
+        correlationId,
+      });
+      return jsonErrorResponse(
+        request,
+        403,
+        correlationId,
+        'Forbidden',
+        reasonCode,
+        'Request token failed tenant or audience validation',
+        false
+      );
+    }
+  }
+
+  const rateLimitConfig = getRateLimitConfig();
+  if (rateLimitConfig.enabled) {
+    const rateLimitResult = checkRateLimit(callerOid, rateLimitConfig.maxRequests, rateLimitConfig.windowMs);
+    if (!rateLimitResult.allowed) {
+      const response = jsonErrorResponse(
+        request,
+        429,
+        correlationId,
+        'Too Many Requests',
+        'AUTH_RATE_LIMITED',
+        'Request rate limit exceeded. Retry after the provided delay.',
+        true
+      );
+      response.headers = {
+        ...(response.headers ?? {}),
+        'Retry-After': String(rateLimitResult.retryAfterSeconds ?? 60),
+      };
+      return response;
+    }
+  }
+
+  // Mock mode — return demo presence without Graph credentials.
+  if (process.env.NODE_ENV !== 'production' && isTrue(process.env.MOCK_MODE)) {
+    context.log('MOCK_MODE active — returning demo presence data');
+    const mockAvailabilities = ['Available', 'Busy', 'Away', 'DoNotDisturb', 'BeRightBack'];
+    const presences = ids.map((id, i) => ({
+      id,
+      availability: mockAvailabilities[i % mockAvailabilities.length],
+      activity: mockAvailabilities[i % mockAvailabilities.length],
+    }));
+    return jsonResponse({ presences }, 200, request, correlationId);
+  }
+
+  context.log(`Fetching presence for ${ids.length} id(s) on behalf of ${redactGuid(callerOid)}`);
+
+  try {
+    const credential = new DefaultAzureCredential();
+    const { hasPresenceReadAll } = await detectOptionalPermissions(credential, context);
+
+    if (!hasPresenceReadAll) {
+      context.warn(
+        'getPresence: Presence.Read.All not granted — ' +
+        'returning empty presences array. ' +
+        'Run infra/setup-graph-permissions.ps1 to enable presence polling via the proxy.'
+      );
+      return jsonResponse({ presences: [] }, 200, request, correlationId);
+    }
+
+    const authProvider = new TokenCredentialAuthenticationProvider(credential, {
+      scopes: ['https://graph.microsoft.com/.default'],
+    });
+    const client = Client.initWithMiddleware({ authProvider });
+
+    // Validate which IDs this caller is allowed to query presence for.
+    //
+    // Fast path (preferred): verify the HMAC-signed token issued by getGuestSponsors.
+    //   - Stateless, zero extra Graph calls, works across all Function instances.
+    //   - Sent as X-Presence-Token header (not URL query param) to keep it out of
+    //     server logs and Application Insights URL traces.
+    //
+    // Fallback: when no valid token is provided (old client, first poll after a
+    //   Function restart with a new secret, or PRESENCE_TOKEN_SECRET not configured),
+    //   fetch the caller's sponsor list from Graph to build the allowed-ID set.
+    //   Logs a warning when a token was supplied but failed verification.
+    //
+    // Either way, any requested ID not in the authorised set is silently dropped
+    // so the response never leaks presence for non-sponsors.
+    const rawToken = request.headers.get('x-presence-token') ?? '';
+    let authorizedIds: Set<string> | undefined;
+
+    if (rawToken) {
+      authorizedIds = verifyPresenceToken(rawToken, callerOid);
+      if (!authorizedIds) {
+        context.warn('getPresence: presence token invalid or expired — falling back to Graph validation', {
+          callerOid: redactGuid(callerOid),
+          correlationId,
+          hasSecret: !!process.env.PRESENCE_TOKEN_SECRET,
+        });
+      }
+    }
+
+    if (!authorizedIds) {
+      // Token absent or invalid — fetch sponsor IDs directly from Graph.
+      try {
+        const sponsorResponse = await withTimeout(
+          client
+            .api(`/users/${callerOid}/sponsors`)
+            .select('id')
+            .get(),
+          getTimeoutMs('SPONSOR_LOOKUP_TIMEOUT_MS', DEFAULT_SPONSOR_LOOKUP_TIMEOUT_MS),
+          'sponsor ID lookup for presence validation'
+        );
+        const graphIds = ((sponsorResponse?.value ?? []) as Array<{ id?: unknown }>)
+          .map(u => u.id)
+          .filter((id): id is string => typeof id === 'string' && isValidGuid(id))
+          .slice(0, MAX_SPONSORS);
+        authorizedIds = new Set(graphIds);
+      } catch (sponsorError) {
+        // Fail-open: a transient Graph error should not permanently block presence
+        // polls.  Log and treat all requested IDs as authorized for this call only.
+        context.warn('getPresence: sponsor validation lookup failed — failing open for this request', sponsorError);
+        authorizedIds = new Set(ids);
+      }
+    }
+
+    // Filter to only the IDs the caller is authorized to query.
+    const validatedIds = ids.filter(id => (authorizedIds as Set<string>).has(id));
+    if (validatedIds.length < ids.length) {
+      context.warn('getPresence: dropping unauthorized IDs from presence request', {
+        requested: ids.length,
+        authorized: validatedIds.length,
+        callerOid: redactGuid(callerOid),
+        correlationId,
+      });
+    }
+
+    if (validatedIds.length === 0) {
+      return jsonResponse({ presences: [] }, 200, request, correlationId);
+    }
+
+    const presenceMap = await fetchPresences(client, validatedIds, context);
+
+    const presences = validatedIds.map(id => {
+      const p = presenceMap.get(id);
+      const entry: { id: string; availability?: string; activity?: string } = { id };
+      if (p?.availability !== undefined) entry.availability = p.availability;
+      if (p?.activity !== undefined) entry.activity = p.activity;
+      return entry;
+    });
+
+    return jsonResponse({ presences }, 200, request, correlationId);
+  } catch (error) {
+    if (error instanceof GraphError && error.statusCode === 403) {
+      context.error(
+        'GRAPH_PERMISSION_DENIED: Microsoft Graph returned HTTP 403 for presence lookup.\n' +
+        'CAUSE: Presence.Read.All application permission not granted to the managed identity.\n' +
+        'FIX: Run infra/setup-graph-permissions.ps1 and restart the Function App.'
+      );
+      return jsonResponse({ presences: [] }, 200, request, correlationId);
+    }
+    context.error('Presence lookup failed:', error);
+    return jsonErrorResponse(
+      request,
+      502,
+      correlationId,
+      'Presence lookup failed',
+      'PRESENCE_LOOKUP_FAILED',
+      'Failed to retrieve presence data from Microsoft Graph',
+      true
+    );
+  }
+}
+
+async function safeGetPresence(
+  request: HttpRequest,
+  context: InvocationContext
+): Promise<HttpResponseInit> {
+  try {
+    const response = await getPresence(request, context);
+    return {
+      ...response,
+      status: getValidHttpStatus(response.status),
+    };
+  } catch (error) {
+    const correlationId = getCorrelationId(request);
+    context.error('Unhandled exception in safeGetPresence:', error);
+    return jsonErrorResponse(
+      request,
+      500,
+      correlationId,
+      'Failed to retrieve presence information.',
+      'UNHANDLED_EXCEPTION',
+      'Unexpected backend exception occurred',
+      true
+    );
+  }
+}
+
+app.http('getPresence', {
+  methods: ['GET', 'OPTIONS'],
+  authLevel: 'anonymous', // Authentication is enforced by EasyAuth, not the function key.
+  handler: safeGetPresence,
 });

@@ -23,6 +23,14 @@ export interface ISponsorsResult {
    * fails open and shows the buttons enabled.
    */
   guestHasTeamsAccess?: boolean;  /**
+   * Short-lived HMAC-signed token issued by the Azure Function that authorizes
+   * subsequent getPresence calls for exactly this caller and sponsor ID set.
+   * Present only when the function has PRESENCE_TOKEN_SECRET configured.
+   * The web part passes this as the `token` query parameter to `/api/getPresence`
+   * so the function can validate IDs without server-side state or extra Graph calls.
+   */
+  presenceToken?: string;
+  /**
    * Version of the Azure Function that served this response, read from the
    * X-Api-Version response header.  Only set on the proxy path; undefined
    * when sponsors are fetched directly via Graph (no function involved).
@@ -266,6 +274,60 @@ export async function getSponsorsViaProxy(
   }
   if (functionVersion) result.functionVersion = functionVersion;
   return result;
+}
+
+/**
+ * Fetches presence for a list of user IDs via the Azure Function proxy.
+ *
+ * The proxy calls Graph with application permissions (Managed Identity), which
+ * work reliably for guest callers — unlike the delegated Presence.Read.All scope
+ * that may silently return empty results for guests on tenants with restrictive
+ * guest-access policies.
+ *
+ * Fails open (empty map) on any error so the existing presence data stays on
+ * screen — identical degradation behaviour to the direct delegated path.
+ *
+ * @param presenceUrl   - Full URL of the `/api/getPresence` Function endpoint.
+ * @param aadHttpClient - Pre-acquired AAD HTTP client scoped to the Function App Registration.
+ * @param userIds       - Entra object IDs whose presence should be refreshed.
+ * @param presenceToken - Optional signed token from the last getGuestSponsors response.
+ *                        When present, the function validates IDs against the token
+ *                        instead of making an extra Graph call.
+ */
+export async function getPresencesViaProxy(
+  presenceUrl: string,
+  aadHttpClient: AadHttpClient,
+  userIds: string[],
+  presenceToken?: string
+): Promise<{ map: Map<string, { availability?: string; activity?: string }>; presenceToken?: string }> {
+  const map = new Map<string, { availability?: string; activity?: string }>();
+  if (userIds.length === 0) return { map };
+  try {
+    const params = new URLSearchParams({ ids: userIds.join(',') });
+    const url = `${presenceUrl}?${params.toString()}`;
+    const headers: Record<string, string> = {};
+    if (presenceToken) headers['X-Presence-Token'] = presenceToken;
+    const response = await aadHttpClient.get(url, AadHttpClient.configurations.v1,
+      Object.keys(headers).length > 0 ? { headers } : undefined
+    );
+    if (!response.ok) return { map }; // fail-open: preserve existing presence data
+    const data = await response.json() as {
+      presences?: Array<{ id: string; availability?: string; activity?: string }>;
+      presenceToken?: string;
+    };
+    for (const entry of data.presences ?? []) {
+      if (entry.id) {
+        map.set(entry.id, {
+          availability: entry.availability,
+          activity: entry.activity,
+        });
+      }
+    }
+    return { map, presenceToken: data.presenceToken };
+  } catch {
+    // Presence is supplemental — silently degrade when the proxy call fails.
+  }
+  return { map };
 }
 
 /**
