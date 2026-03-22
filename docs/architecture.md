@@ -335,7 +335,7 @@ All colours reference SPFx theme tokens via `var()` + `"[theme:]"` dual declarat
 
 ### Hosted workbench
 
-- **As member:** `SPFX_TENANT` in `.env` + `./scripts/start.sh`. Verifies non-guest path.
+- **As member:** `SPFX_TENANT` in `.env` + `./scripts/dev.sh`. Verifies non-guest path.
 - **As guest:** Requires a second M365 tenant with your account as guest, sponsors assigned,
   API permissions consented, `.sppkg` deployed or localhost script loading enabled.
 

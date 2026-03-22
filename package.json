@@ -81,6 +81,7 @@
   },
   "lint-staged": {
     "src/**/*.{ts,tsx}": "eslint --fix",
+    "azure-function/src/**/*.ts": "eslint --fix",
     "src/**/*.scss": "stylelint --fix",
     "*.md": "markdownlint-cli2 --fix"
   }

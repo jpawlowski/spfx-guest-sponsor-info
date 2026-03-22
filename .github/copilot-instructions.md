@@ -26,9 +26,10 @@ Do not suppress linter rules or skip tests to make the pipeline green.
 
 | Script                                     | Purpose                          |
 | ------------------------------------------ | -------------------------------- |
-| `./scripts/start.sh`                       | Start local dev server           |
+| `./scripts/dev.sh`                         | Start local dev server           |
 | `./scripts/test.sh`                        | Run tests                        |
 | `./scripts/lint.sh`                        | Run all linters                  |
+| `./scripts/lint-fix.sh`                    | Auto-fix lint issues locally     |
 | `./scripts/build.sh`                       | CI-style clean build → `.sppkg`  |
 | `./scripts/release-notes.sh`               | Preview release notes locally    |
 | `./scripts/set-version.sh v1.x.y`          | Stamp a release version          |

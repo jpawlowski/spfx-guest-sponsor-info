@@ -303,7 +303,7 @@ async function withTimeout<T>(
   operation: string
 ): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
-  const timeoutPromise = new Promise<never>((_, reject) => {
+  const timeoutPromise = new Promise<never>((_resolve, reject) => {
     timer = setTimeout(() => reject(new TimeoutError(operation, timeoutMs)), timeoutMs);
   });
   try {

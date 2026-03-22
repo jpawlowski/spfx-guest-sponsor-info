@@ -92,7 +92,7 @@ The packaged solution is written to `sharepoint/solution/guest-sponsor-info.sppk
 
 ```bash
 cp .env.example .env          # fill in SPFX_TENANT=<your-tenant>.sharepoint.com
-./scripts/start.sh            # starts dev server with hot-reload
+./scripts/dev.sh              # starts dev server with hot-reload
 ```
 
 The dev server bundles your code locally and serves it to the **hosted workbench** on your

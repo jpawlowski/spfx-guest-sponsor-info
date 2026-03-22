@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Start the local development server.
+# Start the local development server (hot-reload dev mode).
 #
 # Usage:
-#   scripts/start.sh
+#   scripts/dev.sh
 #
 # Requires SPFX_TENANT to be set — either in a local .env file or as an
 # environment variable. Copy .env.example to .env and fill in your tenant:
