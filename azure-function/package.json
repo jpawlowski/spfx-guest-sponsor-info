@@ -4,7 +4,9 @@
   "description": "Azure Function proxy for /me/sponsors — serves guest sponsor data to the SPFx web part.",
   "scripts": {
     "build": "tsc",
+    "watch": "tsc --watch",
     "build:production": "npm run build && node -e \"const fs=require('fs'),pkg=JSON.parse(fs.readFileSync('package.json','utf8'));fs.cpSync('host.json','dist/host.json');pkg.main='src/getGuestSponsors.js';delete pkg.devDependencies;delete pkg.scripts;fs.writeFileSync('dist/package.json',JSON.stringify(pkg,null,2));\" && npm install --omit=dev --prefix dist",
+    "prestart": "tsc",
     "start": "func start",
     "package": "npm run build:production && cd dist && zip -r ../guest-sponsor-info-function.zip ."
   },
