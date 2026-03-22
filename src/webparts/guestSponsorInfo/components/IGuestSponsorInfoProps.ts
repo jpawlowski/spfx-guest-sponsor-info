@@ -67,7 +67,7 @@ export interface IGuestSponsorInfoProps {
   /** Optional Azure Maps key used for inline map preview. */
   azureMapsSubscriptionKey: string | undefined;
   /** External map provider used for fallback links. */
-  externalMapProvider: 'bing' | 'google' | 'apple' | 'openstreetmap' | 'here';
+  externalMapProvider: 'bing' | 'google' | 'apple' | 'openstreetmap' | 'here' | 'none';
   /** Show the manager section in the contact card. */
   showManager: boolean;
   /** Show the presence status indicator and label. Default: true. */

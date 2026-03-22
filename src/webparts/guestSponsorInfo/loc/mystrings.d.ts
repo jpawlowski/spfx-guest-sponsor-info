@@ -35,6 +35,8 @@ declare interface IGuestSponsorInfoWebPartStrings {
   MapProviderAppleOption: string;
   MapProviderOpenStreetMapOption: string;
   MapProviderHereOption: string;
+  MapProviderNoneOption: string;
+  AddressMapProviderHint: string;
   LocationDisplayHintSeparateRows: string;
   LocationDisplayHintHidden: string;
   AdvancedDisplayGroupName: string;

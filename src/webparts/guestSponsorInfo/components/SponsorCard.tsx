@@ -306,8 +306,8 @@ interface ISponsorCardProps {
   showState: boolean;
   /** Optional Azure Maps subscription key used for inline preview. */
   azureMapsSubscriptionKey: string | undefined;
-  /** External map provider used for fallback links. */
-  externalMapProvider: 'bing' | 'google' | 'apple' | 'openstreetmap' | 'here';
+  /** External map provider used for fallback links. 'none' disables the link. */
+  externalMapProvider: 'bing' | 'google' | 'apple' | 'openstreetmap' | 'here' | 'none';
   /** Show the manager section below the contact details. */
   showManager: boolean;
   /** Show the presence status indicator (dot) and label. */
@@ -426,7 +426,9 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
   if (showCountry && sponsor.country?.trim()) addressParts.push(sponsor.country!.trim());
   const combinedAddress = addressParts.join(', ');
   const hasCombinedAddress = combinedAddress.length > 0;
-  const addressMapLink = hasCombinedAddress ? buildExternalMapLink(externalMapProvider, combinedAddress) : undefined;
+  const addressMapLink = hasCombinedAddress && externalMapProvider !== 'none'
+    ? buildExternalMapLink(externalMapProvider, combinedAddress)
+    : undefined;
 
   const [mapPreviewUrl, setMapPreviewUrl] = React.useState<string | undefined>(undefined);
   const [mapLoading, setMapLoading] = React.useState(false);
@@ -654,13 +656,17 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
             <div className={`${styles.richInfoRow} ${styles.richInfoRowInteractive}`}>
               <Icon iconName="MapPin" className={styles.richInfoIcon} aria-hidden="true" />
               <div className={styles.richInfoText}>
-                <Link href={addressMapLink} target="_blank" rel="noreferrer noopener" className={styles.richInfoValue}>
-                  {combinedAddress}
-                </Link>
+                {addressMapLink ? (
+                  <Link href={addressMapLink} target="_blank" rel="noreferrer noopener" className={styles.richInfoValue}>
+                    {combinedAddress}
+                  </Link>
+                ) : (
+                  <div className={styles.richInfoValue}>{combinedAddress}</div>
+                )}
               </div>
               <CopyButton value={combinedAddress} ariaLabel={strings.CopyAddressAriaLabel} />
             </div>
-            {azureMapsSubscriptionKey && (mapLoading || mapPreviewUrl) && (
+            {addressMapLink && azureMapsSubscriptionKey && (mapLoading || mapPreviewUrl) && (
               <div className={styles.mapPreviewInline}>
                 {mapLoading && !mapPreviewUrl && (
                   <div className={styles.mapPreviewStatus}>{strings.AddressMapLoadingLabel}</div>

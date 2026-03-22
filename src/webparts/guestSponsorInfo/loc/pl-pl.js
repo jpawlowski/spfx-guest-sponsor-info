@@ -119,6 +119,8 @@ define([], function() {
     "MapProviderAppleOption": "Apple Maps",
     "MapProviderOpenStreetMapOption": "OpenStreetMap",
     "MapProviderHereOption": "HERE WeGo",
+    "MapProviderNoneOption": "Wyłączone (brak linku do mapy)",
+    "AddressMapProviderHint": "Aby mapa mogła znależć lokalizację, włącz przynajmniej miasto lub kraj wraz z innymi polami adresu.",
     "CityFieldLabel": "Miasto",
     "CountryFieldLabel": "Kraj",
     "CopyCityAriaLabel": "Kopiuj miasto",

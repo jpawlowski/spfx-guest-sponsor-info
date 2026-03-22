@@ -119,6 +119,8 @@ define([], function() {
     "MapProviderAppleOption": "Apple Maps",
     "MapProviderOpenStreetMapOption": "OpenStreetMap",
     "MapProviderHereOption": "HERE WeGo",
+    "MapProviderNoneOption": "禁用（无地图链接）",
+    "AddressMapProviderHint": "要让地图找到该位置，请至少启用城市或国家/地区，并配合其他地址字段。",
     "CityFieldLabel": "城市",
     "CountryFieldLabel": "国家/地区",
     "CopyCityAriaLabel": "复制城市",

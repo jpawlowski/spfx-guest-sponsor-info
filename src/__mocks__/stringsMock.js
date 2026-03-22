@@ -85,6 +85,8 @@ module.exports = {
   MapProviderAppleOption: 'Apple Maps',
   MapProviderOpenStreetMapOption: 'OpenStreetMap',
   MapProviderHereOption: 'HERE WeGo',
+  MapProviderNoneOption: 'Disabled (no map link)',
+  AddressMapProviderHint: 'For the map to find the location, enable at least city or country together with the street address.',
   AddressMapFallbackHint: 'If no Azure Maps key is configured or map lookup fails, an external map link is shown.',
   UseInformalAddressFieldLabel: 'Use informal salutation (du/tu)',
   UseInformalAddressHint: 'Affects status messages and banners that address the guest user directly in full sentences.',

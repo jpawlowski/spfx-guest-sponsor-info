@@ -119,6 +119,8 @@ define([], function() {
     "MapProviderAppleOption": "Apple Maps",
     "MapProviderOpenStreetMapOption": "OpenStreetMap",
     "MapProviderHereOption": "HERE WeGo",
+    "MapProviderNoneOption": "Deaktivert (ingen kartlenke)",
+    "AddressMapProviderHint": "For at kartet skal finne stedet, aktiver minst by eller land sammen med deler av adressen.",
     "CityFieldLabel": "By",
     "CountryFieldLabel": "Land",
     "CopyCityAriaLabel": "Kopier by",

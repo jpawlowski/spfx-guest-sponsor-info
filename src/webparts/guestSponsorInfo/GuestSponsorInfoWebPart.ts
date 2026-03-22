@@ -44,7 +44,7 @@ export interface IGuestSponsorInfoWebPartProps {
   /** Azure Maps subscription key used for inline map preview. */
   azureMapsSubscriptionKey: string;
   /** External map provider used for fallback links. */
-  externalMapProvider: 'bing' | 'google' | 'apple' | 'openstreetmap' | 'here';
+  externalMapProvider: 'bing' | 'google' | 'apple' | 'openstreetmap' | 'here' | 'none';
   /** Show the manager section in the contact card. Default: true. */
   showManager: boolean;
   /** Show the presence status indicator and label. Default: true. */
@@ -204,6 +204,7 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
     const showManager = this.properties.showManager ?? true;
     const externalMapProvider = this.properties.externalMapProvider ?? 'bing';
     const mapProviderOptions: IPropertyPaneDropdownOption[] = [
+      { key: 'none', text: strings.MapProviderNoneOption },
       { key: 'bing', text: strings.MapProviderBingOption },
       { key: 'google', text: strings.MapProviderGoogleOption },
       { key: 'apple', text: strings.MapProviderAppleOption },
@@ -313,6 +314,9 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
                   label: strings.ExternalMapProviderFieldLabel,
                   options: mapProviderOptions,
                   selectedKey: externalMapProvider,
+                }),
+                PropertyPaneLabel('addressMapProviderHint', {
+                  text: strings.AddressMapProviderHint,
                 }),
                 PropertyPaneTextField('azureMapsSubscriptionKey', {
                   label: strings.AzureMapsSubscriptionKeyFieldLabel,

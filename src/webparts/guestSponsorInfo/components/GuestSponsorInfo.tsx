@@ -29,7 +29,7 @@ interface ISponsorListProps {
   showPostalCode: boolean;
   showState: boolean;
   azureMapsSubscriptionKey: string | undefined;
-  externalMapProvider: 'bing' | 'google' | 'apple' | 'openstreetmap' | 'here';
+  externalMapProvider: 'bing' | 'google' | 'apple' | 'openstreetmap' | 'here' | 'none';
   showManager: boolean;
   showPresence: boolean;
   showSponsorJobTitle: boolean;

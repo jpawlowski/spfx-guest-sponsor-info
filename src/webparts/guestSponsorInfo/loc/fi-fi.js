@@ -119,6 +119,8 @@ define([], function() {
     "MapProviderAppleOption": "Apple Maps",
     "MapProviderOpenStreetMapOption": "OpenStreetMap",
     "MapProviderHereOption": "HERE WeGo",
+    "MapProviderNoneOption": "Poistettu käytöstä (ei karttaostaman)",
+    "AddressMapProviderHint": "Jotta kartta voi löytää sijainnin, valitse vähintään kaupunki tai maa yhdessä muiden osoitekenttien kanssa.",
     "CityFieldLabel": "Kaupunki",
     "CountryFieldLabel": "Maa",
     "CopyCityAriaLabel": "Kopioi kaupunki",

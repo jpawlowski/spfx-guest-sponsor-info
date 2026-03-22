@@ -125,6 +125,8 @@ define([], function() {
     "MapProviderAppleOption": "Apple Maps",
     "MapProviderOpenStreetMapOption": "OpenStreetMap",
     "MapProviderHereOption": "HERE WeGo",
+    "MapProviderNoneOption": "Uitgeschakeld (geen kaartlink)",
+    "AddressMapProviderHint": "Activeer voor de kaart minimaal stad of land samen met andere adresvelden, zodat de locatie gevonden kan worden.",
     "CityFieldLabel": "Stad",
     "CountryFieldLabel": "Land",
     "CopyCityAriaLabel": "Stad kopiëren",
