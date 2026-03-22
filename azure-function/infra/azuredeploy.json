@@ -920,14 +920,14 @@
     "functionAppUrl": {
       "type": "string",
       "metadata": {
-        "description": "The URL of the deployed Function App."
+        "description": "The base URL of the deployed Function App. Paste this into the SPFx web part property pane (Azure Function Base URL field)."
       },
       "value": "[format('https://{0}', variables('functionAppHostName'))]"
     },
     "sponsorApiUrl": {
       "type": "string",
       "metadata": {
-        "description": "The function endpoint URL to paste into the SPFx web part property pane."
+        "description": "The full function endpoint URL — use this for curl/Postman testing or health checks. The web part property pane only needs the base URL (functionAppUrl)."
       },
       "value": "[format('https://{0}/api/getGuestSponsors', variables('functionAppHostName'))]"
     },

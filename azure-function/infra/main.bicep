@@ -168,7 +168,19 @@ print total=total, failures5xx=failures5xx, success=success,
 | where failures5xx >= __FAILURE_COUNT__ or successRatePct < __SUCCESS_RATE_PCT__
 '''
 #disable-next-line prefer-interpolation
-var serviceOutageAlertQuery = replace(replace(replace(replace(serviceOutageAlertQueryRaw, '__WINDOW__', string(alertWindowInMinutes)), '__MIN_REQUESTS__', string(serviceOutageMinRequests)), '__FAILURE_COUNT__', string(serviceOutageFailureCountThreshold)), '__SUCCESS_RATE_PCT__', string(serviceOutageSuccessRatePercentThreshold))
+var serviceOutageAlertQuery = replace(
+  replace(
+    replace(
+      replace(serviceOutageAlertQueryRaw, '__WINDOW__', string(alertWindowInMinutes)),
+      '__MIN_REQUESTS__',
+      string(serviceOutageMinRequests)
+    ),
+    '__FAILURE_COUNT__',
+    string(serviceOutageFailureCountThreshold)
+  ),
+  '__SUCCESS_RATE_PCT__',
+  string(serviceOutageSuccessRatePercentThreshold)
+)
 
 var authConfigRegressionAlertQueryRaw = '''
 let window = __WINDOW__m;
@@ -181,7 +193,11 @@ traces
 | where hits >= __HITS_THRESHOLD__
 '''
 #disable-next-line prefer-interpolation
-var authConfigRegressionAlertQuery = replace(replace(authConfigRegressionAlertQueryRaw, '__WINDOW__', string(alertWindowInMinutes)), '__HITS_THRESHOLD__', string(authConfigRegressionHitsThreshold))
+var authConfigRegressionAlertQuery = replace(
+  replace(authConfigRegressionAlertQueryRaw, '__WINDOW__', string(alertWindowInMinutes)),
+  '__HITS_THRESHOLD__',
+  string(authConfigRegressionHitsThreshold)
+)
 
 var likelyAttackInfoAlertQueryRaw = '''
 let window = __WINDOW__m;
@@ -201,7 +217,23 @@ denied
 | where success >= __MIN_SUCCESS__
 '''
 #disable-next-line prefer-interpolation
-var likelyAttackInfoAlertQuery = replace(replace(replace(replace(replace(likelyAttackInfoAlertQueryRaw, '__WINDOW__', string(alertWindowInMinutes)), '__DENIED_COUNT__', string(likelyAttackDeniedCountThreshold)), '__UNIQUE_IP__', string(likelyAttackUniqueIpThreshold)), '__DENY_RATE_PCT__', string(likelyAttackDenyRatePercentThreshold)), '__MIN_SUCCESS__', string(likelyAttackMinSuccessThreshold))
+var likelyAttackInfoAlertQuery = replace(
+  replace(
+    replace(
+      replace(
+        replace(likelyAttackInfoAlertQueryRaw, '__WINDOW__', string(alertWindowInMinutes)),
+        '__DENIED_COUNT__',
+        string(likelyAttackDeniedCountThreshold)
+      ),
+      '__UNIQUE_IP__',
+      string(likelyAttackUniqueIpThreshold)
+    ),
+    '__DENY_RATE_PCT__',
+    string(likelyAttackDenyRatePercentThreshold)
+  ),
+  '__MIN_SUCCESS__',
+  string(likelyAttackMinSuccessThreshold)
+)
 var createDefaultActionGroups = !empty(defaultAlertNotificationEmail)
 
 resource defaultOperationalActionGroup 'Microsoft.Insights/actionGroups@2023-01-01' = if (createDefaultActionGroups) {
@@ -672,7 +704,10 @@ resource storageQueueRole 'Microsoft.Authorization/roleAssignments@2022-04-01' =
   scope: storageAccount
   name: guid(storageAccount.id, functionAppResourceId, storageQueueDataContributorRoleId)
   properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', storageQueueDataContributorRoleId)
+    roleDefinitionId: subscriptionResourceId(
+      'Microsoft.Authorization/roleDefinitions',
+      storageQueueDataContributorRoleId
+    )
     #disable-next-line BCP318
     principalId: functionApp.identity.principalId
     principalType: 'ServicePrincipal'
@@ -683,7 +718,10 @@ resource storageTableRole 'Microsoft.Authorization/roleAssignments@2022-04-01' =
   scope: storageAccount
   name: guid(storageAccount.id, functionAppResourceId, storageTableDataContributorRoleId)
   properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', storageTableDataContributorRoleId)
+    roleDefinitionId: subscriptionResourceId(
+      'Microsoft.Authorization/roleDefinitions',
+      storageTableDataContributorRoleId
+    )
     #disable-next-line BCP318
     principalId: functionApp.identity.principalId
     principalType: 'ServicePrincipal'
@@ -706,7 +744,10 @@ resource storageQueueRoleFlex 'Microsoft.Authorization/roleAssignments@2022-04-0
   scope: storageAccount
   name: guid(storageAccount.id, functionAppResourceId, storageQueueDataContributorRoleId)
   properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', storageQueueDataContributorRoleId)
+    roleDefinitionId: subscriptionResourceId(
+      'Microsoft.Authorization/roleDefinitions',
+      storageQueueDataContributorRoleId
+    )
     #disable-next-line BCP318
     principalId: functionAppFlex.identity.principalId
     principalType: 'ServicePrincipal'
@@ -717,7 +758,10 @@ resource storageTableRoleFlex 'Microsoft.Authorization/roleAssignments@2022-04-0
   scope: storageAccount
   name: guid(storageAccount.id, functionAppResourceId, storageTableDataContributorRoleId)
   properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', storageTableDataContributorRoleId)
+    roleDefinitionId: subscriptionResourceId(
+      'Microsoft.Authorization/roleDefinitions',
+      storageTableDataContributorRoleId
+    )
     #disable-next-line BCP318
     principalId: functionAppFlex.identity.principalId
     principalType: 'ServicePrincipal'
@@ -819,10 +863,10 @@ resource likelyAttackInfoAlert 'Microsoft.Insights/scheduledQueryRules@2021-08-0
 // The hostname follows a fixed pattern — no runtime reference needed.
 var functionAppHostName = '${functionAppName}.azurewebsites.net'
 
-@description('The URL of the deployed Function App.')
+@description('The base URL of the deployed Function App. Paste this into the SPFx web part property pane (Azure Function Base URL field).')
 output functionAppUrl string = 'https://${functionAppHostName}'
 
-@description('The function endpoint URL to paste into the SPFx web part property pane.')
+@description('The full function endpoint URL — use this for curl/Postman testing or health checks. The web part property pane only needs the base URL (functionAppUrl).')
 output sponsorApiUrl string = 'https://${functionAppHostName}/api/getGuestSponsors'
 
 // Safe: exactly one of the two conditional Function App resources is always deployed.

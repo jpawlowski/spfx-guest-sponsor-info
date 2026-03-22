@@ -400,7 +400,15 @@ Billing note: with Azure Maps, pricing is request-based and includes a free mont
 (for example, first requests in S0). If the key is not configured in the web part,
 no Azure Maps requests are issued from the card.
 
-After deployment, note the **Managed Identity Object ID** shown in the output.
+After deployment, open the **Outputs** tab of the deployment in the Azure Portal
+(Resource Group → Deployments → select the deployment → **Outputs**).
+Note the following values:
+
+| Output | Used for |
+|---|---|
+| `managedIdentityObjectId` | Required parameter for `setup-graph-permissions.ps1` (next step) |
+| `functionAppUrl` | Paste into the web part property pane → **Azure Function Base URL** |
+| `sponsorApiUrl` | Full endpoint URL — for curl/Postman health checks only |
 
 #### Grant Graph permissions and configure the App Registration
 
@@ -427,8 +435,8 @@ This script does two things:
 
 In the property pane of the web part (edit the page → edit the web part → **Azure Function** group):
 
-- **Sponsor API URL**: paste the function endpoint, e.g.
-  `https://guest-sponsor-info-xyz.azurewebsites.net/api/getGuestSponsors`
+- **Azure Function Base URL**: paste the function app base URL, e.g.
+  `https://guest-sponsor-info-xyz.azurewebsites.net`
 - **Sponsor API Client ID**: paste the Client ID from the pre-step
 
 #### Updating the function
