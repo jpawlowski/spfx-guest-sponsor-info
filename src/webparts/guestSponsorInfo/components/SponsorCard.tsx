@@ -386,8 +386,9 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
   );
   const showPresenceIndicator = showPresence && sponsor.hasTeams !== false && isActive;
   const isOffline = sponsor.presence === 'Offline' || sponsor.presence === 'PresenceUnknown';
-  const useCustomPresenceDot = showPresenceIndicator && (isFocusing || isOffline);
-  const customDotColor = isFocusing ? PRESENCE_COLORS.Focusing : PRESENCE_COLORS.Offline;
+  const isAvailable = sponsor.presence === 'Available';
+  const useCustomPresenceDot = showPresenceIndicator && (isFocusing || isOffline || isAvailable);
+  const customDotColor = isFocusing ? PRESENCE_COLORS.Focusing : isAvailable ? PRESENCE_COLORS.Available : PRESENCE_COLORS.Offline;
   const effectivePresence = showPresenceIndicator && !useCustomPresenceDot ? personaPresence : PersonaPresence.none;
   const effectiveOof = showPresenceIndicator && !useCustomPresenceDot ? personaOof : false;
   const presenceColor = isOof
@@ -557,6 +558,11 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
               aria-hidden="true"
             >
               {isOffline && <span className={styles.presenceX} aria-hidden="true">×</span>}
+              {isAvailable && (
+                <svg viewBox="0 0 12 10" width="9" height="7" fill="none" aria-hidden="true">
+                  <polyline points="1,5 5,9 11,1" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
             </span>
           )}
         </div>
