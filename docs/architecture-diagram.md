@@ -31,6 +31,7 @@ flowchart TB
     classDef msgraph  fill:#ede9fe,stroke:#7c3aed,color:#4c1d95,font-weight:bold
 
     Admin(["🧑‍💼 SharePoint Admin"]):::admin
+    AzureAdmin(["🧑‍💼 Azure Admin"]):::admin
 
     subgraph spo["☁️ SharePoint Online"]
         Catalog["📦 App Catalog"]:::delivery
@@ -53,6 +54,9 @@ flowchart TB
     Graph[("🕸️ Microsoft Graph")]:::msgraph
 
     Admin      -- "deploys"                              --> Catalog
+    AzureAdmin -- "creates App Registration"             --> TokenSvc
+    AzureAdmin -- "deploys"                              --> Func
+    AzureAdmin -- "grants Graph permissions"             --> MI
     Catalog    -- "via"                                  --> CDN
     CDN        -- "① web part bundle"                    --> WP
     Page       -- "hosts"                                --> WP
@@ -76,26 +80,28 @@ flowchart TB
     style azure fill:#f0fdf4,stroke:#059669
 
     %% link indices (declaration order, 0-based)
-    %% 0–3   delivery: Admin→Catalog, Catalog→CDN, CDN→WP, Page→WP
-    linkStyle 0,1,2,3   stroke:#94a3b8,stroke-width:1.5px
-    %% 4–5   token roundtrip: WP→TokenSvc, TokenSvc→WP
-    linkStyle 4,5       stroke:#d97706,stroke-width:2px
-    %% 6     initial API call: WP→EasyAuth
-    linkStyle 6         stroke:#1d4ed8,stroke-width:2.5px
-    %% 7     valid path: EasyAuth→Func
-    linkStyle 7         stroke:#059669,stroke-width:2.5px
-    %% 8     rejection path: EasyAuth→WP
-    linkStyle 8         stroke:#dc2626,stroke-width:1.5px
-    %% 9–10  function→Graph via MI
-    linkStyle 9,10      stroke:#7c3aed,stroke-width:2px
-    %% 11    sponsor list response: Func→WP
-    linkStyle 11        stroke:#059669,stroke-width:2px
-    %% 12    telemetry: Func→AI
-    linkStyle 12        stroke:#94a3b8,stroke-width:1px
-    %% 13    photos: WP→Graph
-    linkStyle 13        stroke:#3b82f6,stroke-width:2px
-    %% 14–15 presence polling: WP→EasyAuth, Func→WP
-    linkStyle 14,15     stroke:#0891b2,stroke-width:1.5px
+    %% 0      setup: Admin→Catalog
+    %% 1–3    setup: AzureAdmin→TokenSvc, AzureAdmin→Func, AzureAdmin→MI
+    %% 4–6    delivery: Catalog→CDN, CDN→WP, Page→WP
+    linkStyle 0,1,2,3,4,5,6  stroke:#94a3b8,stroke-width:1.5px
+    %% 7–8    token roundtrip: WP→TokenSvc, TokenSvc→WP
+    linkStyle 7,8       stroke:#d97706,stroke-width:2px
+    %% 9      initial API call: WP→EasyAuth
+    linkStyle 9         stroke:#1d4ed8,stroke-width:2.5px
+    %% 10     valid path: EasyAuth→Func
+    linkStyle 10        stroke:#059669,stroke-width:2.5px
+    %% 11     rejection path: EasyAuth→WP
+    linkStyle 11        stroke:#dc2626,stroke-width:1.5px
+    %% 12–13  function→Graph via MI
+    linkStyle 12,13     stroke:#7c3aed,stroke-width:2px
+    %% 14     sponsor list response: Func→WP
+    linkStyle 14        stroke:#059669,stroke-width:2px
+    %% 15     telemetry: Func→AI
+    linkStyle 15        stroke:#94a3b8,stroke-width:1px
+    %% 16     photos: WP→Graph
+    linkStyle 16        stroke:#3b82f6,stroke-width:2px
+    %% 17–18  presence polling: WP→EasyAuth, Func→WP
+    linkStyle 17,18     stroke:#0891b2,stroke-width:1.5px
 ```
 
 ### What each step means
