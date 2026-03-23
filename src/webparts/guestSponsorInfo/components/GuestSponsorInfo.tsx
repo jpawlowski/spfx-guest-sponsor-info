@@ -255,11 +255,22 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
     if (isEditMode) return;
 
     // Demo mode: use static mock data, no Graph calls needed.
-    // Simulate a guest whose Teams access hasn't been provisioned yet so
-    // the warning banner and disabled Chat/Call buttons are visible.
     if (mockMode) {
-      setSponsors(MOCK_SPONSORS);
-      setAllUnavailable(false);
+      // "No sponsors found" — no sponsors are assigned, so no tiles appear.
+      if (mockSimulatedHint === 'noSponsors') {
+        setSponsors([]);
+        setAllUnavailable(false);
+        setUnavailableSponsors([]);
+      } else if (mockSimulatedHint === 'sponsorUnavailable') {
+        // All sponsors are unavailable — show their tiles read-only.
+        setSponsors([]);
+        setAllUnavailable(true);
+        setUnavailableSponsors(MOCK_SPONSORS);
+      } else {
+        setSponsors(MOCK_SPONSORS);
+        setAllUnavailable(false);
+        setUnavailableSponsors([]);
+      }
       setGuestHasTeamsAccess(mockSimulatedHint === 'teamsAccessPending' ? false : undefined);
       setLoading(false);
       return;
