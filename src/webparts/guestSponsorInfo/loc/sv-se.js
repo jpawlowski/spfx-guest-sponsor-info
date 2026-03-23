@@ -82,7 +82,7 @@ define([], function() {
     "InsufficientPermissionsTitle": "Behörighet saknas",
     "InsufficientPermissionsMessage": "Det gick inte att läsa in sponsorinformation — en nödvändig tjänstbehörighet har inte beviljats. Kontakta din IT-administratör.",
     "GuestNotificationsGroupName": "Aviseringar för gäster",
-    "GuestNotificationsGroupHint": "Styr vilka informationsaviseringar som visas för gästanvändare. Alla aviseringar är aktiverade som standard.",
+    "GuestNotificationsGroupHint": "Styr vilka informationsaviseringar som visas för gästanvändare.",
     "ShowTeamsAccessPendingHintLabel": "Visa aviseringen «Microsoft Teams inte konfigurerat ännu»",
     "ShowVersionMismatchHintLabel": "Visa aviseringen «Uppdatering tillgänglig»",
     "ShowSponsorUnavailableHintLabel": "Visa aviseringen «Sponsor inte tillgänglig»",

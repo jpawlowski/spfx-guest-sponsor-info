@@ -90,7 +90,7 @@ define([], function() {
     "TeamsNotReadyCallTooltipInformal": "Anruf hier nicht verfügbar — dein Teams-Gastzugang ist noch nicht eingerichtet",
 
     "GuestNotificationsGroupName": "Hinweise für Gäste",
-    "GuestNotificationsGroupHint": "Legen Sie fest, welche Hinweismeldungen Gastnutzern angezeigt werden. Standardmäßig sind alle Hinweise aktiviert.",
+    "GuestNotificationsGroupHint": "Legen Sie fest, welche Hinweismeldungen Gastnutzern angezeigt werden.",
     "ShowTeamsAccessPendingHintLabel": "Hinweis \"Microsoft Teams noch nicht eingerichtet\" anzeigen",
     "ShowVersionMismatchHintLabel": "Hinweis \"Update verfügbar\" anzeigen",
     "ShowSponsorUnavailableHintLabel": "Hinweis \"Sponsor nicht verfügbar\" anzeigen",

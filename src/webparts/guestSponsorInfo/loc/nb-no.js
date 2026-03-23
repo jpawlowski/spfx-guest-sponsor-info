@@ -83,7 +83,7 @@ define([], function() {
     "InsufficientPermissionsMessage": "Kunne ikke laste inn sponsorinformasjon — en påkrevd tjenestetillatelse er ikke innvilget. Kontakt IT-administratoren din.",
 
     "GuestNotificationsGroupName": "Varsler for gjester",
-    "GuestNotificationsGroupHint": "Kontroller hvilke informasjonsvarsler som vises til gjestebrukere. Alle varsler er aktivert som standard.",
+    "GuestNotificationsGroupHint": "Kontroller hvilke informasjonsvarsler som vises til gjestebrukere.",
     "ShowTeamsAccessPendingHintLabel": "Vis varselet «Microsoft Teams ikke konfigurert ennå»",
     "ShowVersionMismatchHintLabel": "Vis varselet «Oppdatering tilgjengelig»",
     "ShowSponsorUnavailableHintLabel": "Vis varselet «Sponsor ikke tilgjengelig»",

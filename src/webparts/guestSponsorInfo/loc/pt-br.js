@@ -83,7 +83,7 @@ define([], function() {
     "InsufficientPermissionsMessage": "Não foi possível carregar as informações do patrocinador — uma permissão de serviço necessária não foi concedida. Entre em contato com seu administrador de TI.",
 
     "GuestNotificationsGroupName": "Notificações para convidados",
-    "GuestNotificationsGroupHint": "Controle quais notificações informativas são exibidas para usuários convidados. Todas as notificações estão habilitadas por padrão.",
+    "GuestNotificationsGroupHint": "Controle quais notificações informativas são exibidas para usuários convidados.",
     "ShowTeamsAccessPendingHintLabel": "Exibir aviso «Microsoft Teams ainda não configurado»",
     "ShowVersionMismatchHintLabel": "Exibir aviso «Atualização disponível»",
     "ShowSponsorUnavailableHintLabel": "Exibir aviso «Patrocinador não disponível»",

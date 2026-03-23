@@ -83,7 +83,7 @@ define([], function() {
     "InsufficientPermissionsMessage": "Nie można załadować informacji o sponsorze — wymagane uprawnienie usługi nie zostało przyznane. Skontaktuj się z administratorem IT.",
 
     "GuestNotificationsGroupName": "Powiadomienia dla gości",
-    "GuestNotificationsGroupHint": "Kontroluj, które powiadomienia informacyjne są wyświetlane użytkownikiem-gościom. Domyślnie wszystkie powiadomienia są włączone.",
+    "GuestNotificationsGroupHint": "Kontroluj, które powiadomienia informacyjne są wyświetlane użytkownikiem-gościom.",
     "ShowTeamsAccessPendingHintLabel": "Pokaż powiadomienie «Microsoft Teams nie zostało jeszcze skonfigurowane»",
     "ShowVersionMismatchHintLabel": "Pokaż powiadomienie «Dostępna aktualizacja»",
     "ShowSponsorUnavailableHintLabel": "Pokaż powiadomienie «Sponsor niedostępny»",

@@ -89,7 +89,7 @@ define([], function() {
     "TeamsNotReadyCallTooltipInformal": "Appel non disponible ici — ton accès invité Teams n’a pas encore été configuré",
 
     "GuestNotificationsGroupName": "Notifications pour les invités",
-    "GuestNotificationsGroupHint": "Contrôlez les notifications informatives affichées aux utilisateurs invités. Toutes les notifications sont activées par défaut.",
+    "GuestNotificationsGroupHint": "Contrôlez les notifications informatives affichées aux utilisateurs invités.",
     "ShowTeamsAccessPendingHintLabel": "Afficher la notification « Microsoft Teams pas encore configuré »",
     "ShowVersionMismatchHintLabel": "Afficher la notification « Mise à jour disponible »",
     "ShowSponsorUnavailableHintLabel": "Afficher la notification « Sponsor indisponible »",

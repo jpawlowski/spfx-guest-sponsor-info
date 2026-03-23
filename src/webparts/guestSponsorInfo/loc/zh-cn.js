@@ -83,7 +83,7 @@ define([], function() {
     "InsufficientPermissionsMessage": "无法加载赞助商信息 — 尚未授予所需的服务权限。请联系您的 IT 管理员。",
 
     "GuestNotificationsGroupName": "访客通知",
-    "GuestNotificationsGroupHint": "控制向访客用户显示哪些信息通知。默认情况下，所有通知均已启用。",
+    "GuestNotificationsGroupHint": "控制向访客用户显示哪些信息通知。",
     "ShowTeamsAccessPendingHintLabel": "显示「Microsoft Teams 尚未设置」通知",
     "ShowVersionMismatchHintLabel": "显示「有可用更新」通知",
     "ShowSponsorUnavailableHintLabel": "显示「赞助商不可用」通知",

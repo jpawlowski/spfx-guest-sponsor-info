@@ -89,7 +89,7 @@ define([], function() {
     "TeamsNotReadyCallTooltipInformal": "Bellen hier niet beschikbaar — je Teams-gasttoegang is nog niet ingesteld",
 
     "GuestNotificationsGroupName": "Meldingen voor gasten",
-    "GuestNotificationsGroupHint": "Beheer welke informatieve meldingen worden weergegeven aan gastgebruikers. Alle meldingen zijn standaard ingeschakeld.",
+    "GuestNotificationsGroupHint": "Beheer welke informatieve meldingen worden weergegeven aan gastgebruikers.",
     "ShowTeamsAccessPendingHintLabel": "Melding «Microsoft Teams nog niet ingesteld» weergeven",
     "ShowVersionMismatchHintLabel": "Melding «Update beschikbaar» weergeven",
     "ShowSponsorUnavailableHintLabel": "Melding «Sponsor niet beschikbaar» weergeven",

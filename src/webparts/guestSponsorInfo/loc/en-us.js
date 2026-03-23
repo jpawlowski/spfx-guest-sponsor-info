@@ -81,7 +81,7 @@ define([], function() {
     "InsufficientPermissionsTitle": "Permission required",
     "InsufficientPermissionsMessage": "Could not load sponsor information — a required service permission has not been granted. Please contact your IT administrator.",
     "GuestNotificationsGroupName": "Guest Notifications",
-    "GuestNotificationsGroupHint": "Control which informational notices are shown to guest users. All notices are enabled by default.",
+    "GuestNotificationsGroupHint": "Control which informational notices are shown to guest users.",
     "ShowTeamsAccessPendingHintLabel": "Show \"Teams not set up yet\" notice",
     "ShowVersionMismatchHintLabel": "Show \"Update available\" notice",
     "ShowSponsorUnavailableHintLabel": "Show \"Sponsor not available\" notice",

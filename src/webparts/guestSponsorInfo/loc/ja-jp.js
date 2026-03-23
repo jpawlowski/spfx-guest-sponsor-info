@@ -83,7 +83,7 @@ define([], function() {
     "InsufficientPermissionsMessage": "スポンサー情報を読み込めませんでした — 必要なサービスのアクセス許可が付与されていません。IT 管理者にお問い合わせください。",
 
     "GuestNotificationsGroupName": "ゲストへの通知",
-    "GuestNotificationsGroupHint": "ゲストユーザーに表示する情報通知を管理します。デフォルトではすべての通知が有効です。",
+    "GuestNotificationsGroupHint": "ゲストユーザーに表示する情報通知を管理します。",
     "ShowTeamsAccessPendingHintLabel": "「Microsoft Teams はまだ設定されていません」通知を表示",
     "ShowVersionMismatchHintLabel": "「更新が利用可能です」通知を表示",
     "ShowSponsorUnavailableHintLabel": "「スポンサーが利用できません」通知を表示",

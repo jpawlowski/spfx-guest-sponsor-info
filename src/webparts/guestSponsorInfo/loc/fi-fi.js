@@ -83,7 +83,7 @@ define([], function() {
     "InsufficientPermissionsMessage": "Sponsoritietoja ei voitu ladata — vaadittua palvelulupaa ei ole myönnetty. Ota yhteyttä IT-järjestelmänvalvojaasi.",
 
     "GuestNotificationsGroupName": "Vierailijailmoitukset",
-    "GuestNotificationsGroupHint": "Hallinnoi, mitkä tiedottavat ilmoitukset näytetään vierailukäyttäjille. Kaikki ilmoitukset ovat oletuksena käytössä.",
+    "GuestNotificationsGroupHint": "Hallinnoi, mitkä tiedottavat ilmoitukset näytetään vierailukäyttäjille.",
     "ShowTeamsAccessPendingHintLabel": "Näytä ilmoitus \"Microsoft Teams ei ole vielä määritetty\"",
     "ShowVersionMismatchHintLabel": "Näytä ilmoitus \"Päivitys saatavilla\"",
     "ShowSponsorUnavailableHintLabel": "Näytä ilmoitus \"Sponsori ei ole käytettävissä\"",
