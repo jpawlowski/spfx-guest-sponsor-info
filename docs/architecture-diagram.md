@@ -3,7 +3,7 @@
 Visual system-level overview of the *Guest Sponsor Info* solution.
 For the written design decisions behind each component, see [architecture.md](architecture.md).
 
-The recommended path (Azure Function proxy) is split into two diagrams:
+The recommended path (Guest Sponsor API) is split into two diagrams:
 **Setup** shows who configures what during deployment; **Runtime** shows what
 happens each time a guest opens the landing page.
 
@@ -38,9 +38,10 @@ flowchart LR
 
     subgraph entra["🔐 Microsoft Entra ID"]
         AppReg["🔑 App Registration (EasyAuth)"]:::token
+        SP["🪪 Service Principal (Enterprise App)"]:::token
     end
 
-    subgraph azure["⚡ Azure · Sponsor API"]
+    subgraph azure["⚡ Guest Sponsor API"]
         Func["⚡ Azure Function"]:::func
         MI["🔒 Managed Identity"]:::infra
         AI[("📊 App Insights")]:::logs
@@ -52,9 +53,12 @@ flowchart LR
     Catalog -- "publishes assets"         --> CDN
 
     AzAdmin -- "② creates App Registration" --> AppReg
+    AppReg  -. "auto-creates"            .-> SP
     AzAdmin -- "③ deploys function"      --> Func
+    Func    -. "EasyAuth bound to"       .-> SP
     AzAdmin -- "④ grants permissions"    --> MI
-    Func    -. "uses"                    .-> MI
+    AzAdmin -. "④ configures"           .-> SP
+    Func    -. "uses"                   .-> MI
     MI      -- "Graph app permissions"   --> Graph
     AzAdmin -. "connects"               .-> AI
 
@@ -66,16 +70,22 @@ flowchart LR
     linkStyle 0,1   stroke:#94a3b8,stroke-width:1.5px
     %% 2     App Registration creation
     linkStyle 2     stroke:#d97706,stroke-width:2px
-    %% 3     Function deployment
-    linkStyle 3     stroke:#059669,stroke-width:2px
-    %% 4     permission grant
+    %% 3     AppReg auto-creates SP
+    linkStyle 3     stroke:#d97706,stroke-width:1px
+    %% 4     Function deployment
     linkStyle 4     stroke:#059669,stroke-width:2px
-    %% 5     Func uses MI
-    linkStyle 5     stroke:#a7f3d0,stroke-width:1.5px
-    %% 6     MI→Graph permission
-    linkStyle 6     stroke:#7c3aed,stroke-width:2px
-    %% 7     AI connection
-    linkStyle 7     stroke:#94a3b8,stroke-width:1px
+    %% 5     EasyAuth bound to SP
+    linkStyle 5     stroke:#d97706,stroke-width:1.5px
+    %% 6     permission grant to MI
+    linkStyle 6     stroke:#059669,stroke-width:2px
+    %% 7     SP configuration (step ④)
+    linkStyle 7     stroke:#d97706,stroke-width:2px
+    %% 8     Func uses MI
+    linkStyle 8     stroke:#a7f3d0,stroke-width:1.5px
+    %% 9     MI→Graph permission
+    linkStyle 9     stroke:#7c3aed,stroke-width:2px
+    %% 10    AI connection
+    linkStyle 10    stroke:#94a3b8,stroke-width:1px
 ```
 
 ### Required permissions
@@ -84,9 +94,9 @@ flowchart LR
 |---|---|---|---|
 | 1 | SharePoint Admin | Deploys `.sppkg` to the App Catalog | **SharePoint Administrator** |
 | 2 | Azure Admin | Runs `setup-app-registration.ps1` — creates the App Registration | **Application Administrator** |
-| 3 | Azure Admin | Deploys the ARM template — creates Azure resources and Storage role assignments; EasyAuth config registers the Service Principal in Entra | **Owner** on the target resource group¹ |
+| 3 | Azure Admin | Deploys the ARM template — creates Azure resources and Storage role assignments; EasyAuth config binds the Function to the Service Principal as its token validation endpoint | **Owner** on the target resource group¹ |
 | 4 | Azure Admin | Runs `setup-graph-permissions.ps1` — grants Graph app roles to the Managed Identity (`User.Read.All`, `Presence.Read.All`, …) | **Privileged Role Administrator**² |
-| 4 | Azure Admin | Same script — exposes `user_impersonation` scope and pre-authorizes SharePoint Online Web Client Extensibility | **Application Administrator** |
+| 4 | Azure Admin | Same script — creates the Service Principal (Enterprise App) if not yet present (no user has signed in yet); sets `appRoleAssignmentRequired: false` so guests need no individual assignment; exposes `user_impersonation` scope and pre-authorizes SharePoint Online Web Client Extensibility | **Application Administrator** |
 
 ¹ `Contributor` alone is not sufficient — the template creates
 `Microsoft.Authorization/roleAssignments` on the Storage Account.
@@ -101,9 +111,9 @@ or higher.
 
 Color-coding marks system boundaries at a glance:
 **blue** = SharePoint Online · **amber** = Microsoft Entra ID ·
-**green** = Azure Sponsor API · **purple** = Microsoft Graph.
+**green** = Guest Sponsor API · **purple** = Microsoft Graph.
 Steps ②–③ show the authentication handshake — the web part cannot call the
-Sponsor API without first obtaining a signed token from Entra ID.
+Guest Sponsor API without first obtaining a signed token from Entra ID.
 Step ⑦ is a separate polling loop that only fetches presence, never the full
 sponsor list.
 
@@ -128,7 +138,7 @@ flowchart TB
         TokenSvc["🔑 Token Service (App Registration)"]:::token
     end
 
-    subgraph azure["⚡ Azure · Sponsor API"]
+    subgraph azure["⚡ Guest Sponsor API"]
         EasyAuth{"🛡️ EasyAuth (Azure App Service)"}:::gate
         Func["⚡ Azure Function (sponsor lookup)"]:::func
         MI["🔒 Managed Identity"]:::infra
@@ -140,7 +150,7 @@ flowchart TB
     CDN        -- "① web part bundle"                    --> WP
     Page       -- "hosts"                                --> WP
 
-    WP         -- "② request token (Sponsor API scope)"  --> TokenSvc
+    WP         -- "② request token (Guest Sponsor API scope)"  --> TokenSvc
     TokenSvc   -- "signed Bearer token"                  --> WP
     WP         -- "③ call with Bearer token"             --> EasyAuth
     EasyAuth   -- "④ token valid — OID confirmed"        --> Func
@@ -185,21 +195,21 @@ flowchart TB
 | Step | What happens |
 |---|---|
 | ① | The guest opens the SharePoint landing page. The browser loads the web part bundle from the Public CDN — no App Catalog access needed at runtime. |
-| ② | The web part silently requests a token from Entra ID, scoped specifically to the Sponsor API's App Registration. No extra guest consent is required — the scope is pre-authorized for SharePoint. |
-| ③ | Only after a valid token is in hand does the web part call the Sponsor API, with the Bearer token attached. There is no direct path to the function without this token. |
+| ② | The web part silently requests a token from Entra ID, scoped specifically to the Guest Sponsor API's App Registration. No extra guest consent is required — the scope is pre-authorized for SharePoint. |
+| ③ | Only after a valid token is in hand does the web part call the Guest Sponsor API, with the Bearer token attached. There is no direct path to the function without this token. |
 | ④ | [EasyAuth](https://learn.microsoft.com/azure/app-service/overview-authentication-authorization) (Microsoft Azure App Service Authentication) intercepts the request at the Azure Function boundary and validates the token before any function code runs. An invalid or missing token is rejected immediately (HTTP 401); the function never sees the request. |
 | ⑤ | The function identifies the guest from the EasyAuth-confirmed OID and calls Microsoft Graph using its own Managed Identity. It returns the full sponsor list — sponsors, profiles, and manager — in one response. This happens **once on page load**. |
 | ⑥ | Profile photos are loaded **directly** from Graph using the guest's own delegated token. They bypass the function entirely. |
-| ⑦ | After the initial load, the web part polls the Sponsor API for **presence status only** at adaptive intervals — **30 seconds** while a sponsor card is hovered, **2 minutes** while the browser tab is visible, **5 minutes** while the tab is in the background. The token is silently refreshed by the browser before it expires; the EasyAuth gate applies on every poll just as on the initial call. The full sponsor list is never re-fetched during polling. |
+| ⑦ | After the initial load, the web part polls the Guest Sponsor API for **presence status only** at adaptive intervals — **30 seconds** while a sponsor card is hovered, **2 minutes** while the browser tab is visible, **5 minutes** while the tab is in the background. The token is silently refreshed by the browser before it expires; the EasyAuth gate applies on every poll just as on the initial call. The full sponsor list is never re-fetched during polling. |
 
 ---
 
-## Fallback Path — Direct Graph (legacy, no Azure Function)
+## Fallback Path — Direct Graph (legacy, no Guest Sponsor API)
 
-When no Azure Function URL is configured, the web part calls Microsoft Graph
+When no Guest Sponsor API URL is configured, the web part calls Microsoft Graph
 directly with the guest's delegated token. This requires the guest account to
 hold an Entra directory role (*Directory Readers*) — impractical at scale.
-The Azure Function proxy removes that requirement.
+The Guest Sponsor API removes that requirement.
 
 ```mermaid
 flowchart LR
@@ -239,7 +249,7 @@ flowchart LR
 | Public CDN | Delivers the web part JavaScript bundle to the guest's browser |
 | Web Part | Guest-facing UI rendered inside the SharePoint page |
 | Token Service (Entra ID) | Issues tokens that identify the guest — no directory role needed |
-| Sponsor API (Azure Function) | Secure proxy between the web part and Graph; enforces caller identity |
+| Guest Sponsor API | Secure proxy between the web part and Microsoft Graph; validates caller identity via EasyAuth and calls Graph using a Managed Identity |
 | [EasyAuth](https://learn.microsoft.com/azure/app-service/overview-authentication-authorization) | Microsoft Azure App Service Authentication — validates tokens at the function boundary before any code runs |
 | Managed Identity | Allows the function to call Graph without any stored credentials |
 | Microsoft Graph | Source of sponsor relationships, profiles, photos, and presence |
@@ -250,7 +260,7 @@ flowchart LR
 ## Related Documents
 
 - [architecture.md](architecture.md) — design decisions, known limitations, SPFx lifecycle
-- [deployment.md](deployment.md) — step-by-step deployment, Azure Function setup, hosting plans
+- [deployment.md](deployment.md) — step-by-step deployment, Guest Sponsor API setup, hosting plans
 - [development.md](development.md) — local dev setup, build & test commands
 - [features.md](features.md) — feature descriptions and the problems they solve
 - [README](../README.md) — quick-start and overview
