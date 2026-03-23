@@ -14,7 +14,7 @@ import {
 import { PropertyPaneCustomField } from '@microsoft/sp-property-pane/lib/propertyPaneFields/propertyPaneCustomField/PropertyPaneCustomField';
 import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
 import { MSGraphClientV3, AadHttpClient } from '@microsoft/sp-http';
-import { initializeIcons } from '@fluentui/react';
+import { initializeIcons, MessageBar, MessageBarType } from '@fluentui/react';
 
 import * as strings from 'GuestSponsorInfoWebPartStrings';
 import GuestSponsorInfo from './components/GuestSponsorInfo';
@@ -24,6 +24,8 @@ import workohoDefaultLogo from './assets/workoho-default-logo.svg';
 export interface IGuestSponsorInfoWebPartProps {
   title: string;
   mockMode: boolean;
+  /** Simulate Teams unavailability in demo mode. Default: false. */
+  mockTeamsUnavailable: boolean;
   /** Card layout: 'auto' switches to compact when >2 sponsors. Default: 'auto'. */
   cardLayout: 'auto' | 'full' | 'compact';
   functionUrl: string;
@@ -84,6 +86,7 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
         graphClient: this._graphClient, // undefined until onInit resolves
         title: this.properties.title,
         mockMode: this.properties.mockMode ?? false,
+        mockTeamsUnavailable: (this.properties.mockMode ?? false) && (this.properties.mockTeamsUnavailable ?? false),
         cardLayout: this.properties.cardLayout ?? 'auto',
         hostTenantId: this.context.pageContext.aadInfo.tenantId.toString(),
         functionUrl: this.properties.functionUrl
@@ -184,6 +187,13 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
 
     if (oldValue === newValue) return;
     if (
+      propertyPath === 'functionUrl' ||
+      propertyPath === 'functionClientId'
+    ) {
+      this._proxyStatus = 'checking';
+      this.context.propertyPane.refresh();
+    } else if (
+      propertyPath === 'mockMode' ||
       propertyPath === 'showCity' ||
       propertyPath === 'showCountry' ||
       propertyPath === 'showWorkLocation' ||
@@ -383,14 +393,19 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
           groups: [
             {
               groupName: strings.BasicGroupName,
-              isCollapsed: true,
+              isCollapsed: false,
               groupFields: [
                 PropertyPaneTextField('title', {
                   label: strings.TitleFieldLabel
                 }),
                 PropertyPaneCheckbox('mockMode', {
                   text: strings.MockModeFieldLabel
-                })
+                }),
+                ...(this.properties.mockMode ? [
+                  PropertyPaneCheckbox('mockTeamsUnavailable', {
+                    text: strings.MockTeamsUnavailableFieldLabel
+                  })
+                ] : [])
               ]
             },
             {
@@ -523,12 +538,31 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
                 PropertyPaneTextField('functionClientId', {
                   label: strings.FunctionClientIdFieldLabel
                 }),
-                ...(this.properties.functionUrl ? [
-                  PropertyPaneLabel('proxyStatusLabel', {
-                    text: this._proxyStatus === 'ok' ? strings.ProxyStatusOk
-                      : this._proxyStatus === 'error' ? strings.ProxyStatusError
-                      : strings.ProxyStatusChecking
-                  })
+                ...(this.properties.functionUrl && this.properties.functionClientId ? [
+                  PropertyPaneCustomField({
+                    key: 'proxyStatusField',
+                    onRender: (element: HTMLElement | undefined) => {
+                      if (!element) return;
+                      const status = this._proxyStatus;
+                      const messageBarType = status === 'ok' ? MessageBarType.success
+                        : status === 'error' ? MessageBarType.error
+                        : MessageBarType.info;
+                      const text = status === 'ok' ? strings.ProxyStatusOk
+                        : status === 'error' ? strings.ProxyStatusError
+                        : strings.ProxyStatusChecking;
+                      ReactDom.render(
+                        React.createElement(MessageBar, {
+                          messageBarType,
+                          isMultiline: false,
+                          styles: { root: { marginTop: 8 } },
+                        }, text),
+                        element
+                      );
+                    },
+                    onDispose: (element: HTMLElement | undefined) => {
+                      if (element) ReactDom.unmountComponentAtNode(element);
+                    },
+                  }) as unknown as IPropertyPaneField<unknown>
                 ] : [])
               ]
             },

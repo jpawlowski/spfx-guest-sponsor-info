@@ -14,6 +14,7 @@ define([], function() {
     "GuestOnlyPlaceholder": "Tämä verkko-osa näkyy vain vieraskäyttäjille näyttötilassa.",
     "MockModeFieldLabel": "Demotila (testitiedot)",
     "MockModePlaceholder": "Vieraan sponsoritiedot — Demotila on aktiivinen. Siirry näyttötilaan nähdäksesi testitiedot.",
+    "MockTeamsUnavailableFieldLabel": "Simuloi Teamsin saatavuuseste",
 
     "PresenceAvailable": "Saatavilla",
     "PresenceAvailableIdle": "Saatavilla, poissaoleva",

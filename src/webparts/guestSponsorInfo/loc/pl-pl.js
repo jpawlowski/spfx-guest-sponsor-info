@@ -14,6 +14,7 @@ define([], function() {
     "GuestOnlyPlaceholder": "Ten składnik Web Part jest widoczny tylko dla użytkowników-gości w trybie wyświetlania.",
     "MockModeFieldLabel": "Tryb demonstracyjny (dane testowe)",
     "MockModePlaceholder": "Informacje o sponsorze gościa — aktywny tryb demonstracyjny. Przełącz do trybu wyświetlania, aby zobaczyć dane testowe.",
+    "MockTeamsUnavailableFieldLabel": "Symuluj niedostępność Teams",
 
     "PresenceAvailable": "Dostępny",
     "PresenceAvailableIdle": "Dostępny, bezczynny",

@@ -14,6 +14,7 @@ define([], function() {
     "GuestOnlyPlaceholder": "Ce composant WebPart n’est visible qu’aux utilisateurs invités en mode d’affichage.",
     "MockModeFieldLabel": "Mode démo (données fictives)",
     "MockModePlaceholder": "Infos sur le sponsor invité — Mode démo actif. Passez en mode d’affichage pour voir les données fictives.",
+    "MockTeamsUnavailableFieldLabel": "Simuler l'indisponibilité de Teams",
 
     "PresenceAvailable": "Disponible",
     "PresenceAvailableIdle": "Disponible, inactif",

@@ -14,6 +14,7 @@ define([], function() {
     "GuestOnlyPlaceholder": "Denne webdel er kun synlig for gæstebrugere i visningstilstand.",
     "MockModeFieldLabel": "Demotilstand (testdata)",
     "MockModePlaceholder": "Gæstesponsoroplysninger — Demotilstand aktiv. Skift til visningstilstand for at se testdata.",
+    "MockTeamsUnavailableFieldLabel": "Simuler Teams utilgængelighed",
 
     "PresenceAvailable": "Tilgængelig",
     "PresenceAvailableIdle": "Tilgængelig, inaktiv",

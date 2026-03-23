@@ -14,6 +14,7 @@ define([], function() {
     "GuestOnlyPlaceholder": "Dieses Webpart ist im Anzeigemodus nur für Gastbenutzer sichtbar.",
     "MockModeFieldLabel": "Demo-Modus (Testdaten)",
     "MockModePlaceholder": "Gast-Sponsor-Info — Demo-Modus aktiv. Wechseln Sie in den Anzeigemodus, um die Testdaten zu sehen.",
+    "MockTeamsUnavailableFieldLabel": "Teams-Nichtverfügbarkeit simulieren",
 
     "PresenceAvailable": "Verfügbar",
     "PresenceAvailableIdle": "Verfügbar, inaktiv",

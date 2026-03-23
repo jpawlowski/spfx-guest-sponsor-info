@@ -14,6 +14,7 @@ define([], function() {
     "GuestOnlyPlaceholder": "Denne webdelen er bare synlig for gjestebrukere i visningsmodus.",
     "MockModeFieldLabel": "Demonstrasjonsmodus (testdata)",
     "MockModePlaceholder": "Gjestesponsorinformasjon — Demonstrasjonsmodus aktiv. Bytt til visningsmodus for å se testdata.",
+    "MockTeamsUnavailableFieldLabel": "Simuler Teams-utilgjengelighet",
 
     "PresenceAvailable": "Tilgjengelig",
     "PresenceAvailableIdle": "Tilgjengelig, inaktiv",

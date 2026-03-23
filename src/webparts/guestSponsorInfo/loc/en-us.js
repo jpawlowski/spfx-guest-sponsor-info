@@ -14,6 +14,7 @@ define([], function() {
     "GuestOnlyPlaceholder": "This web part is only visible to guest users in view mode.",
     "MockModeFieldLabel": "Demo mode (mock data)",
     "MockModePlaceholder": "Guest Sponsor Info — Demo mode active. Switch to view mode to see mock sponsors.",
+    "MockTeamsUnavailableFieldLabel": "Simulate Teams unavailability",
 
     "PresenceAvailable": "Available",
     "PresenceAvailableIdle": "Available, Idle",

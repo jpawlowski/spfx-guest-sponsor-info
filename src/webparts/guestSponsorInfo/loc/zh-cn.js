@@ -14,6 +14,7 @@ define([], function() {
     "GuestOnlyPlaceholder": "此 Web 部件在查看模式下仅对访客用户可见。",
     "MockModeFieldLabel": "演示模式（模拟数据）",
     "MockModePlaceholder": "访客赞助商信息 — 演示模式已激活。切换到查看模式以查看模拟数据。",
+    "MockTeamsUnavailableFieldLabel": "模拟 Teams 不可用",
 
     "PresenceAvailable": "有空",
     "PresenceAvailableIdle": "有空（闲置）",

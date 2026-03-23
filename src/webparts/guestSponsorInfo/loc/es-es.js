@@ -14,6 +14,7 @@ define([], function() {
     "GuestOnlyPlaceholder": "Este elemento web solo es visible para los usuarios invitados en modo de visualización.",
     "MockModeFieldLabel": "Modo demo (datos de prueba)",
     "MockModePlaceholder": "Información del patrocinador invitado — Modo demo activo. Cambie al modo de visualización para ver los datos de prueba.",
+    "MockTeamsUnavailableFieldLabel": "Simular no disponibilidad de Teams",
 
     "PresenceAvailable": "Disponible",
     "PresenceAvailableIdle": "Disponible, inactivo",

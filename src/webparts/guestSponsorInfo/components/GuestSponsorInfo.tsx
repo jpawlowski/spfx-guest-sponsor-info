@@ -177,6 +177,7 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
   graphClient,
   title,
   mockMode,
+  mockTeamsUnavailable,
   cardLayout,
   hostTenantId,
   functionUrl,
@@ -266,7 +267,7 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
     if (mockMode) {
       setSponsors(MOCK_SPONSORS);
       setAllUnavailable(false);
-      setGuestHasTeamsAccess(false);
+      setGuestHasTeamsAccess(mockTeamsUnavailable ? false : undefined);
       setLoading(false);
       return;
     }
@@ -470,8 +471,19 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
           showManagerPhoto={showManagerPhoto}
           useInformalAddress={useInformalAddress}
           onActiveCardChange={() => undefined}
-          guestHasTeamsAccess={false}
+          guestHasTeamsAccess={mockMode && mockTeamsUnavailable ? false : undefined}
         />
+        {mockMode && mockTeamsUnavailable && (
+          <MessageBar
+            messageBarType={MessageBarType.warning}
+            isMultiline
+            delayedRender={false}
+            className={styles.teamsAccessBanner}
+          >
+            <b>{strings.TeamsAccessPendingTitle}</b><br />
+            {fstr('TeamsAccessPendingMessage')}
+          </MessageBar>
+        )}
       </section>
     );
   }

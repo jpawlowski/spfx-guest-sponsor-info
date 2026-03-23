@@ -14,6 +14,7 @@ define([], function() {
     "GuestOnlyPlaceholder": "この Web パーツは、表示モードではゲスト ユーザーにのみ表示されます。",
     "MockModeFieldLabel": "デモ モード (テスト データ)",
     "MockModePlaceholder": "ゲストスポンサー情報 — デモ モードが有効です。テスト データを表示するには表示モードに切り替えてください。",
+    "MockTeamsUnavailableFieldLabel": "Teams の利用不可をシミュレートする",
 
     "PresenceAvailable": "連絡可能",
     "PresenceAvailableIdle": "連絡可能、アイドル",

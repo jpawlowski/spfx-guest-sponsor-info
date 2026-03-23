@@ -22,6 +22,7 @@ export interface IGuestSponsorInfoProps {
    * making live Graph calls.
    */
   mockMode: boolean;
+  mockTeamsUnavailable: boolean;
   /** Card layout mode: 'full' (136px tiles), 'compact' (horizontal rows), or 'auto' (switches based on count). */
   cardLayout: 'auto' | 'full' | 'compact';
   /**

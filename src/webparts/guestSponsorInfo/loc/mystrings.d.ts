@@ -13,6 +13,7 @@ declare interface IGuestSponsorInfoWebPartStrings {
   GuestOnlyPlaceholder: string;
   MockModeFieldLabel: string;
   MockModePlaceholder: string;
+  MockTeamsUnavailableFieldLabel: string;
 
   // Display toggles
   DisplayGroupName: string;

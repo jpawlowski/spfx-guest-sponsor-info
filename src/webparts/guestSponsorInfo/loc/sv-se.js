@@ -14,6 +14,7 @@ define([], function() {
     "GuestOnlyPlaceholder": "Den här webbdelen visas bara för gästanvändare i visningsläge.",
     "MockModeFieldLabel": "Demoläge (testdata)",
     "MockModePlaceholder": "Gästsponsorsinfo — Demoläge aktivt. Växla till visningsläge för att se testdata.",
+    "MockTeamsUnavailableFieldLabel": "Simulera Teams-otillgänglighet",
 
     "PresenceAvailable": "Tillgänglig",
     "PresenceAvailableIdle": "Tillgänglig, inaktiv",

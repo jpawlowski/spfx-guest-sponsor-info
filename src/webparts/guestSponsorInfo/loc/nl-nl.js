@@ -14,6 +14,7 @@ define([], function() {
     "GuestOnlyPlaceholder": "Dit webonderdeel is alleen zichtbaar voor gastgebruikers in de weergavemodus.",
     "MockModeFieldLabel": "Demomodus (testgegevens)",
     "MockModePlaceholder": "Gastsponsors — Demomodus actief. Schakel over naar de weergavemodus om testgegevens te zien.",
+    "MockTeamsUnavailableFieldLabel": "Teams-onbeschikbaarheid simuleren",
 
     "PresenceAvailable": "Beschikbaar",
     "PresenceAvailableIdle": "Beschikbaar, inactief",
