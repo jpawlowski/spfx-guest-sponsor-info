@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { DisplayMode } from '@microsoft/sp-core-library';
-import { Shimmer, ShimmerElementType, ShimmerElementsGroup, MessageBar, MessageBarType } from '@fluentui/react';
+import { MessageBar, MessageBarType } from '@fluentui/react';
 import * as strings from 'GuestSponsorInfoWebPartStrings';
 import styles from './GuestSponsorInfo.module.scss';
 import type { IGuestSponsorInfoProps } from './IGuestSponsorInfoProps';
@@ -46,14 +46,20 @@ interface ISponsorListProps {
 
 const SponsorList: React.FC<ISponsorListProps> = ({ sponsors, hostTenantId, compact, showBusinessPhones, showMobilePhone, showWorkLocation, showCity, showCountry, showStreetAddress, showPostalCode, showState, azureMapsSubscriptionKey, externalMapProvider, showManager, showPresence, showSponsorJobTitle, showManagerJobTitle, showSponsorDepartment, showManagerDepartment, showSponsorPhoto, showManagerPhoto, useInformalAddress, onActiveCardChange, guestHasTeamsAccess }) => {
   const [activeId, setActiveId] = React.useState<string | null>(null);
+  const showTimeout = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const hideTimeout = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const activate = (id: string): void => {
     if (hideTimeout.current) { clearTimeout(hideTimeout.current); hideTimeout.current = null; }
-    setActiveId(id);
-    onActiveCardChange?.(true);
+    if (showTimeout.current) return; // already pending for this or another card
+    showTimeout.current = setTimeout(() => {
+      showTimeout.current = null;
+      setActiveId(id);
+      onActiveCardChange?.(true);
+    }, 500);
   };
   const scheduleDeactivate = (): void => {
+    if (showTimeout.current) { clearTimeout(showTimeout.current); showTimeout.current = null; }
     hideTimeout.current = setTimeout(() => {
       setActiveId(null);
       onActiveCardChange?.(false);
@@ -62,6 +68,7 @@ const SponsorList: React.FC<ISponsorListProps> = ({ sponsors, hostTenantId, comp
 
   React.useEffect(() => {
     return () => {
+      if (showTimeout.current) clearTimeout(showTimeout.current);
       if (hideTimeout.current) clearTimeout(hideTimeout.current);
       onActiveCardChange?.(false);
     };
@@ -105,65 +112,30 @@ const SponsorList: React.FC<ISponsorListProps> = ({ sponsors, hostTenantId, comp
   );
 };
 
-// Skeleton shimmer for full layout — 136px tile with 72px avatar + 2-line name.
-// Total height: 12 (top) + 72 (avatar) + 8 (gap) + 18 (name×1) + 18 (name×2) + 12 (bottom) = 140px.
-// Matches card padding: 12px equal on all sides.
-const sponsorCardShimmerFull = (
-  <ShimmerElementsGroup
-    flexWrap
-    width="136px"
-    shimmerElements={[
-      // top padding 12px
-      { type: ShimmerElementType.gap, width: '100%', height: 12 },
-      // avatar row: (136-72)/2 = 32px gap each side
-      { type: ShimmerElementType.gap,    width: 32, height: 72 },
-      { type: ShimmerElementType.circle,            height: 72 },
-      { type: ShimmerElementType.gap,    width: 32, height: 72 },
-      // gap between avatar and name
-      { type: ShimmerElementType.gap, width: '100%', height: 8 },
-      // name line 1 (~96px): (136-96)/2 = 20px each side
-      { type: ShimmerElementType.gap,  width: 20, height: 18 },
-      { type: ShimmerElementType.line, width: 96, height: 18 },
-      { type: ShimmerElementType.gap,  width: 20, height: 18 },
-      // name line 2 (~70px): (136-70)/2 = 33px each side
-      { type: ShimmerElementType.gap,  width: 33, height: 18 },
-      { type: ShimmerElementType.line, width: 70, height: 18 },
-      { type: ShimmerElementType.gap,  width: 33, height: 18 },
-      // bottom padding 12px
-      { type: ShimmerElementType.gap, width: '100%', height: 12 },
-    ]}
-  />
-);
-
-// Skeleton shimmer for compact layout — horizontal row with 40px avatar + name line.
-// Total height: 6px padding + 40px avatar + 6px padding = 52px.
-// Width: 6px + 40px + 10px gap + ~120px name + 6px = 182px.
-const sponsorCardShimmerCompact = (
-  <ShimmerElementsGroup
-    width="182px"
-    shimmerElements={[
-      { type: ShimmerElementType.gap,    width: 6,  height: 52 },
-      { type: ShimmerElementType.circle,            height: 40 },
-      { type: ShimmerElementType.gap,    width: 10, height: 52 },
-      { type: ShimmerElementType.line,   width: 120, height: 14 },
-      { type: ShimmerElementType.gap,    width: 6,  height: 52 },
-    ]}
-  />
-);
-
 /**
- * Renders a single shimmer placeholder in the same grid as the real sponsor list.
- * The shimmer shape matches the configured card layout so there is no layout shift
- * when real data replaces the skeleton.
+ * Pure-CSS loading skeleton — uses the identical DOM structure and CSS classes
+ * as the real sponsor cards so spacing is pixel-perfect and requires no manual
+ * height arithmetic.  Two placeholder cards are rendered (matching the typical
+ * mock-data count) to give a realistic sense of the list size.
  */
 const SponsorGridSkeleton: React.FC<{ compact: boolean }> = ({ compact }) => (
   <ul className={compact ? styles.sponsorGridCompact : styles.sponsorGrid} aria-busy="true">
-    <li className={styles.sponsorItem}>
-      {compact
-        ? <Shimmer customElementsGroup={sponsorCardShimmerCompact} width="182px" />
-        : <Shimmer customElementsGroup={sponsorCardShimmerFull} width="136px" />
-      }
-    </li>
+    {[0, 1].map(i => (
+      <li key={i} className={styles.sponsorItem}>
+        {compact ? (
+          <div className={`${styles.cardCompact} ${styles.skeletonItem}`}>
+            <div className={styles.skeletonCircleCompact} />
+            <div className={styles.skeletonLine} style={{ width: 120 }} />
+          </div>
+        ) : (
+          <div className={`${styles.card} ${styles.skeletonItem}`}>
+            <div className={styles.skeletonCircle} />
+            <div className={styles.skeletonLine} style={{ width: 88 }} />
+            <div className={styles.skeletonLine} style={{ width: 64 }} />
+          </div>
+        )}
+      </li>
+    ))}
   </ul>
 );
 
