@@ -154,6 +154,70 @@ After **every** code change:
 - **React version** — Pinned at 17.0.1; do not change
 - **@microsoft/** packages — Managed as coordinated set; do not individually update
 
+## Fluent UI v9 Rules (Enforced — Do Not Use v8 APIs)
+
+This project has been migrated to **Fluent UI v9** (`@fluentui/react-components`).
+All new code **must** use v9 APIs. Do not import from `@fluentui/react` (v8).
+
+### Allowed imports
+
+```typescript
+// ✅ Fluent UI v9 components
+import { FluentProvider, MessageBar, MessageBarBody, Avatar,
+         PresenceBadge, Popover, PopoverTrigger, PopoverSurface,
+         OverlayDrawer, DrawerHeader, DrawerHeaderTitle, DrawerBody,
+         Button, Tooltip, Link, makeStyles, mergeClasses } from '@fluentui/react-components';
+
+// ✅ Fluent UI v9 icons (SVG — no icon font needed)
+import { ChatRegular, MailRegular, CallRegular, CopyRegular,
+         CheckmarkRegular, PhoneRegular, BuildingRegular,
+         LocationRegular, OrganizationRegular, DismissRegular } from '@fluentui/react-icons';
+
+// ✅ Theme bridge (SPFx → v9)
+import { createV9Theme } from '@fluentui/react-migration-v8-v9';
+```
+
+### Forbidden patterns
+
+```typescript
+// ❌ v8 components
+import { Persona, Callout, Panel, ActionButton, IconButton,
+         Icon, TooltipHost, MessageBar } from '@fluentui/react';
+// ❌ v8 icon font
+initializeIcons();
+// ❌ v8 inline style overrides
+const styles: IButtonStyles = { root: { ... } };
+```
+
+### Key component equivalents
+
+| v8 | v9 |
+|---|---|
+| `Persona` (avatar display) | `Avatar` with `color="colorful"` |
+| `PersonaPresence` enum | `PresenceBadge` `status` string prop |
+| `Callout` | `Popover` + `PopoverTrigger` + `PopoverSurface` |
+| `Panel` | `OverlayDrawer` + `DrawerHeader` + `DrawerBody` |
+| `ActionButton` / `IconButton` | `Button` with `appearance="subtle"` |
+| `Icon iconName="Chat"` | `<ChatRegular />` (SVG from `@fluentui/react-icons`) |
+| `TooltipHost` | `Tooltip` with `relationship="label"` |
+| `Link` | `Link` from `@fluentui/react-components` |
+| `MessageBar` + `MessageBarType` | `MessageBar` + `MessageBarBody` with `intent` prop |
+| `IButtonStyles` | `makeStyles(…)` (Griffel) |
+
+### Theme integration
+
+Always wrap the component tree in `<FluentProvider>` with the site theme:
+
+```tsx
+import { FluentProvider } from '@fluentui/react-components';
+import { createV9Theme } from '@fluentui/react-migration-v8-v9';
+// `theme` is the IReadonlyTheme from the SPFx ThemeProvider service
+const v9Theme = theme ? createV9Theme(theme) : undefined;
+return <FluentProvider theme={v9Theme}>{children}</FluentProvider>;
+```
+
+See `MIGRATION.md` for the full migration plan and component mapping table.
+
 ## Key Files for Reference
 
 - **Lint config** → `config/` directory + `.markdownlint.json`

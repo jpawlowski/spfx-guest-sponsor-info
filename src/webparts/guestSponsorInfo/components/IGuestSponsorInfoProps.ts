@@ -1,5 +1,6 @@
 import { MSGraphClientV3, AadHttpClient } from '@microsoft/sp-http';
 import { DisplayMode } from '@microsoft/sp-core-library';
+import type { IReadonlyTheme } from '@microsoft/sp-component-base';
 
 export interface IGuestSponsorInfoProps {
   /** SPFx login name (UPN) of the current user – used as a fallback for guest detection. */
@@ -108,5 +109,12 @@ export interface IGuestSponsorInfoProps {
    * holding the proxyStatus state in both the component and the web part.
    */
   onProxyStatusChange?: (status: 'checking' | 'ok' | 'error') => void;
+  /**
+   * SPFx host site theme supplied by the ThemeProvider service.
+   * Passed to createV9Theme to produce a matching Fluent UI v9 theme for the
+   * FluentProvider that wraps the entire web part component tree.
+   * When undefined the FluentProvider falls back to webLightTheme.
+   */
+  theme?: IReadonlyTheme;
 }
 

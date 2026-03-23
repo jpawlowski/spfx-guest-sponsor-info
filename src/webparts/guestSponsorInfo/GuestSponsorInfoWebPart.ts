@@ -14,7 +14,9 @@ import {
 import { PropertyPaneCustomField } from '@microsoft/sp-property-pane/lib/propertyPaneFields/propertyPaneCustomField/PropertyPaneCustomField';
 import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
 import { MSGraphClientV3, AadHttpClient } from '@microsoft/sp-http';
-import { initializeIcons, MessageBar, MessageBarType } from '@fluentui/react';
+import { ThemeProvider, IReadonlyTheme, ThemeChangedEventArgs } from '@microsoft/sp-component-base';
+import { FluentProvider, MessageBar, MessageBarBody } from '@fluentui/react-components';
+import { createV9Theme } from '@fluentui/react-migration-v8-v9';
 
 import * as strings from 'GuestSponsorInfoWebPartStrings';
 import GuestSponsorInfo from './components/GuestSponsorInfo';
@@ -87,6 +89,8 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
   private _graphClient: MSGraphClientV3 | undefined;
   private _aadHttpClient: AadHttpClient | undefined;
   private _proxyStatus: 'checking' | 'ok' | 'error' = 'checking';
+  private _themeProvider: ThemeProvider | undefined;
+  private _theme: IReadonlyTheme | undefined;
 
   public render(): void {
     const element: React.ReactElement<IGuestSponsorInfoProps> = React.createElement(
@@ -142,6 +146,7 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
             this.context.propertyPane.refresh();
           }
         },
+        theme: this._theme,
       }
     );
 
@@ -150,10 +155,11 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
 
   protected async onInit(): Promise<void> {
     await super.onInit();
-    // Register the Fluent UI MDL2 icon font. Passing disableWarnings suppresses
-    // the "icons re-registered" console warning that occurs when multiple web parts
-    // or the SharePoint page itself have already called initializeIcons().
-    initializeIcons(undefined, { disableWarnings: true });
+    // Consume the SPFx ThemeProvider service so the FluentProvider can receive the
+    // host site's v8-style theme and convert it to a v9 theme via createV9Theme.
+    this._themeProvider = this.context.serviceScope.consume(ThemeProvider.serviceKey);
+    this._theme = this._themeProvider?.tryGetTheme();
+    this._themeProvider?.themeChangedEvent.add(this, this._handleThemeChanged);
     // Acquire Graph and AAD clients in the background — do NOT await them here.
     // SPFx awaits the onInit() Promise before rendering any web part on the page,
     // so blocking here would delay the entire page. Instead we resolve immediately
@@ -161,6 +167,11 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
     // shimmer while clients are undefined, so there is no visible flash.
     this._acquireClientsInBackground();
   }
+
+  private _handleThemeChanged = (args: ThemeChangedEventArgs): void => {
+    this._theme = args.theme;
+    this.render();
+  };
 
   /**
    * Starts Graph and AAD HTTP client acquisition concurrently without blocking
@@ -191,6 +202,7 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
   }
 
   protected onDispose(): void {
+    this._themeProvider?.themeChangedEvent.remove(this, this._handleThemeChanged);
     ReactDom.unmountComponentAtNode(this.domElement);
   }
 
@@ -604,18 +616,20 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
                     onRender: (element: HTMLElement | undefined) => {
                       if (!element) return;
                       const status = this._proxyStatus;
-                      const messageBarType = status === 'ok' ? MessageBarType.success
-                        : status === 'error' ? MessageBarType.error
-                        : MessageBarType.info;
+                      const intent: 'success' | 'error' | 'info' = status === 'ok' ? 'success'
+                        : status === 'error' ? 'error'
+                        : 'info';
                       const text = status === 'ok' ? strings.ProxyStatusOk
                         : status === 'error' ? strings.ProxyStatusError
                         : strings.ProxyStatusChecking;
                       ReactDom.render(
-                        React.createElement(MessageBar, {
-                          messageBarType,
-                          isMultiline: false,
-                          styles: { root: { marginTop: 8 } },
-                        }, text),
+                        React.createElement(FluentProvider,
+                          { theme: this._theme ? createV9Theme(this._theme as unknown as Parameters<typeof createV9Theme>[0]) : undefined },
+                          React.createElement(MessageBar,
+                            { intent, style: { marginTop: 8 } },
+                            React.createElement(MessageBarBody, null, text)
+                          )
+                        ),
                         element
                       );
                     },

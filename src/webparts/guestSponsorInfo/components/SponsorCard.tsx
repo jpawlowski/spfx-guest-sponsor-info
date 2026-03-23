@@ -1,36 +1,37 @@
 import * as React from 'react';
-import { ActionButton, Callout, DirectionalHint, Icon, IconButton, Link, Panel, PanelType, Persona, PersonaPresence, PersonaSize, TooltipHost } from '@fluentui/react';
-import type { IButtonStyles } from '@fluentui/react';
+import {
+  Avatar,
+  Button,
+  OverlayDrawer,
+  DrawerHeader,
+  DrawerHeaderTitle,
+  DrawerBody,
+  Popover,
+  PopoverSurface,
+  Link,
+  Tooltip,
+  makeStyles,
+  tokens,
+  mergeClasses,
+} from '@fluentui/react-components';
+import type { PresenceBadgeStatus } from '@fluentui/react-components';
+import {
+  ChatRegular,
+  MailRegular,
+  CallRegular,
+  CopyRegular,
+  CheckmarkRegular,
+  PhoneRegular,
+  BuildingRegular,
+  LocationRegular,
+  OrganizationRegular,
+  DismissRegular,
+} from '@fluentui/react-icons';
 import * as strings from 'GuestSponsorInfoWebPartStrings';
 import { ISponsor } from '../services/ISponsor';
 import styles from './GuestSponsorInfo.module.scss';
 
 /** Fluent UI persona colours used as avatar backgrounds when no photo is available. */
-const PERSONA_COLORS = [
-  '#D13438', '#CA5010', '#986F0B', '#498205',
-  '#038387', '#004E8C', '#8764B8', '#69797E',
-  '#C19C00', '#00B294', '#E3008C', '#0099BC',
-];
-
-/** Derives a consistent colour from a display name string. */
-function getInitialsColor(name: string): string {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = (hash << 5) - hash + name.charCodeAt(i);
-    hash |= 0; // Convert to 32-bit integer
-  }
-  return PERSONA_COLORS[Math.abs(hash) % PERSONA_COLORS.length];
-}
-
-/** Extracts up to two initials from a display name. */
-function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length >= 2) {
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  }
-  return name.substring(0, 2).toUpperCase();
-}
-
 /**
  * Returns "givenName surname" when either part is non-empty, otherwise falls
  * back to displayName. Mirrors how Microsoft renders names in Teams/Outlook.
@@ -154,36 +155,37 @@ function formatPresenceActivity(activity: string): string {
 }
 
 /**
- * Maps Graph presence availability and activity tokens to Fluent UI v8 Persona
- * presence props. All standard states are handled natively by Persona; only
- * Focusing requires a custom presence span (no Fluent enum equivalent).
+ * Maps Graph presence availability and activity tokens to Fluent UI v9
+ * PresenceBadge status. Focusing has no direct v9 equivalent and is
+ * handled separately via a custom CSS dot.
  */
-function graphPresenceToPersonaPresence(
+function graphPresenceToPresenceBadge(
   availability: string | undefined,
   activity: string | undefined
-): { presence: PersonaPresence; isOutOfOffice: boolean } {
+): { status: PresenceBadgeStatus; isOutOfOffice: boolean } {
   if (activity === 'OutOfOffice') {
-    return { presence: PersonaPresence.away, isOutOfOffice: true };
+    return { status: 'out-of-office', isOutOfOffice: true };
   }
   if (activity === 'Focusing') {
-    return { presence: PersonaPresence.none, isOutOfOffice: false };
+    // Focusing has no v9 PresenceBadge equivalent; handled by a custom dot.
+    return { status: 'unknown', isOutOfOffice: false };
   }
   switch (availability) {
     case 'Available':
     case 'AvailableIdle':
-      return { presence: PersonaPresence.online, isOutOfOffice: false };
+      return { status: 'available', isOutOfOffice: false };
     case 'Away':
     case 'BeRightBack':
-      return { presence: PersonaPresence.away, isOutOfOffice: false };
+      return { status: 'away', isOutOfOffice: false };
     case 'Busy':
     case 'BusyIdle':
-      return { presence: PersonaPresence.busy, isOutOfOffice: false };
+      return { status: 'busy', isOutOfOffice: false };
     case 'DoNotDisturb':
-      return { presence: PersonaPresence.dnd, isOutOfOffice: false };
+      return { status: 'do-not-disturb', isOutOfOffice: false };
     case 'Offline':
-      return { presence: PersonaPresence.offline, isOutOfOffice: false };
+      return { status: 'offline', isOutOfOffice: false };
     default:
-      return { presence: PersonaPresence.none, isOutOfOffice: false };
+      return { status: 'unknown', isOutOfOffice: false };
   }
 }
 
@@ -203,60 +205,33 @@ const CopyButton: React.FC<{ value: string; ariaLabel: string }> = ({ value, ari
   };
 
   return (
-    <TooltipHost content={copied ? strings.CopiedFeedback : ariaLabel}>
-      <IconButton
-        iconProps={{ iconName: copied ? 'Accept' : 'Copy' }}
-        ariaLabel={copied ? strings.CopiedFeedback : ariaLabel}
+    <Tooltip content={copied ? strings.CopiedFeedback : ariaLabel} relationship="label">
+      <Button
+        appearance="subtle"
+        icon={copied ? <CheckmarkRegular /> : <CopyRegular />}
+        aria-label={copied ? strings.CopiedFeedback : ariaLabel}
         onClick={handleCopy}
-        className={`${styles.copyButton}${copied ? ` ${styles.copyButtonCopied}` : ''}`}
-        styles={{
-          root: { background: 'none', border: 'none', borderRadius: 4, color: 'inherit' },
-          rootHovered: { background: 'var(--neutralLight, #edebe9)' },
-          icon: { fontSize: 14, lineHeight: '1' },
-        }}
+        className={mergeClasses(styles.copyButton, copied ? styles.copyButtonCopied : '')}
+        size="small"
       />
-    </TooltipHost>
+    </Tooltip>
   );
 };
 
-/** Styles for the icon-only action buttons in the rich card header. */
-const actionButtonStyles: IButtonStyles = {
-  root: {
+/** Griffel styles for the icon-only action buttons in the rich card header. */
+const useActionButtonStyles = makeStyles({
+  actionButton: {
     padding: '8px',
-    borderRadius: 4,
-    minWidth: 40,
-    width: 40,
-    height: 40,
-    border: 'none',
-    background: 'none',
-  },
-  rootHovered: {
-    background: 'var(--neutralLight, #edebe9)',
-    textDecoration: 'none',
-  },
-  rootDisabled: {
-    opacity: 0.4,
-    background: 'none',
-  },
-  flexContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  icon: {
-    fontSize: 15, // Tier 1: matches richInfoIcon below
-    lineHeight: '1',
-    // neutralSecondary matches the info-row icons below — dark grey, no theme blue.
+    borderRadius: tokens.borderRadiusMedium,
+    minWidth: '40px',
+    width: '40px',
+    height: '40px',
     color: 'var(--neutralSecondary, #666666)',
-    margin: 0,
-    height: 'auto',
+    ':disabled': {
+      opacity: 0.4,
+    },
   },
-  iconHovered: {
-    color: 'var(--neutralSecondary, #666666)', // stays the same on hover
-  },
-  iconDisabled: {
-    color: 'var(--neutralTertiary, #a19f9d)',
-  },
-};
+});
 
 /**
  * Returns true when the viewport is ≤ 480 px (phone-sized).
@@ -384,20 +359,15 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
     return strings[key] as string;
   };
 
-  const initials = getInitials(resolvedName);
-  const bgColor = getInitialsColor(resolvedName);
   const isFocusing = sponsor.presenceActivity === 'Focusing';
   const isOof = sponsor.presenceActivity === 'OutOfOffice';
-  const { presence: personaPresence, isOutOfOffice: personaOof } = graphPresenceToPersonaPresence(
+  const { status: presenceBadgeStatus, isOutOfOffice: badgeOof } = graphPresenceToPresenceBadge(
     sponsor.presence, sponsor.presenceActivity
   );
   const showPresenceIndicator = showPresence && sponsor.hasTeams !== false && isActive;
-  const isOffline = sponsor.presence === 'Offline' || sponsor.presence === 'PresenceUnknown';
-  const isAvailable = sponsor.presence === 'Available';
-  const useCustomPresenceDot = showPresenceIndicator && (isFocusing || isOffline || isAvailable);
-  const customDotColor = isFocusing ? PRESENCE_COLORS.Focusing : isAvailable ? PRESENCE_COLORS.Available : PRESENCE_COLORS.Offline;
-  const effectivePresence = showPresenceIndicator && !useCustomPresenceDot ? personaPresence : PersonaPresence.none;
-  const effectiveOof = showPresenceIndicator && !useCustomPresenceDot ? personaOof : false;
+  // Only Focusing needs a custom dot; v9 Avatar's PresenceBadge handles all other states.
+  const useCustomPresenceDot = showPresenceIndicator && isFocusing;
+  const badgeStatus = showPresenceIndicator && !useCustomPresenceDot ? presenceBadgeStatus : undefined;
   const presenceColor = isOof
     ? PRESENCE_COLORS.OutOfOffice
     : sponsor.presence ? (PRESENCE_COLORS[sponsor.presence] ?? '#8A8886') : undefined;
@@ -415,9 +385,8 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
     if (activity) return formatPresenceActivity(activity);
     return availability ? (getPresenceLabels()[availability] ?? '') : undefined;
   }, [sponsor.presence, sponsor.presenceActivity, isOof]);
-  const managerInitials = resolvedManagerName ? getInitials(resolvedManagerName) : '';
-  const managerBgColor = resolvedManagerName ? getInitialsColor(resolvedManagerName) : '#8A8886';
   const isMobile = useIsMobile();
+  const actionButtonClasses = useActionButtonStyles();
   const officeLocation = sponsor.officeLocation?.trim();
   const streetAddress = sponsor.streetAddress?.trim();
   const postalCode = sponsor.postalCode?.trim();
@@ -522,22 +491,8 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
     return () => clearTimeout(timer);
   }, [isActive]);
 
-  // Show the rich card below (or above when viewport space is tight) the persona
-  // tile. We pre-calculate at activation time whether the fully-expanded callout
-  // fits below, so the direction is committed before the body animates open and
-  // the callout never flips mid-expansion.
-  // richCard max-height = min(389px, 80vh); Callout gapSpace = 8px.
-  const [calloutHint, setCalloutHint] = React.useState<DirectionalHint>(DirectionalHint.bottomAutoEdge);
-  React.useEffect(() => {
-    if (!isActive || !cardRef.current) return;
-    const rect = cardRef.current.getBoundingClientRect();
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const expandedHeight = Math.min(389, window.innerHeight * 0.8) + 8; // richCard + gapSpace
-    setCalloutHint(spaceBelow >= expandedHeight ? DirectionalHint.bottomAutoEdge : DirectionalHint.topAutoEdge);
-  }, [isActive]);
-
   // The rich card body is defined here so it can be placed inside either
-  // a Callout (desktop) or a Panel (mobile) without duplicating the JSX.
+  // a Popover (desktop) or an OverlayDrawer (mobile) without duplicating the JSX.
   const richBody = (
     <div
       className={styles.richCard}
@@ -548,34 +503,19 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
       {/* ── Header: large avatar + name / title / presence ─── */}
       <div className={styles.richHeader}>
         <div className={styles.richAvatarWrapper}>
-          <Persona
-            size={PersonaSize.size72}
-            initialsColor={bgColor}
-            imageInitials={initials}
-            imageUrl={showSponsorPhoto ? sponsor.photoUrl : undefined}
-            imageShouldFadeIn
-            presence={effectivePresence}
-            isOutOfOffice={effectiveOof}
-            hidePersonaDetails
+          <Avatar
+            size={72}
+            name={resolvedName}
+            image={showSponsorPhoto && sponsor.photoUrl ? { src: sponsor.photoUrl } : undefined}
+            color="colorful"
+            badge={badgeStatus ? { status: badgeStatus, outOfOffice: badgeOof } : undefined}
           />
           {useCustomPresenceDot && (
             <span
               className={styles.richPresenceDot}
-              style={{ backgroundColor: customDotColor }}
+              style={{ backgroundColor: PRESENCE_COLORS.Focusing }}
               aria-hidden="true"
-            >
-              {isOffline && (
-                <svg viewBox="0 0 10 10" width="12" height="12" fill="none" aria-hidden="true">
-                  <line x1="1" y1="1" x2="9" y2="9" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
-                  <line x1="9" y1="1" x2="1" y2="9" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
-                </svg>
-              )}
-              {isAvailable && (
-                <svg viewBox="0 0 12 10" width="13" height="10" fill="none" aria-hidden="true">
-                  <polyline points="1,5 5,9 11,1" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              )}
-            </span>
+            />
           )}
         </div>
         <div className={styles.richHeaderText}>
@@ -598,37 +538,49 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
       {sponsor.mail && (
         <div className={styles.richActions} role="toolbar" aria-label={strings.ContactActionsAriaLabel}>
           {sponsor.hasTeams !== false && sponsor.mail && (
-            <TooltipHost content={guestHasTeamsAccess === false ? fstr('TeamsNotReadyChatTooltip') : strings.ChatTitle.replace('{name}', resolvedName)}>
-              <ActionButton
+            <Tooltip
+              content={guestHasTeamsAccess === false ? fstr('TeamsNotReadyChatTooltip') : strings.ChatTitle.replace('{name}', resolvedName)}
+              relationship="label"
+            >
+              <Button
+                as={guestHasTeamsAccess === false ? 'button' : 'a'}
                 href={guestHasTeamsAccess === false ? undefined : `https://teams.microsoft.com/l/chat/0/0?tenantId=${encodeURIComponent(hostTenantId)}&users=${encodeURIComponent(sponsor.mail)}`}
                 disabled={guestHasTeamsAccess === false}
-                iconProps={{ iconName: 'Chat' }}
+                appearance="subtle"
+                icon={<ChatRegular />}
                 target="_blank"
                 rel="noreferrer noopener"
-                styles={actionButtonStyles}
+                className={actionButtonClasses.actionButton}
               />
-            </TooltipHost>
+            </Tooltip>
           )}
           {sponsor.mail && (
-            <TooltipHost content={strings.EmailTitle.replace('{name}', resolvedName)}>
-              <ActionButton
+            <Tooltip content={strings.EmailTitle.replace('{name}', resolvedName)} relationship="label">
+              <Button
+                as="a"
                 href={`mailto:${sponsor.mail}`}
-                iconProps={{ iconName: 'Mail' }}
-                styles={actionButtonStyles}
+                appearance="subtle"
+                icon={<MailRegular />}
+                className={actionButtonClasses.actionButton}
               />
-            </TooltipHost>
+            </Tooltip>
           )}
           {sponsor.hasTeams !== false && (
-            <TooltipHost content={guestHasTeamsAccess === false ? fstr('TeamsNotReadyCallTooltip') : strings.CallTitle.replace('{name}', resolvedName)}>
-              <ActionButton
+            <Tooltip
+              content={guestHasTeamsAccess === false ? fstr('TeamsNotReadyCallTooltip') : strings.CallTitle.replace('{name}', resolvedName)}
+              relationship="label"
+            >
+              <Button
+                as={guestHasTeamsAccess === false ? 'button' : 'a'}
                 href={guestHasTeamsAccess === false ? undefined : `https://teams.microsoft.com/l/call/0/0?tenantId=${encodeURIComponent(hostTenantId)}&users=${encodeURIComponent(sponsor.mail)}&withVideo=false`}
                 disabled={guestHasTeamsAccess === false}
-                iconProps={{ iconName: 'Phone' }}
+                appearance="subtle"
+                icon={<CallRegular />}
                 target="_blank"
                 rel="noreferrer noopener"
-                styles={actionButtonStyles}
+                className={actionButtonClasses.actionButton}
               />
-            </TooltipHost>
+            </Tooltip>
           )}
         </div>
       )}
@@ -643,7 +595,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
       <div className={styles.richSection}>
         {sponsor.mail && (
           <div className={`${styles.richInfoRow} ${styles.richInfoRowInteractive}`}>
-            <Icon iconName="Mail" className={styles.richInfoIcon} aria-hidden="true" />
+            <MailRegular className={styles.richInfoIcon} aria-hidden="true" />
             <div className={styles.richInfoText}>
               <Link href={`mailto:${sponsor.mail}`} className={styles.richInfoValue}>{sponsor.mail}</Link>
             </div>
@@ -652,7 +604,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
         )}
         {showBusinessPhones && sponsor.businessPhones?.map(phone => (
           <div key={phone} className={`${styles.richInfoRow} ${styles.richInfoRowInteractive}`}>
-            <Icon iconName="Phone" className={styles.richInfoIcon} aria-hidden="true" />
+            <CallRegular className={styles.richInfoIcon} aria-hidden="true" />
             <div className={styles.richInfoText}>
               <Link href={`tel:${phone}`} className={styles.richInfoValue}>{phone}</Link>
             </div>
@@ -661,7 +613,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
         ))}
         {showMobilePhone && sponsor.mobilePhone && (
           <div className={`${styles.richInfoRow} ${styles.richInfoRowInteractive}`}>
-            <Icon iconName="CellPhone" className={styles.richInfoIcon} aria-hidden="true" />
+            <PhoneRegular className={styles.richInfoIcon} aria-hidden="true" />
             <div className={styles.richInfoText}>
               <Link href={`tel:${sponsor.mobilePhone}`} className={styles.richInfoValue}>{sponsor.mobilePhone}</Link>
             </div>
@@ -670,7 +622,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
         )}
         {showOfficeLocation && (
           <div className={`${styles.richInfoRow} ${styles.richInfoRowInteractive}`}>
-            <Icon iconName="CityNext" className={styles.richInfoIcon} aria-hidden="true" />
+            <BuildingRegular className={styles.richInfoIcon} aria-hidden="true" />
             <div className={styles.richInfoText}>
               <div className={styles.richInfoValue}>{officeLocation}</div>
             </div>
@@ -680,7 +632,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
         {hasCombinedAddress && (
           <>
             <div className={`${styles.richInfoRow} ${styles.richInfoRowInteractive}`}>
-              <Icon iconName="MapPin" className={styles.richInfoIcon} aria-hidden="true" />
+              <LocationRegular className={styles.richInfoIcon} aria-hidden="true" />
               <div className={styles.richInfoText}>
                 {addressMapLink ? (
                   <Link href={addressMapLink} target="_blank" rel="noreferrer noopener" className={styles.richInfoValue}>
@@ -719,7 +671,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
           <div className={styles.richSectionTitle}>{strings.OrganizationSection}</div>
           <div className={styles.richSection}>
             <div className={styles.richInfoRow}>
-              <Icon iconName="Org" className={styles.richInfoIcon} aria-hidden="true" />
+              <OrganizationRegular className={styles.richInfoIcon} aria-hidden="true" />
               <div className={styles.richInfoText}>
                 <div className={styles.departmentValue}>{sponsor.department}</div>
               </div>
@@ -734,13 +686,11 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
           <div className={styles.richSectionTitle}>{strings.ReportsToSection}</div>
           <div className={styles.richSection}>
             <div className={styles.managerRow}>
-              <Persona
-                size={PersonaSize.size40}
-                initialsColor={managerBgColor}
-                imageInitials={managerInitials}
-                imageUrl={showManagerPhoto ? sponsor.managerPhotoUrl : undefined}
-                imageShouldFadeIn
-                hidePersonaDetails
+              <Avatar
+                size={40}
+                name={resolvedManagerName}
+                image={showManagerPhoto && sponsor.managerPhotoUrl ? { src: sponsor.managerPhotoUrl } : undefined}
+                color="colorful"
               />
               <div className={styles.managerText}>
                 <div className={styles.managerName}>{resolvedManagerName}</div>
@@ -781,14 +731,11 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
         aria-expanded={readOnly ? undefined : isActive}
       >
         <div className={compact ? styles.avatarWrapperCompact : styles.avatarWrapper}>
-          <Persona
-            size={compact ? PersonaSize.size40 : PersonaSize.size72}
-            initialsColor={bgColor}
-            imageInitials={initials}
-            imageUrl={sponsor.photoUrl}
-            imageShouldFadeIn
-            presence={PersonaPresence.none}
-            hidePersonaDetails
+          <Avatar
+            size={compact ? 40 : 72}
+            name={resolvedName}
+            image={sponsor.photoUrl ? { src: sponsor.photoUrl } : undefined}
+            color="colorful"
           />
         </div>
         <div className={compact ? styles.cardNameCompact : styles.cardName}>
@@ -796,34 +743,54 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
         </div>
       </div>
 
-      {/* ── Rich contact card (Panel on mobile, Callout on desktop) ─── */}
-      {!readOnly && isActive && (
-        isMobile ? (
-          <Panel
-            isOpen
-            type={PanelType.custom}
-            customWidth="100%"
-            isLightDismiss
-            hasCloseButton
-            headerText={resolvedName}
-            onDismiss={() => onScheduleDeactivate()}
-          >
+      {/* ── Rich contact card (OverlayDrawer on mobile, Popover on desktop) ─── */}
+      {!readOnly && isMobile && (
+        <OverlayDrawer
+          open={isActive}
+          position="bottom"
+          onOpenChange={(_, data) => { if (!data.open) onScheduleDeactivate(); }}
+        >
+          <DrawerHeader>
+            <DrawerHeaderTitle
+              action={
+                <Button
+                  appearance="subtle"
+                  icon={<DismissRegular />}
+                  onClick={onScheduleDeactivate}
+                  aria-label="Close"
+                />
+              }
+            >
+              {resolvedName}
+            </DrawerHeaderTitle>
+          </DrawerHeader>
+          <DrawerBody>
             {richBody}
-          </Panel>
-        ) : (
-          <Callout
-            target={cardRef}
-            onDismiss={onScheduleDeactivate}
-            directionalHint={calloutHint}
-            isBeakVisible={false}
-            gapSpace={8}
+          </DrawerBody>
+        </OverlayDrawer>
+      )}
+      {!readOnly && !isMobile && isActive && (
+        <Popover
+          open
+          positioning={{
+            target: cardRef.current,
+            position: 'below',
+            align: 'start',
+            offset: { mainAxis: 8 },
+            fallbackPositions: ['above'],
+          }}
+          onOpenChange={(_, data) => { if (!data.open) onScheduleDeactivate(); }}
+        >
+          <PopoverSurface
             role="dialog"
             aria-label={strings.ContactDetailsAriaLabel.replace('{0}', resolvedName)}
-            setInitialFocus={false}
+            style={{ padding: 0 }}
+            onMouseEnter={onActivate}
+            onMouseLeave={onScheduleDeactivate}
           >
             {richBody}
-          </Callout>
-        )
+          </PopoverSurface>
+        </Popover>
       )}
     </>
   );

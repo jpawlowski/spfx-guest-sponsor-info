@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { DisplayMode } from '@microsoft/sp-core-library';
-import { MessageBar, MessageBarType } from '@fluentui/react';
+import { FluentProvider, MessageBar, MessageBarBody } from '@fluentui/react-components';
+import { createV9Theme } from '@fluentui/react-migration-v8-v9';
 import * as strings from 'GuestSponsorInfoWebPartStrings';
 import styles from './GuestSponsorInfo.module.scss';
 import type { IGuestSponsorInfoProps } from './IGuestSponsorInfoProps';
@@ -187,6 +188,7 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
   useInformalAddress,
   clientVersion,
   onProxyStatusChange,
+  theme,
 }) => {
   // Helper: pick the informal string variant when useInformalAddress is enabled and
   // the current locale provides one (languages with T-V distinction like de, fr, es, it, nl).
@@ -445,6 +447,11 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
   // populated strings object.
   if (!(strings as unknown as object | undefined)) return null;
 
+  // Derive a Fluent v9 theme from the SPFx host site theme supplied by the ThemeProvider
+  // service. When no theme is available (e.g. during tests), FluentProvider uses its
+  // built-in default (webLightTheme).
+  const v9Theme = theme ? createV9Theme(theme as unknown as Parameters<typeof createV9Theme>[0]) : undefined;
+
   // Edit mode: always show a live preview using mock sponsor cards so page authors
   // can see the real layout and adjust display settings before going live.
   if (isEditMode) {
@@ -466,90 +473,82 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
     })();
     if (!hasEditContent) return null;
     return (
-      <section className={styles.webPart}>
-        {title && <h2 className={styles.title}>{title}</h2>}
-        {showMockCards && (
-        <SponsorList
-          sponsors={MOCK_SPONSORS}
-          hostTenantId={hostTenantId}
-          compact={mockCompact}
-          showBusinessPhones={showBusinessPhones}
-          showMobilePhone={showMobilePhone}
-          showWorkLocation={showWorkLocation}
-          showCity={showCity}
-          showCountry={showCountry}
-          showStreetAddress={showStreetAddress}
-          showPostalCode={showPostalCode}
-          showState={showState}
-          azureMapsSubscriptionKey={azureMapsSubscriptionKey}
-          externalMapProvider={externalMapProvider}
-          showManager={showManager}
-          showPresence={showPresence}
-          showSponsorJobTitle={showSponsorJobTitle}
-          showManagerJobTitle={showManagerJobTitle}
-          showSponsorDepartment={showSponsorDepartment}
-          showManagerDepartment={showManagerDepartment}
-          showSponsorPhoto={showSponsorPhoto}
-          showManagerPhoto={showManagerPhoto}
-          useInformalAddress={useInformalAddress}
-          onActiveCardChange={() => undefined}
-          guestHasTeamsAccess={mockMode && mockSimulatedHint === 'teamsAccessPending' ? false : undefined}
-          readOnly={mockMode && mockSimulatedHint === 'sponsorUnavailable'}
-        />
-        )}
-        {/* Real version mismatch detected via ping: always shown to the editor, independent
-            of the showVersionMismatchHint guest-facing toggle. */}
-        {versionMismatch && mockSimulatedHint !== 'versionMismatch' && (
-          <MessageBar
-            messageBarType={MessageBarType.warning}
-            isMultiline
-            delayedRender={false}
-            className={styles.teamsAccessBanner}
-          >
-            <b>{strings.VersionMismatchTitle}</b><br />
-            {strings.VersionMismatchMessage}
-          </MessageBar>
-        )}
-        {mockMode && mockSimulatedHint === 'teamsAccessPending' && (
-          <MessageBar
-            messageBarType={MessageBarType.warning}
-            isMultiline
-            delayedRender={false}
-            className={styles.teamsAccessBanner}
-          >
-            <b>{strings.TeamsAccessPendingTitle}</b><br />
-            {fstr('TeamsAccessPendingMessage')}
-          </MessageBar>
-        )}
-        {mockMode && mockSimulatedHint === 'versionMismatch' && (
-          <MessageBar
-            messageBarType={MessageBarType.warning}
-            isMultiline
-            delayedRender={false}
-            className={styles.teamsAccessBanner}
-          >
-            <b>{strings.VersionMismatchTitle}</b><br />
-            {strings.VersionMismatchMessage}
-          </MessageBar>
-        )}
-        {mockMode && mockSimulatedHint === 'sponsorUnavailable' && showSponsorUnavailableHint && (
-          <MessageBar
-            messageBarType={MessageBarType.warning}
-            isMultiline
-            delayedRender={false}
-            className={styles.teamsAccessBanner}
-          >
-            <b>{strings.SponsorUnavailableTitle}</b><br />
-            {fstr('SponsorUnavailableMessage')}
-          </MessageBar>
-        )}
-        {mockMode && mockSimulatedHint === 'noSponsors' && showNoSponsorsHint && (
-          <MessageBar messageBarType={MessageBarType.info} isMultiline delayedRender={false}>
-            <b>{strings.NoSponsorsTitle}</b><br />
-            {fstr('NoSponsorsMessage')}
-          </MessageBar>
-        )}
-      </section>
+      <FluentProvider theme={v9Theme}>
+        <section className={styles.webPart}>
+          {title && <h2 className={styles.title}>{title}</h2>}
+          {showMockCards && (
+          <SponsorList
+            sponsors={MOCK_SPONSORS}
+            hostTenantId={hostTenantId}
+            compact={mockCompact}
+            showBusinessPhones={showBusinessPhones}
+            showMobilePhone={showMobilePhone}
+            showWorkLocation={showWorkLocation}
+            showCity={showCity}
+            showCountry={showCountry}
+            showStreetAddress={showStreetAddress}
+            showPostalCode={showPostalCode}
+            showState={showState}
+            azureMapsSubscriptionKey={azureMapsSubscriptionKey}
+            externalMapProvider={externalMapProvider}
+            showManager={showManager}
+            showPresence={showPresence}
+            showSponsorJobTitle={showSponsorJobTitle}
+            showManagerJobTitle={showManagerJobTitle}
+            showSponsorDepartment={showSponsorDepartment}
+            showManagerDepartment={showManagerDepartment}
+            showSponsorPhoto={showSponsorPhoto}
+            showManagerPhoto={showManagerPhoto}
+            useInformalAddress={useInformalAddress}
+            onActiveCardChange={() => undefined}
+            guestHasTeamsAccess={mockMode && mockSimulatedHint === 'teamsAccessPending' ? false : undefined}
+            readOnly={mockMode && mockSimulatedHint === 'sponsorUnavailable'}
+          />
+          )}
+          {/* Real version mismatch detected via ping: always shown to the editor, independent
+              of the showVersionMismatchHint guest-facing toggle. */}
+          {versionMismatch && mockSimulatedHint !== 'versionMismatch' && (
+            <MessageBar intent="warning" className={styles.teamsAccessBanner}>
+              <MessageBarBody>
+                <b>{strings.VersionMismatchTitle}</b><br />
+                {strings.VersionMismatchMessage}
+              </MessageBarBody>
+            </MessageBar>
+          )}
+          {mockMode && mockSimulatedHint === 'teamsAccessPending' && (
+            <MessageBar intent="warning" className={styles.teamsAccessBanner}>
+              <MessageBarBody>
+                <b>{strings.TeamsAccessPendingTitle}</b><br />
+                {fstr('TeamsAccessPendingMessage')}
+              </MessageBarBody>
+            </MessageBar>
+          )}
+          {mockMode && mockSimulatedHint === 'versionMismatch' && (
+            <MessageBar intent="warning" className={styles.teamsAccessBanner}>
+              <MessageBarBody>
+                <b>{strings.VersionMismatchTitle}</b><br />
+                {strings.VersionMismatchMessage}
+              </MessageBarBody>
+            </MessageBar>
+          )}
+          {mockMode && mockSimulatedHint === 'sponsorUnavailable' && showSponsorUnavailableHint && (
+            <MessageBar intent="warning" className={styles.teamsAccessBanner}>
+              <MessageBarBody>
+                <b>{strings.SponsorUnavailableTitle}</b><br />
+                {fstr('SponsorUnavailableMessage')}
+              </MessageBarBody>
+            </MessageBar>
+          )}
+          {mockMode && mockSimulatedHint === 'noSponsors' && showNoSponsorsHint && (
+            <MessageBar intent="info">
+              <MessageBarBody>
+                <b>{strings.NoSponsorsTitle}</b><br />
+                {fstr('NoSponsorsMessage')}
+              </MessageBarBody>
+            </MessageBar>
+          )}
+        </section>
+      </FluentProvider>
     );
   }
 
@@ -578,123 +577,126 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
   const noResults = !loading && !error && sponsors.length === 0 && unavailableSponsors.length === 0;
   const contentClassNames = (loading || error || noResults) ? `${styles.webPart} ${styles.webPartContent}` : styles.webPart;
   return (
-    <section className={contentClassNames}>
-      {title && <h2 className={styles.title}>{title}</h2>}
-      {loading && <SponsorGridSkeleton compact={cardLayout === 'compact'} />}
-      {!loading && error && !isPermissionError && (
-        <MessageBar messageBarType={MessageBarType.error} isMultiline delayedRender={false}>
-          <b>{strings.ErrorMessageTitle}</b><br />
-          {error}
-        </MessageBar>
-      )}
-      {!loading && isPermissionError && error && (
-        <MessageBar messageBarType={MessageBarType.error} isMultiline delayedRender={false}>
-          <b>{strings.InsufficientPermissionsTitle}</b><br />
-          {error}
-        </MessageBar>
-      )}
-      {!loading && !error && sponsors.length > 0 && (
-        <SponsorList
-          sponsors={sponsors}
-          hostTenantId={hostTenantId}
-          compact={cardLayout === 'compact' || (cardLayout === 'auto' && sponsors.length > 2)}
-          showBusinessPhones={showBusinessPhones}
-          showMobilePhone={showMobilePhone}
-          showWorkLocation={showWorkLocation}
-          showCity={showCity}
-          showCountry={showCountry}
-          showStreetAddress={showStreetAddress}
-          showPostalCode={showPostalCode}
-          showState={showState}
-          azureMapsSubscriptionKey={azureMapsSubscriptionKey}
-          externalMapProvider={externalMapProvider}
-          showManager={showManager}
-          showPresence={showPresence}
-          showSponsorJobTitle={showSponsorJobTitle}
-          showManagerJobTitle={showManagerJobTitle}
-          showSponsorDepartment={showSponsorDepartment}
-          showManagerDepartment={showManagerDepartment}
-          showSponsorPhoto={showSponsorPhoto}
-          showManagerPhoto={showManagerPhoto}
-          useInformalAddress={useInformalAddress}
-          onActiveCardChange={setHasActiveCard}
-          guestHasTeamsAccess={guestHasTeamsAccess}
-        />
-      )}
-      {/* Unavailable sponsors: show tiles read-only (no hover popup) so the guest
-          can still see who their sponsors are, even if the accounts are currently
-          disabled or deleted. */}
-      {!loading && !error && allUnavailable && unavailableSponsors.length > 0 && (
-        <SponsorList
-          sponsors={unavailableSponsors}
-          hostTenantId={hostTenantId}
-          compact={cardLayout === 'compact' || (cardLayout === 'auto' && unavailableSponsors.length > 2)}
-          showBusinessPhones={showBusinessPhones}
-          showMobilePhone={showMobilePhone}
-          showWorkLocation={showWorkLocation}
-          showCity={showCity}
-          showCountry={showCountry}
-          showStreetAddress={showStreetAddress}
-          showPostalCode={showPostalCode}
-          showState={showState}
-          azureMapsSubscriptionKey={azureMapsSubscriptionKey}
-          externalMapProvider={externalMapProvider}
-          showManager={showManager}
-          showPresence={showPresence}
-          showSponsorJobTitle={showSponsorJobTitle}
-          showManagerJobTitle={showManagerJobTitle}
-          showSponsorDepartment={showSponsorDepartment}
-          showManagerDepartment={showManagerDepartment}
-          showSponsorPhoto={showSponsorPhoto}
-          showManagerPhoto={showManagerPhoto}
-          useInformalAddress={useInformalAddress}
-          onActiveCardChange={() => undefined}
-          readOnly
-        />
-      )}
-      {/* "Sponsor not available" notice — rendered below the tiles (if any). */}
-      {!loading && !error && allUnavailable && showSponsorUnavailableHint && (
-        <MessageBar
-          messageBarType={MessageBarType.warning}
-          isMultiline
-          delayedRender={false}
-          className={unavailableSponsors.length > 0 ? styles.teamsAccessBanner : undefined}
-        >
-          <b>{strings.SponsorUnavailableTitle}</b><br />
-          {fstr('SponsorUnavailableMessage')}
-        </MessageBar>
-      )}
-      {!loading && !error && sponsors.length === 0 && !allUnavailable && showNoSponsorsHint && (
-        <MessageBar messageBarType={MessageBarType.info} isMultiline delayedRender={false}>
-          <b>{strings.NoSponsorsTitle}</b><br />
-          {fstr('NoSponsorsMessage')}
-        </MessageBar>
-      )}
-      {!loading && !error && guestHasTeamsAccess === false && showTeamsAccessPendingHint && (
-        <MessageBar
-          messageBarType={MessageBarType.warning}
-          isMultiline
-          delayedRender={false}
-          className={styles.teamsAccessBanner}
-        >
-          <b>{strings.TeamsAccessPendingTitle}</b><br />
-          {fstr('TeamsAccessPendingMessage')}
-        </MessageBar>
-      )}
-      {versionMismatch && showVersionMismatchHint && (
-        <MessageBar
-          messageBarType={MessageBarType.warning}
-          isMultiline
-          delayedRender={false}
-          className={styles.teamsAccessBanner}
-        >
-          <b>{strings.VersionMismatchTitle}</b><br />
-          {strings.VersionMismatchMessage}
-        </MessageBar>
-      )}
-    </section>
+    <FluentProvider theme={v9Theme}>
+      <section className={contentClassNames}>
+        {title && <h2 className={styles.title}>{title}</h2>}
+        {loading && <SponsorGridSkeleton compact={cardLayout === 'compact'} />}
+        {!loading && error && !isPermissionError && (
+          <MessageBar intent="error">
+            <MessageBarBody>
+              <b>{strings.ErrorMessageTitle}</b><br />
+              {error}
+            </MessageBarBody>
+          </MessageBar>
+        )}
+        {!loading && isPermissionError && error && (
+          <MessageBar intent="error">
+            <MessageBarBody>
+              <b>{strings.InsufficientPermissionsTitle}</b><br />
+              {error}
+            </MessageBarBody>
+          </MessageBar>
+        )}
+        {!loading && !error && sponsors.length > 0 && (
+          <SponsorList
+            sponsors={sponsors}
+            hostTenantId={hostTenantId}
+            compact={cardLayout === 'compact' || (cardLayout === 'auto' && sponsors.length > 2)}
+            showBusinessPhones={showBusinessPhones}
+            showMobilePhone={showMobilePhone}
+            showWorkLocation={showWorkLocation}
+            showCity={showCity}
+            showCountry={showCountry}
+            showStreetAddress={showStreetAddress}
+            showPostalCode={showPostalCode}
+            showState={showState}
+            azureMapsSubscriptionKey={azureMapsSubscriptionKey}
+            externalMapProvider={externalMapProvider}
+            showManager={showManager}
+            showPresence={showPresence}
+            showSponsorJobTitle={showSponsorJobTitle}
+            showManagerJobTitle={showManagerJobTitle}
+            showSponsorDepartment={showSponsorDepartment}
+            showManagerDepartment={showManagerDepartment}
+            showSponsorPhoto={showSponsorPhoto}
+            showManagerPhoto={showManagerPhoto}
+            useInformalAddress={useInformalAddress}
+            onActiveCardChange={setHasActiveCard}
+            guestHasTeamsAccess={guestHasTeamsAccess}
+          />
+        )}
+        {/* Unavailable sponsors: show tiles read-only (no hover popup) so the guest
+            can still see who their sponsors are, even if the accounts are currently
+            disabled or deleted. */}
+        {!loading && !error && allUnavailable && unavailableSponsors.length > 0 && (
+          <SponsorList
+            sponsors={unavailableSponsors}
+            hostTenantId={hostTenantId}
+            compact={cardLayout === 'compact' || (cardLayout === 'auto' && unavailableSponsors.length > 2)}
+            showBusinessPhones={showBusinessPhones}
+            showMobilePhone={showMobilePhone}
+            showWorkLocation={showWorkLocation}
+            showCity={showCity}
+            showCountry={showCountry}
+            showStreetAddress={showStreetAddress}
+            showPostalCode={showPostalCode}
+            showState={showState}
+            azureMapsSubscriptionKey={azureMapsSubscriptionKey}
+            externalMapProvider={externalMapProvider}
+            showManager={showManager}
+            showPresence={showPresence}
+            showSponsorJobTitle={showSponsorJobTitle}
+            showManagerJobTitle={showManagerJobTitle}
+            showSponsorDepartment={showSponsorDepartment}
+            showManagerDepartment={showManagerDepartment}
+            showSponsorPhoto={showSponsorPhoto}
+            showManagerPhoto={showManagerPhoto}
+            useInformalAddress={useInformalAddress}
+            onActiveCardChange={() => undefined}
+            readOnly
+          />
+        )}
+        {/* "Sponsor not available" notice — rendered below the tiles (if any). */}
+        {!loading && !error && allUnavailable && showSponsorUnavailableHint && (
+          <MessageBar
+            intent="warning"
+            className={unavailableSponsors.length > 0 ? styles.teamsAccessBanner : undefined}
+          >
+            <MessageBarBody>
+              <b>{strings.SponsorUnavailableTitle}</b><br />
+              {fstr('SponsorUnavailableMessage')}
+            </MessageBarBody>
+          </MessageBar>
+        )}
+        {!loading && !error && sponsors.length === 0 && !allUnavailable && showNoSponsorsHint && (
+          <MessageBar intent="info">
+            <MessageBarBody>
+              <b>{strings.NoSponsorsTitle}</b><br />
+              {fstr('NoSponsorsMessage')}
+            </MessageBarBody>
+          </MessageBar>
+        )}
+        {!loading && !error && guestHasTeamsAccess === false && showTeamsAccessPendingHint && (
+          <MessageBar intent="warning" className={styles.teamsAccessBanner}>
+            <MessageBarBody>
+              <b>{strings.TeamsAccessPendingTitle}</b><br />
+              {fstr('TeamsAccessPendingMessage')}
+            </MessageBarBody>
+          </MessageBar>
+        )}
+        {versionMismatch && showVersionMismatchHint && (
+          <MessageBar intent="warning" className={styles.teamsAccessBanner}>
+            <MessageBarBody>
+              <b>{strings.VersionMismatchTitle}</b><br />
+              {strings.VersionMismatchMessage}
+            </MessageBarBody>
+          </MessageBar>
+        )}
+      </section>
+    </FluentProvider>
   );
 };
 
 export default GuestSponsorInfo;
+
 
