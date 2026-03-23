@@ -23,7 +23,7 @@ For architecture decisions and internals, see [architecture.md](architecture.md)
 ### Upload and install
 
 1. Download the latest `guest-sponsor-info.sppkg` from
-   [Releases](https://github.com/jpawlowski/spfx-guest-sponsor-info/releases).
+   [Releases](https://github.com/workoho/spfx-guest-sponsor-info/releases).
 2. Upload it to your SharePoint **App Catalog**.
 3. Check **SharePoint Admin Center → Advanced → API access** for pending
    permission requests and approve them if present.
@@ -222,7 +222,7 @@ required; also works for updates — ARM deployments are idempotent):
 ```bash
 az deployment group create \
   --resource-group <your-resource-group> \
-  --template-uri https://github.com/jpawlowski/spfx-guest-sponsor-info/releases/latest/download/azuredeploy.json \
+  --template-uri https://github.com/workoho/spfx-guest-sponsor-info/releases/latest/download/azuredeploy.json \
   --parameters \
       tenantId=<your-tenant-id> \
       tenantName=<your-tenant-name> \
@@ -242,7 +242,7 @@ deleted; clean teardown requires a single command.
 az stack group create \
   --name guest-sponsor-info \
   --resource-group <your-resource-group> \
-  --template-uri https://github.com/jpawlowski/spfx-guest-sponsor-info/releases/latest/download/azuredeploy.json \
+  --template-uri https://github.com/workoho/spfx-guest-sponsor-info/releases/latest/download/azuredeploy.json \
   --parameters \
       tenantId=<your-tenant-id> \
       tenantName=<your-tenant-name> \
@@ -286,7 +286,7 @@ regional support. Add the extra parameters:
 ```bash
 az deployment group create \
   --resource-group <your-resource-group> \
-  --template-uri https://github.com/jpawlowski/spfx-guest-sponsor-info/releases/latest/download/azuredeploy.json \
+  --template-uri https://github.com/workoho/spfx-guest-sponsor-info/releases/latest/download/azuredeploy.json \
   --parameters \
       tenantId=<your-tenant-id> \
       tenantName=<your-tenant-name> \
@@ -413,7 +413,7 @@ Re-deploy the ARM template with a pinned `appVersion`:
 ```bash
 az deployment group create \
   --resource-group <your-resource-group> \
-  --template-uri https://github.com/jpawlowski/spfx-guest-sponsor-info/releases/latest/download/azuredeploy.json \
+  --template-uri https://github.com/workoho/spfx-guest-sponsor-info/releases/latest/download/azuredeploy.json \
   --parameters \
       tenantId=<your-tenant-id> \
       tenantName=<your-tenant-name> \
@@ -431,14 +431,14 @@ az deployment group create \
 
 1. Open Storage Account → **Containers** → `app-package`.
 2. **Upload** → select the ZIP from the
-   [Releases page](https://github.com/jpawlowski/spfx-guest-sponsor-info/releases).
+   [Releases page](https://github.com/workoho/spfx-guest-sponsor-info/releases).
 3. **Advanced** → Blob name: `function.zip` → enable **Overwrite** → Upload.
 
 **Via Azure CLI ([Cloud Shell](https://shell.azure.com)):**
 
 ```bash
 curl -sSfL -o function.zip \
-  https://github.com/jpawlowski/spfx-guest-sponsor-info/releases/latest/download/guest-sponsor-info-function.zip
+  https://github.com/workoho/spfx-guest-sponsor-info/releases/latest/download/guest-sponsor-info-function.zip
 
 az storage blob upload \
   --account-name <storage-account-name> \
@@ -460,7 +460,7 @@ deployment (idempotent):
 ```bash
 az deployment group create \
   --resource-group <your-resource-group> \
-  --template-uri https://github.com/jpawlowski/spfx-guest-sponsor-info/releases/latest/download/azuredeploy.json \
+  --template-uri https://github.com/workoho/spfx-guest-sponsor-info/releases/latest/download/azuredeploy.json \
   --parameters \
       tenantId=<your-tenant-id> \
       tenantName=<your-tenant-name> \

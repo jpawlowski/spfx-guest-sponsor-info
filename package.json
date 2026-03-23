@@ -4,7 +4,7 @@
   "description": "SharePoint Online web part that shows the Microsoft Entra sponsors of the signed-in guest user",
   "license": "MIT",
   "author": "Julian Pawlowski",
-  "homepage": "https://github.com/jpawlowski/spfx-guest-sponsor-info",
+  "homepage": "https://github.com/workoho/spfx-guest-sponsor-info",
   "keywords": [
     "sharepoint",
     "spfx",

@@ -17,7 +17,7 @@ details. The layout matches the built-in SharePoint People web part.
 
 | Solution | Author(s) |
 |---|---|
-| `guest-sponsor-info.sppkg` | [Julian Pawlowski](https://github.com/jpawlowski) |
+| `guest-sponsor-info.sppkg` | [Julian Pawlowski](https://github.com/workoho) |
 
 ## Prerequisites
 

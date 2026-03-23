@@ -30,7 +30,7 @@ footer = """
 | `azuredeploy.json` | ARM template for the Azure Function proxy |
 | `main.bicep` | Bicep source template — for customisation before compiling to ARM |
 
-> First time deploying? See the [README](https://github.com/jpawlowski/spfx-guest-sponsor-info#readme) for step-by-step instructions.
+> First time deploying? See the [README](https://github.com/workoho/spfx-guest-sponsor-info#readme) for step-by-step instructions.
 """
 trim = true
 

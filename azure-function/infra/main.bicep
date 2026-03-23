@@ -2,7 +2,7 @@ targetScope = 'resourceGroup'
 
 metadata name = 'Guest Sponsor Info – Azure Function Proxy'
 metadata description = 'Deploys an Azure Function App that acts as a Graph API proxy for the Guest Sponsor Info SharePoint web part. Includes a Storage Account, App Service Plan, EasyAuth configuration, Managed Identity role assignments, Log Analytics Workspace, and Application Insights.'
-metadata repository = 'https://github.com/jpawlowski/spfx-guest-sponsor-info'
+metadata repository = 'https://github.com/workoho/spfx-guest-sponsor-info'
 metadata author = 'jpawlowski'
 metadata license = 'MIT'
 
@@ -178,7 +178,7 @@ param defaultInfoActionGroupShortName string = 'GSIInfo'
 var isFlexConsumption = hostingPlan == 'FlexConsumption'
 var deploymentContainerName = 'app-package'
 var storageAccountName = toLower(replace(functionAppName, '-', ''))
-var baseReleaseUrl = 'https://github.com/jpawlowski/spfx-guest-sponsor-info/releases'
+var baseReleaseUrl = 'https://github.com/workoho/spfx-guest-sponsor-info/releases'
 // Strip a leading 'v' from appVersion so both '1.4.2' and 'v1.4.2' work correctly.
 var normalizedAppVersion = startsWith(appVersion, 'v') ? substring(appVersion, 1) : appVersion
 var resolvedPackageUrl = !empty(packageUrl)
@@ -188,7 +188,7 @@ var resolvedPackageUrl = !empty(packageUrl)
       : '${baseReleaseUrl}/download/v${normalizedAppVersion}/guest-sponsor-info-function.zip'
 var builtInTags = {
   'managed-by': 'bicep'
-  source: 'https://github.com/jpawlowski/spfx-guest-sponsor-info'
+  source: 'https://github.com/workoho/spfx-guest-sponsor-info'
   'package-version': appVersion
 }
 var effectiveTags = union(builtInTags, tags)
