@@ -30,27 +30,27 @@ flowchart TB
     classDef logs     fill:#f8fafc,stroke:#94a3b8,color:#64748b
     classDef msgraph  fill:#ede9fe,stroke:#7c3aed,color:#4c1d95,font-weight:bold
 
-    Admin(["SharePoint Admin"]):::admin
+    Admin(["🧑‍💼 SharePoint Admin"]):::admin
 
-    subgraph spo["SharePoint Online"]
-        Catalog["App Catalog\n(solution package)"]:::delivery
-        CDN["Public CDN\n(web part bundle)"]:::delivery
-        Page["Guest Landing Page"]:::delivery
-        WP["Guest Sponsor Info\nWeb Part"]:::webpart
+    subgraph spo["☁️ SharePoint Online"]
+        Catalog["📦 App Catalog"]:::delivery
+        CDN["🌐 Public CDN"]:::delivery
+        Page["📄 Guest Landing Page"]:::delivery
+        WP["🖥️ Guest Sponsor Info\nWeb Part"]:::webpart
     end
 
-    subgraph entra["Microsoft Entra ID"]
-        TokenSvc["Token Service\n(App Registration\nfor Sponsor API)"]:::token
+    subgraph entra["🔐 Microsoft Entra ID"]
+        TokenSvc["🔑 Token Service\n(App Registration\nfor Sponsor API)"]:::token
     end
 
-    subgraph azure["Azure · Sponsor API"]
-        EasyAuth{"EasyAuth\ntoken validation\n(runs before any\nfunction code)"}:::gate
-        Func["Azure Function\n(sponsor lookup &\nbusiness logic)"]:::func
-        MI["Managed Identity\n(no stored credentials)"]:::infra
-        AI[("Application\nInsights")]:::logs
+    subgraph azure["⚡ Azure · Sponsor API"]
+        EasyAuth{"🛡️ EasyAuth\ntoken validation\n(runs before any\nfunction code)"}:::gate
+        Func["⚡ Azure Function\n(sponsor lookup &\nbusiness logic)"]:::func
+        MI["🔒 Managed Identity\n(no stored credentials)"]:::infra
+        AI[("📊 Application\nInsights")]:::logs
     end
 
-    Graph[("Microsoft Graph\n(sponsors · profiles\nphotos · presence)")]:::msgraph
+    Graph[("🕸️ Microsoft Graph\n(sponsors · profiles\nphotos · presence)")]:::msgraph
 
     Admin      -- "deploys"                              --> Catalog
     Catalog    -- "via"                                  --> CDN
@@ -125,15 +125,15 @@ flowchart LR
     classDef token    fill:#fef3c7,stroke:#d97706,color:#78350f,font-weight:bold
     classDef msgraph  fill:#ede9fe,stroke:#7c3aed,color:#4c1d95,font-weight:bold
 
-    subgraph browser["Guest's Browser"]
-        WP2["Guest Sponsor Info\nWeb Part"]:::webpart
+    subgraph browser["💻 Guest's Browser"]
+        WP2["🖥️ Guest Sponsor Info\nWeb Part"]:::webpart
     end
 
-    subgraph entra2["Microsoft Entra ID"]
-        TokenSvc2["Token Service"]:::token
+    subgraph entra2["🔐 Microsoft Entra ID"]
+        TokenSvc2["🔑 Token Service"]:::token
     end
 
-    Graph2[("Microsoft Graph\n(delegated permissions)")]:::msgraph
+    Graph2[("🕸️ Microsoft Graph\n(delegated permissions)")]:::msgraph
 
     WP2 -- "acquire token" --> TokenSvc2
     WP2 -- "sponsors, profiles, photos\n(guest must hold Directory Readers role)" --> Graph2
