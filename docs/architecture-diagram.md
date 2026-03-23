@@ -8,36 +8,49 @@ For the written design decisions behind each component, see [architecture.md](ar
 ## System Overview — Recommended Path (Azure Function Proxy)
 
 The diagram covers two aspects: **how the web part reaches the guest's browser**
-(delivery, grey arrows) and **how it retrieves and keeps data current at runtime**
-(numbered arrows). Steps ②–③ make the authentication handshake explicit — the web
-part cannot call the Sponsor API without first obtaining a signed token from Entra ID.
-Presence status (step ⑦) is kept up-to-date through a separate polling loop that reuses
-the same token and the same EasyAuth gate, but only fetches presence — not the full
-sponsor list.
+(delivery) and **how it retrieves and keeps data current at runtime** (steps ①–⑦).
+Color-coding marks system boundaries at a glance:
+**blue** = SharePoint Online · **amber** = Microsoft Entra ID ·
+**green** = Azure Sponsor API · **purple** = Microsoft Graph.
+Steps ②–③ make the authentication handshake explicit — the web part cannot call
+the Sponsor API without first obtaining a signed token from Entra ID.
+Presence status (step ⑦) is kept up-to-date through a separate polling loop that
+reuses the same token and the same EasyAuth gate, but only fetches presence —
+not the full sponsor list.
 
 ```mermaid
 flowchart TB
-    Admin(["SharePoint Admin"])
+    classDef admin    fill:#f1f5f9,stroke:#64748b,color:#1e293b,font-weight:bold
+    classDef delivery fill:#dbeafe,stroke:#3b82f6,color:#1e3a8a
+    classDef webpart  fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,font-weight:bold
+    classDef token    fill:#fef3c7,stroke:#d97706,color:#78350f,font-weight:bold
+    classDef gate     fill:#fde68a,stroke:#b45309,color:#78350f,font-weight:bold
+    classDef func     fill:#d1fae5,stroke:#059669,color:#064e3b,font-weight:bold
+    classDef infra    fill:#a7f3d0,stroke:#059669,color:#064e3b
+    classDef logs     fill:#f8fafc,stroke:#94a3b8,color:#64748b
+    classDef graph    fill:#ede9fe,stroke:#7c3aed,color:#4c1d95,font-weight:bold
+
+    Admin(["SharePoint Admin"]):::admin
 
     subgraph spo["SharePoint Online"]
-        Catalog["App Catalog\n(solution package)"]
-        CDN["Public CDN\n(web part bundle)"]
-        Page["Guest Landing Page"]
-        WP["Guest Sponsor Info\nWeb Part"]
+        Catalog["App Catalog\n(solution package)"]:::delivery
+        CDN["Public CDN\n(web part bundle)"]:::delivery
+        Page["Guest Landing Page"]:::delivery
+        WP["Guest Sponsor Info\nWeb Part"]:::webpart
     end
 
     subgraph entra["Microsoft Entra ID"]
-        TokenSvc["Token Service\n(App Registration for\nthe Sponsor API)"]
+        TokenSvc["Token Service\n(App Registration\nfor Sponsor API)"]:::token
     end
 
     subgraph azure["Azure · Sponsor API"]
-        EasyAuth{"EasyAuth\ntoken validation\n(runs before any\nfunction code)"}
-        Func["Azure Function\n(sponsor lookup &\nbusiness logic)"]
-        MI["Managed Identity\n(no stored credentials)"]
-        AI[("Application\nInsights")]
+        EasyAuth{"EasyAuth\ntoken validation\n(runs before any\nfunction code)"}:::gate
+        Func["Azure Function\n(sponsor lookup &\nbusiness logic)"]:::func
+        MI["Managed Identity\n(no stored credentials)"]:::infra
+        AI[("Application\nInsights")]:::logs
     end
 
-    Graph[("Microsoft Graph\n(sponsors · profiles\nphotos · presence)")]
+    Graph[("Microsoft Graph\n(sponsors · profiles\nphotos · presence)")]:::graph
 
     Admin      -- "deploys"                              --> Catalog
     Catalog    -- "via"                                  --> CDN
@@ -50,13 +63,39 @@ flowchart TB
     EasyAuth   -- "④ token valid —\nguest OID confirmed"  --> Func
     EasyAuth   -. "token invalid or missing —\nrequest rejected (HTTP 401)"  .-> WP
     Func       --> MI
-    MI         -- "sponsors · profiles\n· presence · photos\n(app permissions)"  --> Graph
+    MI         -- "sponsors · profiles · presence\n(app permissions)"  --> Graph
     Func       -- "⑤ full sponsor list\n(one-time on load)"  --> WP
     Func       -. "telemetry"                            .-> AI
     WP         -- "⑥ profile photos\n(direct · delegated token)"  --> Graph
 
     WP         -. "⑦ presence poll\n(same Bearer token —\nsilently refreshed)"  .-> EasyAuth
     Func       -. "⑦ presence status only\n(no sponsor re-fetch)"  .-> WP
+
+    style spo   fill:#eff6ff,stroke:#3b82f6
+    style entra fill:#fffbeb,stroke:#d97706
+    style azure fill:#f0fdf4,stroke:#059669
+
+    %% link indices (declaration order, 0-based)
+    %% 0–3   delivery: Admin→Catalog, Catalog→CDN, CDN→WP, Page→WP
+    linkStyle 0,1,2,3   stroke:#94a3b8,stroke-width:1.5px
+    %% 4–5   token roundtrip: WP→TokenSvc, TokenSvc→WP
+    linkStyle 4,5       stroke:#d97706,stroke-width:2px
+    %% 6     initial API call: WP→EasyAuth
+    linkStyle 6         stroke:#1d4ed8,stroke-width:2.5px
+    %% 7     valid path: EasyAuth→Func
+    linkStyle 7         stroke:#059669,stroke-width:2.5px
+    %% 8     rejection path: EasyAuth→WP
+    linkStyle 8         stroke:#dc2626,stroke-width:1.5px
+    %% 9–10  function→Graph via MI
+    linkStyle 9,10      stroke:#7c3aed,stroke-width:2px
+    %% 11    sponsor list response: Func→WP
+    linkStyle 11        stroke:#059669,stroke-width:2px
+    %% 12    telemetry: Func→AI
+    linkStyle 12        stroke:#94a3b8,stroke-width:1px
+    %% 13    photos: WP→Graph
+    linkStyle 13        stroke:#3b82f6,stroke-width:2px
+    %% 14–15 presence polling: WP→EasyAuth, Func→WP
+    linkStyle 14,15     stroke:#0891b2,stroke-width:1.5px
 ```
 
 ### What each step means
@@ -82,19 +121,30 @@ The Azure Function proxy removes that requirement.
 
 ```mermaid
 flowchart LR
+    classDef webpart  fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,font-weight:bold
+    classDef token    fill:#fef3c7,stroke:#d97706,color:#78350f,font-weight:bold
+    classDef graph    fill:#ede9fe,stroke:#7c3aed,color:#4c1d95,font-weight:bold
+
     subgraph browser["Guest's Browser"]
-        WP2["Guest Sponsor Info\nWeb Part"]
+        WP2["Guest Sponsor Info\nWeb Part"]:::webpart
     end
 
     subgraph entra2["Microsoft Entra ID"]
-        TokenSvc2["Token Service"]
+        TokenSvc2["Token Service"]:::token
     end
 
-    Graph2[("Microsoft Graph\n(delegated permissions)")]
+    Graph2[("Microsoft Graph\n(delegated permissions)")]:::graph
 
     WP2 -- "acquire token" --> TokenSvc2
     WP2 -- "sponsors, profiles, photos\n(guest must hold Directory Readers role)" --> Graph2
     WP2 -. "presence (optional)" .-> Graph2
+
+    style browser fill:#eff6ff,stroke:#3b82f6
+    style entra2  fill:#fffbeb,stroke:#d97706
+
+    linkStyle 0   stroke:#d97706,stroke-width:2px
+    linkStyle 1   stroke:#3b82f6,stroke-width:2px
+    linkStyle 2   stroke:#3b82f6,stroke-width:1.5px
 ```
 
 ---
