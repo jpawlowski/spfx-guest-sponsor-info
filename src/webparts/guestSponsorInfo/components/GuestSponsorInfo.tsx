@@ -42,9 +42,14 @@ interface ISponsorListProps {
   onActiveCardChange?: (hasActiveCard: boolean) => void;
   /** Propagated from ISponsorsResult — false shows disabled buttons in each card. */
   guestHasTeamsAccess?: boolean;
+  /**
+   * When true, sponsor tiles are shown as static visuals only — no hover popup,
+   * no keyboard activation. Used when all sponsors are unavailable.
+   */
+  readOnly?: boolean;
 }
 
-const SponsorList: React.FC<ISponsorListProps> = ({ sponsors, hostTenantId, compact, showBusinessPhones, showMobilePhone, showWorkLocation, showCity, showCountry, showStreetAddress, showPostalCode, showState, azureMapsSubscriptionKey, externalMapProvider, showManager, showPresence, showSponsorJobTitle, showManagerJobTitle, showSponsorDepartment, showManagerDepartment, showSponsorPhoto, showManagerPhoto, useInformalAddress, onActiveCardChange, guestHasTeamsAccess }) => {
+const SponsorList: React.FC<ISponsorListProps> = ({ sponsors, hostTenantId, compact, showBusinessPhones, showMobilePhone, showWorkLocation, showCity, showCountry, showStreetAddress, showPostalCode, showState, azureMapsSubscriptionKey, externalMapProvider, showManager, showPresence, showSponsorJobTitle, showManagerJobTitle, showSponsorDepartment, showManagerDepartment, showSponsorPhoto, showManagerPhoto, useInformalAddress, onActiveCardChange, guestHasTeamsAccess, readOnly }) => {
   const [activeId, setActiveId] = React.useState<string | null>(null);
   const showTimeout = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const hideTimeout = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -82,9 +87,10 @@ const SponsorList: React.FC<ISponsorListProps> = ({ sponsors, hostTenantId, comp
             sponsor={sponsor}
             hostTenantId={hostTenantId}
             compact={compact}
-            isActive={activeId === sponsor.id}
-            onActivate={() => activate(sponsor.id)}
-            onScheduleDeactivate={scheduleDeactivate}
+            isActive={!readOnly && activeId === sponsor.id}
+            onActivate={readOnly ? () => undefined : () => activate(sponsor.id)}
+            onScheduleDeactivate={readOnly ? () => undefined : scheduleDeactivate}
+            readOnly={readOnly}
             showBusinessPhones={showBusinessPhones}
             showMobilePhone={showMobilePhone}
             showWorkLocation={showWorkLocation}
@@ -201,6 +207,7 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
 
   const [sponsors, setSponsors] = React.useState<ISponsor[]>([]);
   const [allUnavailable, setAllUnavailable] = React.useState(false);
+  const [unavailableSponsors, setUnavailableSponsors] = React.useState<ISponsor[]>([]);
   // Start in loading state immediately for guests and demo mode so the shimmer
   // is visible on the very first render — before the first useEffect tick.
   // Without this, React paints a brief "no sponsors" flash before the effect
@@ -285,6 +292,7 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
           sponsorIdsRef.current = active.map(s => s.id);
           // All unavailable = sponsors were assigned but every account is disabled/deleted.
           setAllUnavailable(active.length === 0 && result.unavailableCount > 0);
+          setUnavailableSponsors(result.unavailableSponsors ?? []);
           setGuestHasTeamsAccess(result.guestHasTeamsAccess);
           setPresenceToken(result.presenceToken);
           setLoading(false);
@@ -430,10 +438,11 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
   // can see the real layout and adjust display settings before going live.
   if (isEditMode) {
     const mockCompact = cardLayout === 'compact' || (cardLayout === 'auto' && MOCK_SPONSORS.length > 2);
-    // Hide the sponsor list when the simulated hint replaces it in reality
-    // (no sponsors assigned → "No sponsors found"; all inactive → "Sponsor not available").
-    const showMockCards = !mockMode ||
-      (mockSimulatedHint !== 'noSponsors' && mockSimulatedHint !== 'sponsorUnavailable');
+    // Hide the sponsor list only when simulating "No sponsors found" — in that
+    // state no sponsors are assigned at all so no tiles would appear. For
+    // "Sponsor not available" the tiles ARE shown (read-only) so the editor can
+    // see how the layout looks when all sponsors are unavailable.
+    const showMockCards = !mockMode || mockSimulatedHint !== 'noSponsors';
     return (
       <section className={styles.webPart}>
         {title && <h2 className={styles.title}>{title}</h2>}
@@ -463,6 +472,7 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
           useInformalAddress={useInformalAddress}
           onActiveCardChange={() => undefined}
           guestHasTeamsAccess={mockMode && mockSimulatedHint === 'teamsAccessPending' ? false : undefined}
+          readOnly={mockMode && mockSimulatedHint === 'sponsorUnavailable'}
         />
         )}
         {/* Real version mismatch detected via ping: always shown to the editor, independent
@@ -501,7 +511,12 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
           </MessageBar>
         )}
         {mockMode && mockSimulatedHint === 'sponsorUnavailable' && (
-          <MessageBar messageBarType={MessageBarType.warning} isMultiline delayedRender={false}>
+          <MessageBar
+            messageBarType={MessageBarType.warning}
+            isMultiline
+            delayedRender={false}
+            className={styles.teamsAccessBanner}
+          >
             <b>{strings.SponsorUnavailableTitle}</b><br />
             {fstr('SponsorUnavailableMessage')}
           </MessageBar>
@@ -522,7 +537,10 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
   }
 
   // View mode + guest user: render the sponsor list.
-  const noResults = !loading && !error && sponsors.length === 0;
+  // When all sponsors are unavailable but their profile data is available, we still
+  // show their tiles (read-only, no popup) so the guest can see who their sponsors are,
+  // even if those accounts are currently disabled or deleted.
+  const noResults = !loading && !error && sponsors.length === 0 && unavailableSponsors.length === 0;
   const contentClassNames = (loading || error || noResults) ? `${styles.webPart} ${styles.webPartContent}` : styles.webPart;
   return (
     <section className={contentClassNames}>
@@ -538,18 +556,6 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
         <MessageBar messageBarType={MessageBarType.error} isMultiline delayedRender={false}>
           <b>{strings.InsufficientPermissionsTitle}</b><br />
           {error}
-        </MessageBar>
-      )}
-      {!loading && !error && sponsors.length === 0 && allUnavailable && showSponsorUnavailableHint && (
-        <MessageBar messageBarType={MessageBarType.warning} isMultiline delayedRender={false}>
-          <b>{strings.SponsorUnavailableTitle}</b><br />
-          {fstr('SponsorUnavailableMessage')}
-        </MessageBar>
-      )}
-      {!loading && !error && sponsors.length === 0 && !allUnavailable && showNoSponsorsHint && (
-        <MessageBar messageBarType={MessageBarType.info} isMultiline delayedRender={false}>
-          <b>{strings.NoSponsorsTitle}</b><br />
-          {fstr('NoSponsorsMessage')}
         </MessageBar>
       )}
       {!loading && !error && sponsors.length > 0 && (
@@ -579,6 +585,55 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
           onActiveCardChange={setHasActiveCard}
           guestHasTeamsAccess={guestHasTeamsAccess}
         />
+      )}
+      {/* Unavailable sponsors: show tiles read-only (no hover popup) so the guest
+          can still see who their sponsors are, even if the accounts are currently
+          disabled or deleted. */}
+      {!loading && !error && allUnavailable && unavailableSponsors.length > 0 && (
+        <SponsorList
+          sponsors={unavailableSponsors}
+          hostTenantId={hostTenantId}
+          compact={cardLayout === 'compact' || (cardLayout === 'auto' && unavailableSponsors.length > 2)}
+          showBusinessPhones={showBusinessPhones}
+          showMobilePhone={showMobilePhone}
+          showWorkLocation={showWorkLocation}
+          showCity={showCity}
+          showCountry={showCountry}
+          showStreetAddress={showStreetAddress}
+          showPostalCode={showPostalCode}
+          showState={showState}
+          azureMapsSubscriptionKey={azureMapsSubscriptionKey}
+          externalMapProvider={externalMapProvider}
+          showManager={showManager}
+          showPresence={showPresence}
+          showSponsorJobTitle={showSponsorJobTitle}
+          showManagerJobTitle={showManagerJobTitle}
+          showSponsorDepartment={showSponsorDepartment}
+          showManagerDepartment={showManagerDepartment}
+          showSponsorPhoto={showSponsorPhoto}
+          showManagerPhoto={showManagerPhoto}
+          useInformalAddress={useInformalAddress}
+          onActiveCardChange={() => undefined}
+          readOnly
+        />
+      )}
+      {/* "Sponsor not available" notice — rendered below the tiles (if any). */}
+      {!loading && !error && allUnavailable && showSponsorUnavailableHint && (
+        <MessageBar
+          messageBarType={MessageBarType.warning}
+          isMultiline
+          delayedRender={false}
+          className={unavailableSponsors.length > 0 ? styles.teamsAccessBanner : undefined}
+        >
+          <b>{strings.SponsorUnavailableTitle}</b><br />
+          {fstr('SponsorUnavailableMessage')}
+        </MessageBar>
+      )}
+      {!loading && !error && sponsors.length === 0 && !allUnavailable && showNoSponsorsHint && (
+        <MessageBar messageBarType={MessageBarType.info} isMultiline delayedRender={false}>
+          <b>{strings.NoSponsorsTitle}</b><br />
+          {fstr('NoSponsorsMessage')}
+        </MessageBar>
       )}
       {!loading && !error && guestHasTeamsAccess === false && showTeamsAccessPendingHint && (
         <MessageBar

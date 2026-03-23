@@ -332,6 +332,12 @@ interface ISponsorCardProps {
    * undefined = unknown (fail-open — buttons remain active).
    */
   guestHasTeamsAccess?: boolean;
+  /**
+   * When true, the card is displayed as a visual tile only — no hover popup,
+   * no keyboard activation. Used when the sponsor account is unavailable
+   * (disabled or deleted) and only the name is shown for context.
+   */
+  readOnly?: boolean;
 }
 
 const SponsorCard: React.FC<ISponsorCardProps> = ({
@@ -361,6 +367,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
   showManagerDepartment,
   useInformalAddress,
   guestHasTeamsAccess,
+  readOnly,
 }) => {
   const cardRef = React.useRef<HTMLDivElement>(null);
 
@@ -762,16 +769,16 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
       <div
         ref={cardRef}
         className={`${compact ? styles.cardCompact : styles.card}${isActive ? ` ${styles.cardActive}` : ''}`}
-        onMouseEnter={onActivate}
-        onMouseLeave={onScheduleDeactivate}
-        onFocus={onActivate}
-        onBlur={onScheduleDeactivate}
-        onClick={onActivate}
-        tabIndex={0}
-        role="button"
+        onMouseEnter={readOnly ? undefined : onActivate}
+        onMouseLeave={readOnly ? undefined : onScheduleDeactivate}
+        onFocus={readOnly ? undefined : onActivate}
+        onBlur={readOnly ? undefined : onScheduleDeactivate}
+        onClick={readOnly ? undefined : onActivate}
+        tabIndex={readOnly ? undefined : 0}
+        role={readOnly ? undefined : 'button'}
         aria-label={resolvedName}
-        aria-haspopup="dialog"
-        aria-expanded={isActive}
+        aria-haspopup={readOnly ? undefined : 'dialog'}
+        aria-expanded={readOnly ? undefined : isActive}
       >
         <div className={compact ? styles.avatarWrapperCompact : styles.avatarWrapper}>
           <Persona
@@ -790,7 +797,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
       </div>
 
       {/* ── Rich contact card (Panel on mobile, Callout on desktop) ─── */}
-      {isActive && (
+      {!readOnly && isActive && (
         isMobile ? (
           <Panel
             isOpen

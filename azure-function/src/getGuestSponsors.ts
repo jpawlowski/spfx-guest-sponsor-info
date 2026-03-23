@@ -456,6 +456,13 @@ interface ISponsorsResult {
    * PRESENCE_TOKEN_SECRET is configured in the Function App settings.
    */
   presenceToken?: string;
+  /**
+   * Sponsor profiles that exist (or existed) in the directory but whose
+   * account is disabled, soft-deleted, or otherwise unavailable. Populated
+   * when all sponsors fall into this category so the client can render
+   * read-only tiles alongside the "sponsor not available" notice.
+   */
+  unavailableSponsors?: ISponsor[];
 }
 
 /**
@@ -1189,6 +1196,21 @@ export async function getGuestSponsors(
         return out;
       });
     const unavailableCount = perSponsorResults.filter(r => !r.exists).length;
+    const unavailableSponsors: ISponsor[] = perSponsorResults
+      .filter(r => !r.exists)
+      .map(r => {
+        const s = r.sponsor;
+        const out: ISponsor = {
+          id: s.id,
+          displayName: s.displayName,
+          businessPhones: s.businessPhones ?? [],
+        };
+        if (s.givenName)   out.givenName   = s.givenName;
+        if (s.surname)     out.surname     = s.surname;
+        if (s.jobTitle)    out.jobTitle    = s.jobTitle;
+        if (s.department)  out.department  = s.department;
+        return out;
+      });
 
     // Determine whether the guest's Teams service account has been provisioned.
     //
@@ -1223,6 +1245,7 @@ export async function getGuestSponsors(
     // else → undefined: neither permission granted, client falls open.
 
     const result: ISponsorsResult = { activeSponsors, unavailableCount };
+    if (unavailableSponsors.length > 0) result.unavailableSponsors = unavailableSponsors;
     if (guestHasTeamsAccess !== undefined) result.guestHasTeamsAccess = guestHasTeamsAccess;
 
     // Issue a signed presence token so subsequent getPresence polls can be

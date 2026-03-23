@@ -35,7 +35,15 @@ export interface ISponsorsResult {
    * X-Api-Version response header.  Only set on the proxy path; undefined
    * when sponsors are fetched directly via Graph (no function involved).
    */
-  functionVersion?: string;}
+  functionVersion?: string;
+  /**
+   * Sponsor profiles that were found in the directory but whose account is
+   * disabled, deleted, or otherwise unavailable. Populated when all sponsors
+   * are unavailable so the client can still render read-only tiles alongside
+   * the "sponsor not available" notice.
+   */
+  unavailableSponsors?: ISponsor[];
+}
 
 interface IPresenceSnapshot {
   availability?: string;
@@ -207,8 +215,18 @@ export async function getSponsors(client: MSGraphClientV3): Promise<ISponsorsRes
         presenceActivity: presence?.activity,
       };
     });
-  const unavailableCount = perSponsorResults.filter(r => !r.exists).length;
-  return { activeSponsors, unavailableCount };
+  const unavailableSponsors = perSponsorResults
+    .filter(r => !r.exists)
+    .map(r => {
+      const { id, displayName, givenName, surname, jobTitle, department } = r.sponsor;
+      return { id, displayName, givenName, surname, jobTitle, department } as ISponsor;
+    });
+  const unavailableCount = unavailableSponsors.length;
+  return {
+    activeSponsors,
+    unavailableCount,
+    ...(unavailableSponsors.length > 0 ? { unavailableSponsors } : {}),
+  };
 }
 
 /**
