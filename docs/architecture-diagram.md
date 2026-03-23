@@ -95,9 +95,6 @@ flowchart LR
 `AppRoleAssignment.ReadWrite.All`, which requires Privileged Role Administrator
 or higher.
 
-> **Tip:** A single person covering all Azure and Entra steps needs
-> **Global Administrator** + **Owner** on the resource group.
-
 ---
 
 ## Runtime — Guest Experience (Recommended Path)
