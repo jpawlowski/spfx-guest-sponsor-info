@@ -304,10 +304,14 @@
 
 .richPresenceDot {
   position: absolute;
-  bottom: 2px;
-  right: 2px;
-  width: 14px;
-  height: 14px;
+
+  // Exact match for Fluent UI PersonaPresence at size72:
+  // content-box 20 × 20 px, right: -2px, bottom: -2px (native border-box outer
+  // edge lands at -4 px; our box-shadow replicates that identically).
+  bottom: -2px;
+  right: -2px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   box-shadow: 0 0 0 2px var(--white, #fff);
   box-shadow: 0 0 0 2px "[theme:white, default: #ffffff]";
