@@ -45,17 +45,33 @@ unaffected.
 
 ```text
 [Guest Browser]
-      │  SPFx acquires AAD token for function App Registration
+      │  ① acquires Bearer token from Entra ID
+      │     (scoped to the EasyAuth App Registration)
       ▼
-[Azure Function]
-  - EasyAuth validates token, sets caller OID from X-MS-CLIENT-PRINCIPAL-ID
+[Entra ID]
+      │  returns signed token (identifies the guest)
+      ▼
+[Guest Browser]
+      │  ② calls Sponsor API with Bearer token attached
+      ▼
+[Azure Function – EasyAuth gate]
+  - Validates token before any function code runs
+  - Invalid / missing token → HTTP 401, request rejected here
+  - Valid token → injects caller OID as X-MS-CLIENT-PRINCIPAL-ID
+      ▼
+[Azure Function – business logic]
   - Calls Graph via Managed Identity (app permissions)
   - Returns { activeSponsors, unavailableCount }
       │
-[SPFx]
-  - Renders sponsor cards
-  - Loads photos directly from Graph (delegated, progressive)
-  - Polls presence with adaptive intervals
+[Guest Browser – SPFx Web Part]
+  - Renders sponsor cards (one-time on page load)
+  - Loads profile photos directly from Graph (delegated token, progressive)
+
+[Presence polling – ongoing, separate from initial load]
+  - Web part polls Sponsor API at adaptive intervals:
+      30 s while a card is hovered · 2 min tab visible · 5 min tab hidden
+  - Same Bearer token (silently refreshed) · same EasyAuth gate
+  - Function returns presence status only — sponsor list is never re-fetched
 ```
 
 No Entra directory role needed for the guest. The function is the only party that
