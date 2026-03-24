@@ -19,6 +19,8 @@ declare interface IGuestSponsorInfoWebPartStrings {
   MockSimulatedHintVersionMismatchOption: string;
   MockSimulatedHintSponsorUnavailableOption: string;
   MockSimulatedHintNoSponsorsOption: string;
+  /** Slider label for the demo sponsor count. */
+  MockSponsorCountFieldLabel: string;
 
   // Display toggles
   GuestNotificationsGroupName: string;
@@ -30,6 +32,7 @@ declare interface IGuestSponsorInfoWebPartStrings {
   DisplayGroupName: string;
   CardLayoutFieldLabel: string;
   CardLayoutAutoOption: string;
+  CardLayoutAutoThresholdFieldLabel: string;
   CardLayoutFullOption: string;
   CardLayoutCompactOption: string;
   ShowBusinessPhonesFieldLabel: string;

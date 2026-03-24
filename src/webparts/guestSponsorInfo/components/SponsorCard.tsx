@@ -2,10 +2,12 @@ import * as React from 'react';
 import {
   Avatar,
   Button,
+  FluentProvider,
   OverlayDrawer,
   DrawerHeader,
   DrawerHeaderTitle,
   DrawerBody,
+  Persona,
   Popover,
   PopoverSurface,
   Link,
@@ -14,19 +16,30 @@ import {
   tokens,
   mergeClasses,
 } from '@fluentui/react-components';
-import type { PresenceBadgeStatus } from '@fluentui/react-components';
+import type { PresenceBadgeStatus, Theme } from '@fluentui/react-components';
 import {
+  bundleIcon,
   ChatRegular,
+  ChatFilled,
   MailRegular,
+  MailFilled,
   CallRegular,
+  CallFilled,
   CopyRegular,
+  CopyFilled,
   CheckmarkRegular,
+  CheckmarkFilled,
   PhoneRegular,
   BuildingRegular,
   LocationRegular,
-  OrganizationRegular,
   DismissRegular,
 } from '@fluentui/react-icons';
+
+const ChatIcon = bundleIcon(ChatFilled, ChatRegular);
+const MailIcon = bundleIcon(MailFilled, MailRegular);
+const CallIcon = bundleIcon(CallFilled, CallRegular);
+const CopyIcon = bundleIcon(CopyFilled, CopyRegular);
+const CheckmarkIcon = bundleIcon(CheckmarkFilled, CheckmarkRegular);
 import * as strings from 'GuestSponsorInfoWebPartStrings';
 import { ISponsor } from '../services/ISponsor';
 import styles from './GuestSponsorInfo.module.scss';
@@ -67,24 +80,7 @@ function buildExternalMapLink(
   }
 }
 
-/** Maps Graph presence availability (and activity) token → display colour. */
-const PRESENCE_COLORS: Record<string, string> = {
-  // Matches Microsoft Teams presence indicator colours (Fluent v9 / new Teams).
-  Available:       '#13A10C',
-  AvailableIdle:   '#13A10C',
-  Away:            '#FFAA44',
-  BeRightBack:     '#FFAA44',
-  Busy:            '#C50F1F',
-  BusyIdle:        '#C50F1F',
-  DoNotDisturb:    '#C50F1F',
-  Focusing:        '#6264A7',
-  InACall:         '#C50F1F',
-  InAMeeting:      '#C50F1F',
-  OutOfOffice:     '#B4009E',
-  Presenting:      '#C50F1F',
-  Offline:         '#8A8886',
-  PresenceUnknown: '#8A8886',
-};
+
 
 /**
  * Maps Graph presence availability and activity tokens → localised label.
@@ -156,8 +152,7 @@ function formatPresenceActivity(activity: string): string {
 
 /**
  * Maps Graph presence availability and activity tokens to Fluent UI v9
- * PresenceBadge status. Focusing has no direct v9 equivalent and is
- * handled separately via a custom CSS dot.
+ * PresenceBadge status. Focusing maps to do-not-disturb (closest v9 equivalent).
  */
 function graphPresenceToPresenceBadge(
   availability: string | undefined,
@@ -167,8 +162,7 @@ function graphPresenceToPresenceBadge(
     return { status: 'out-of-office', isOutOfOffice: true };
   }
   if (activity === 'Focusing') {
-    // Focusing has no v9 PresenceBadge equivalent; handled by a custom dot.
-    return { status: 'unknown', isOutOfOffice: false };
+    return { status: 'do-not-disturb', isOutOfOffice: false };
   }
   switch (availability) {
     case 'Available':
@@ -190,11 +184,128 @@ function graphPresenceToPresenceBadge(
 }
 
 /**
+ * Griffel styles for Persona text slots in the rich card header and manager row.
+ * Replaces the SCSS classes that previously styled the manual avatar+div structure.
+ */
+const usePersonaStyles = makeStyles({
+  // ── Rich card header (size="huge", 96px avatar) ──────────────────────────
+  richName: {
+    fontSize: tokens.fontSizeBase400,       // 16px
+    fontWeight: tokens.fontWeightSemibold,  // 600
+    color: tokens.colorNeutralForeground1,
+    display: '-webkit-box' as 'flex',       // line-clamp for long names
+    WebkitLineClamp: '2',
+    WebkitBoxOrient: 'vertical' as 'horizontal',
+    overflow: 'hidden',
+  },
+  richSecondary: {
+    fontSize: tokens.fontSizeBase200,       // 12px — job title or department
+    color: tokens.colorNeutralForeground2,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    marginTop: tokens.spacingHorizontalSNudge, // 6px — block 1→2 separator (name → text)
+  },
+  richTertiary: {
+    fontSize: tokens.fontSizeBase200,       // 12px — department (same block as job title)
+    fontWeight: tokens.fontWeightRegular,
+    color: tokens.colorNeutralForeground3,  // slightly lighter than job title — matches manager style
+    // no marginTop — tight within-block spacing (Gestalt proximity)
+  },
+  richPresenceLine: {
+    fontSize: tokens.fontSizeBase300,       // 14px — matches contact info rows
+    fontWeight: tokens.fontWeightRegular,
+    color: tokens.colorNeutralForeground2,
+    marginTop: tokens.spacingHorizontalSNudge, // 6px — block 2→3 separator
+  },
+  // ── Manager row (size="extra-large", 56px avatar) ────────────────────────
+  managerName: {
+    fontSize: tokens.fontSizeBase400,       // 16px — matches previous .managerName
+    fontWeight: tokens.fontWeightRegular,   // 400
+    color: tokens.colorNeutralForeground1,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  managerSecondary: {
+    fontSize: tokens.fontSizeBase200,       // 12px — job title
+    color: tokens.colorNeutralForeground2,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    marginTop: tokens.spacingHorizontalXS,  // 4px — block 1→2 separator (scaled for smaller avatar)
+  },
+  managerTertiary: {
+    fontSize: tokens.fontSizeBase200,       // 12px — department (same block as job title)
+    color: tokens.colorNeutralForeground3,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    // no marginTop — tight within-block spacing (Gestalt proximity)
+  },
+  // Override the internal avatar↔text gap to match the 24px card-edge padding.
+  // Fluent sets --fui-Persona__avatar--spacing on the .fui-Persona__avatar element
+  // itself (not inherited from the root), so we must target that element directly.
+  // Our compound selector (.richPersona .fui-Persona__avatar) has specificity
+  // 0,2,0 vs Fluent's internal single-class 0,1,0 — so we reliably win.
+  richPersona: {
+    '& .fui-Persona__avatar': {
+      '--fui-Persona__avatar--spacing': tokens.spacingHorizontalXXL, // 24px = card edge
+    },
+  },
+  managerPersona: {
+    '& .fui-Persona__avatar': {
+      '--fui-Persona__avatar--spacing': tokens.spacingHorizontalXXL, // 24px = card edge
+    },
+  },
+});
+
+/** Griffel styles for the icon-only action buttons in the rich card header. */
+const useActionButtonStyles = makeStyles({
+  actionButton: {
+    // 44 × 44 px matches Fluent UI's `size="large"` icon-button footprint and
+    // the Teams People Card action button size. The built-in `size` prop on
+    // Button changes both padding and min-width/height; override explicitly so
+    // we keep `appearance="subtle"` without other `large` layout side-effects
+    // (e.g. larger label font). Icon size 24px matches Teams.
+    padding: tokens.spacingHorizontalSNudge,
+    borderRadius: tokens.borderRadiusMedium,
+    minWidth: '44px',
+    width: '44px',
+    height: '44px',
+    color: tokens.colorNeutralForeground2,
+    backgroundColor: 'transparent',
+    '& .fui-Button__icon': {
+      fontSize: '24px',
+      width: '24px',
+      height: '24px',
+    },
+    '&:hover': {
+      backgroundColor: 'transparent',
+    },
+    '&:hover:active': {
+      backgroundColor: 'transparent',
+    },
+    // Colour change + filled icon swap only when hovering directly over the icon,
+    // not the surrounding padding. The full button area remains clickable.
+    '& .fui-Button__icon:hover': {
+      color: tokens.colorNeutralForeground2BrandHover,
+      '& .fui-Icon-filled': { display: 'inline' },
+      '& .fui-Icon-regular': { display: 'none' },
+    },
+    '& .fui-Button__icon:hover:active': {
+      color: tokens.colorNeutralForeground2BrandPressed,
+    },
+  },
+});
+
+/**
  * Small copy-to-clipboard button shown at the trailing edge of each contact row.
  * Switches to a checkmark for 1.5 s after a successful copy.
  */
 const CopyButton: React.FC<{ value: string; ariaLabel: string }> = ({ value, ariaLabel }) => {
   const [copied, setCopied] = React.useState(false);
+  const actionButtonClasses = useActionButtonStyles();
 
   const handleCopy = (e: React.MouseEvent<HTMLElement>): void => {
     e.stopPropagation();
@@ -208,41 +319,33 @@ const CopyButton: React.FC<{ value: string; ariaLabel: string }> = ({ value, ari
     <Tooltip content={copied ? strings.CopiedFeedback : ariaLabel} relationship="label">
       <Button
         appearance="subtle"
-        icon={copied ? <CheckmarkRegular /> : <CopyRegular />}
+        icon={copied ? <CheckmarkIcon /> : <CopyIcon />}
         aria-label={copied ? strings.CopiedFeedback : ariaLabel}
         onClick={handleCopy}
-        className={mergeClasses(styles.copyButton, copied ? styles.copyButtonCopied : '')}
+        className={mergeClasses(actionButtonClasses.actionButton, styles.copyButton, copied ? styles.copyButtonCopied : '')}
         size="small"
       />
     </Tooltip>
   );
 };
 
-/** Griffel styles for the icon-only action buttons in the rich card header. */
-const useActionButtonStyles = makeStyles({
-  actionButton: {
-    padding: '8px',
-    borderRadius: tokens.borderRadiusMedium,
-    minWidth: '40px',
-    width: '40px',
-    height: '40px',
-    color: 'var(--neutralSecondary, #666666)',
-    ':disabled': {
-      opacity: 0.4,
-    },
-  },
-});
-
 /**
- * Returns true when the viewport is ≤ 480 px (phone-sized).
+ * Returns true when the primary pointer is coarse (touch device — phone, tablet,
+ * Surface in tablet mode, etc.). Determines whether the rich contact card opens
+ * in an OverlayDrawer (touch) or a Popover anchored to the card tile (pointer).
+ *
+ * Using `pointer: coarse` is more reliable than a viewport-width check:
+ * - Tablets (iPad, Surface) have wide viewports but need the drawer UX.
+ * - A 480px breakpoint would wrongly pick Popover on a landscape phone.
+ *
  * Starts as false so it is safe in SSR and test environments (jsdom has no matchMedia).
- * Updates reactively when the viewport resizes across the breakpoint.
+ * Updates reactively when the pointer type changes (e.g. detaching a keyboard).
  */
 function useIsMobile(): boolean {
   const [isMobile, setIsMobile] = React.useState(false);
   React.useEffect(() => {
     if (!window.matchMedia) return;
-    const mq = window.matchMedia('(max-width: 480px)');
+    const mq = window.matchMedia('(pointer: coarse)');
     setIsMobile(mq.matches);
     const handler = (e: MediaQueryListEvent): void => setIsMobile(e.matches);
     mq.addEventListener('change', handler);
@@ -295,7 +398,7 @@ interface ISponsorCardProps {
   showSponsorPhoto: boolean;
   /** Show the manager's profile photo. When false, only initials are shown. */
   showManagerPhoto: boolean;
-  /** Show the sponsor's department in the Organization section. */
+  /** Show the sponsor's department as the third line in the Persona header. */
   showSponsorDepartment: boolean;
   /** Show the manager's department in the manager row. */
   showManagerDepartment: boolean;
@@ -313,6 +416,12 @@ interface ISponsorCardProps {
    * (disabled or deleted) and only the name is shown for context.
    */
   readOnly?: boolean;
+  /**
+   * Fluent v9 theme object — passed into a nested FluentProvider inside the
+   * Popover/Drawer portal so that design tokens (avatar colours, presence
+   * badge, etc.) cascade correctly outside the main FluentProvider DOM tree.
+   */
+  v9Theme?: Theme;
 }
 
 const SponsorCard: React.FC<ISponsorCardProps> = ({
@@ -343,6 +452,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
   useInformalAddress,
   guestHasTeamsAccess,
   readOnly,
+  v9Theme,
 }) => {
   const cardRef = React.useRef<HTMLDivElement>(null);
 
@@ -359,18 +469,15 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
     return strings[key] as string;
   };
 
-  const isFocusing = sponsor.presenceActivity === 'Focusing';
   const isOof = sponsor.presenceActivity === 'OutOfOffice';
   const { status: presenceBadgeStatus, isOutOfOffice: badgeOof } = graphPresenceToPresenceBadge(
     sponsor.presence, sponsor.presenceActivity
   );
-  const showPresenceIndicator = showPresence && sponsor.hasTeams !== false && isActive;
-  // Only Focusing needs a custom dot; v9 Avatar's PresenceBadge handles all other states.
-  const useCustomPresenceDot = showPresenceIndicator && isFocusing;
-  const badgeStatus = showPresenceIndicator && !useCustomPresenceDot ? presenceBadgeStatus : undefined;
-  const presenceColor = isOof
-    ? PRESENCE_COLORS.OutOfOffice
-    : sponsor.presence ? (PRESENCE_COLORS[sponsor.presence] ?? '#8A8886') : undefined;
+  // Presence badge is shown only inside the rich card header (contact popup),
+  // not on the thumbnail tile — consistent with the Teams People Card pattern
+  // where the grid view stays clean and presence is revealed on hover/tap.
+  const showPresenceBadge = isActive && showPresence && sponsor.hasTeams !== false && !!sponsor.presence;
+  const badgeStatus: PresenceBadgeStatus | undefined = showPresenceBadge ? presenceBadgeStatus : undefined;
   const presenceLabel = React.useMemo(() => {
     const availability = sponsor.presence;
     const activity = sponsor.presenceActivity;
@@ -387,6 +494,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
   }, [sponsor.presence, sponsor.presenceActivity, isOof]);
   const isMobile = useIsMobile();
   const actionButtonClasses = useActionButtonStyles();
+  const personaClasses = usePersonaStyles();
   const officeLocation = sponsor.officeLocation?.trim();
   const streetAddress = sponsor.streetAddress?.trim();
   const postalCode = sponsor.postalCode?.trim();
@@ -482,57 +590,73 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
     return () => controller.abort();
   }, [isActive, hasCombinedAddress, azureMapsSubscriptionKey, combinedAddress]);
 
-  // Delayed expand: the detail sections slide open after 2 s, mimicking the
-  // Microsoft People Card behaviour where the header + actions appear first.
+  // Delayed expand: the detail sections slide open ~300 ms after the card
+  // appears, matching the Microsoft Teams People Card pattern where the header
+  // and action row are visible first and the body expands shortly after.
+  // 300 ms = card-enter animation (180 ms) + short settle pause (~120 ms).
   const [detailsExpanded, setDetailsExpanded] = React.useState(false);
   React.useEffect(() => {
     if (!isActive) { setDetailsExpanded(false); return; }
-    const timer = setTimeout(() => setDetailsExpanded(true), 1000);
+    const timer = setTimeout(() => setDetailsExpanded(true), 300);
     return () => clearTimeout(timer);
   }, [isActive]);
 
   // The rich card body is defined here so it can be placed inside either
   // a Popover (desktop) or an OverlayDrawer (mobile) without duplicating the JSX.
+
+  // Manager avatar size scales with the number of text rows shown:
+  //   2 rows (name + job title + department) → 64 px  (one above extra-large natural)
+  //   0–1 rows                              → 56 px  (extra-large natural size)
+  const managerThreeLines =
+    showManagerJobTitle && showManagerDepartment && !!sponsor.managerDepartment;
+  const managerAvatarSize: 56 | 64 = managerThreeLines ? 64 : 56;
+
   const richBody = (
     <div
-      className={styles.richCard}
-      style={isMobile ? { width: 'auto', maxHeight: 'none', backgroundColor: 'transparent' } : undefined}
+      className={mergeClasses(styles.richCard, isMobile && styles.richCardFlat)}
       onMouseEnter={!isMobile ? onActivate : undefined}
       onMouseLeave={!isMobile ? onScheduleDeactivate : undefined}
     >
-      {/* ── Header: large avatar + name / title / presence ─── */}
+      {/* ── Header panel: elevated rounded card (avatar + buttons) ─── */}
+      <div className={styles.richCardHeaderPanel}>
       <div className={styles.richHeader}>
-        <div className={styles.richAvatarWrapper}>
-          <Avatar
-            size={72}
-            name={resolvedName}
-            image={showSponsorPhoto && sponsor.photoUrl ? { src: sponsor.photoUrl } : undefined}
-            color="colorful"
-            badge={badgeStatus ? { status: badgeStatus, outOfOffice: badgeOof } : undefined}
-          />
-          {useCustomPresenceDot && (
-            <span
-              className={styles.richPresenceDot}
-              style={{ backgroundColor: PRESENCE_COLORS.Focusing }}
-              aria-hidden="true"
-            />
-          )}
-        </div>
-        <div className={styles.richHeaderText}>
-          <div className={styles.richName}>{resolvedName}</div>
-          {/* Job title in header, or department as fallback when job title is hidden */}
-          {showSponsorJobTitle && sponsor.jobTitle ? (
-            <div className={styles.richJobTitle}>{sponsor.jobTitle}</div>
-          ) : !showSponsorJobTitle && showSponsorDepartment && sponsor.department ? (
-            <div className={styles.richJobTitle}>{sponsor.department}</div>
-          ) : null}
-          {presenceLabel && showPresence && sponsor.hasTeams !== false && (
-            <div className={styles.richPresenceLabel} style={{ color: presenceColor }}>
-              {presenceLabel}
-            </div>
-          )}
-        </div>
-      </div>
+        <Persona
+          size="huge"
+          name={resolvedName}
+          className={personaClasses.richPersona}
+          textAlignment="center"
+          secondaryText={
+            showSponsorJobTitle && sponsor.jobTitle
+              ? { children: sponsor.jobTitle, className: personaClasses.richSecondary }
+              : showSponsorDepartment && sponsor.department
+                ? { children: sponsor.department, className: personaClasses.richSecondary }
+                : presenceLabel && showPresence && sponsor.hasTeams !== false
+                  ? { children: presenceLabel, className: personaClasses.richPresenceLine }
+                  : undefined
+          }
+          tertiaryText={
+            showSponsorJobTitle && sponsor.jobTitle && showSponsorDepartment && sponsor.department
+              ? { children: sponsor.department, className: personaClasses.richTertiary }
+              : (showSponsorJobTitle && sponsor.jobTitle || showSponsorDepartment && sponsor.department)
+                  && presenceLabel && showPresence && sponsor.hasTeams !== false
+                ? { children: presenceLabel, className: personaClasses.richPresenceLine }
+                : undefined
+          }
+          quaternaryText={
+            showSponsorJobTitle && sponsor.jobTitle && showSponsorDepartment && sponsor.department
+              && presenceLabel && showPresence && sponsor.hasTeams !== false
+              ? { children: presenceLabel, className: personaClasses.richPresenceLine }
+              : undefined
+          }
+          primaryText={{ className: personaClasses.richName }}
+          avatar={{
+            size: 96,
+            image: showSponsorPhoto && sponsor.photoUrl ? { src: sponsor.photoUrl } : undefined,
+            color: 'colorful',
+            badge: badgeStatus ? { status: badgeStatus, outOfOffice: badgeOof } : undefined,
+          }}
+        />
+      </div>{/* end richHeader */}
 
       {/* ── Action buttons row ───────────────────────────────── */}
       {sponsor.mail && (
@@ -545,9 +669,9 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
               <Button
                 as={guestHasTeamsAccess === false ? 'button' : 'a'}
                 href={guestHasTeamsAccess === false ? undefined : `https://teams.microsoft.com/l/chat/0/0?tenantId=${encodeURIComponent(hostTenantId)}&users=${encodeURIComponent(sponsor.mail)}`}
-                disabled={guestHasTeamsAccess === false}
+                disabledFocusable={guestHasTeamsAccess === false}
                 appearance="subtle"
-                icon={<ChatRegular />}
+                icon={<ChatIcon />}
                 target="_blank"
                 rel="noreferrer noopener"
                 className={actionButtonClasses.actionButton}
@@ -560,7 +684,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
                 as="a"
                 href={`mailto:${sponsor.mail}`}
                 appearance="subtle"
-                icon={<MailRegular />}
+                icon={<MailIcon />}
                 className={actionButtonClasses.actionButton}
               />
             </Tooltip>
@@ -573,9 +697,9 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
               <Button
                 as={guestHasTeamsAccess === false ? 'button' : 'a'}
                 href={guestHasTeamsAccess === false ? undefined : `https://teams.microsoft.com/l/call/0/0?tenantId=${encodeURIComponent(hostTenantId)}&users=${encodeURIComponent(sponsor.mail)}&withVideo=false`}
-                disabled={guestHasTeamsAccess === false}
+                disabledFocusable={guestHasTeamsAccess === false}
                 appearance="subtle"
-                icon={<CallRegular />}
+                icon={<CallIcon />}
                 target="_blank"
                 rel="noreferrer noopener"
                 className={actionButtonClasses.actionButton}
@@ -585,9 +709,11 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
         </div>
       )}
 
+      </div>{/* end richCardHeaderPanel */}
+
       {/* ── Scrollable detail area (expands after delay) ─────── */}
       <div
-        className={`${styles.richCardBody}${isMobile || detailsExpanded ? ` ${styles.richCardBodyExpanded}` : ''}`}
+        className={mergeClasses(styles.richCardBody, (isMobile || detailsExpanded) && styles.richCardBodyExpanded)}
       >
 
       {/* ── Contact section ─────────────────────────────────── */}
@@ -665,46 +791,37 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
         )}
       </div>
 
-      {/* ── Organization section (department only) ─────────────────── */}
-      {showSponsorDepartment && sponsor.department && (
-        <>
-          <div className={styles.richSectionTitle}>{strings.OrganizationSection}</div>
-          <div className={styles.richSection}>
-            <div className={styles.richInfoRow}>
-              <OrganizationRegular className={styles.richInfoIcon} aria-hidden="true" />
-              <div className={styles.richInfoText}>
-                <div className={styles.departmentValue}>{sponsor.department}</div>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-
       {/* ── Reports to section (manager) ───────────────────────────── */}
       {showManager && sponsor.managerDisplayName && (
         <>
+          <div className={styles.richSectionDivider} />
           <div className={styles.richSectionTitle}>{strings.ReportsToSection}</div>
           <div className={styles.richSection}>
             <div className={styles.managerRow}>
-              <Avatar
-                size={40}
+              <Persona
+                size="extra-large"
                 name={resolvedManagerName}
-                image={showManagerPhoto && sponsor.managerPhotoUrl ? { src: sponsor.managerPhotoUrl } : undefined}
-                color="colorful"
+                className={personaClasses.managerPersona}
+                textAlignment="center"
+                secondaryText={
+                  showManagerJobTitle && sponsor.managerJobTitle
+                    ? { children: sponsor.managerJobTitle, className: personaClasses.managerSecondary }
+                    : !showManagerJobTitle && showManagerDepartment && sponsor.managerDepartment
+                      ? { children: sponsor.managerDepartment, className: personaClasses.managerSecondary }
+                      : undefined
+                }
+                tertiaryText={
+                  showManagerJobTitle && showManagerDepartment && sponsor.managerDepartment
+                    ? { children: sponsor.managerDepartment, className: personaClasses.managerTertiary }
+                    : undefined
+                }
+                primaryText={{ className: personaClasses.managerName }}
+                avatar={{
+                  size: managerAvatarSize,
+                  image: showManagerPhoto && sponsor.managerPhotoUrl ? { src: sponsor.managerPhotoUrl } : undefined,
+                  color: 'colorful',
+                }}
               />
-              <div className={styles.managerText}>
-                <div className={styles.managerName}>{resolvedManagerName}</div>
-                {/* Manager job title, or department as fallback if job title is hidden */}
-                {showManagerJobTitle && sponsor.managerJobTitle ? (
-                  <div className={styles.managerJobTitle}>{sponsor.managerJobTitle}</div>
-                ) : !showManagerJobTitle && showManagerDepartment && sponsor.managerDepartment ? (
-                  <div className={styles.managerJobTitle}>{sponsor.managerDepartment}</div>
-                ) : null}
-                {/* Manager department below job title (only when both are shown) */}
-                {showManagerJobTitle && showManagerDepartment && sponsor.managerDepartment && (
-                  <div className={styles.managerDept}>{sponsor.managerDepartment}</div>
-                )}
-              </div>
             </div>
           </div>
         </>
@@ -734,7 +851,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
           <Avatar
             size={compact ? 40 : 72}
             name={resolvedName}
-            image={sponsor.photoUrl ? { src: sponsor.photoUrl } : undefined}
+            image={showSponsorPhoto && sponsor.photoUrl ? { src: sponsor.photoUrl } : undefined}
             color="colorful"
           />
         </div>
@@ -750,23 +867,25 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
           position="bottom"
           onOpenChange={(_, data) => { if (!data.open) onScheduleDeactivate(); }}
         >
-          <DrawerHeader>
-            <DrawerHeaderTitle
-              action={
-                <Button
-                  appearance="subtle"
-                  icon={<DismissRegular />}
-                  onClick={onScheduleDeactivate}
-                  aria-label="Close"
-                />
-              }
-            >
-              {resolvedName}
-            </DrawerHeaderTitle>
-          </DrawerHeader>
-          <DrawerBody>
-            {richBody}
-          </DrawerBody>
+          <FluentProvider theme={v9Theme}>
+            <DrawerHeader>
+              <DrawerHeaderTitle
+                action={
+                  <Button
+                    appearance="subtle"
+                    icon={<DismissRegular />}
+                    onClick={onScheduleDeactivate}
+                    aria-label="Close"
+                  />
+                }
+              >
+                {resolvedName}
+              </DrawerHeaderTitle>
+            </DrawerHeader>
+            <DrawerBody>
+              {richBody}
+            </DrawerBody>
+          </FluentProvider>
         </OverlayDrawer>
       )}
       {!readOnly && !isMobile && isActive && (
@@ -784,11 +903,13 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
           <PopoverSurface
             role="dialog"
             aria-label={strings.ContactDetailsAriaLabel.replace('{0}', resolvedName)}
-            style={{ padding: 0 }}
+            style={{ padding: 0, boxShadow: 'none', border: 'none', borderRadius: 0, backgroundColor: 'transparent', overflow: 'visible' }}
             onMouseEnter={onActivate}
             onMouseLeave={onScheduleDeactivate}
           >
-            {richBody}
+            <FluentProvider theme={v9Theme}>
+              {richBody}
+            </FluentProvider>
           </PopoverSurface>
         </Popover>
       )}

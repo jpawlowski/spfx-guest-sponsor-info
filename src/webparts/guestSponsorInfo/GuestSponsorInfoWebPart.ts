@@ -10,12 +10,13 @@ import {
   PropertyPaneTextField,
   PropertyPaneCheckbox,
   PropertyPaneDropdown,
+  PropertyPaneSlider,
 } from '@microsoft/sp-property-pane';
 import { PropertyPaneCustomField } from '@microsoft/sp-property-pane/lib/propertyPaneFields/propertyPaneCustomField/PropertyPaneCustomField';
 import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
 import { MSGraphClientV3, AadHttpClient } from '@microsoft/sp-http';
 import { ThemeProvider, IReadonlyTheme, ThemeChangedEventArgs } from '@microsoft/sp-component-base';
-import { FluentProvider, MessageBar, MessageBarBody } from '@fluentui/react-components';
+import { FluentProvider, MessageBar, MessageBarBody, webLightTheme, webDarkTheme } from '@fluentui/react-components';
 import { createV9Theme } from '@fluentui/react-migration-v8-v9';
 
 import * as strings from 'GuestSponsorInfoWebPartStrings';
@@ -31,6 +32,8 @@ export interface IGuestSponsorInfoWebPartProps {
    * Replaces the former mockTeamsUnavailable boolean with a dropdown selection.
    * Default: 'none'.
    */
+  /** Number of mock sponsor cards to show in demo mode (1–5). Default: 2. */
+  mockSponsorCount: number;
   mockSimulatedHint: 'none' | 'teamsAccessPending' | 'versionMismatch' | 'sponsorUnavailable' | 'noSponsors';
   /** Show the "Teams not set up yet" notice to guest users. Default: true. */
   showTeamsAccessPendingHint: boolean;
@@ -40,8 +43,10 @@ export interface IGuestSponsorInfoWebPartProps {
   showSponsorUnavailableHint: boolean;
   /** Show the "No sponsors found" notice when no sponsors are assigned. Default: true. */
   showNoSponsorsHint: boolean;
-  /** Card layout: 'auto' switches to compact when >2 sponsors. Default: 'auto'. */
+  /** Card layout: 'auto' switches to compact when sponsors reach the threshold. Default: 'auto'. */
   cardLayout: 'auto' | 'full' | 'compact';
+  /** Number of sponsors at which 'auto' switches to compact layout. Default: 3. */
+  cardLayoutAutoThreshold: number;
   functionUrl: string;
   functionClientId: string;
   /** Show business phone numbers in the contact card. Default: true. */
@@ -102,12 +107,14 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
         graphClient: this._graphClient, // undefined until onInit resolves
         title: this.properties.title,
         mockMode: this.properties.mockMode ?? false,
+        mockSponsorCount: this.properties.mockSponsorCount ?? 2,
         mockSimulatedHint: this.properties.mockSimulatedHint ?? 'none',
         showTeamsAccessPendingHint: this.properties.showTeamsAccessPendingHint ?? true,
         showVersionMismatchHint: this.properties.showVersionMismatchHint ?? false,
         showSponsorUnavailableHint: this.properties.showSponsorUnavailableHint ?? true,
         showNoSponsorsHint: this.properties.showNoSponsorsHint ?? true,
         cardLayout: this.properties.cardLayout ?? 'auto',
+        cardLayoutAutoThreshold: this.properties.cardLayoutAutoThreshold ?? 3,
         hostTenantId: this.context.pageContext.aadInfo.tenantId.toString(),
         functionUrl: this.properties.functionUrl
           ? `https://${this.properties.functionUrl.replace(/^https?:\/\//i, '').replace(/\/$/, '')}/api/getGuestSponsors`
@@ -140,6 +147,7 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
         showManagerDepartment: this.properties.showManagerDepartment ?? false,
         useInformalAddress: this.properties.useInformalAddress ?? false,
         clientVersion: this.manifest.version,
+        fluentProviderId: `gsi-${this.context.instanceId}`,
         onProxyStatusChange: (status: 'checking' | 'ok' | 'error') => {
           this._proxyStatus = status;
           if (this.context.propertyPane.isPropertyPaneOpen()) {
@@ -222,6 +230,7 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
       this.context.propertyPane.refresh();
     } else if (
       propertyPath === 'mockMode' ||
+      propertyPath === 'cardLayout' ||
       propertyPath === 'showCity' ||
       propertyPath === 'showCountry' ||
       propertyPath === 'showWorkLocation' ||
@@ -439,22 +448,29 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
                 PropertyPaneTextField('title', {
                   label: strings.TitleFieldLabel
                 }),
+                PropertyPaneHorizontalRule(),
+                PropertyPaneSlider('mockSponsorCount', {
+                  label: strings.MockSponsorCountFieldLabel,
+                  min: 1,
+                  max: 5,
+                  step: 1,
+                  value: this.properties.mockSponsorCount ?? 2,
+                }),
                 PropertyPaneCheckbox('mockMode', {
                   text: strings.MockModeFieldLabel
                 }),
-                ...(this.properties.mockMode ? [
-                  PropertyPaneDropdown('mockSimulatedHint', {
-                    label: strings.MockSimulatedHintFieldLabel,
-                    options: [
-                      { key: 'none', text: strings.MockSimulatedHintNoneOption },
-                      { key: 'teamsAccessPending', text: strings.MockSimulatedHintTeamsAccessPendingOption },
-                      { key: 'versionMismatch', text: strings.MockSimulatedHintVersionMismatchOption },
-                      { key: 'sponsorUnavailable', text: strings.MockSimulatedHintSponsorUnavailableOption },
-                      { key: 'noSponsors', text: strings.MockSimulatedHintNoSponsorsOption },
-                    ],
-                    selectedKey: this.properties.mockSimulatedHint ?? 'none',
-                  })
-                ] : [])
+                PropertyPaneHorizontalRule(),
+                PropertyPaneDropdown('mockSimulatedHint', {
+                  label: strings.MockSimulatedHintFieldLabel,
+                  options: [
+                    { key: 'none', text: strings.MockSimulatedHintNoneOption },
+                    { key: 'teamsAccessPending', text: strings.MockSimulatedHintTeamsAccessPendingOption },
+                    { key: 'versionMismatch', text: strings.MockSimulatedHintVersionMismatchOption },
+                    { key: 'sponsorUnavailable', text: strings.MockSimulatedHintSponsorUnavailableOption },
+                    { key: 'noSponsors', text: strings.MockSimulatedHintNoSponsorsOption },
+                  ],
+                  selectedKey: this.properties.mockSimulatedHint ?? 'none',
+                })
               ]
             },
             {
@@ -501,6 +517,15 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
                   ],
                   selectedKey: this.properties.cardLayout ?? 'auto',
                 }),
+                ...((this.properties.cardLayout ?? 'auto') === 'auto' ? [
+                  PropertyPaneSlider('cardLayoutAutoThreshold', {
+                    label: strings.CardLayoutAutoThresholdFieldLabel,
+                    min: 1,
+                    max: 5,
+                    step: 1,
+                    value: this.properties.cardLayoutAutoThreshold ?? 3,
+                  }),
+                ] : []),
                 PropertyPaneHorizontalRule(),
                 PropertyPaneCheckbox('showPresence', {
                   text: strings.ShowPresenceFieldLabel,
@@ -624,7 +649,7 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
                         : strings.ProxyStatusChecking;
                       ReactDom.render(
                         React.createElement(FluentProvider,
-                          { theme: this._theme ? createV9Theme(this._theme as unknown as Parameters<typeof createV9Theme>[0]) : undefined },
+                          { theme: this._theme ? createV9Theme(this._theme as unknown as Parameters<typeof createV9Theme>[0], this._theme.isInverted ? webDarkTheme : webLightTheme) : undefined, id: `gsi-pp-${this.context.instanceId}` },
                           React.createElement(MessageBar,
                             { intent, style: { marginTop: 8 } },
                             React.createElement(MessageBarBody, null, text)
