@@ -35,7 +35,8 @@ on Microsoft Graph, SharePoint Framework, and the included optional Azure
 Function. [EasyLife 365 Collaboration](https://easylife365.cloud/) pairs
 naturally as a companion: it automates sponsor assignments and the full guest
 lifecycle so the right information stays accurate over time — solid on its
-own, stronger together.
+own, stronger together. [Workoho](https://www.workoho.com/), the author of
+this web part, is a Platinum EasyLife 365 partner and happy to advise.
 
 - **"Who is my contact here?"** — guests see their sponsor's photo, name, and
   job title directly on the SharePoint landing page — no searching, no asking
