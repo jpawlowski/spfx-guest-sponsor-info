@@ -2,6 +2,8 @@
 # Stamp a SemVer tag into package.json and config/package-solution.json.
 #
 # Usage:
+#   scripts/set-version.sh              # interactive mode
+#   scripts/set-version.sh --help       # show this help
 #   scripts/set-version.sh v1.2.3           # stamp only (for CI)
 #   scripts/set-version.sh v1.2.3 --commit  # stamp + git commit + git tag
 #
@@ -19,22 +21,195 @@ set -euo pipefail
 # Always run from the repository root so paths resolve correctly.
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-TAG="${1:-}"
+# --------------------------------------------------------------------------- #
+# Helpers
+# --------------------------------------------------------------------------- #
+
+show_help() {
+  cat <<'EOF'
+Usage: scripts/set-version.sh [OPTIONS] [<version>] [--commit]
+
+Stamp a SemVer version into package.json, azure-function/package.json,
+and config/package-solution.json.
+
+Arguments:
+  <version>   Target version, e.g. v1.2.3 or 1.2.3. A leading "v" is stripped
+              automatically. When omitted, interactive mode starts.
+  --commit    After stamping, create a git commit and annotated tag, then
+              print the push command. In interactive mode you will be asked.
+
+Options:
+  -h, --help  Show this help and exit.
+
+Interactive mode (no arguments):
+  Detects the current version from the last git tag (falling back to
+  package.json) and suggests next patch, minor, and major versions.
+
+Examples:
+  scripts/set-version.sh                    # interactive
+  scripts/set-version.sh v1.2.3             # stamp only (CI)
+  scripts/set-version.sh v1.2.3 --commit    # stamp + commit + tag
+EOF
+}
+
+# Prints "X.Y.Z (from git tag vX.Y.Z)" or "X.Y.Z (from package.json)"
+get_current_label() {
+  local tag
+  tag=$(git describe --tags --match "v*" --abbrev=0 2>/dev/null || true)
+  if [[ -n "$tag" ]]; then
+    printf '%s (from git tag %s)' "${tag#v}" "$tag"
+    return
+  fi
+  local ver
+  ver=$(node -p "require('./package.json').version" 2>/dev/null || true)
+  if [[ -n "$ver" ]]; then
+    printf '%s (from package.json)' "$ver"
+    return
+  fi
+  echo "unknown"
+}
+
+# Returns just the bare semver string (no label)
+get_current_semver() {
+  local tag
+  tag=$(git describe --tags --match "v*" --abbrev=0 2>/dev/null || true)
+  if [[ -n "$tag" ]]; then
+    echo "${tag#v}"
+    return
+  fi
+  node -p "require('./package.json').version" 2>/dev/null || echo "0.0.0"
+}
+
+# bump_version <x.y.z> <patch|minor|major>
+bump_version() {
+  local version="$1" bump="$2"
+  local major minor patch
+  IFS='.' read -r major minor patch <<<"$version"
+  patch="${patch%%[-+]*}" # strip any pre-release/build suffix
+  case "$bump" in
+    major) echo "$((major + 1)).0.0" ;;
+    minor) echo "${major}.$((minor + 1)).0" ;;
+    patch) echo "${major}.${minor}.$((patch + 1))" ;;
+  esac
+}
+
+# --------------------------------------------------------------------------- #
+# Argument parsing
+# --------------------------------------------------------------------------- #
+
+TAG=""
+DO_COMMIT=false
+
+for arg in "$@"; do
+  case "$arg" in
+    -h | --help)
+      show_help
+      exit 0
+      ;;
+    --commit)
+      DO_COMMIT=true
+      ;;
+    -*)
+      echo "Unknown option: $arg" >&2
+      echo "Run '$0 --help' for usage." >&2
+      exit 1
+      ;;
+    *)
+      if [[ -z "$TAG" ]]; then
+        TAG="$arg"
+      else
+        echo "Unexpected argument: $arg" >&2
+        echo "Run '$0 --help' for usage." >&2
+        exit 1
+      fi
+      ;;
+  esac
+done
+
+# --------------------------------------------------------------------------- #
+# Interactive mode (no version argument)
+# --------------------------------------------------------------------------- #
+
 if [[ -z "$TAG" ]]; then
-  echo "Usage: $0 <tag> [--commit]  (e.g. v1.2.3 --commit)" >&2
+  if [[ ! -t 0 ]]; then
+    echo "Error: interactive mode requires a TTY. Pass a version explicitly." >&2
+    echo "Run '$0 --help' for usage." >&2
+    exit 1
+  fi
+
+  CURRENT_LABEL=$(get_current_label)
+  CURRENT_SEMVER=$(get_current_semver)
+  NEXT_PATCH=$(bump_version "$CURRENT_SEMVER" patch)
+  NEXT_MINOR=$(bump_version "$CURRENT_SEMVER" minor)
+  NEXT_MAJOR=$(bump_version "$CURRENT_SEMVER" major)
+
+  echo ""
+  echo "Current version: ${CURRENT_LABEL}"
+  echo ""
+  echo "Suggested next versions:"
+  echo "  1) patch  →  ${NEXT_PATCH}"
+  echo "  2) minor  →  ${NEXT_MINOR}"
+  echo "  3) major  →  ${NEXT_MAJOR}"
+  echo "  4) Enter a custom version"
+  echo ""
+
+  while true; do
+    read -rp "Select [1-4] or press Enter for patch (${NEXT_PATCH}): " CHOICE
+    CHOICE="${CHOICE:-1}"
+    case "$CHOICE" in
+      1)
+        TAG="$NEXT_PATCH"
+        break
+        ;;
+      2)
+        TAG="$NEXT_MINOR"
+        break
+        ;;
+      3)
+        TAG="$NEXT_MAJOR"
+        break
+        ;;
+      4)
+        read -rp "Enter version (e.g. 1.2.3 or v1.2.3): " CUSTOM
+        if [[ -z "$CUSTOM" ]]; then
+          echo "No version entered, please try again." >&2
+          continue
+        fi
+        TAG="$CUSTOM"
+        break
+        ;;
+      *)
+        echo "Invalid choice — enter 1, 2, 3, or 4." >&2
+        ;;
+    esac
+  done
+
+  echo ""
+  read -rp "Create git commit and tag? [y/N]: " COMMIT_ANSWER
+  if [[ "${COMMIT_ANSWER,,}" == "y" || "${COMMIT_ANSWER,,}" == "yes" ]]; then
+    DO_COMMIT=true
+  fi
+  echo ""
+fi
+
+# --------------------------------------------------------------------------- #
+# Validate and normalise
+# --------------------------------------------------------------------------- #
+
+SEMVER="${TAG#v}"      # strip leading "v" if present
+VTAG="v${SEMVER}"      # ensure "v" prefix for the git tag
+SPFX_VER="${SEMVER}.0" # SPFx requires four-part version (major.minor.patch.build)
+
+if ! [[ "$SEMVER" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][a-zA-Z0-9.]+)?$ ]]; then
+  echo "Error: '$SEMVER' is not a valid SemVer string (expected e.g. 1.2.3)." >&2
   exit 1
 fi
 
-DO_COMMIT=false
-if [[ "${2:-}" == "--commit" ]]; then
-  DO_COMMIT=true
-fi
-
-SEMVER="${TAG#v}"       # strip leading "v" if present
-VTAG="v${SEMVER}"      # ensure "v" prefix for the git tag
-SPFX_VER="${SEMVER}.0"  # SPFx requires four-part version (major.minor.patch.build)
-
 echo "Stamping version: semver=${SEMVER}  spfx=${SPFX_VER}"
+
+# --------------------------------------------------------------------------- #
+# Stamp files
+# --------------------------------------------------------------------------- #
 
 npm version "$SEMVER" --no-git-tag-version --allow-same-version
 
@@ -66,6 +241,10 @@ if command -v az &>/dev/null && [[ -f "azure-function/infra/main.bicep" ]]; then
 else
   echo "⚠ az CLI not found (or main.bicep missing) — azuredeploy.json will be regenerated by CI if needed"
 fi
+
+# --------------------------------------------------------------------------- #
+# Commit and tag
+# --------------------------------------------------------------------------- #
 
 if [[ "${DO_COMMIT}" == "true" ]]; then
   git add package.json package-lock.json config/package-solution.json
