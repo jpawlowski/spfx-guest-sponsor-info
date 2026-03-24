@@ -97,7 +97,7 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
   private _aadHttpClient: AadHttpClient | undefined;
   private _proxyStatus: 'checking' | 'ok' | 'error' = 'checking';
   private _versionMismatch = false;
-  private _newVersionAvailable: string | false = false;
+  private _newVersionAvailable: { version: string; url: string } | false = false;
   private _githubCheckDone = false;
 
   /** sessionStorage key for the cached GitHub release check result. */
@@ -211,14 +211,16 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
       'https://api.github.com/repos/workoho/spfx-guest-sponsor-info/releases/latest',
       { headers: { Accept: 'application/vnd.github+json' } }
     )
-      .then((res): Promise<{ tag_name: string } | null> =>
-        res.ok ? (res.json() as Promise<{ tag_name: string }>) : Promise.resolve(null)
+      .then((res): Promise<{ tag_name: string; html_url: string } | null> =>
+        res.ok ? (res.json() as Promise<{ tag_name: string; html_url: string }>) : Promise.resolve(null)
       )
       .then((data) => {
         const tag = data?.tag_name;
-        // No valid tag means an API error or unexpected shape — don't cache;
+        const releaseUrl = data?.html_url;
+        // No valid tag or URL means an API error or unexpected shape — don't cache;
         // a retry is acceptable on the next pane open.
         if (typeof tag !== 'string' || !tag) return;
+        if (typeof releaseUrl !== 'string' || !releaseUrl) return;
         const latest = tag.replace(/^v/, '');
         const current = this.manifest.version.split('.').slice(0, 3).join('.');
         const newer = this._isNewerVersion(latest, current);
@@ -227,11 +229,15 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
         try {
           sessionStorage.setItem(
             GuestSponsorInfoWebPart._GITHUB_CACHE_KEY,
-            JSON.stringify({ version: newer ? latest : null, ts: Date.now() })
+            JSON.stringify({
+              version: newer ? latest : null,
+              url: newer ? releaseUrl : null,
+              ts: Date.now()
+            })
           );
         } catch { /* sessionStorage unavailable — ignore */ }
         if (newer) {
-          this._newVersionAvailable = latest;
+          this._newVersionAvailable = { version: latest, url: releaseUrl };
           if (this.context.propertyPane.isPropertyPaneOpen()) {
             this.context.propertyPane.refresh();
           }
@@ -297,10 +303,11 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
     try {
       const raw = sessionStorage.getItem(GuestSponsorInfoWebPart._GITHUB_CACHE_KEY);
       if (raw) {
-        const { version, ts } = JSON.parse(raw) as { version: string | null; ts: number };
+        const { version, url, ts } = JSON.parse(raw) as
+          { version: string | null; url: string | null; ts: number };
         if (Date.now() - ts < GuestSponsorInfoWebPart._GITHUB_CACHE_TTL) {
-          if (version) {
-            this._newVersionAvailable = version;
+          if (version && url) {
+            this._newVersionAvailable = { version, url };
             this.context.propertyPane.refresh();
           }
           return; // cache hit — skip fetch
@@ -524,11 +531,10 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
     if (this._newVersionAvailable) {
       const newRelSep = document.createElement('span');
       newRelSep.textContent = ' \u00b7 ';
-      const semverLatest = this._newVersionAvailable.split('.').slice(0, 3).join('.');
+      const semverLatest = this._newVersionAvailable.version.split('.').slice(0, 3).join('.');
       const newRelBadge = document.createElement('a');
       newRelBadge.textContent = `\u2191\u00a0v${semverLatest}`;
-      newRelBadge.href =
-        `https://github.com/workoho/spfx-guest-sponsor-info/releases/tag/v${semverLatest}`;
+      newRelBadge.href = this._newVersionAvailable.url;
       newRelBadge.target = '_blank';
       newRelBadge.rel = 'noopener noreferrer';
       newRelBadge.title = strings.NewReleaseAvailableLabel;
