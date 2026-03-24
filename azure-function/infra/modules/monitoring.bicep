@@ -418,7 +418,7 @@ resource newReleaseAlert 'Microsoft.Insights/scheduledQueryRules@2021-08-01' = i
             {
               name: 'latestVersion'
               operator: 'Include'
-              values: [ '*' ]
+              values: ['*']
             }
           ]
           failingPeriods: {
