@@ -104,47 +104,39 @@ suggest_bump() {
 
   local range="HEAD"
   if [[ -n "$base_tag" ]]; then
-    # Only analyse commits that are not reachable from the base tag
     range="${base_tag}..HEAD"
   fi
 
-  # Check whether there are any commits to analyse at all
-  if ! git log "$range" --format="%s" 2>/dev/null | grep -q .; then
+  # Collect all one-line subjects (safe in a variable — no NUL bytes needed)
+  local subjects
+  subjects=$(git log "$range" --format="%s" 2>/dev/null || true)
+
+  if [[ -z "$subjects" ]]; then
     echo "patch"
     return
   fi
 
-  local bump="patch"
+  # Breaking change in subject line: type!: or type(scope)!:
+  # Each grep runs inside an if-condition, so set -e does not apply.
+  if echo "$subjects" | grep -qE '^[a-zA-Z]+(\([^)]*\))?!:'; then
+    echo "major"
+    return
+  fi
 
-  # Patterns stored in variables — required for complex ERE in bash [[ =~ ]]
-  local re_breaking='^[a-zA-Z]+(\([^)]*\))?!:'
-  local re_feat='^feat(\([^)]*\))?:'
+  # Breaking change token in any commit body / footer
+  if git log "$range" --format="%b" 2>/dev/null |
+    grep -qiE '^(BREAKING CHANGE|BREAKING-CHANGE):'; then
+    echo "major"
+    return
+  fi
 
-  # Pipe directly into the loop — bash variables cannot hold NUL bytes, so
-  # storing the output in a variable via $() would silently drop all \0
-  # delimiters and break the read -d $'\0' loop.
-  while IFS= read -r -d $'\0' subject && IFS= read -r -d $'\0' body; do
-    [[ -z "$subject" ]] && continue
+  # Feature commit → minor
+  if echo "$subjects" | grep -qE '^feat(\([^)]*\))?:'; then
+    echo "minor"
+    return
+  fi
 
-    # Breaking change: exclamation mark after type/scope, e.g. feat!: or feat(x)!:
-    if [[ "$subject" =~ $re_breaking ]]; then
-      echo "major"
-      return
-    fi
-
-    # Breaking change in footer or body (BREAKING CHANGE: or BREAKING-CHANGE:)
-    if echo "$body" | grep -qiE '^(BREAKING CHANGE|BREAKING-CHANGE):'; then
-      echo "major"
-      return
-    fi
-
-    # Feature commit → at least minor
-    if [[ "$subject" =~ $re_feat ]] && [[ "$bump" != "major" ]]; then
-      bump="minor"
-    fi
-  done < <(git log "$range" --format="%s%x00%b%x00" 2>/dev/null)
-
-  echo "$bump"
+  echo "patch"
 }
 
 # --------------------------------------------------------------------------- #
