@@ -89,7 +89,7 @@ docs: update architecture decision record for graph scopes
 
 ## User-facing vs. Internal Changes
 
-Release notes are read by **SharePoint admins and end users**, not developers.
+Release notes are read by **SharePoint admins, Azure admins, and end users**, not developers.
 The commit type and scope together decide in which section a change appears
 (or whether it appears at all). Apply these rules:
 
@@ -150,7 +150,7 @@ refactor(card): extract usePhoto hook from SponsorCard
 ### Quick decision tree
 
 ```text
-Is the change visible to a SharePoint admin or end user?
+Is the change visible to a SharePoint admin, Azure admin, or end user?
 ├─ Yes → feat / fix / perf  (no developer scope)
 └─ No  → Is it an improvement to dev tooling / CI / scripts?
           ├─ Yes → feat / fix / perf  WITH a developer scope from the table
