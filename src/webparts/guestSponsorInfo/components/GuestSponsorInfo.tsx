@@ -585,7 +585,7 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
           {/* Real version mismatch detected via ping: always shown to the editor, independent
               of the showVersionMismatchHint guest-facing toggle. */}
           {versionMismatch && mockSimulatedHint !== 'versionMismatch' && (
-            <MessageBar intent="warning" className={styles.teamsAccessBanner}>
+            <MessageBar intent="info" className={styles.teamsAccessBanner}>
               <MessageBarBody>
                 <b>{strings.VersionMismatchTitle}</b><br />
                 {strings.VersionMismatchMessage}
@@ -601,7 +601,7 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
             </MessageBar>
           )}
           {mockSimulatedHint === 'versionMismatch' && (
-            <MessageBar intent="warning" className={styles.teamsAccessBanner}>
+            <MessageBar intent="info" className={styles.teamsAccessBanner}>
               <MessageBarBody>
                 <b>{strings.VersionMismatchTitle}</b><br />
                 {strings.VersionMismatchMessage}
@@ -771,7 +771,7 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
           </MessageBar>
         )}
         {versionMismatch && showVersionMismatchHint && (
-          <MessageBar intent="warning" className={styles.teamsAccessBanner}>
+          <MessageBar intent="info" className={styles.teamsAccessBanner}>
             <MessageBarBody>
               <b>{strings.VersionMismatchTitle}</b><br />
               {strings.VersionMismatchMessage}
