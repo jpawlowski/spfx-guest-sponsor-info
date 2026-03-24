@@ -153,6 +153,10 @@ param likelyAttackMinSuccessThreshold int = 1
 param enableNewReleaseAlert bool = true
 
 @metadata({ category: 'Monitoring' })
+@description('Enable operational alert when a hard-deleted Entra object remains referenced as a sponsor (Graph 404).')
+param enableBrokenSponsorAlert bool = false
+
+@metadata({ category: 'Monitoring' })
 @description('KQL evaluation frequency for the new-release alert in minutes.')
 @minValue(5)
 param newReleaseAlertEvaluationFrequencyInMinutes int = 60
@@ -236,6 +240,7 @@ module monitoring './modules/monitoring.bicep' = {
     enableNewReleaseAlert: enableNewReleaseAlert
     newReleaseAlertEvaluationFrequencyInMinutes: newReleaseAlertEvaluationFrequencyInMinutes
     newReleaseAlertWindowInMinutes: newReleaseAlertWindowInMinutes
+    enableBrokenSponsorAlert: enableBrokenSponsorAlert
     operationalActionGroupResourceIds: operationalActionGroupResourceIds
     infoActionGroupResourceIds: infoActionGroupResourceIds
     defaultAlertNotificationEmail: defaultAlertNotificationEmail

@@ -24,6 +24,9 @@ param enableLikelyAttackInfoAlert bool = true
 @description('Enable info-only alert when a newer GitHub release of the function is available.')
 param enableNewReleaseAlert bool = true
 
+@description('Enable operational alert when a hard-deleted Entra object remains referenced as a sponsor (Graph 404).')
+param enableBrokenSponsorAlert bool = false
+
 // ── Alert timing ─────────────────────────────────────────────────────────────
 
 @description('KQL alert evaluation frequency in minutes.')
@@ -130,6 +133,22 @@ traces
 '''
 #disable-next-line prefer-interpolation
 var newReleaseAlertQuery = replace(newReleaseAlertQueryRaw, '__WINDOW__', string(newReleaseAlertWindowInMinutes))
+
+// Matches the structured WARNING logged by getGuestSponsors when a sponsor object
+// returns Graph HTTP 404 (hard-deleted Entra account still referenced as a sponsor).
+// Dimension split on sponsorId so each distinct broken reference fires and
+// auto-mitigates independently — no alert noise when unrelated guests are affected.
+var brokenSponsorAlertQueryRaw = '''
+let window = __WINDOW__m;
+traces
+| where timestamp > ago(window)
+| where message has "[BROKEN_SPONSOR_REF]"
+| extend sponsorId = extract(@"sponsorId=([a-f0-9]{8}\\.\\.\\.[a-f0-9]{4})", 1, message)
+| where isnotempty(sponsorId)
+| project sponsorId
+'''
+#disable-next-line prefer-interpolation
+var brokenSponsorAlertQuery = replace(brokenSponsorAlertQueryRaw, '__WINDOW__', string(alertWindowInMinutes))
 
 var serviceOutageAlertQueryRaw = '''
 let window = __WINDOW__m;
@@ -430,6 +449,50 @@ resource newReleaseAlert 'Microsoft.Insights/scheduledQueryRules@2021-08-01' = i
     }
     actions: {
       actionGroups: effectiveInfoActionGroupIds
+    }
+    autoMitigate: true
+  }
+}
+
+resource brokenSponsorAlert 'Microsoft.Insights/scheduledQueryRules@2021-08-01' = if (enableBrokenSponsorAlert) {
+  name: '${functionAppName}-broken-sponsor-ref-kql'
+  location: location
+  tags: tags
+  properties: {
+    description: 'Operational alert when a hard-deleted Entra object remains referenced as a sponsor (Graph 404). Fires per unique pseudonymized sponsor OID; auto-mitigates when the reference is resolved.'
+    enabled: true
+    scopes: [
+      appInsights.id
+    ]
+    evaluationFrequency: 'PT${alertEvaluationFrequencyInMinutes}M'
+    windowSize: 'PT${alertWindowInMinutes}M'
+    // Severity 3 = Warning — operational issue requiring admin attention but not an outage.
+    severity: 3
+    criteria: {
+      allOf: [
+        {
+          query: brokenSponsorAlertQuery
+          timeAggregation: 'Count'
+          operator: 'GreaterThan'
+          threshold: 0
+          // Dimension split: one alert instance per unique pseudonymized sponsorId.
+          // Alerts resolve independently once the broken reference is cleaned up.
+          dimensions: [
+            {
+              name: 'sponsorId'
+              operator: 'Include'
+              values: ['*']
+            }
+          ]
+          failingPeriods: {
+            numberOfEvaluationPeriods: 1
+            minFailingPeriodsToAlert: 1
+          }
+        }
+      ]
+    }
+    actions: {
+      actionGroups: effectiveOperationalActionGroupIds
     }
     autoMitigate: true
   }

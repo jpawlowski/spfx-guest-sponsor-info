@@ -20,6 +20,18 @@ const VERSION_WARN_INTERVAL_MS = 3_600_000; // 1 hour
 let _lastVersionWarnAt = 0;
 
 /**
+ * Throttle map for broken-sponsor-reference warnings.  Keyed by the
+ * pseudonymized sponsor OID (redactGuid output); value is the timestamp of the
+ * last emitted trace for that sponsor in milliseconds since epoch.
+ *
+ * One [BROKEN_SPONSOR_REF] warn per sponsor per hour per instance prevents
+ * Application Insights flooding when many guests still reference the same
+ * deleted account simultaneously.
+ */
+const BROKEN_SPONSOR_WARN_INTERVAL_MS = 3_600_000; // 1 hour
+const _brokenSponsorWarnAt = new Map<string, number>();
+
+/**
  * A guest can have at most 5 sponsors.
  * Keeping the cap explicit avoids unnecessary Graph work and bounds the size
  * of our batch requests.
@@ -1174,6 +1186,19 @@ export async function getGuestSponsors(
       const exists = existsResponse?.status === 404 ? false
         : sponsorEnabled !== false && hasUserMailbox;
 
+      // Emit a throttled warn for hard-deleted sponsors (Graph 404).  A persistent
+      // 404 indicates a broken sponsor reference — the Entra object no longer exists
+      // and an admin should remove it from the guest's sponsor list.  One trace per
+      // sponsor per hour per instance avoids flooding Application Insights.
+      if (existsResponse?.status === 404) {
+        const key = redactGuid(sponsor.id);
+        const now = Date.now();
+        if ((now - (_brokenSponsorWarnAt.get(key) ?? 0)) >= BROKEN_SPONSOR_WARN_INTERVAL_MS) {
+          _brokenSponsorWarnAt.set(key, now);
+          context.warn(`[BROKEN_SPONSOR_REF] sponsorId=${key}`);
+        }
+      }
+
       const hasTeams = assignedPlansHaveTeams(existsBody?.assignedPlans);
 
       // Manager is inlined via $expand — read directly from the user body.
@@ -1361,6 +1386,8 @@ export async function getGuestSponsors(
         requestId: error.requestId,
         message: error.message,
       });
+    } else if (error instanceof TimeoutError) {
+      context.warn(`[SPONSOR_LOOKUP_TIMEOUT] timeoutMs=${getTimeoutMs('SPONSOR_LOOKUP_TIMEOUT_MS', DEFAULT_SPONSOR_LOOKUP_TIMEOUT_MS)}`);
     } else {
       context.error('Error fetching sponsors:', error);
     }
