@@ -132,6 +132,7 @@ define([], function() {
     "AuthorSectionPartnerTagline": "EasyLife 365 automates lifecycle management for Teams, SharePoint sites, Viva Engage, and other Microsoft 365 workspaces — including guest onboarding and sponsor assignments.",
     "AuthorSectionSourceCodeLabel": "Source code on GitHub",
     "AuthorSectionVersionLabel": "Web part version",
+    "NewReleaseAvailableLabel": "New release available — click to open GitHub Releases",
     "ShowSponsorJobTitleFieldLabel": "Show sponsor's job title",
     "ShowManagerJobTitleFieldLabel": "Show manager's job title",
     "ShowSponsorDepartmentFieldLabel": "Show sponsor's department",

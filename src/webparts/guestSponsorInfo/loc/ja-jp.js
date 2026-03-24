@@ -126,6 +126,7 @@ define([], function() {
     "AuthorSectionPartnerTagline": "EasyLife 365 は、Teams、SharePoint サイト、Viva Engage などの Microsoft 365 ワークスペースのライフサイクル管理を自動化します。ゲストのオンボーディングやスポンサー管理も含まれます。",
     "AuthorSectionSourceCodeLabel": "GitHub のソースコード",
     "AuthorSectionVersionLabel": "Web パーツのバージョン",
+    "NewReleaseAvailableLabel": "新しいリリースがあります — GitHub Releases を開く",
     "ShowSponsorJobTitleFieldLabel": "スポンサーの役職を表示",
     "ShowManagerJobTitleFieldLabel": "マネージャーの役職を表示",
     "ShowSponsorDepartmentFieldLabel": "スポンサーの部署を表示",

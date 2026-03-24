@@ -97,6 +97,8 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
   private _aadHttpClient: AadHttpClient | undefined;
   private _proxyStatus: 'checking' | 'ok' | 'error' = 'checking';
   private _versionMismatch = false;
+  private _newVersionAvailable: string | false = false;
+  private _githubCheckDone = false;
   private _themeProvider: ThemeProvider | undefined;
   private _theme: IReadonlyTheme | undefined;
 
@@ -193,6 +195,47 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
   };
 
   /**
+   * Fetches the latest release tag from GitHub and compares it against the
+   * current manifest version. When a newer release exists the property pane
+   * badge is updated so the page editor can navigate straight to the download.
+   * Called lazily from onPropertyPaneOpened the first time the pane is opened;
+   * errors are silently ignored because this is purely informational.
+   */
+  private _checkGitHubRelease(): void {
+    fetch(
+      'https://api.github.com/repos/workoho/spfx-guest-sponsor-info/releases/latest',
+      { headers: { Accept: 'application/vnd.github+json' } }
+    )
+      .then((res): Promise<{ tag_name: string } | null> =>
+        res.ok ? (res.json() as Promise<{ tag_name: string }>) : Promise.resolve(null)
+      )
+      .then((data) => {
+        const tag = data?.tag_name;
+        if (typeof tag !== 'string' || !tag) return;
+        const latest = tag.replace(/^v/, '');
+        const current = this.manifest.version.split('.').slice(0, 3).join('.');
+        if (this._isNewerVersion(latest, current)) {
+          this._newVersionAvailable = latest;
+          if (this.context.propertyPane.isPropertyPaneOpen()) {
+            this.context.propertyPane.refresh();
+          }
+        }
+      })
+      .catch(() => { /* informational only — silent on failure */ });
+  }
+
+  private _isNewerVersion(candidate: string, current: string): boolean {
+    const parse = (v: string): number[] => v.split('.').map(n => parseInt(n, 10) || 0);
+    const a = parse(candidate);
+    const b = parse(current);
+    for (let i = 0; i < 3; i++) {
+      if ((a[i] ?? 0) > (b[i] ?? 0)) return true;
+      if ((a[i] ?? 0) < (b[i] ?? 0)) return false;
+    }
+    return false;
+  }
+
+  /**
    * Starts Graph and AAD HTTP client acquisition concurrently without blocking
    * the SPFx page lifecycle. Calls render() once both have settled so the React
    * component receives real clients in a single props update (avoids triggering
@@ -227,6 +270,13 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
 
   protected get dataVersion(): Version {
     return Version.parse('1.0');
+  }
+
+  protected onPropertyPaneOpened(): void {
+    if (!this._githubCheckDone) {
+      this._githubCheckDone = true;
+      this._checkGitHubRelease();
+    }
   }
 
   protected onPropertyPaneFieldChanged(propertyPath: string, oldValue: unknown, newValue: unknown): void {
@@ -438,6 +488,30 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
       updateBadge.style.cursor = 'help';
       metaLine.appendChild(updateSep);
       metaLine.appendChild(updateBadge);
+    }
+
+    if (this._newVersionAvailable) {
+      const newRelSep = document.createElement('span');
+      newRelSep.textContent = ' \u00b7 ';
+      const semverLatest = this._newVersionAvailable.split('.').slice(0, 3).join('.');
+      const newRelBadge = document.createElement('a');
+      newRelBadge.textContent = `\u2191\u00a0v${semverLatest}`;
+      newRelBadge.href =
+        `https://github.com/workoho/spfx-guest-sponsor-info/releases/tag/v${semverLatest}`;
+      newRelBadge.target = '_blank';
+      newRelBadge.rel = 'noopener noreferrer';
+      newRelBadge.title = strings.NewReleaseAvailableLabel;
+      newRelBadge.style.display = 'inline-block';
+      newRelBadge.style.padding = '1px 7px';
+      newRelBadge.style.borderRadius = '4px';
+      newRelBadge.style.backgroundColor = '#f0fdf4';
+      newRelBadge.style.color = '#15803d';
+      newRelBadge.style.border = '1px solid #86efac';
+      newRelBadge.style.fontWeight = '700';
+      newRelBadge.style.fontSize = '11px';
+      newRelBadge.style.textDecoration = 'none';
+      metaLine.appendChild(newRelSep);
+      metaLine.appendChild(newRelBadge);
     }
 
     footer.appendChild(metaLine);

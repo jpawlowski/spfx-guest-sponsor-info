@@ -89,6 +89,7 @@ declare interface IGuestSponsorInfoWebPartStrings {
   AuthorSectionPartnerTagline: string;
   AuthorSectionSourceCodeLabel: string;
   AuthorSectionVersionLabel: string;
+  NewReleaseAvailableLabel: string;
 
   // Presence labels
   PresenceAvailable: string;

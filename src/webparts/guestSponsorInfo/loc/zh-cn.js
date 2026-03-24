@@ -126,6 +126,7 @@ define([], function() {
     "AuthorSectionPartnerTagline": "EasyLife 365 自动化 Teams、SharePoint 站点、Viva Engage 等 Microsoft 365 工作区的生命周期管理，涵盖来宾引导与申办人管理。",
     "AuthorSectionSourceCodeLabel": "GitHub 上的源代码",
     "AuthorSectionVersionLabel": "Web 部件版本",
+    "NewReleaseAvailableLabel": "有新版本可用 — 打开 GitHub Releases",
     "ShowSponsorJobTitleFieldLabel": "显示担保人的职位",
     "ShowManagerJobTitleFieldLabel": "显示经理的职位",
     "ShowSponsorDepartmentFieldLabel": "显示担保人的部门",

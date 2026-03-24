@@ -130,6 +130,7 @@ define([], function() {
     "AuthorSectionPartnerTagline": "EasyLife 365 automatise la gestion du cycle de vie pour Teams, les sites SharePoint, Viva Engage et d'autres espaces de travail Microsoft 365 — y compris l'intégration des invités et la gestion des sponsors.",
     "AuthorSectionSourceCodeLabel": "Code source sur GitHub",
     "AuthorSectionVersionLabel": "Version du composant Web",
+    "NewReleaseAvailableLabel": "Nouvelle version disponible — ouvrir GitHub Releases",
     "ShowSponsorJobTitleFieldLabel": "Afficher le poste du sponsor",
     "ShowManagerJobTitleFieldLabel": "Afficher le poste du responsable",
     "ShowSponsorDepartmentFieldLabel": "Afficher le service du sponsor",

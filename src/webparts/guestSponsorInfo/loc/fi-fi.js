@@ -126,6 +126,7 @@ define([], function() {
     "AuthorSectionPartnerTagline": "EasyLife 365 automatisoi elinkaarihallinnan Teams-, SharePoint-sivusto- ja Viva Engage -ympäristöissä sekä muissa Microsoft 365 -työtiloissa – mukaan lukien vieraiden käyttöönotto ja sponsorinhallinta.",
     "AuthorSectionSourceCodeLabel": "Lähdekoodi GitHubissa",
     "AuthorSectionVersionLabel": "Web-osan versio",
+    "NewReleaseAvailableLabel": "Uusi versio saatavilla — avaa GitHub Releases",
     "ShowSponsorJobTitleFieldLabel": "Näytä sponsorin tehtävänimike",
     "ShowManagerJobTitleFieldLabel": "Näytä esihenkilön tehtävänimike",
     "ShowSponsorDepartmentFieldLabel": "Näytä sponsorin osasto",
