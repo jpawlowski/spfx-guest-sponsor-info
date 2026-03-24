@@ -1,23 +1,9 @@
 import { app, InvocationContext, Timer } from '@azure/functions';
 import packageJson from '../package.json';
+import { isNewerVersion, setLatestGitHubVersion } from './releaseState.js';
 
 const CURRENT_VERSION: string = packageJson.version;
 const GITHUB_API_URL = 'https://api.github.com/repos/workoho/spfx-guest-sponsor-info/releases/latest';
-
-/**
- * Returns true when `candidate` is strictly newer than `current`
- * (major · minor · patch comparison; pre-release suffixes are ignored).
- */
-function isNewerVersion(candidate: string, current: string): boolean {
-  const parse = (v: string): number[] => v.split('.').map(n => parseInt(n, 10) || 0);
-  const a = parse(candidate);
-  const b = parse(current);
-  for (let i = 0; i < 3; i++) {
-    if ((a[i] ?? 0) > (b[i] ?? 0)) return true;
-    if ((a[i] ?? 0) < (b[i] ?? 0)) return false;
-  }
-  return false;
-}
 
 /**
  * Fetches the latest published GitHub Release and compares it against the
@@ -89,6 +75,11 @@ async function checkGitHubRelease(_timer: Timer, context: InvocationContext): Pr
   if (typeof releaseUrl !== 'string' || !releaseUrl) return;
 
   const latestVersion = tag.replace(/^v/, '');
+
+  // Always record the fetched GitHub version in shared in-memory state so that
+  // the getGuestSponsors request handler can use it to enrich mismatch context
+  // (e.g. determine whether the function or the web part is on the latest version).
+  setLatestGitHubVersion(latestVersion);
 
   if (!isNewerVersion(latestVersion, currentVersion)) {
     context.log(`[checkGitHubRelease] Function is up to date (v${currentVersion}).`);

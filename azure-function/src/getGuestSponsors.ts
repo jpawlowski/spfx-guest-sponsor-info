@@ -4,9 +4,20 @@ import { DefaultAzureCredential } from '@azure/identity';
 import { Client, GraphError } from '@microsoft/microsoft-graph-client';
 import { TokenCredentialAuthenticationProvider } from '@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials';
 import packageJson from '../package.json';
+import { isNewerVersion, latestGitHubVersion } from './releaseState.js';
 
 /** Version string exposed in every response via X-Api-Version and used for client/server mismatch detection. */
 const FUNCTION_VERSION: string = packageJson.version;
+
+/**
+ * Minimum interval between consecutive version-mismatch / update-available warn
+ * traces emitted during request handling.  Throttling is per function instance
+ * (in-memory) to avoid flooding Application Insights when many guests are active
+ * simultaneously.  A 60-minute interval is short enough for a 2-hour KQL alert
+ * window to observe at least one trace per evaluation cycle.
+ */
+const VERSION_WARN_INTERVAL_MS = 3_600_000; // 1 hour
+let _lastVersionWarnAt = 0;
 
 /**
  * A guest can have at most 5 sponsors.
@@ -919,14 +930,52 @@ export async function getGuestSponsors(
     }
   }
 
-  // Version compatibility check — warn in Azure Monitor when the client and function versions differ.
+  // Version compatibility check.
+  //
+  // When the web part sends X-Client-Version and it does not match the running
+  // function version, log a structured warning so Azure Monitor can alert.
+  // Throttled per function instance (1 h) to avoid flooding Application Insights
+  // when many guests are online simultaneously.
+  //
+  // Hierarchy of logged sentinel tokens (used by KQL alert rules):
+  //   [VERSION_MISMATCH]          — versions differ; no GitHub context yet
+  //   [WEBPART_UPDATE_AVAILABLE]  — S3: function is on latest, web part is behind
+  //   [FUNCTION_UPDATE_AVAILABLE] — S4: web part is on latest, function is behind
+  //
+  // The [NEW_RELEASE_AVAILABLE] token (emitted by checkGitHubRelease.ts) covers
+  // the case where both components are at the same version but GitHub has a newer
+  // release.
   const clientVersion = request.headers.get('x-client-version');
   if (clientVersion && clientVersion !== FUNCTION_VERSION) {
-    context.warn('Client/function version mismatch', {
-      clientVersion,
-      functionVersion: FUNCTION_VERSION,
-      correlationId,
-    });
+    const now = Date.now();
+    if (now - _lastVersionWarnAt >= VERSION_WARN_INTERVAL_MS) {
+      _lastVersionWarnAt = now;
+      const cached = latestGitHubVersion; // snapshot; may be undefined on first cold start
+      const funcIsNewer = isNewerVersion(FUNCTION_VERSION, clientVersion);
+      const clientIsNewer = isNewerVersion(clientVersion, FUNCTION_VERSION);
+
+      if (funcIsNewer && cached && !isNewerVersion(cached, FUNCTION_VERSION)) {
+        // S3: function is on (or ahead of) the latest GitHub release; web part is behind.
+        context.warn(
+          `[WEBPART_UPDATE_AVAILABLE] webPartVersion=${clientVersion}` +
+          ` functionVersion=${FUNCTION_VERSION} latestVersion=${cached}`
+        );
+      } else if (clientIsNewer && cached && !isNewerVersion(cached, clientVersion)) {
+        // S4: web part is on (or ahead of) the latest GitHub release; function is behind.
+        context.warn(
+          `[FUNCTION_UPDATE_AVAILABLE] functionVersion=${FUNCTION_VERSION}` +
+          ` webPartVersion=${clientVersion} latestVersion=${cached}`
+        );
+      } else {
+        // Generic mismatch — no GitHub context available yet, or both are behind latest.
+        const olderComponent = funcIsNewer ? 'webpart' : 'function';
+        context.warn(
+          `[VERSION_MISMATCH] functionVersion=${FUNCTION_VERSION}` +
+          ` webPartVersion=${clientVersion} olderComponent=${olderComponent}` +
+          (cached ? ` latestVersion=${cached}` : '')
+        );
+      }
+    }
   }
 
   // Mock mode — return realistic demo data without Graph credentials.
