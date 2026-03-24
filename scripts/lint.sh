@@ -10,66 +10,79 @@ set -euo pipefail
 # Always run from the repository root so npm scripts resolve correctly.
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
+# Colours are disabled in CI, when NO_COLOR is set, or when stdout is not a TTY.
+if [[ -t 1 && "${CI:-}" == "" && "${NO_COLOR:-}" == "" && "${TERM:-}" != "dumb" ]]; then
+  C_RED=$'\033[0;31m'
+  C_GRN=$'\033[0;32m'
+  C_BLD=$'\033[1m'
+  C_RST=$'\033[0m'
+else
+  C_RED=''
+  C_GRN=''
+  C_BLD=''
+  C_RST=''
+fi
+
 EXIT=0
 
-echo "[ 1/5 ] ESLint (TypeScript — web part)..."
+echo "${C_BLD}[ 1/6 ] ESLint (TypeScript — web part)…${C_RST}"
 if npm run lint:ts; then
-    echo "  ✓ ESLint passed"
+  echo "  ${C_GRN}✓${C_RST} ESLint passed"
 else
-    echo "  ✗ ESLint found issues"
-    EXIT=1
+  echo "  ${C_RED}✗${C_RST} ESLint found issues"
+  EXIT=1
 fi
 
 echo ""
-echo "[ 2/5 ] ESLint (TypeScript — Azure Function)..."
+echo "${C_BLD}[ 2/6 ] ESLint (TypeScript — Azure Function)…${C_RST}"
 if npm run lint:ts:func; then
-    echo "  ✓ ESLint passed"
+  echo "  ${C_GRN}✓${C_RST} ESLint passed"
 else
-    echo "  ✗ ESLint found issues"
-    EXIT=1
+  echo "  ${C_RED}✗${C_RST} ESLint found issues"
+  EXIT=1
 fi
 
 echo ""
-echo "[ 3/5 ] Stylelint (SCSS)..."
+echo "${C_BLD}[ 3/6 ] Stylelint (SCSS)…${C_RST}"
 if npm run lint:scss; then
-    echo "  ✓ Stylelint passed"
+  echo "  ${C_GRN}✓${C_RST} Stylelint passed"
 else
-    echo "  ✗ Stylelint found issues"
-    EXIT=1
+  echo "  ${C_RED}✗${C_RST} Stylelint found issues"
+  EXIT=1
 fi
 
 echo ""
-echo "[ 4/5 ] Markdownlint (Docs)..."
+echo "${C_BLD}[ 4/6 ] Markdownlint (Docs)…${C_RST}"
 if npm run lint:md; then
-    echo "  ✓ Markdownlint passed"
+  echo "  ${C_GRN}✓${C_RST} Markdownlint passed"
 else
-    echo "  ✗ Markdownlint found issues"
-    EXIT=1
+  echo "  ${C_RED}✗${C_RST} Markdownlint found issues"
+  EXIT=1
 fi
 
 echo ""
-echo "[ 5/6 ] Bicep lint (Azure Function infra)..."
+echo "${C_BLD}[ 5/6 ] Bicep lint (Azure Function infra)…${C_RST}"
 if npm run lint:bicep; then
-    echo "  ✓ Bicep lint passed"
+  echo "  ${C_GRN}✓${C_RST} Bicep lint passed"
 else
-    echo "  ✗ Bicep lint found issues"
-    EXIT=1
+  echo "  ${C_RED}✗${C_RST} Bicep lint found issues"
+  EXIT=1
 fi
 
 echo ""
-echo "[ 6/6 ] shellcheck (Shell scripts)..."
+echo "${C_BLD}[ 6/6 ] shellcheck (Shell scripts)…${C_RST}"
 if npm run lint:sh; then
-    echo "  ✓ shellcheck passed"
+  echo "  ${C_GRN}✓${C_RST} shellcheck passed"
 else
-    echo "  ✗ shellcheck found issues"
-    EXIT=1
+  echo "  ${C_RED}✗${C_RST} shellcheck found issues"
+  EXIT=1
 fi
 
 echo ""
 if [[ $EXIT -eq 0 ]]; then
-    echo "✓ All linters passed."
+  echo "${C_GRN}✓ All linters passed.${C_RST}"
 else
-    echo "✗ One or more linters reported issues — see above."
+  echo "${C_RED}✗ One or more linters reported issues — see above.${C_RST}"
 fi
 
 exit $EXIT

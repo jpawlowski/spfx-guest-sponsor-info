@@ -20,22 +20,37 @@ set -euo pipefail
 # Always run from the repository root so paths resolve correctly.
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-echo "Installing web part dependencies..."
+# Colours are disabled in CI, when NO_COLOR is set, or when stdout is not a TTY.
+if [[ -t 1 && "${CI:-}" == "" && "${NO_COLOR:-}" == "" && "${TERM:-}" != "dumb" ]]; then
+  C_RED=$'\033[0;31m'
+  C_GRN=$'\033[0;32m'
+  C_BLD=$'\033[1m'
+  C_DIM=$'\033[2m'
+  C_RST=$'\033[0m'
+else
+  C_RED=''
+  C_GRN=''
+  C_BLD=''
+  C_DIM=''
+  C_RST=''
+fi
+
+echo "${C_DIM}Installing web part dependencies…${C_RST}"
 npm ci
 
-echo "Building solution (compile · bundle · test · package)..."
+echo "${C_BLD}Building solution (compile · bundle · test · package)…${C_RST}"
 npm run build
 
 PKG="sharepoint/solution/guest-sponsor-info.sppkg"
 if [[ ! -f "$PKG" ]]; then
-  echo "ERROR: Expected artifact not found: ${PKG}" >&2
+  echo "${C_RED}ERROR:${C_RST} Expected artifact not found: ${PKG}" >&2
   exit 1
 fi
 
-echo "Installing Azure Function dependencies..."
+echo "${C_DIM}Installing Azure Function dependencies…${C_RST}"
 npm ci --prefix azure-function
 
-echo "Building Azure Function..."
+echo "${C_BLD}Building Azure Function…${C_RST}"
 npm run build --prefix azure-function
 
-echo "Artifact ready: $(du -sh "$PKG" | cut -f1)  ${PKG}"
+echo "${C_GRN}✓${C_RST} Artifact ready: ${C_BLD}$(du -sh "$PKG" | cut -f1)${C_RST}  ${PKG}"
