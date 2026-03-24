@@ -60,6 +60,12 @@ details. The layout matches the built-in SharePoint People web part.
   colleagues — not former employees or system accounts that are still lingering
   in the sponsor list; if all assigned sponsors have since left the organisation,
   the guest receives a clear notice instead of an empty page
+- **Automatic sponsor delegation** — when sponsors are stored in priority order
+  (primary, secondary, tertiary … as tools like
+  [EasyLife 365](https://easylife365.cloud/) do), the web part honours that
+  order: if a higher-priority sponsor is unavailable, the next active one steps
+  in automatically — no configuration change needed; unavailable sponsors are
+  still shown as read-only tiles so the guest sees the full picture
 - **Only shown to guests** — member users see nothing; the web part is invisible
   unless the visitor is actually a guest account
 - **Works without giving guests extra permissions** — if you've ever tried to

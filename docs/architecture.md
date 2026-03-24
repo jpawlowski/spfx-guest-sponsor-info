@@ -170,6 +170,12 @@ is not self-scoped — GDPR concern). The function sidesteps all of this.
   than `user` / `linked`. Without the permission the filter is skipped (fail-open).
 - Excluded sponsors/managers are counted in `unavailableCount`.
 - Max 5 sponsors enforced at the Graph query level.
+- `sponsorOrder` — the array of all sponsor IDs in the original Graph response
+  order — is always returned alongside `activeSponsors` and
+  `unavailableSponsors`. The client uses it to reconstruct the full
+  priority-ordered list and implement automatic delegation: active sponsors
+  step into vacated visible slots while unavailable ones are still rendered as
+  read-only tiles in their original position.
 
 ### Runtime
 
