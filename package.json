@@ -41,7 +41,6 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@fluentui/react": "^8.106.4",
     "@fluentui/react-components": "9.73.4",
     "@fluentui/react-icons": "2.0.321",
     "@fluentui/react-migration-v8-v9": "9.10.6",
