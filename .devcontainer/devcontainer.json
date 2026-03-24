@@ -24,9 +24,17 @@
     // prompt, PSReadLine, and optional PSGallery resources. Replaces the fragile
     // packages-microsoft-prod.deb approach that fails on ARM64/Codespaces.
     "ghcr.io/jpawlowski/devcontainer-features/powershell-extended:2": {
-      "installOhMyPosh": false,
+      "installOhMyPosh": true,
+      // Pre-install Graph modules used by azure-function/infra/*.ps1
+      // (setup-app-registration.ps1, setup-graph-permissions.ps1).
+      // Az.* is intentionally omitted — the Azure CLI covers all Azure resource
+      // operations; Az PowerShell would add ~500 MB without adding new capability.
       "resources": "Microsoft.Graph.Authentication;Microsoft.Graph.Applications"
-    }
+    },
+    // PnP PowerShell — cross-platform module for SharePoint Online management:
+    // .sppkg deployment to app catalog, site configuration, permission management.
+    // Depends on powershell-extended (above) and adds adamwojcikit.pnp-powershell-extension.
+    "ghcr.io/jpawlowski/devcontainer-features/pnp.powershell:1": {}
   },
   "build": {
     "dockerfile": "Dockerfile",
