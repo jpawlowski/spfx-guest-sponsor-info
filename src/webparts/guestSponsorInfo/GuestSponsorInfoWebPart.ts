@@ -18,11 +18,18 @@ import { MSGraphClientV3, AadHttpClient } from '@microsoft/sp-http';
 import { ThemeProvider, IReadonlyTheme, ThemeChangedEventArgs } from '@microsoft/sp-component-base';
 import { FluentProvider, MessageBar, MessageBarBody, webLightTheme, webDarkTheme } from '@fluentui/react-components';
 import { createV9Theme } from '@fluentui/react-migration-v8-v9';
+import { createDOMRenderer, RendererProvider } from '@griffel/react';
 
 import * as strings from 'GuestSponsorInfoWebPartStrings';
 import GuestSponsorInfo from './components/GuestSponsorInfo';
 import { IGuestSponsorInfoProps } from './components/IGuestSponsorInfoProps';
 import workohoDefaultLogo from './assets/workoho-default-logo.svg';
+
+// Scoped Griffel renderer — must use the same salt as GuestSponsorInfo.tsx so
+// both modules produce identical class-name hashes. See the comment in that file.
+const griffelRenderer = createDOMRenderer(document, {
+  classNameHashSalt: '16be4020-0cfb-4b1b-9d50-d3d4af2e90e6',
+});
 
 export interface IGuestSponsorInfoWebPartProps {
   title: string;
@@ -804,11 +811,13 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
                         : status === 'error' ? strings.ProxyStatusError
                         : strings.ProxyStatusChecking;
                       ReactDom.render(
-                        React.createElement(FluentProvider,
-                          { theme: this._theme ? createV9Theme(this._theme as unknown as Parameters<typeof createV9Theme>[0], this._theme.isInverted ? webDarkTheme : webLightTheme) : undefined, id: `gsi-pp-${this.context.instanceId}` },
-                          React.createElement(MessageBar,
-                            { intent, style: { marginTop: 8 } },
-                            React.createElement(MessageBarBody, null, text)
+                        React.createElement(RendererProvider, { renderer: griffelRenderer } as React.ComponentProps<typeof RendererProvider>,
+                          React.createElement(FluentProvider,
+                            { theme: this._theme ? createV9Theme(this._theme as unknown as Parameters<typeof createV9Theme>[0], this._theme.isInverted ? webDarkTheme : webLightTheme) : undefined, id: `gsi-pp-${this.context.instanceId}` },
+                            React.createElement(MessageBar,
+                              { intent, style: { marginTop: 8 } },
+                              React.createElement(MessageBarBody, null, text)
+                            )
                           )
                         ),
                         element
