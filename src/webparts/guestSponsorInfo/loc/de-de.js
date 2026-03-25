@@ -162,5 +162,11 @@ define([], function() {
     "TitleSizeSmallOption": "Klein",
     "TitleSizeMediumOption": "Mittel (Standard)",
     "TitleSizeLargeOption": "Groß",
+
+    "WelcomeDialogTitle": "Willkommen bei Guest Sponsor Info",
+    "WelcomeDialogBody": "Dieses Webpart zeigt Ihre Microsoft 365-Sponsoren – die internen Kolleginnen und Kollegen, die für Ihren Gastzugang, Ihr Onboarding und Ihren Alltag in dieser Organisation verantwortlich sind.",
+    "WelcomeDialogBroughtToYouBy": "Entwickelt von Workoho – Experten für Microsoft 365 Governance, Identity und Guest Access Management.",
+    "WelcomeDialogWorkohoLinkLabel": "workoho.com besuchen",
+    "WelcomeDialogDismissButton": "Los geht's",
   }
 });

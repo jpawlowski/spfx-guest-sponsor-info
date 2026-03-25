@@ -173,6 +173,13 @@ declare interface IGuestSponsorInfoWebPartStrings {
   InsufficientPermissionsTitle: string;
   InsufficientPermissionsMessage: string;
 
+  // First-run welcome dialog (shown once per instance per browser)
+  WelcomeDialogTitle: string;
+  WelcomeDialogBody: string;
+  WelcomeDialogBroughtToYouBy: string;
+  WelcomeDialogWorkohoLinkLabel: string;
+  WelcomeDialogDismissButton: string;
+
   // Informal-address overrides (optional — only provided by locales with T-V distinction)
   LoadingMessageInformal?: string;
   NoSponsorsMessageInformal?: string;

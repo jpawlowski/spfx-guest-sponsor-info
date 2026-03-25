@@ -130,6 +130,12 @@ export interface IGuestSponsorInfoProps {
    */
   onTitleChange?: (newTitle: string) => void;
   /**
+   * The raw SPFx web part instance ID (a GUID).
+   * Used as the per-instance localStorage key for the first-run welcome dialog
+   * so each instance on a page tracks dismissal independently.
+   */
+  instanceId: string;
+  /**
    * Unique prefix derived from the SPFx web part instance ID.
    * Passed as `id` to every FluentProvider so multiple web part instances
    * on the same page do not produce conflicting Fluent UI style-tag IDs.

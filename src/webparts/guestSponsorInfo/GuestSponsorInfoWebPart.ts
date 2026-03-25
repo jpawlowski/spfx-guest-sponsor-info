@@ -9,7 +9,6 @@ import {
   PropertyPaneLabel,
   PropertyPaneTextField,
   PropertyPaneCheckbox,
-  PropertyPaneChoiceGroup,
   PropertyPaneDropdown,
   PropertyPaneSlider,
 } from '@microsoft/sp-property-pane';
@@ -176,6 +175,7 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
         showManagerDepartment: this.properties.showManagerDepartment ?? false,
         useInformalAddress: this.properties.useInformalAddress ?? false,
         clientVersion: this.manifest.version,
+        instanceId: this.context.instanceId,
         fluentProviderId: `gsi-${this.context.instanceId}`,
         onProxyStatusChange: (status: 'checking' | 'ok' | 'error') => {
           this._proxyStatus = status;
@@ -675,13 +675,14 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
               groupName: strings.DisplayGroupName,
               isCollapsed: true,
               groupFields: [
-                PropertyPaneChoiceGroup('titleSize', {
+                PropertyPaneDropdown('titleSize', {
                   label: strings.TitleSizeFieldLabel,
                   options: [
                     { key: 'small', text: strings.TitleSizeSmallOption },
                     { key: 'medium', text: strings.TitleSizeMediumOption },
                     { key: 'large', text: strings.TitleSizeLargeOption },
                   ],
+                  selectedKey: this.properties.titleSize ?? 'medium',
                 }),
                 PropertyPaneHorizontalRule(),
                 PropertyPaneDropdown('cardLayout', {

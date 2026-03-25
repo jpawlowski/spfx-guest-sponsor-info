@@ -109,6 +109,7 @@ function renderWebPart(overrides: Partial<IGuestSponsorInfoProps> = {}): void {
     showSponsorUnavailableHint: true,
     showNoSponsorsHint: true,
     clientVersion: '0.0.1',
+    instanceId: 'test-instance-id',
     fluentProviderId: 'gsi-test',
   };
   ReactDOM.render(<GuestSponsorInfo {...defaults} {...overrides} />, container);

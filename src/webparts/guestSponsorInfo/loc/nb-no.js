@@ -159,5 +159,11 @@ define([], function() {
     "TitleSizeSmallOption": "Liten",
     "TitleSizeMediumOption": "Middels (standard)",
     "TitleSizeLargeOption": "Stor",
+
+    "WelcomeDialogTitle": "Velkommen til Guest Sponsor Info",
+    "WelcomeDialogBody": "Denne webdelen viser dine Microsoft 365-sponsorer — de interne kollegene som er ansvarlige for gjestekontoen din, innføringen din og den daglige støtten din i denne organisasjonen.",
+    "WelcomeDialogBroughtToYouBy": "Utviklet av Workoho — spesialister på Microsoft 365-styring, identitet og gjestestyring.",
+    "WelcomeDialogWorkohoLinkLabel": "Besøk workoho.com",
+    "WelcomeDialogDismissButton": "La oss begynne",
   }
 });

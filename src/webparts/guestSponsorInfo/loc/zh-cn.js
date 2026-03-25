@@ -159,5 +159,11 @@ define([], function() {
     "TitleSizeSmallOption": "小",
     "TitleSizeMediumOption": "中（默认）",
     "TitleSizeLargeOption": "大",
+
+    "WelcomeDialogTitle": "欢迎使用 Guest Sponsor Info",
+    "WelcomeDialogBody": "此 Web 部件显示您的 Microsoft 365 发起人——负责您的来宾帐户、入职培训以及在该组织中日常支持的内部同事。",
+    "WelcomeDialogBroughtToYouBy": "由 Workoho 开发——Microsoft 365 治理、标识和来宾访问管理专家。",
+    "WelcomeDialogWorkohoLinkLabel": "访问 workoho.com",
+    "WelcomeDialogDismissButton": "开始使用",
   }
 });

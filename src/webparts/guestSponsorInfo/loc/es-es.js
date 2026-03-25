@@ -165,5 +165,11 @@ define([], function() {
     "TitleSizeSmallOption": "Pequeño",
     "TitleSizeMediumOption": "Mediano (predeterminado)",
     "TitleSizeLargeOption": "Grande",
+
+    "WelcomeDialogTitle": "Bienvenido a Guest Sponsor Info",
+    "WelcomeDialogBody": "Este elemento web muestra a sus patrocinadores de Microsoft 365 — los compañeros internos responsables de su cuenta de invitado, su incorporación y su soporte diario en esta organización.",
+    "WelcomeDialogBroughtToYouBy": "Desarrollado por Workoho — especialistas en gobernanza de Microsoft 365, identidad y gestión de acceso de invitados.",
+    "WelcomeDialogWorkohoLinkLabel": "Visitar workoho.com",
+    "WelcomeDialogDismissButton": "\u00a1Empecemos!",
   }
 });

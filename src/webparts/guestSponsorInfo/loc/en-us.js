@@ -153,5 +153,11 @@ define([], function() {
     "TitleSizeSmallOption": "Small",
     "TitleSizeMediumOption": "Medium (default)",
     "TitleSizeLargeOption": "Large",
+
+    "WelcomeDialogTitle": "Welcome to Guest Sponsor Info",
+    "WelcomeDialogBody": "This web part shows your Microsoft 365 sponsors — the internal colleagues responsible for your guest account, your onboarding, and your day-to-day support in this organisation.",
+    "WelcomeDialogBroughtToYouBy": "Built by Workoho — specialists in Microsoft 365 governance, identity, and guest access management.",
+    "WelcomeDialogWorkohoLinkLabel": "Visit workoho.com",
+    "WelcomeDialogDismissButton": "Let's go",
   }
 });

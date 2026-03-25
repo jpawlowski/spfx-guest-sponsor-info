@@ -159,5 +159,11 @@ define([], function() {
     "TitleSizeSmallOption": "Pieni",
     "TitleSizeMediumOption": "Keskikokoinen (oletus)",
     "TitleSizeLargeOption": "Suuri",
+
+    "WelcomeDialogTitle": "Tervetuloa Guest Sponsor Info -verkko-osaan",
+    "WelcomeDialogBody": "Tämä verkko-osa näyttää Microsoft 365 -sponsorisi — organisaation sisäiset kollegat, jotka vastaavat vieraskäyttäjätilisi hallinnasta, perehdytyksestäsi ja päivittäisestä tuestäsi.",
+    "WelcomeDialogBroughtToYouBy": "Workoho on kehittänyt tämän verkko-osan — asiantuntijat Microsoft 365:n hallinnassa, identiteetissä ja vieraskäyttäjien pääsynhallinnassa.",
+    "WelcomeDialogWorkohoLinkLabel": "Vieraile workoho.com-sivustolla",
+    "WelcomeDialogDismissButton": "Aloitetaan",
   }
 });

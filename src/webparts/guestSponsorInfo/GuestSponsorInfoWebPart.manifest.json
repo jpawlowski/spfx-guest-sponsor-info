@@ -6,9 +6,7 @@
   "version": "*",
   "manifestVersion": 2,
   "requiresCustomScript": false,
-  "supportedHosts": [
-    "SharePointWebPart"
-  ],
+  "supportedHosts": ["SharePointWebPart"],
   "supportsThemeVariants": true,
   "mobileViewable": true,
   "preconfiguredEntries": [
@@ -51,7 +49,8 @@
       },
       "officeFabricIconFontName": "People",
       "properties": {
-        "title": "My Sponsors"
+        "title": "My Sponsors",
+        "titleSize": "medium"
       }
     }
   ]

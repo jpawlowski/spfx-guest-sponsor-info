@@ -159,5 +159,11 @@ define([], function() {
     "TitleSizeSmallOption": "小",
     "TitleSizeMediumOption": "中（既定）",
     "TitleSizeLargeOption": "大",
+
+    "WelcomeDialogTitle": "Guest Sponsor Info へようこそ",
+    "WelcomeDialogBody": "この Web パーツは、Microsoft 365 スポンサーを表示します。スポンサーとは、この組織でのゲスト アカウント、オンボーディング、および日常的なサポートを担当する社内の同僚です。",
+    "WelcomeDialogBroughtToYouBy": "Workoho によって開発 — Microsoft 365 ガバナンス、ID、ゲスト アクセス管理のスペシャリスト。",
+    "WelcomeDialogWorkohoLinkLabel": "workoho.com を訪問する",
+    "WelcomeDialogDismissButton": "はじめましょう",
   }
 });
