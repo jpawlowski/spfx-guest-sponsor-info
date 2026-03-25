@@ -42,7 +42,6 @@ const CopyIcon = bundleIcon(CopyFilled, CopyRegular);
 const CheckmarkIcon = bundleIcon(CheckmarkFilled, CheckmarkRegular);
 import * as strings from 'GuestSponsorInfoWebPartStrings';
 import { ISponsor } from '../services/ISponsor';
-import styles from './GuestSponsorInfo.module.scss';
 
 /** Fluent UI persona colours used as avatar backgrounds when no photo is available. */
 /**
@@ -184,6 +183,276 @@ function graphPresenceToPresenceBadge(
 }
 
 /**
+ * Griffel styles for the card thumbnail tiles visible in the sponsor grid.
+ * Covers both the default vertical layout (136px tiles) and the compact
+ * horizontal row variant used in narrow SharePoint columns.
+ */
+const useCardTileStyles = makeStyles({
+  card: {
+    position: 'relative' as const,
+    width: '100%',
+    boxSizing: 'border-box' as const,
+    minHeight: '122px',
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'center' as const,
+    gap: '8px',
+    padding: '12px',
+    borderRadius: tokens.borderRadiusMedium,
+    cursor: 'pointer',
+    outline: 'none',
+    backgroundColor: 'transparent',
+    '&:focus-visible': {
+      boxShadow: `0 0 0 2px ${tokens.colorStrokeFocus2}`,
+    },
+  },
+  cardReadOnly: {
+    cursor: 'default',
+  },
+  cardCompact: {
+    position: 'relative' as const,
+    display: 'inline-flex',
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: '10px',
+    padding: '6px',
+    borderRadius: tokens.borderRadiusMedium,
+    cursor: 'pointer',
+    outline: 'none',
+    backgroundColor: 'transparent',
+    maxWidth: '100%',
+    '&:focus-visible': {
+      boxShadow: `0 0 0 2px ${tokens.colorStrokeFocus2}`,
+    },
+  },
+  avatarWrapper: {
+    position: 'relative' as const,
+    display: 'inline-flex',
+  },
+  avatarWrapperCompact: {
+    position: 'relative' as const,
+    display: 'inline-flex',
+    flexShrink: 0,
+  },
+  cardName: {
+    fontSize: tokens.fontSizeBase300,
+    fontWeight: tokens.fontWeightSemibold,
+    textAlign: 'center' as const,
+    color: tokens.colorNeutralForeground1,
+    lineHeight: tokens.lineHeightBase300,
+    maxWidth: '100%',
+    display: '-webkit-box' as 'flex',
+    WebkitLineClamp: '3',
+    WebkitBoxOrient: 'vertical' as 'horizontal',
+    overflow: 'hidden',
+  },
+  cardNameCompact: {
+    fontSize: tokens.fontSizeBase300,
+    fontWeight: tokens.fontWeightSemibold,
+    color: tokens.colorNeutralForeground1,
+    lineHeight: tokens.lineHeightBase300,
+    minWidth: 0,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap' as const,
+  },
+});
+
+/**
+ * Griffel styles for the rich contact card (the detail popup / drawer).
+ *
+ * Cross-class hover effects (e.g. hovering a row reveals the copy button)
+ * use CSS custom properties set by the parent row and read by children.
+ * This avoids Griffel's limitation of not being able to reference one
+ * atomic class from another's descendant selector.
+ */
+const useRichCardStyles = makeStyles({
+  richCard: {
+    width: '360px',
+    display: 'flex',
+    flexDirection: 'column' as const,
+    position: 'relative' as const,
+    borderRadius: tokens.borderRadiusLarge,
+    boxShadow: tokens.shadow16,
+    animationName: {
+      from: { opacity: 0, transform: 'translateY(-6px) scale(0.98)' },
+      to: { opacity: 1, transform: 'translateY(0) scale(1)' },
+    },
+    animationDuration: '180ms',
+    animationTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
+    animationFillMode: 'both',
+    '@media (prefers-reduced-motion: reduce)': {
+      animationName: 'none',
+      animationDuration: '0s',
+    },
+  },
+  richCardFlat: {
+    width: 'auto',
+    boxShadow: 'none',
+    animationName: 'none',
+    animationDuration: '0s',
+  },
+  richCardHeaderPanel: {
+    position: 'relative' as const,
+    zIndex: 2,
+    flexShrink: 0,
+    backgroundColor: tokens.colorNeutralBackground1,
+    borderRadius: tokens.borderRadiusLarge,
+    border: `1px solid ${tokens.colorNeutralStroke2}`,
+  },
+  richCardHeaderPanelFlat: {
+    border: 'none',
+    boxShadow: 'none',
+    borderRadius: '0',
+    backgroundColor: 'transparent',
+  },
+  richCardBody: {
+    overflowY: 'auto' as const,
+    maxHeight: '0',
+    opacity: 0,
+    position: 'relative' as const,
+    zIndex: 1,
+    backgroundColor: tokens.colorNeutralBackground1,
+    border: `1px solid ${tokens.colorNeutralStroke2}`,
+    borderTop: 'none',
+    borderRadius: `0 0 ${tokens.borderRadiusLarge} ${tokens.borderRadiusLarge}`,
+    marginTop: '-8px',
+    paddingTop: '8px',
+    transitionProperty: 'max-height, opacity',
+    transitionDuration: `${tokens.durationSlower}, ${tokens.durationNormal}`,
+    transitionTimingFunction: `${tokens.curveEasyEase}, ease-in-out`,
+  },
+  richCardBodyFlat: {
+    border: 'none',
+    borderRadius: '0',
+    backgroundColor: 'transparent',
+    marginTop: '0',
+    paddingTop: '0',
+  },
+  richCardBodyExpanded: {
+    maxHeight: 'min(300px, 50vh)',
+    opacity: 1,
+    paddingBottom: '24px',
+  },
+  richCardBodyExpandedFlat: {
+    maxHeight: 'none',
+  },
+  richHeader: {
+    padding: '24px 24px 0',
+  },
+  richActions: {
+    display: 'flex',
+    justifyContent: 'flex-start',
+    gap: '12px',
+    padding: '0 24px 16px',
+  },
+  richSectionTitle: {
+    fontSize: tokens.fontSizeBase300,
+    fontWeight: tokens.fontWeightSemibold,
+    letterSpacing: '0.01em',
+    padding: '24px 24px 2px',
+    color: tokens.colorNeutralForeground1,
+  },
+  richSection: {
+    padding: '0',
+  },
+  richSectionDivider: {
+    height: '1px',
+    backgroundColor: tokens.colorNeutralStroke2,
+    margin: '24px 24px 0',
+  },
+  richInfoRow: {
+    display: 'flex',
+    gap: '12px',
+    minHeight: '32px',
+    padding: '0 24px',
+    alignItems: 'center',
+    color: 'inherit',
+    position: 'relative' as const,
+  },
+  // Sets CSS custom properties on hover that child elements (richInfoValue,
+  // copyButton) read via var(). Only applied on devices with a precise pointer.
+  richInfoRowInteractive: {
+    '@media (hover: hover)': {
+      '&:hover': {
+        backgroundColor: tokens.colorNeutralBackground2,
+        '--gsi-info-brightness': 'brightness(0.75)',
+        '--gsi-copy-opacity': '1',
+      },
+    },
+  },
+  richInfoText: {
+    flex: '1',
+    minWidth: '0',
+  },
+  richInfoIcon: {
+    fontSize: '24px',
+    flexShrink: 0,
+    width: '24px',
+    textAlign: 'center' as const,
+    color: tokens.colorNeutralForeground2,
+  },
+  richInfoValue: {
+    fontSize: tokens.fontSizeBase300,
+    color: tokens.colorBrandForeground1,
+    overflowWrap: 'break-word' as const,
+    textDecoration: 'none',
+    '&:hover': {
+      textDecoration: 'none',
+    },
+    // Stretch an invisible click target across the entire row so the user can
+    // click anywhere in the row to follow the link.
+    '&[href]::before': {
+      content: '""',
+      position: 'absolute' as const,
+      inset: '0',
+    },
+    // Plain-text values (not links): darken on row hover via the custom property.
+    '&:not(a)': {
+      filter: 'var(--gsi-info-brightness, none)',
+    },
+  },
+  copyButton: {
+    position: 'relative' as const,
+    zIndex: 1,
+    flexShrink: 0,
+    // Read from the parent row's --gsi-copy-opacity custom property, falling
+    // back to 0 (hidden) when the row is not hovered.
+    opacity: 'var(--gsi-copy-opacity, 0)' as unknown as number,
+    transitionProperty: 'opacity',
+    transitionDuration: '80ms',
+    transitionTimingFunction: 'ease',
+    '&:focus-visible': {
+      opacity: 1,
+    },
+  },
+  copyButtonCopied: {
+    opacity: 1,
+    color: tokens.colorStatusSuccessForeground1,
+  },
+  mapPreviewInline: {
+    padding: '4px 24px 8px 60px',
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: '8px',
+  },
+  mapPreviewImage: {
+    width: '100%',
+    maxWidth: '100%',
+    height: 'auto',
+    borderRadius: tokens.borderRadiusMedium,
+    border: `1px solid ${tokens.colorNeutralStroke2}`,
+  },
+  mapPreviewStatus: {
+    fontSize: tokens.fontSizeBase200,
+    color: tokens.colorNeutralForeground2,
+  },
+  managerRow: {
+    padding: '6px 24px 0',
+  },
+});
+
+/**
  * Griffel styles for Persona text slots in the rich card header and manager row.
  * Replaces the SCSS classes that previously styled the manual avatar+div structure.
  */
@@ -306,6 +575,7 @@ const useActionButtonStyles = makeStyles({
 const CopyButton: React.FC<{ value: string; ariaLabel: string }> = ({ value, ariaLabel }) => {
   const [copied, setCopied] = React.useState(false);
   const actionButtonClasses = useActionButtonStyles();
+  const richClasses = useRichCardStyles();
 
   const handleCopy = (e: React.MouseEvent<HTMLElement>): void => {
     e.stopPropagation();
@@ -322,7 +592,7 @@ const CopyButton: React.FC<{ value: string; ariaLabel: string }> = ({ value, ari
         icon={copied ? <CheckmarkIcon /> : <CopyIcon />}
         aria-label={copied ? strings.CopiedFeedback : ariaLabel}
         onClick={handleCopy}
-        className={mergeClasses(actionButtonClasses.actionButton, styles.copyButton, copied ? styles.copyButtonCopied : '')}
+        className={mergeClasses(actionButtonClasses.actionButton, richClasses.copyButton, copied ? richClasses.copyButtonCopied : '')}
         size="small"
       />
     </Tooltip>
@@ -495,6 +765,8 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
   const isMobile = useIsMobile();
   const actionButtonClasses = useActionButtonStyles();
   const personaClasses = usePersonaStyles();
+  const cardClasses = useCardTileStyles();
+  const richClasses = useRichCardStyles();
   const officeLocation = sponsor.officeLocation?.trim();
   const streetAddress = sponsor.streetAddress?.trim();
   const postalCode = sponsor.postalCode?.trim();
@@ -613,13 +885,13 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
 
   const richBody = (
     <div
-      className={mergeClasses(styles.richCard, isMobile && styles.richCardFlat)}
+      className={mergeClasses(richClasses.richCard, isMobile && richClasses.richCardFlat)}
       onMouseEnter={!isMobile ? onActivate : undefined}
       onMouseLeave={!isMobile ? onScheduleDeactivate : undefined}
     >
       {/* ── Header panel: elevated rounded card (avatar + buttons) ─── */}
-      <div className={styles.richCardHeaderPanel}>
-      <div className={styles.richHeader}>
+      <div className={mergeClasses(richClasses.richCardHeaderPanel, isMobile && richClasses.richCardHeaderPanelFlat)}>
+      <div className={richClasses.richHeader}>
         <Persona
           size="huge"
           name={resolvedName}
@@ -660,7 +932,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
 
       {/* ── Action buttons row ───────────────────────────────── */}
       {sponsor.mail && (
-        <div className={styles.richActions} role="toolbar" aria-label={strings.ContactActionsAriaLabel}>
+        <div className={richClasses.richActions} role="toolbar" aria-label={strings.ContactActionsAriaLabel}>
           {sponsor.hasTeams !== false && sponsor.mail && (
             <Tooltip
               content={guestHasTeamsAccess === false ? fstr('TeamsNotReadyChatTooltip') : strings.ChatTitle.replace('{name}', resolvedName)}
@@ -713,74 +985,79 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
 
       {/* ── Scrollable detail area (expands after delay) ─────── */}
       <div
-        className={mergeClasses(styles.richCardBody, (isMobile || detailsExpanded) && styles.richCardBodyExpanded)}
+        className={mergeClasses(
+          richClasses.richCardBody,
+          isMobile && richClasses.richCardBodyFlat,
+          (isMobile || detailsExpanded) && richClasses.richCardBodyExpanded,
+          isMobile && richClasses.richCardBodyExpandedFlat,
+        )}
       >
 
       {/* ── Contact section ─────────────────────────────────── */}
-      <div className={styles.richSectionTitle}>{strings.ContactInfoSection}</div>
-      <div className={styles.richSection}>
+      <div className={richClasses.richSectionTitle}>{strings.ContactInfoSection}</div>
+      <div className={richClasses.richSection}>
         {sponsor.mail && (
-          <div className={`${styles.richInfoRow} ${styles.richInfoRowInteractive}`}>
-            <MailRegular className={styles.richInfoIcon} aria-hidden="true" />
-            <div className={styles.richInfoText}>
-              <Link href={`mailto:${sponsor.mail}`} className={styles.richInfoValue}>{sponsor.mail}</Link>
+          <div className={mergeClasses(richClasses.richInfoRow, richClasses.richInfoRowInteractive)}>
+            <MailRegular className={richClasses.richInfoIcon} aria-hidden="true" />
+            <div className={richClasses.richInfoText}>
+              <Link href={`mailto:${sponsor.mail}`} className={richClasses.richInfoValue}>{sponsor.mail}</Link>
             </div>
             <CopyButton value={sponsor.mail} ariaLabel={strings.CopyEmailAriaLabel} />
           </div>
         )}
         {showBusinessPhones && sponsor.businessPhones?.map(phone => (
-          <div key={phone} className={`${styles.richInfoRow} ${styles.richInfoRowInteractive}`}>
-            <CallRegular className={styles.richInfoIcon} aria-hidden="true" />
-            <div className={styles.richInfoText}>
-              <Link href={`tel:${phone}`} className={styles.richInfoValue}>{phone}</Link>
+          <div key={phone} className={mergeClasses(richClasses.richInfoRow, richClasses.richInfoRowInteractive)}>
+            <CallRegular className={richClasses.richInfoIcon} aria-hidden="true" />
+            <div className={richClasses.richInfoText}>
+              <Link href={`tel:${phone}`} className={richClasses.richInfoValue}>{phone}</Link>
             </div>
             <CopyButton value={phone} ariaLabel={strings.CopyWorkPhoneAriaLabel} />
           </div>
         ))}
         {showMobilePhone && sponsor.mobilePhone && (
-          <div className={`${styles.richInfoRow} ${styles.richInfoRowInteractive}`}>
-            <PhoneRegular className={styles.richInfoIcon} aria-hidden="true" />
-            <div className={styles.richInfoText}>
-              <Link href={`tel:${sponsor.mobilePhone}`} className={styles.richInfoValue}>{sponsor.mobilePhone}</Link>
+          <div className={mergeClasses(richClasses.richInfoRow, richClasses.richInfoRowInteractive)}>
+            <PhoneRegular className={richClasses.richInfoIcon} aria-hidden="true" />
+            <div className={richClasses.richInfoText}>
+              <Link href={`tel:${sponsor.mobilePhone}`} className={richClasses.richInfoValue}>{sponsor.mobilePhone}</Link>
             </div>
             <CopyButton value={sponsor.mobilePhone} ariaLabel={strings.CopyMobileAriaLabel} />
           </div>
         )}
         {showOfficeLocation && (
-          <div className={`${styles.richInfoRow} ${styles.richInfoRowInteractive}`}>
-            <BuildingRegular className={styles.richInfoIcon} aria-hidden="true" />
-            <div className={styles.richInfoText}>
-              <div className={styles.richInfoValue}>{officeLocation}</div>
+          <div className={mergeClasses(richClasses.richInfoRow, richClasses.richInfoRowInteractive)}>
+            <BuildingRegular className={richClasses.richInfoIcon} aria-hidden="true" />
+            <div className={richClasses.richInfoText}>
+              <div className={richClasses.richInfoValue}>{officeLocation}</div>
             </div>
             <CopyButton value={officeLocation!} ariaLabel={strings.CopyLocationAriaLabel} />
           </div>
         )}
         {hasCombinedAddress && (
           <>
-            <div className={`${styles.richInfoRow} ${styles.richInfoRowInteractive}`}>
-              <LocationRegular className={styles.richInfoIcon} aria-hidden="true" />
-              <div className={styles.richInfoText}>
+            <div className={mergeClasses(richClasses.richInfoRow, richClasses.richInfoRowInteractive)}>
+              <LocationRegular className={richClasses.richInfoIcon} aria-hidden="true" />
+              <div className={richClasses.richInfoText}>
                 {addressMapLink ? (
-                  <Link href={addressMapLink} target="_blank" rel="noreferrer noopener" className={styles.richInfoValue}>
+                  <Link href={addressMapLink} target="_blank" rel="noreferrer noopener" className={richClasses.richInfoValue}>
                     {combinedAddress}
                   </Link>
                 ) : (
-                  <div className={styles.richInfoValue}>{combinedAddress}</div>
+                  <div className={richClasses.richInfoValue}>{combinedAddress}</div>
                 )}
               </div>
               <CopyButton value={combinedAddress} ariaLabel={strings.CopyAddressAriaLabel} />
             </div>
             {addressMapLink && azureMapsSubscriptionKey && (mapLoading || mapPreviewUrl) && (
-              <div className={styles.mapPreviewInline}>
+              <div className={richClasses.mapPreviewInline}>
                 {mapLoading && !mapPreviewUrl && (
-                  <div className={styles.mapPreviewStatus}>{strings.AddressMapLoadingLabel}</div>
+                  <div className={richClasses.mapPreviewStatus}>{strings.AddressMapLoadingLabel}</div>
                 )}
                 {mapPreviewUrl && (
                   <Link href={addressMapLink} target="_blank" rel="noreferrer noopener">
                     <img
                       src={mapPreviewUrl}
                       alt={strings.AddressMapSectionLabel}
-                      className={styles.mapPreviewImage}
+                      className={richClasses.mapPreviewImage}
                       referrerPolicy="no-referrer"
                     />
                   </Link>
@@ -794,10 +1071,10 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
       {/* ── Reports to section (manager) ───────────────────────────── */}
       {showManager && sponsor.managerDisplayName && (
         <>
-          <div className={styles.richSectionDivider} />
-          <div className={styles.richSectionTitle}>{strings.ReportsToSection}</div>
-          <div className={styles.richSection}>
-            <div className={styles.managerRow}>
+          <div className={richClasses.richSectionDivider} />
+          <div className={richClasses.richSectionTitle}>{strings.ReportsToSection}</div>
+          <div className={richClasses.richSection}>
+            <div className={richClasses.managerRow}>
               <Persona
                 size="extra-large"
                 name={resolvedManagerName}
@@ -835,7 +1112,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
       {/* ── Card thumbnail (always visible in the grid) ──────────────── */}
       <div
         ref={cardRef}
-        className={`${compact ? styles.cardCompact : styles.card}${readOnly ? ` ${styles.cardReadOnly}` : ''}`}
+        className={mergeClasses(compact ? cardClasses.cardCompact : cardClasses.card, readOnly ? cardClasses.cardReadOnly : '')}
         onMouseEnter={readOnly ? undefined : onActivate}
         onMouseLeave={readOnly ? undefined : onScheduleDeactivate}
         onFocus={readOnly ? undefined : onActivate}
@@ -847,7 +1124,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
         aria-haspopup={readOnly ? undefined : 'dialog'}
         aria-expanded={readOnly ? undefined : isActive}
       >
-        <div className={compact ? styles.avatarWrapperCompact : styles.avatarWrapper}>
+        <div className={compact ? cardClasses.avatarWrapperCompact : cardClasses.avatarWrapper}>
           <Avatar
             size={compact ? 40 : 72}
             name={resolvedName}
@@ -855,7 +1132,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
             color="colorful"
           />
         </div>
-        <div className={compact ? styles.cardNameCompact : styles.cardName}>
+        <div className={compact ? cardClasses.cardNameCompact : cardClasses.cardName}>
           {resolvedName}
         </div>
       </div>

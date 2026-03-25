@@ -1,11 +1,10 @@
 import * as React from 'react';
 import { DisplayMode } from '@microsoft/sp-core-library';
-import { FluentProvider, MessageBar, MessageBarBody, Skeleton, SkeletonItem, mergeClasses, webLightTheme, webDarkTheme } from '@fluentui/react-components';
+import { FluentProvider, MessageBar, MessageBarBody, Skeleton, SkeletonItem, makeStyles, mergeClasses, tokens, webLightTheme, webDarkTheme } from '@fluentui/react-components';
 import type { Theme } from '@fluentui/react-components';
 import { createV9Theme } from '@fluentui/react-migration-v8-v9';
 import { createDOMRenderer, RendererProvider } from '@griffel/react';
 import * as strings from 'GuestSponsorInfoWebPartStrings';
-import styles from './GuestSponsorInfo.module.scss';
 import type { IGuestSponsorInfoProps } from './IGuestSponsorInfoProps';
 import { ISponsor } from '../services/ISponsor';
 import { isGuestUser, getSponsors, getSponsorsViaProxy, pingProxy, loadPhotosProgressively, fetchPresences, getPresencesViaProxy } from '../services/SponsorService';
@@ -20,6 +19,96 @@ import SponsorCard from './SponsorCard';
 // The salt is the manifest component ID — globally unique per web part.
 const griffelRenderer = createDOMRenderer(document, {
   classNameHashSalt: '16be4020-0cfb-4b1b-9d50-d3d4af2e90e6',
+});
+
+const useWebPartStyles = makeStyles({
+  webPart: {
+    padding: '8px 0',
+    overflow: 'visible',
+    maxWidth: '100%',
+    boxSizing: 'border-box',
+    containerType: 'inline-size',
+  },
+  webPartContent: {
+    minHeight: '200px',
+  },
+  title: {
+    fontSize: '20px',
+    fontWeight: 600,
+    margin: '0 0 16px',
+    color: tokens.colorNeutralForeground1,
+    '@container (max-width: 319px)': {
+      fontSize: '16px',
+      marginBottom: '10px',
+    },
+    '@container (min-width: 320px) and (max-width: 479px)': {
+      fontSize: '18px',
+      marginBottom: '12px',
+    },
+  },
+  sponsorGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(136px, 1fr))',
+    gap: '16px',
+    listStyle: 'none',
+    margin: '0',
+    padding: '0',
+    '@container (max-width: 319px)': {
+      gap: '8px',
+    },
+    '@container (min-width: 320px) and (max-width: 479px)': {
+      gap: '12px',
+    },
+  },
+  sponsorGridCompact: {
+    display: 'grid',
+    gridTemplateColumns: '1fr',
+    gap: '4px',
+    listStyle: 'none',
+    margin: '0',
+    padding: '0',
+  },
+  sponsorItem: {
+    display: 'block',
+  },
+  teamsAccessBanner: {
+    marginTop: '16px',
+    '@container (max-width: 319px)': {
+      marginTop: '10px',
+    },
+  },
+  // Skeleton reuses the card tile layout so loading shimmer matches the real
+  // card dimensions pixel-perfectly. Only layout properties are needed here;
+  // interactive properties (cursor, focus-visible) are irrelevant because
+  // skeletonItem disables pointer-events.
+  skeletonCard: {
+    position: 'relative' as const,
+    width: '100%',
+    boxSizing: 'border-box' as const,
+    minHeight: '122px',
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'center' as const,
+    gap: '8px',
+    padding: '12px',
+    borderRadius: tokens.borderRadiusMedium,
+    backgroundColor: 'transparent',
+  },
+  skeletonCardCompact: {
+    position: 'relative' as const,
+    display: 'inline-flex',
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: '10px',
+    padding: '6px',
+    borderRadius: tokens.borderRadiusMedium,
+    backgroundColor: 'transparent',
+    maxWidth: '100%',
+  },
+  skeletonItem: {
+    pointerEvents: 'none' as const,
+    cursor: 'default',
+  },
 });
 
 /**
@@ -68,6 +157,7 @@ const SponsorList: React.FC<ISponsorListProps> = ({ sponsors, hostTenantId, comp
   const [activeId, setActiveId] = React.useState<string | null>(null);
   const showTimeout = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const hideTimeout = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const classes = useWebPartStyles();
 
   const activate = (id: string): void => {
     if (hideTimeout.current) { clearTimeout(hideTimeout.current); hideTimeout.current = null; }
@@ -95,9 +185,9 @@ const SponsorList: React.FC<ISponsorListProps> = ({ sponsors, hostTenantId, comp
   }, [onActiveCardChange]);
 
   return (
-    <ul className={compact ? styles.sponsorGridCompact : styles.sponsorGrid}>
+    <ul className={compact ? classes.sponsorGridCompact : classes.sponsorGrid}>
       {sponsors.map(sponsor => (
-        <li key={sponsor.id} className={styles.sponsorItem}>
+        <li key={sponsor.id} className={classes.sponsorItem}>
           <SponsorCard
             sponsor={sponsor}
             hostTenantId={hostTenantId}
@@ -140,13 +230,15 @@ const SponsorList: React.FC<ISponsorListProps> = ({ sponsors, hostTenantId, comp
  * Fluent’s Skeleton handles the shimmer animation and automatically
  * respects prefers-reduced-motion without custom media-query code.
  */
-const SponsorGridSkeleton: React.FC<{ compact: boolean }> = ({ compact }) => (
-  <ul className={compact ? styles.sponsorGridCompact : styles.sponsorGrid} aria-busy="true">
+const SponsorGridSkeleton: React.FC<{ compact: boolean }> = ({ compact }) => {
+  const classes = useWebPartStyles();
+  return (
+  <ul className={compact ? classes.sponsorGridCompact : classes.sponsorGrid} aria-busy="true">
     {[0, 1].map(i => (
-      <li key={i} className={styles.sponsorItem}>
+      <li key={i} className={classes.sponsorItem}>
         {compact ? (
           <Skeleton
-            className={mergeClasses(styles.cardCompact, styles.skeletonItem)}
+            className={mergeClasses(classes.skeletonCardCompact, classes.skeletonItem)}
             aria-label={strings.LoadingMessage}
           >
             <SkeletonItem shape="circle" size={40} />
@@ -158,7 +250,7 @@ const SponsorGridSkeleton: React.FC<{ compact: boolean }> = ({ compact }) => (
           </Skeleton>
         ) : (
           <Skeleton
-            className={mergeClasses(styles.card, styles.skeletonItem)}
+            className={mergeClasses(classes.skeletonCard, classes.skeletonItem)}
             aria-label={strings.LoadingMessage}
           >
             <SkeletonItem shape="circle" size={72} />
@@ -177,7 +269,8 @@ const SponsorGridSkeleton: React.FC<{ compact: boolean }> = ({ compact }) => (
       </li>
     ))}
   </ul>
-);
+  );
+};
 
 /**
  * Builds the two visible sponsor sets, respecting both the configured cap and
@@ -283,6 +376,7 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
   // has not yet been created for the guest, causing SP.UserProfile to return HTTP 500).
   const isGuest = isExternalGuestUser || isGuestUser(loginName);
   const isEditMode = displayMode === DisplayMode.Edit;
+  const classes = useWebPartStyles();
 
   const [sponsors, setSponsors] = React.useState<ISponsor[]>([]);
   const [sponsorOrder, setSponsorOrder] = React.useState<string[]>([]);
@@ -562,8 +656,8 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
     return (
       <RendererProvider renderer={griffelRenderer}>
       <FluentProvider theme={v9Theme} id={`${fluentProviderId}-edit`}>
-        <section className={styles.webPart}>
-          {title && <h2 className={styles.title}>{title}</h2>}
+        <section className={classes.webPart}>
+          {title && <h2 className={classes.title}>{title}</h2>}
           {showMockCards && (
           <SponsorList
             sponsors={visibleMockSponsors}
@@ -595,7 +689,7 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
           />
           )}
           {mockSimulatedHint === 'teamsAccessPending' && (
-            <MessageBar intent="warning" className={styles.teamsAccessBanner}>
+            <MessageBar intent="warning" className={classes.teamsAccessBanner}>
               <MessageBarBody>
                 <b>{strings.TeamsAccessPendingTitle}</b><br />
                 {fstr('TeamsAccessPendingMessage')}
@@ -603,7 +697,7 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
             </MessageBar>
           )}
           {mockSimulatedHint === 'versionMismatch' && (
-            <MessageBar intent="info" className={styles.teamsAccessBanner}>
+            <MessageBar intent="info" className={classes.teamsAccessBanner}>
               <MessageBarBody>
                 <b>{strings.VersionMismatchTitle}</b><br />
                 {strings.VersionMismatchMessage}
@@ -611,7 +705,7 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
             </MessageBar>
           )}
           {mockSimulatedHint === 'sponsorUnavailable' && showSponsorUnavailableHint && (
-            <MessageBar intent="warning" className={styles.teamsAccessBanner}>
+            <MessageBar intent="warning" className={classes.teamsAccessBanner}>
               <MessageBarBody>
                 <b>{strings.SponsorUnavailableTitle}</b><br />
                 {fstr('SponsorUnavailableMessage')}
@@ -660,12 +754,12 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
     (versionMismatch && showVersionMismatchHint);
   if (!hasVisibleContent) return null;
   const noResults = !loading && !error && visibleActive.length === 0 && !someUnavailable;
-  const contentClassNames = (loading || error || noResults) ? `${styles.webPart} ${styles.webPartContent}` : styles.webPart;
+  const contentClassNames = (loading || error || noResults) ? mergeClasses(classes.webPart, classes.webPartContent) : classes.webPart;
   return (
     <RendererProvider renderer={griffelRenderer}>
     <FluentProvider theme={v9Theme} id={`${fluentProviderId}-view`}>
       <section className={contentClassNames}>
-        {title && <h2 className={styles.title}>{title}</h2>}
+        {title && <h2 className={classes.title}>{title}</h2>}
         {loading && <SponsorGridSkeleton compact={cardLayout === 'compact'} />}
         {!loading && error && !isPermissionError && (
           <MessageBar intent="error">
@@ -750,7 +844,7 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
         {!loading && !error && noActiveSponsor && someUnavailable && showSponsorUnavailableHint && (
           <MessageBar
             intent="warning"
-            className={styles.teamsAccessBanner}
+            className={classes.teamsAccessBanner}
           >
             <MessageBarBody>
               <b>{strings.SponsorUnavailableTitle}</b><br />
@@ -767,7 +861,7 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
           </MessageBar>
         )}
         {!loading && !error && guestHasTeamsAccess === false && showTeamsAccessPendingHint && (
-          <MessageBar intent="warning" className={styles.teamsAccessBanner}>
+          <MessageBar intent="warning" className={classes.teamsAccessBanner}>
             <MessageBarBody>
               <b>{strings.TeamsAccessPendingTitle}</b><br />
               {fstr('TeamsAccessPendingMessage')}
@@ -775,7 +869,7 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
           </MessageBar>
         )}
         {versionMismatch && showVersionMismatchHint && (
-          <MessageBar intent="info" className={styles.teamsAccessBanner}>
+          <MessageBar intent="info" className={classes.teamsAccessBanner}>
             <MessageBarBody>
               <b>{strings.VersionMismatchTitle}</b><br />
               {strings.VersionMismatchMessage}

@@ -210,9 +210,7 @@ For import patterns, check the existing components — `GuestSponsorInfo.tsx` an
 Use **`makeStyles`** from `@fluentui/react-components` (Griffel) for all component-level
 styles, with **`tokens`** from `@fluentui/react-components` for all colour and spacing values.
 Use `mergeClasses()` for conditional class composition.
-
-`GuestSponsorInfo.module.scss` is a **legacy** CSS Modules file from before the Fluent v9
-migration. **Do not add new SCSS classes there.** All new styles must use `makeStyles`.
+Do not add CSS/SCSS module files — all styles live in `makeStyles` hooks.
 
 ### Forbidden patterns
 
@@ -226,8 +224,8 @@ initializeIcons();
 import { mergeStyles, mergeStyleSets } from '@fluentui/merge-styles';
 // ❌ Hardcoded colour values — use tokens instead
 const style = { color: '#0078d4' };
-// ❌ New SCSS classes — add to makeStyles hooks instead
-// (reading legacy styles from GuestSponsorInfo.module.scss is fine for existing code)
+// ❌ CSS/SCSS module files — use makeStyles hooks instead
+import styles from './Foo.module.scss';
 ```
 
 ### Key component equivalents

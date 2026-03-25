@@ -27,19 +27,17 @@
     "eject-webpack": "heft eject-webpack",
     "lint:ts": "eslint src --ext .ts,.tsx",
     "lint:ts:func": "eslint azure-function/src --ext .ts",
-    "lint:scss": "stylelint \"src/**/*.scss\"",
     "lint:md": "markdownlint-cli2 --config .markdownlint.json README.md AGENTS.md azure-function/README.md docs/**/*.md .github/*.md .github/**/*.md",
     "lint:bicep": "az bicep lint --file azure-function/infra/main.bicep",
     "lint:sh": "shellcheck -x scripts/*.sh azure-function/infra/hooks/*.sh",
     "lint:loc": "node --check src/webparts/guestSponsorInfo/loc/da-dk.js src/webparts/guestSponsorInfo/loc/de-de.js src/webparts/guestSponsorInfo/loc/en-us.js src/webparts/guestSponsorInfo/loc/es-es.js src/webparts/guestSponsorInfo/loc/fi-fi.js src/webparts/guestSponsorInfo/loc/fr-fr.js src/webparts/guestSponsorInfo/loc/it-it.js src/webparts/guestSponsorInfo/loc/ja-jp.js src/webparts/guestSponsorInfo/loc/nb-no.js src/webparts/guestSponsorInfo/loc/nl-nl.js src/webparts/guestSponsorInfo/loc/pl-pl.js src/webparts/guestSponsorInfo/loc/pt-br.js src/webparts/guestSponsorInfo/loc/sv-se.js src/webparts/guestSponsorInfo/loc/zh-cn.js",
-    "lint": "npm run lint:ts && npm run lint:ts:func && npm run lint:scss && npm run lint:md && npm run lint:bicep && npm run lint:sh && npm run lint:loc",
+    "lint": "npm run lint:ts && npm run lint:ts:func && npm run lint:md && npm run lint:bicep && npm run lint:sh && npm run lint:loc",
     "fix:ts": "eslint src --ext .ts,.tsx --fix",
     "fix:ts:func": "eslint azure-function/src --ext .ts --fix",
-    "fix:scss": "stylelint \"src/**/*.scss\" --fix",
     "fix:md": "markdownlint-cli2 --config .markdownlint.json --fix README.md AGENTS.md azure-function/README.md docs/**/*.md .github/*.md .github/**/*.md",
     "fix:json": "prettier --write \"*.{json,jsonc}\" \"config/*.{json,jsonc}\" \"azure-function/*.{json,jsonc}\" \"azure-function/infra/**/*.{json,jsonc}\" \".vscode/*.{json,jsonc}\" \".devcontainer/*.{json,jsonc}\"",
     "fix:sh": "shfmt -w -i 2 -ci scripts/*.sh azure-function/infra/hooks/*.sh",
-    "fix": "npm run fix:ts && npm run fix:ts:func && npm run fix:scss && npm run fix:md && npm run fix:json && npm run fix:sh",
+    "fix": "npm run fix:ts && npm run fix:ts:func && npm run fix:md && npm run fix:json && npm run fix:sh",
     "prepare": "husky"
   },
   "dependencies": {
@@ -92,7 +90,6 @@
   "lint-staged": {
     "src/**/*.{ts,tsx}": "eslint --fix",
     "azure-function/src/**/*.ts": "eslint --fix",
-    "src/**/*.scss": "stylelint --fix",
     "*.md": "markdownlint-cli2 --fix",
     "**/*.{json,jsonc}": "prettier --write --ignore-path .prettierignore",
     "**/*.sh": "shfmt -w -i 2 -ci"

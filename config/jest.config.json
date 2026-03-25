@@ -10,11 +10,8 @@
   "maxWorkers": 1,
   // Polyfills and global stubs for Fluent UI v9 (e.g. ResizeObserver used by MessageBar).
   "setupFiles": ["<rootDir>/src/__mocks__/jest.setup.js"],
-  // Map modules that jest cannot load natively (SCSS, AMD-format strings, browser-only SPFx packages).
+  // Map modules that jest cannot load natively (AMD-format strings, browser-only SPFx packages).
   "moduleNameMapper": {
-    // CSS/SCSS Modules: return a Proxy that echoes the key as a plain string so
-    // className props in rendered components have predictable, non-empty values.
-    "\\.module\\.scss$": "<rootDir>/src/__mocks__/styleMock.js",
     // Loc strings: the dist files use AMD define() which jest cannot evaluate.
     // The CJS shim exports the same key/value pairs in a format jest understands.
     "^GuestSponsorInfoWebPartStrings$": "<rootDir>/src/__mocks__/stringsMock.js",

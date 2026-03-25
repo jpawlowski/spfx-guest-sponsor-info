@@ -10,7 +10,7 @@ Authoritative versions are in `package.json` (`engines`, `dependencies`, `devDep
 Always validate your changes before considering a task done:
 
 1. **Lint** — always run `npm run lint` after every change (fast, catches most issues early).
-   Per-type: `npm run lint:ts` · `npm run lint:scss` · `npm run lint:md` · `npm run lint:loc` · `npm run lint:sh`
+   Per-type: `npm run lint:ts` · `npm run lint:md` · `npm run lint:loc` · `npm run lint:sh`
    Auto-fix: `npm run fix` (runs ESLint · Stylelint · Prettier for JSON · shfmt for shell · Markdownlint)
 2. **Test** — run `npm test` when you changed logic, components, or services.
    Skip for pure documentation, config, or style-only changes.
@@ -70,7 +70,7 @@ The release workflow is documented in `docs/development.md` → "Publishing a Re
 - All code comments and documentation in English. User-facing chat may stay in German.
 - No bundled placeholder images. Use live profile photos from Graph; fall back to initials.
 - Styles use `makeStyles` + `tokens` from `@fluentui/react-components` (Griffel) for all component-level
-  styles. `GuestSponsorInfo.module.scss` is a legacy file — do not add new classes there.
+  styles. Do not add CSS/SCSS module files.
 - Locale strings follow the SPFx AMD `define()` pattern in `loc/*.js`; add new keys to all 14 locale files
   (en-us, de-de, fr-fr, es-es, it-it, da-dk, fi-fi, ja-jp, nb-no, nl-nl, pl-pl, pt-br, sv-se, zh-cn).
 

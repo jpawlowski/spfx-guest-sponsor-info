@@ -37,13 +37,14 @@ initializeIcons();
 import { mergeStyles, mergeStyleSets } from '@fluentui/merge-styles';
 // ❌ Hardcoded colour values — use tokens instead
 const style = { color: '#0078d4' };
-// ❌ New SCSS classes in GuestSponsorInfo.module.scss
-// (reading legacy styles from that file is fine for existing code only)
+// ❌ CSS/SCSS module files — use makeStyles hooks instead
+import styles from './Foo.module.scss';
 ```
 
 ## Styling
 
-Use **`makeStyles`** with **`tokens`** for all new component-level styles:
+Use **`makeStyles`** with **`tokens`** for all component-level styles.
+Do not add CSS/SCSS module files — all styles live in `makeStyles` hooks.
 
 ```typescript
 import { makeStyles, tokens, mergeClasses } from '@fluentui/react-components';
@@ -64,10 +65,7 @@ const styles = useCardStyles();
 return <div className={mergeClasses(styles.root, isActive && styles.active)} />;
 ```
 
-`GuestSponsorInfo.module.scss` is a **legacy** file retained from before the v9 migration.
-**Do not add new SCSS classes.** All new styles go into `makeStyles` hooks.
-
-### CSS variable → token mapping (for migrating legacy SCSS)
+### CSS variable → token mapping
 
 | Old CSS Variable              | Fluent v9 Token                          |
 | ----------------------------- | ---------------------------------------- |
