@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 Workoho GmbH <https://workoho.com>
+# SPDX-FileCopyrightText: 2026 Julian Pawlowski <https://github.com/jpawlowski>
+# SPDX-License-Identifier: AGPL-3.0-only
+#
 # Stamp a SemVer tag into package.json and config/package-solution.json.
 #
 # Usage:

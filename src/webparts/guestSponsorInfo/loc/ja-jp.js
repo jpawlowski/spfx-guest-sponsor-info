@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 Workoho GmbH <https://workoho.com>
+// SPDX-FileCopyrightText: 2026 Julian Pawlowski <https://github.com/jpawlowski>
+// SPDX-License-Identifier: AGPL-3.0-only
+
 define([], function() {
   return {
     "PropertyPaneDescription": "ゲストスポンサー情報 Web パーツを設定します。",
@@ -164,6 +168,21 @@ define([], function() {
     "WelcomeDialogBody": "この Web パーツは、Microsoft 365 スポンサーを表示します。スポンサーとは、この組織でのゲスト アカウント、オンボーディング、および日常的なサポートを担当する社内の同僚です。",
     "WelcomeDialogBroughtToYouBy": "Workoho によって開発 — Microsoft 365 ガバナンス、ID、ゲスト アクセス管理のスペシャリスト。",
     "WelcomeDialogWorkohoLinkLabel": "workoho.com を訪問する",
+    "WelcomeDialogNextButton": "次へ",
+    "WelcomeDialogBackButton": "戻る",
+    "WelcomeDialogSkipButton": "後で設定する",
+    "WelcomeDialogSetupTitle": "数分で利用開始",
+    "WelcomeDialogSetupIntro": "Web パーツの実行方法を選択してください。この設定はいつでも Web パーツの設定で変更できます。",
+    "WelcomeDialogOptionApiTitle": "Guest Sponsor API を接続する",
+    "WelcomeDialogOptionApiBody": "Azure Function を利用した本格的なエクスペリエンスです。Azure の初回セットアップが必要です — 本番環境に推奨。",
+    "WelcomeDialogOptionApiDocsLabel": "GitHub のセットアップ ガイドを表示",
+    "WelcomeDialogOptionDemoTitle": "デモ モードで試す",
+    "WelcomeDialogOptionDemoBody": "模擬スポンサー データで Web パーツを試せます — Azure のセットアップは不要です。設定からいつでも実際の API に切り替えられます。",
+    "WelcomeDialogFunctionUrlRequired": "Guest Sponsor API のベース URL を入力してください。",
+    "WelcomeDialogDoneApiTitle": "API を設定しました！",
+    "WelcomeDialogDoneApiBody": "Guest Sponsor API への接続が保存されました。設定をすべてのユーザーに適用するには、ページを保存してください。",
+    "WelcomeDialogDoneDemoTitle": "デモ モードを有効にしました！",
+    "WelcomeDialogDoneDemoBody": "表示モードに切り替えると、模擬スポンサー カードで Web パーツが表示されます。準備ができたら、設定から Guest Sponsor API を接続してください。",
     "WelcomeDialogDismissButton": "はじめましょう",
   }
 });

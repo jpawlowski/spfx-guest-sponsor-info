@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 Workoho GmbH <https://workoho.com>
+// SPDX-FileCopyrightText: 2026 Julian Pawlowski <https://github.com/jpawlowski>
+// SPDX-License-Identifier: AGPL-3.0-only
+
 define([], function() {
   return {
     "PropertyPaneDescription": "Configurer le composant WebPart «Infos sur le sponsor invité».",
@@ -168,6 +172,21 @@ define([], function() {
     "WelcomeDialogBody": "Ce composant Web vous présente vos sponsors Microsoft 365 — les collègues internes chargés de votre compte invité, de votre intégration et de votre support au quotidien dans cette organisation.",
     "WelcomeDialogBroughtToYouBy": "Développé par Workoho — spécialistes de la gouvernance, de l'identité et de la gestion des accès invités sur Microsoft 365.",
     "WelcomeDialogWorkohoLinkLabel": "Visiter workoho.com",
+    "WelcomeDialogNextButton": "Suivant",
+    "WelcomeDialogBackButton": "Retour",
+    "WelcomeDialogSkipButton": "Ignorer pour l'instant",
+    "WelcomeDialogSetupTitle": "Prêt en quelques minutes",
+    "WelcomeDialogSetupIntro": "Choisissez comment vous souhaitez utiliser le composant. Vous pouvez modifier cela à tout moment dans les paramètres.",
+    "WelcomeDialogOptionApiTitle": "Connecter l'API Guest Sponsor",
+    "WelcomeDialogOptionApiBody": "Expérience complète alimentée par une Azure Function. Nécessite une configuration Azure unique — recommandé pour la production.",
+    "WelcomeDialogOptionApiDocsLabel": "Voir le guide de configuration sur GitHub",
+    "WelcomeDialogOptionDemoTitle": "Explorer en mode démo",
+    "WelcomeDialogOptionDemoBody": "Essayez le composant avec des données de sponsors simulées — aucune configuration Azure requise. Passez à l'API réelle depuis les paramètres à tout moment.",
+    "WelcomeDialogFunctionUrlRequired": "Veuillez entrer l'URL de base de l'API Guest Sponsor.",
+    "WelcomeDialogDoneApiTitle": "API configurée !",
+    "WelcomeDialogDoneApiBody": "La connexion à l'API Guest Sponsor a été enregistrée. N'oubliez pas d'enregistrer la page pour que vos paramètres soient appliqués pour tout le monde.",
+    "WelcomeDialogDoneDemoTitle": "Mode démo activé !",
+    "WelcomeDialogDoneDemoBody": "Passez en mode affichage pour voir le composant avec des cartes de sponsors simulées. Connectez l'API Guest Sponsor depuis les paramètres quand vous êtes prêt.",
     "WelcomeDialogDismissButton": "C'est parti",
   }
 });

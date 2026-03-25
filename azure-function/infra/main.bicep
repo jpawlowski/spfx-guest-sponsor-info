@@ -3,8 +3,8 @@ targetScope = 'resourceGroup'
 metadata name = 'Guest Sponsor Info – Azure Function Proxy'
 metadata description = 'Deploys an Azure Function App that acts as a Graph API proxy for the Guest Sponsor Info SharePoint web part. Includes a Storage Account, App Service Plan, EasyAuth configuration, Managed Identity role assignments, Log Analytics Workspace, and Application Insights.'
 metadata repository = 'https://github.com/workoho/spfx-guest-sponsor-info'
-metadata author = 'jpawlowski'
-metadata license = 'MIT'
+metadata author = 'Workoho GmbH'
+metadata license = 'AGPL-3.0-only'
 
 @metadata({ category: 'Basics' })
 @description('Azure region for all resources.')
@@ -193,6 +193,10 @@ param defaultOperationalActionGroupShortName string = 'GSIOps'
 @maxLength(12)
 param defaultInfoActionGroupShortName string = 'GSIInfo'
 
+@metadata({ category: 'Telemetry' })
+@description('Enable Customer Usage Attribution (CUA): an empty nested deployment named pid-18fb4033-c9f3-41fa-a5db-e3a03b012939 is created in your resource group. Microsoft forwards aggregated Azure consumption figures for that GUID to Workoho via Partner Center — no personal data or resource details ever leave your subscription. Set to false to opt out. See https://aka.ms/partnercenter-attribution')
+param enableTelemetry bool = true
+
 var isFlexConsumption = hostingPlan == 'FlexConsumption'
 var deploymentContainerName = 'app-package'
 var storageAccountName = toLower(replace(functionAppName, '-', ''))
@@ -214,6 +218,27 @@ var appServicePlanName = '${functionAppName}-plan'
 var azureMapsName = empty(azureMapsAccountName)
   ? toLower('maps${uniqueString(resourceGroup().id, functionAppName)}')
   : toLower(azureMapsAccountName)
+
+// ── Customer Usage Attribution (Partner Center tracking) ─────────────────────
+// Empty nested deployment whose name carries the Partner Center GUID. Azure
+// records this GUID against every resource group deployment that includes this
+// template, allowing Workoho to see adoption metrics in Partner Center without
+// collecting any customer data. See https://learn.microsoft.com/partner-center/marketplace-offers/azure-partner-customer-usage-attribution
+// The no-deployments-resources rule is suppressed: Microsoft's CUA pattern
+// intentionally requires a named nested deployment — a Bicep module cannot
+// carry the pid- prefix required for attribution.
+#disable-next-line no-deployments-resources
+resource partnerAttribution 'Microsoft.Resources/deployments@2021-04-01' = if (enableTelemetry) {
+  name: 'pid-18fb4033-c9f3-41fa-a5db-e3a03b012939'
+  properties: {
+    mode: 'Incremental'
+    template: {
+      '$schema': 'https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#'
+      contentVersion: '1.0.0.0'
+      resources: []
+    }
+  }
+}
 
 // ── Monitoring module ────────────────────────────────────────────────────────
 // Log Analytics, Application Insights, Action Groups, and KQL alert rules are

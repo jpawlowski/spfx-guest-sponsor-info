@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 Workoho GmbH <https://workoho.com>
+// SPDX-FileCopyrightText: 2026 Julian Pawlowski <https://github.com/jpawlowski>
+// SPDX-License-Identifier: AGPL-3.0-only
+
 define([], function() {
   return {
     "PropertyPaneDescription": "Konfigurer webdelen Gæstesponsoroplysninger.",
@@ -164,6 +168,21 @@ define([], function() {
     "WelcomeDialogBody": "Denne webdel viser dine Microsoft 365-sponsorer — de interne kolleger, der er ansvarlige for din gæstekonto, din introduktion og din daglige support i denne organisation.",
     "WelcomeDialogBroughtToYouBy": "Udviklet af Workoho — specialister i Microsoft 365-styring, identitet og gæsteadgangsstyring.",
     "WelcomeDialogWorkohoLinkLabel": "Besøg workoho.com",
+    "WelcomeDialogNextButton": "Næste",
+    "WelcomeDialogBackButton": "Tilbage",
+    "WelcomeDialogSkipButton": "Spring over",
+    "WelcomeDialogSetupTitle": "Klar på få minutter",
+    "WelcomeDialogSetupIntro": "Vælg, hvordan du vil køre webdelen. Du kan ændre dette til enhver tid i indstillingerne.",
+    "WelcomeDialogOptionApiTitle": "Tilslut Guest Sponsor API",
+    "WelcomeDialogOptionApiBody": "Fuld funktionsrig oplevelse via en Azure Function. Kræver engangsopsætning i Azure — anbefales til produktion.",
+    "WelcomeDialogOptionApiDocsLabel": "Se installationsvejledningen på GitHub",
+    "WelcomeDialogOptionDemoTitle": "Udforsk i demotilstand",
+    "WelcomeDialogOptionDemoBody": "Prøv webdelen med simulerede sponsordata — ingen Azure-opsætning kræves. Skift til den rigtige API fra indstillingerne til enhver tid.",
+    "WelcomeDialogFunctionUrlRequired": "Angiv basis-URL'en for Guest Sponsor API.",
+    "WelcomeDialogDoneApiTitle": "API konfigureret!",
+    "WelcomeDialogDoneApiBody": "Forbindelsen til Guest Sponsor API er gemt. Husk at gemme siden, så dine indstillinger gælder for alle.",
+    "WelcomeDialogDoneDemoTitle": "Demotilstand aktiveret!",
+    "WelcomeDialogDoneDemoBody": "Skift til visningstilstand for at se webdelen med simulerede sponsorkort. Tilslut Guest Sponsor API fra indstillingerne, når du er klar.",
     "WelcomeDialogDismissButton": "Kom i gang",
   }
 });

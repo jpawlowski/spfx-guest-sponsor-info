@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 Workoho GmbH <https://workoho.com>
+// SPDX-FileCopyrightText: 2026 Julian Pawlowski <https://github.com/jpawlowski>
+// SPDX-License-Identifier: AGPL-3.0-only
+
 define([], function() {
   return {
     "PropertyPaneDescription": "Konfigurera webbdelen Gästsponsorsinfo.",
@@ -162,6 +166,21 @@ define([], function() {
     "WelcomeDialogBody": "Den här webbdelen visar dina Microsoft 365-sponsorer — de interna kollegor som ansvarar för ditt gästkonto, din introduktion och ditt dagliga stöd i den här organisationen.",
     "WelcomeDialogBroughtToYouBy": "Utvecklat av Workoho — specialister på Microsoft 365-styrning, identitet och hantering av gäståtkomst.",
     "WelcomeDialogWorkohoLinkLabel": "Besök workoho.com",
+    "WelcomeDialogNextButton": "Nästa",
+    "WelcomeDialogBackButton": "Tillbaka",
+    "WelcomeDialogSkipButton": "Hoppa över",
+    "WelcomeDialogSetupTitle": "Igång på några minuter",
+    "WelcomeDialogSetupIntro": "Välj hur du vill köra webbdelen. Du kan ändra detta när som helst i inställningarna.",
+    "WelcomeDialogOptionApiTitle": "Anslut Guest Sponsor API",
+    "WelcomeDialogOptionApiBody": "Fullständig upplevelse via en Azure Function. Kräver engångskonfiguration i Azure — rekommenderas för produktion.",
+    "WelcomeDialogOptionApiDocsLabel": "Visa installationsguide på GitHub",
+    "WelcomeDialogOptionDemoTitle": "Utforska i deoläge",
+    "WelcomeDialogOptionDemoBody": "Prova webbdelen med simulerade sponsordata — ingen Azure-konfiguration krävs. Byt till det verkliga API:et från inställningarna när som helst.",
+    "WelcomeDialogFunctionUrlRequired": "Ange bas-URL:en för Guest Sponsor API.",
+    "WelcomeDialogDoneApiTitle": "API konfigurerat!",
+    "WelcomeDialogDoneApiBody": "Anslutningen till Guest Sponsor API har sparats. Kom ihåg att spara sidan så att dina inställningar tillämpas för alla.",
+    "WelcomeDialogDoneDemoTitle": "Deoläge aktiverat!",
+    "WelcomeDialogDoneDemoBody": "Byt till visningsläge för att se webbdelen med simulerade sponsorkort. Anslut Guest Sponsor API från inställningarna när du är redo.",
     "WelcomeDialogDismissButton": "Kör igång",
   }
 });

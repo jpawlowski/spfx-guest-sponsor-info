@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 Workoho GmbH <https://workoho.com>
+# SPDX-FileCopyrightText: 2026 Julian Pawlowski <https://github.com/jpawlowski>
+# SPDX-License-Identifier: AGPL-3.0-only
+#
 # Preview or generate release notes from Conventional Commit history.
 #
 # Uses git-cliff (https://git-cliff.org) with the project's cliff.toml config.
@@ -34,7 +38,7 @@ if ! command -v git-cliff &>/dev/null; then
     exit 1
   fi
   case "${ARCH}" in
-    x86_64)  TRIPLE="x86_64-unknown-linux-musl" ;;
+    x86_64) TRIPLE="x86_64-unknown-linux-musl" ;;
     aarch64) TRIPLE="aarch64-unknown-linux-musl" ;;
     *)
       echo "ERROR: git-cliff auto-install is not supported for ${ARCH}." >&2
@@ -47,10 +51,10 @@ if ! command -v git-cliff &>/dev/null; then
   echo "git-cliff not found — installing v${GIT_CLIFF_VERSION} into ${INSTALL_DIR}..." >&2
   mkdir -p "${INSTALL_DIR}"
   curl -fsSL \
-    "https://github.com/orhun/git-cliff/releases/download/v${GIT_CLIFF_VERSION}/${TARBALL}" \
-    | tar -xz -C "${INSTALL_DIR}" \
-        --strip-components=1 \
-        "git-cliff-${GIT_CLIFF_VERSION}/git-cliff"
+    "https://github.com/orhun/git-cliff/releases/download/v${GIT_CLIFF_VERSION}/${TARBALL}" |
+    tar -xz -C "${INSTALL_DIR}" \
+      --strip-components=1 \
+      "git-cliff-${GIT_CLIFF_VERSION}/git-cliff"
   chmod +x "${INSTALL_DIR}/git-cliff"
   export PATH="${INSTALL_DIR}:${PATH}"
   echo "git-cliff ${GIT_CLIFF_VERSION} installed." >&2

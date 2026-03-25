@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 Workoho GmbH <https://workoho.com>
+// SPDX-FileCopyrightText: 2026 Julian Pawlowski <https://github.com/jpawlowski>
+// SPDX-License-Identifier: AGPL-3.0-only
+
 define([], function() {
   return {
     "PropertyPaneDescription": "配置访客赞助商信息 Web 部件。",
@@ -164,6 +168,21 @@ define([], function() {
     "WelcomeDialogBody": "此 Web 部件显示您的 Microsoft 365 发起人——负责您的来宾帐户、入职培训以及在该组织中日常支持的内部同事。",
     "WelcomeDialogBroughtToYouBy": "由 Workoho 开发——Microsoft 365 治理、标识和来宾访问管理专家。",
     "WelcomeDialogWorkohoLinkLabel": "访问 workoho.com",
+    "WelcomeDialogNextButton": "下一步",
+    "WelcomeDialogBackButton": "返回",
+    "WelcomeDialogSkipButton": "暂时跳过",
+    "WelcomeDialogSetupTitle": "几分钟内开始使用",
+    "WelcomeDialogSetupIntro": "选择 Web 部件的运行方式。您可以随时在 Web 部件设置中更改此项。",
+    "WelcomeDialogOptionApiTitle": "连接 Guest Sponsor API",
+    "WelcomeDialogOptionApiBody": "由 Azure Function 提供支持的完整体验。需要一次性 Azure 设置 — 推荐用于生产环境。",
+    "WelcomeDialogOptionApiDocsLabel": "查看 GitHub 上的设置指南",
+    "WelcomeDialogOptionDemoTitle": "在演示模式下探索",
+    "WelcomeDialogOptionDemoBody": "使用模拟赞助商数据试用 Web 部件 — 无需 Azure 设置。随时可以从设置中切换到真实 API。",
+    "WelcomeDialogFunctionUrlRequired": "请输入 Guest Sponsor API 的基础 URL。",
+    "WelcomeDialogDoneApiTitle": "API 已配置！",
+    "WelcomeDialogDoneApiBody": "与 Guest Sponsor API 的连接已保存。请记得保存页面，以便将设置应用给所有人。",
+    "WelcomeDialogDoneDemoTitle": "演示模式已激活！",
+    "WelcomeDialogDoneDemoBody": "切换到查看模式，查看带有模拟赞助商卡片的 Web 部件。准备好后，可从 Web 部件设置中连接 Guest Sponsor API。",
     "WelcomeDialogDismissButton": "开始使用",
   }
 });

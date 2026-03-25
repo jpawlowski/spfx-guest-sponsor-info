@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 Workoho GmbH <https://workoho.com>
+// SPDX-FileCopyrightText: 2026 Julian Pawlowski <https://github.com/jpawlowski>
+// SPDX-License-Identifier: AGPL-3.0-only
+
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import { act } from 'react-dom/test-utils';
@@ -109,7 +113,8 @@ function renderWebPart(overrides: Partial<IGuestSponsorInfoProps> = {}): void {
     showSponsorUnavailableHint: true,
     showNoSponsorsHint: true,
     clientVersion: '0.0.1',
-    instanceId: 'test-instance-id',
+    welcomeSeen: false,
+    onWelcomeComplete: () => undefined,
     fluentProviderId: 'gsi-test',
   };
   ReactDOM.render(<GuestSponsorInfo {...defaults} {...overrides} />, container);
@@ -130,7 +135,7 @@ describe('GuestSponsorInfo', () => {
 
   describe('edit mode', () => {
     it('shows mock sponsor cards for a guest author', () => {
-      act(() => { renderWebPart({ displayMode: DisplayMode.Edit }); });
+      act(() => { renderWebPart({ displayMode: DisplayMode.Edit, welcomeSeen: true }); });
       expect(container.textContent).toContain('Anna Müller');
     });
 
@@ -141,13 +146,14 @@ describe('GuestSponsorInfo', () => {
           displayMode: DisplayMode.Edit,
           loginName: 'member@fabrikam.onmicrosoft.com',
           isExternalGuestUser: false,
+          welcomeSeen: true,
         });
       });
       expect(container.textContent).toContain('Anna Müller');
     });
 
     it('never calls getSponsors in edit mode', () => {
-      act(() => { renderWebPart({ displayMode: DisplayMode.Edit }); });
+      act(() => { renderWebPart({ displayMode: DisplayMode.Edit, welcomeSeen: true }); });
       expect(mockGetSponsors).not.toHaveBeenCalled();
     });
   });

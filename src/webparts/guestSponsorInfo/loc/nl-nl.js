@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 Workoho GmbH <https://workoho.com>
+// SPDX-FileCopyrightText: 2026 Julian Pawlowski <https://github.com/jpawlowski>
+// SPDX-License-Identifier: AGPL-3.0-only
+
 define([], function() {
   return {
     "PropertyPaneDescription": "Configureer het webonderdeel Gastsponsors.",
@@ -170,6 +174,21 @@ define([], function() {
     "WelcomeDialogBody": "Dit webonderdeel toont uw Microsoft 365-sponsors — de interne collega's die verantwoordelijk zijn voor uw gastaccount, uw onboarding en uw dagelijkse ondersteuning in deze organisatie.",
     "WelcomeDialogBroughtToYouBy": "Ontwikkeld door Workoho — specialisten in Microsoft 365-governance, identiteit en beheer van gasttoegang.",
     "WelcomeDialogWorkohoLinkLabel": "Bezoek workoho.com",
+    "WelcomeDialogNextButton": "Volgende",
+    "WelcomeDialogBackButton": "Terug",
+    "WelcomeDialogSkipButton": "Nu overslaan",
+    "WelcomeDialogSetupTitle": "In enkele minuten klaar",
+    "WelcomeDialogSetupIntro": "Kies hoe u het webonderdeel wilt uitvoeren. U kunt dit op elk moment wijzigen in de instellingen.",
+    "WelcomeDialogOptionApiTitle": "Guest Sponsor API verbinden",
+    "WelcomeDialogOptionApiBody": "Volledige ervaring aangedreven door een Azure Function. Vereist eenmalige Azure-installatie — aanbevolen voor productie.",
+    "WelcomeDialogOptionApiDocsLabel": "Installatiehandleiding bekijken op GitHub",
+    "WelcomeDialogOptionDemoTitle": "Verkennen in demomodus",
+    "WelcomeDialogOptionDemoBody": "Probeer het webonderdeel met gesimuleerde sponsorgegevens — geen Azure-installatie vereist. Schakel op elk moment over naar de echte API via de instellingen.",
+    "WelcomeDialogFunctionUrlRequired": "Voer de basis-URL van de Guest Sponsor API in.",
+    "WelcomeDialogDoneApiTitle": "API geconfigureerd!",
+    "WelcomeDialogDoneApiBody": "De verbinding met de Guest Sponsor API is opgeslagen. Vergeet niet de pagina op te slaan zodat uw instellingen voor iedereen worden toegepast.",
+    "WelcomeDialogDoneDemoTitle": "Demomodus geactiveerd!",
+    "WelcomeDialogDoneDemoBody": "Schakel over naar weergavemodus om het webonderdeel te zien met gesimuleerde sponsorkaarten. Verbind de Guest Sponsor API via de instellingen wanneer u klaar bent.",
     "WelcomeDialogDismissButton": "Aan de slag",
   }
 });

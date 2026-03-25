@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 Workoho GmbH <https://workoho.com>
+// SPDX-FileCopyrightText: 2026 Julian Pawlowski <https://github.com/jpawlowski>
+// SPDX-License-Identifier: AGPL-3.0-only
+
 define([], function() {
   return {
     "PropertyPaneDescription": "Configure the Guest Sponsor Info web part.",
@@ -159,5 +163,20 @@ define([], function() {
     "WelcomeDialogBroughtToYouBy": "Built by Workoho — specialists in Microsoft 365 governance, identity, and guest access management.",
     "WelcomeDialogWorkohoLinkLabel": "Visit workoho.com",
     "WelcomeDialogDismissButton": "Let's go",
+    "WelcomeDialogNextButton": "Next",
+    "WelcomeDialogBackButton": "Back",
+    "WelcomeDialogSkipButton": "Skip for now",
+    "WelcomeDialogSetupTitle": "Get started in minutes",
+    "WelcomeDialogSetupIntro": "Choose how you want to run the web part. You can change this any time in the web part settings.",
+    "WelcomeDialogOptionApiTitle": "Connect Guest Sponsor API",
+    "WelcomeDialogOptionApiBody": "Full-featured experience powered by an Azure Function. Requires one-time Azure setup — recommended for production.",
+    "WelcomeDialogOptionApiDocsLabel": "View setup guide on GitHub",
+    "WelcomeDialogOptionDemoTitle": "Explore in Demo Mode",
+    "WelcomeDialogOptionDemoBody": "Try the web part with simulated sponsor data — no Azure setup required. Switch to the real API from the settings at any time.",
+    "WelcomeDialogFunctionUrlRequired": "Please enter the Guest Sponsor API base URL.",
+    "WelcomeDialogDoneApiTitle": "API configured!",
+    "WelcomeDialogDoneApiBody": "The Guest Sponsor API connection has been saved. Remember to save the page so your settings are applied for everyone.",
+    "WelcomeDialogDoneDemoTitle": "Demo Mode activated!",
+    "WelcomeDialogDoneDemoBody": "Switch to view mode to see the web part with simulated sponsor cards. Connect the Guest Sponsor API from the settings whenever you are ready.",
   }
 });

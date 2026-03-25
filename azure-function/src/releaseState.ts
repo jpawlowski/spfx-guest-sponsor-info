@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 Workoho GmbH <https://workoho.com>
+// SPDX-FileCopyrightText: 2026 Julian Pawlowski <https://github.com/jpawlowski>
+// SPDX-License-Identifier: AGPL-3.0-only
+
 /**
  * In-memory release state shared between the checkGitHubRelease timer trigger
  * and the getGuestSponsors request handler.
@@ -21,11 +25,27 @@
 export let latestGitHubVersion: string | undefined;
 
 /**
+ * The HTML URL of the latest published GitHub release page
+ * (e.g. "https://github.com/workoho/spfx-guest-sponsor-info/releases/tag/v1.2.3").
+ * Updated alongside `latestGitHubVersion` by `checkGitHubRelease`.
+ * `undefined` until the timer has completed its first run in this instance.
+ */
+export let latestGitHubReleaseUrl: string | undefined;
+
+/**
  * Records the most recent GitHub release version fetched by the timer.
  * Called by `checkGitHubRelease` after every successful GitHub API response.
  */
 export function setLatestGitHubVersion(version: string): void {
   latestGitHubVersion = version;
+}
+
+/**
+ * Records the HTML URL of the most recent GitHub release page.
+ * Called by `checkGitHubRelease` alongside `setLatestGitHubVersion`.
+ */
+export function setLatestGitHubReleaseUrl(url: string): void {
+  latestGitHubReleaseUrl = url;
 }
 
 /**

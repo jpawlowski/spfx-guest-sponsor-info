@@ -26,11 +26,11 @@
       "zh-CN"
     ],
     "developer": {
-      "name": "Julian Pawlowski",
+      "name": "Workoho GmbH",
       "websiteUrl": "https://github.com/workoho/spfx-guest-sponsor-info",
-      "privacyUrl": "https://github.com/workoho/spfx-guest-sponsor-info#readme",
-      "termsOfUseUrl": "https://github.com/workoho/spfx-guest-sponsor-info/blob/main/LICENSE",
-      "mpnId": ""
+      "privacyUrl": "https://github.com/workoho/spfx-guest-sponsor-info/blob/main/docs/privacy-policy.md",
+      "termsOfUseUrl": "https://github.com/workoho/spfx-guest-sponsor-info/blob/main/docs/terms-of-use.md",
+      "mpnId": "6553067"
     },
     "metadata": {
       "shortDescription": {

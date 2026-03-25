@@ -1,6 +1,10 @@
+// SPDX-FileCopyrightText: 2026 Workoho GmbH <https://workoho.com>
+// SPDX-FileCopyrightText: 2026 Julian Pawlowski <https://github.com/jpawlowski>
+// SPDX-License-Identifier: AGPL-3.0-only
+
 import { app, InvocationContext, Timer } from '@azure/functions';
 import packageJson from '../package.json';
-import { isNewerVersion, setLatestGitHubVersion } from './releaseState.js';
+import { isNewerVersion, setLatestGitHubVersion, setLatestGitHubReleaseUrl } from './releaseState.js';
 
 const CURRENT_VERSION: string = packageJson.version;
 const GITHUB_API_URL = 'https://api.github.com/repos/workoho/spfx-guest-sponsor-info/releases/latest';
@@ -76,10 +80,11 @@ async function checkGitHubRelease(_timer: Timer, context: InvocationContext): Pr
 
   const latestVersion = tag.replace(/^v/, '');
 
-  // Always record the fetched GitHub version in shared in-memory state so that
-  // the getGuestSponsors request handler can use it to enrich mismatch context
-  // (e.g. determine whether the function or the web part is on the latest version).
+  // Always record the fetched GitHub version and release URL in shared in-memory
+  // state so that both the getGuestSponsors mismatch-context logic and the new
+  // getLatestRelease endpoint can serve clients without an extra GitHub API call.
   setLatestGitHubVersion(latestVersion);
+  setLatestGitHubReleaseUrl(releaseUrl);
 
   if (!isNewerVersion(latestVersion, currentVersion)) {
     context.log(`[checkGitHubRelease] Function is up to date (v${currentVersion}).`);

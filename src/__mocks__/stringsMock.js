@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 Workoho GmbH <https://workoho.com>
+// SPDX-FileCopyrightText: 2026 Julian Pawlowski <https://github.com/jpawlowski>
+// SPDX-License-Identifier: AGPL-3.0-only
+
 // CommonJS equivalent of loc/en-us.js.
 // The original locale file uses the AMD define() pattern which jest cannot evaluate
 // in a CommonJS test environment. This shim exposes the same strings via module.exports.

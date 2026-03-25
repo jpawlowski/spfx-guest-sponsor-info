@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 Workoho GmbH <https://workoho.com>
+// SPDX-FileCopyrightText: 2026 Julian Pawlowski <https://github.com/jpawlowski>
+// SPDX-License-Identifier: AGPL-3.0-only
+
 define([], function() {
   return {
     "PropertyPaneDescription": "Konfigurieren Sie das Webpart 'Gast-Sponsor-Info'.",
@@ -167,6 +171,21 @@ define([], function() {
     "WelcomeDialogBody": "Dieses Webpart zeigt Ihre Microsoft 365-Sponsoren – die internen Kolleginnen und Kollegen, die für Ihren Gastzugang, Ihr Onboarding und Ihren Alltag in dieser Organisation verantwortlich sind.",
     "WelcomeDialogBroughtToYouBy": "Entwickelt von Workoho – Experten für Microsoft 365 Governance, Identity und Guest Access Management.",
     "WelcomeDialogWorkohoLinkLabel": "workoho.com besuchen",
+    "WelcomeDialogNextButton": "Weiter",
+    "WelcomeDialogBackButton": "Zurück",
+    "WelcomeDialogSkipButton": "Überspringen",
+    "WelcomeDialogSetupTitle": "In wenigen Minuten einsatzbereit",
+    "WelcomeDialogSetupIntro": "Wählen Sie, wie das Webpart betrieben werden soll. Sie können dies jederzeit in den Einstellungen ändern.",
+    "WelcomeDialogOptionApiTitle": "Guest Sponsor API verbinden",
+    "WelcomeDialogOptionApiBody": "Voller Funktionsumfang über eine Azure Function. Erfordert eine einmalige Azure-Einrichtung — empfohlen für den Produktivbetrieb.",
+    "WelcomeDialogOptionApiDocsLabel": "Einrichtungsanleitung auf GitHub ansehen",
+    "WelcomeDialogOptionDemoTitle": "Im Demo-Modus erkunden",
+    "WelcomeDialogOptionDemoBody": "Testen Sie das Webpart mit simulierten Sponsoren — ohne Azure-Einrichtung. Sie können jederzeit in den Einstellungen auf die echte API umstellen.",
+    "WelcomeDialogFunctionUrlRequired": "Bitte geben Sie die Basis-URL der Guest Sponsor API ein.",
+    "WelcomeDialogDoneApiTitle": "API konfiguriert!",
+    "WelcomeDialogDoneApiBody": "Die Verbindung zur Guest Sponsor API wurde gespeichert. Vergessen Sie nicht, die Seite zu speichern, damit die Einstellungen für alle übernommen werden.",
+    "WelcomeDialogDoneDemoTitle": "Demo-Modus aktiviert!",
+    "WelcomeDialogDoneDemoBody": "Wechseln Sie in den Ansichtsmodus, um das Webpart mit simulierten Sponsor-Karten in Aktion zu sehen. Verbinden Sie die Guest Sponsor API jederzeit in den Einstellungen.",
     "WelcomeDialogDismissButton": "Los geht's",
   }
 });

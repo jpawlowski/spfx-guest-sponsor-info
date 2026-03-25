@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 Workoho GmbH <https://workoho.com>
+// SPDX-FileCopyrightText: 2026 Julian Pawlowski <https://github.com/jpawlowski>
+// SPDX-License-Identifier: AGPL-3.0-only
+
 define([], function() {
   return {
     "PropertyPaneDescription": "Configura la web part «Info sponsor ospite».",
@@ -171,6 +175,21 @@ define([], function() {
     "WelcomeDialogBody": "Questa web part mostra i tuoi sponsor Microsoft 365 — i colleghi interni responsabili del tuo account ospite, della tua integrazione e del tuo supporto quotidiano in questa organizzazione.",
     "WelcomeDialogBroughtToYouBy": "Sviluppato da Workoho — specialisti nella governance, nell'identità e nella gestione degli accessi ospite su Microsoft 365.",
     "WelcomeDialogWorkohoLinkLabel": "Visita workoho.com",
+    "WelcomeDialogNextButton": "Avanti",
+    "WelcomeDialogBackButton": "Indietro",
+    "WelcomeDialogSkipButton": "Salta per ora",
+    "WelcomeDialogSetupTitle": "Pronto in pochi minuti",
+    "WelcomeDialogSetupIntro": "Scegli come vuoi eseguire la web part. Puoi modificarlo in qualsiasi momento nelle impostazioni.",
+    "WelcomeDialogOptionApiTitle": "Collega la Guest Sponsor API",
+    "WelcomeDialogOptionApiBody": "Esperienza completa alimentata da una Azure Function. Richiede una configurazione Azure una tantum — consigliato per la produzione.",
+    "WelcomeDialogOptionApiDocsLabel": "Visualizza la guida di configurazione su GitHub",
+    "WelcomeDialogOptionDemoTitle": "Esplora in modalità demo",
+    "WelcomeDialogOptionDemoBody": "Prova la web part con dati di sponsor simulati — senza configurazione Azure. Passa all'API reale dalle impostazioni in qualsiasi momento.",
+    "WelcomeDialogFunctionUrlRequired": "Inserisci l'URL base della Guest Sponsor API.",
+    "WelcomeDialogDoneApiTitle": "API configurata!",
+    "WelcomeDialogDoneApiBody": "La connessione alla Guest Sponsor API è stata salvata. Ricorda di salvare la pagina affinché le impostazioni vengano applicate a tutti.",
+    "WelcomeDialogDoneDemoTitle": "Modalità demo attivata!",
+    "WelcomeDialogDoneDemoBody": "Passa alla modalità di visualizzazione per vedere la web part con schede sponsor simulate. Connetti la Guest Sponsor API dalle impostazioni quando sei pronto.",
     "WelcomeDialogDismissButton": "Iniziamo",
   }
 });

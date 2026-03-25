@@ -1,10 +1,14 @@
+// SPDX-FileCopyrightText: 2026 Workoho GmbH <https://workoho.com>
+// SPDX-FileCopyrightText: 2026 Julian Pawlowski <https://github.com/jpawlowski>
+// SPDX-License-Identifier: AGPL-3.0-only
+
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
 import { createHmac, randomUUID, timingSafeEqual } from 'crypto';
 import { DefaultAzureCredential } from '@azure/identity';
 import { Client, GraphError } from '@microsoft/microsoft-graph-client';
 import { TokenCredentialAuthenticationProvider } from '@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials';
 import packageJson from '../package.json';
-import { isNewerVersion, latestGitHubVersion } from './releaseState.js';
+import { isNewerVersion, latestGitHubVersion, latestGitHubReleaseUrl } from './releaseState.js';
 
 /** Version string exposed in every response via X-Api-Version and used for client/server mismatch detection. */
 const FUNCTION_VERSION: string = packageJson.version;
@@ -1123,7 +1127,7 @@ export async function getGuestSponsors(
     const sponsorBatchRequests: IBatchRequest[] = candidates.map((sponsor, index) => ({
       id: `exists-${index}`,
       method: 'GET',
-      url: `/users/${sponsor.id}?$select=id,accountEnabled,assignedPlans${hasMailboxSettings ? ',mailboxSettings' : ''}&$expand=manager($select=id,displayName,givenName,surname,jobTitle,department,accountEnabled)`,
+      url: `/users/${sponsor.id}?$select=id,accountEnabled,isResourceAccount,assignedPlans${hasMailboxSettings ? ',mailboxSettings' : ''}&$expand=manager($select=id,displayName,givenName,surname,jobTitle,department,accountEnabled)`,
     }));
 
     // When TeamMember.Read.All is granted, add a joinedTeams sub-request to the
@@ -1182,9 +1186,16 @@ export async function getGuestSponsors(
           }
         }
       }
-      // Treat missing, soft-deleted, disabled, or non-user-mailbox sponsors as unavailable.
+      // isResourceAccount flags Teams Room devices, Common Area Phones, and other
+      // resource accounts — these are never valid sponsors regardless of their licenses.
+      // Fail-open when the property is absent (undefined) so a transient Graph response
+      // does not silently hide a legitimately configured sponsor.
+      const isResourceAccount = existsBody !== undefined
+        ? getBooleanValue(existsBody, 'isResourceAccount') === true
+        : false;
+      // Treat missing, soft-deleted, disabled, resource, or non-user-mailbox sponsors as unavailable.
       const exists = existsResponse?.status === 404 ? false
-        : sponsorEnabled !== false && hasUserMailbox;
+        : sponsorEnabled !== false && !isResourceAccount && hasUserMailbox;
 
       // Emit a throttled warn for hard-deleted sponsors (Graph 404).  A persistent
       // 404 indicates a broken sponsor reference — the Entra object no longer exists
@@ -1834,6 +1845,48 @@ app.http('ping', {
     return {
       status: 200,
       body: JSON.stringify({ status: 'ok', version: FUNCTION_VERSION }),
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-version': FUNCTION_VERSION,
+        ...corsHeaders(request),
+      },
+    };
+  },
+});
+
+/**
+ * HTTP GET – returns the latest published GitHub release version cached in memory.
+ *
+ * The timer trigger in `checkGitHubRelease` fetches the GitHub Releases API once
+ * every six hours (and on every cold start) and stores the result in module-level
+ * in-memory state (`releaseState.ts`).  This endpoint exposes that cached state so
+ * the SPFx web part can learn about new releases without ever calling GitHub
+ * directly from the browser.  Multiple simultaneous clients therefore share a
+ * single outbound GitHub request per six-hour window.
+ *
+ * Response body (JSON):
+ *   latestVersion  – semver string of the latest GitHub release (no leading "v"),
+ *                    or null when the timer has not yet completed its first run.
+ *   url            – HTML URL of the GitHub release page, or null.
+ *   functionVersion – the currently deployed function version.
+ *
+ * No caller-identity or Graph work is performed here.  EasyAuth gates access
+ * at the infrastructure level (same as /api/ping).
+ */
+app.http('getLatestRelease', {
+  methods: ['GET', 'OPTIONS'],
+  authLevel: 'anonymous', // Authentication is enforced by EasyAuth, not the function key.
+  handler: async (request: HttpRequest): Promise<HttpResponseInit> => {
+    if (request.method === 'OPTIONS') {
+      return { status: 204, headers: corsHeaders(request) };
+    }
+    return {
+      status: 200,
+      body: JSON.stringify({
+        latestVersion: latestGitHubVersion ?? null,
+        url: latestGitHubReleaseUrl ?? null,
+        functionVersion: FUNCTION_VERSION,
+      }),
       headers: {
         'Content-Type': 'application/json',
         'x-api-version': FUNCTION_VERSION,

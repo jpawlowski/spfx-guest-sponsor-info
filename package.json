@@ -2,8 +2,17 @@
   "name": "guest-sponsor-info",
   "version": "0.21.0",
   "description": "SharePoint Online web part that shows the Microsoft Entra sponsors of the signed-in guest user",
-  "license": "MIT",
-  "author": "Julian Pawlowski",
+  "license": "AGPL-3.0-only",
+  "author": {
+    "name": "Workoho GmbH",
+    "url": "https://workoho.com"
+  },
+  "contributors": [
+    {
+      "name": "Julian Pawlowski",
+      "url": "https://github.com/jpawlowski"
+    }
+  ],
   "homepage": "https://github.com/workoho/spfx-guest-sponsor-info",
   "keywords": [
     "sharepoint",

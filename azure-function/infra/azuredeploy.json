@@ -5,13 +5,13 @@
     "_generator": {
       "name": "bicep",
       "version": "0.41.2.15936",
-      "templateHash": "11299032576628616274"
+      "templateHash": "3752820722782831946"
     },
     "name": "Guest Sponsor Info – Azure Function Proxy",
     "description": "Deploys an Azure Function App that acts as a Graph API proxy for the Guest Sponsor Info SharePoint web part. Includes a Storage Account, App Service Plan, EasyAuth configuration, Managed Identity role assignments, Log Analytics Workspace, and Application Insights.",
     "repository": "https://github.com/workoho/spfx-guest-sponsor-info",
-    "author": "jpawlowski",
-    "license": "MIT"
+    "author": "Workoho GmbH",
+    "license": "AGPL-3.0-only"
   },
   "parameters": {
     "location": {
@@ -339,6 +339,14 @@
         "description": "Short name for the auto-created info action group (max 12 chars)."
       },
       "maxLength": 12
+    },
+    "enableTelemetry": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "category": "Telemetry",
+        "description": "Enable Customer Usage Attribution (CUA): an empty nested deployment named pid-18fb4033-c9f3-41fa-a5db-e3a03b012939 is created in your resource group. Microsoft forwards aggregated Azure consumption figures for that GUID to Workoho via Partner Center — no personal data or resource details ever leave your subscription. Set to false to opt out. See https://aka.ms/partnercenter-attribution"
+      }
     }
   },
   "variables": {
@@ -405,6 +413,20 @@
     "functionAppHostName": "[format('{0}.azurewebsites.net', parameters('functionAppName'))]"
   },
   "resources": [
+    {
+      "condition": "[parameters('enableTelemetry')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2021-04-01",
+      "name": "pid-18fb4033-c9f3-41fa-a5db-e3a03b012939",
+      "properties": {
+        "mode": "Incremental",
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "resources": []
+        }
+      }
+    },
     {
       "type": "Microsoft.Storage/storageAccounts",
       "apiVersion": "2023-01-01",

@@ -1,6 +1,20 @@
+// SPDX-FileCopyrightText: 2026 Workoho GmbH <https://workoho.com>
+// SPDX-FileCopyrightText: 2026 Julian Pawlowski <https://github.com/jpawlowski>
+// SPDX-License-Identifier: AGPL-3.0-only
+
 import { MSGraphClientV3, AadHttpClient } from '@microsoft/sp-http';
 import { DisplayMode } from '@microsoft/sp-core-library';
 import type { IReadonlyTheme } from '@microsoft/sp-component-base';
+
+/** Payload emitted by WelcomeDialog when the admin completes or skips the wizard. */
+export interface IWelcomeSetupConfig {
+  /** The path the admin chose: configure the API, enable demo mode, or skip entirely. */
+  chosenPath: 'api' | 'demo' | 'skip';
+  /** Azure Function base URL (without `/api/…` suffix). Only present when `chosenPath === 'api'`. */
+  apiUrl?: string;
+  /** App Registration client ID for the Azure Function. Only present when `chosenPath === 'api'`. */
+  clientId?: string;
+}
 
 export interface IGuestSponsorInfoProps {
   /** SPFx login name (UPN) of the current user – used as a fallback for guest detection. */
@@ -130,11 +144,19 @@ export interface IGuestSponsorInfoProps {
    */
   onTitleChange?: (newTitle: string) => void;
   /**
-   * The raw SPFx web part instance ID (a GUID).
-   * Used as the per-instance localStorage key for the first-run welcome dialog
-   * so each instance on a page tracks dismissal independently.
+   * Whether the first-run welcome dialog has already been dismissed for this instance.
+   * Backed by `this.properties.welcomeSeen` in the web part class so the flag is
+   * stored in SharePoint (per-page, per-instance) rather than in the browser —
+   * dismissing it once removes it for all users on all devices.
    */
-  instanceId: string;
+  welcomeSeen: boolean;
+  /**
+   * Called when the admin completes (or deliberately skips) the first-run setup wizard.
+   * The web part class persists `welcomeSeen = true` and optionally writes the chosen
+   * API URL, client ID, and mode into `this.properties` so the page author only needs
+   * to save the page once to apply all settings.
+   */
+  onWelcomeComplete: (config: IWelcomeSetupConfig) => void;
   /**
    * Unique prefix derived from the SPFx web part instance ID.
    * Passed as `id` to every FluentProvider so multiple web part instances

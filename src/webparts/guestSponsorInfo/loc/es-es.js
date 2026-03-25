@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 Workoho GmbH <https://workoho.com>
+// SPDX-FileCopyrightText: 2026 Julian Pawlowski <https://github.com/jpawlowski>
+// SPDX-License-Identifier: AGPL-3.0-only
+
 define([], function() {
   return {
     "PropertyPaneDescription": "Configure el elemento web «Información del patrocinador invitado».",
@@ -170,6 +174,21 @@ define([], function() {
     "WelcomeDialogBody": "Este elemento web muestra a sus patrocinadores de Microsoft 365 — los compañeros internos responsables de su cuenta de invitado, su incorporación y su soporte diario en esta organización.",
     "WelcomeDialogBroughtToYouBy": "Desarrollado por Workoho — especialistas en gobernanza de Microsoft 365, identidad y gestión de acceso de invitados.",
     "WelcomeDialogWorkohoLinkLabel": "Visitar workoho.com",
+    "WelcomeDialogNextButton": "Siguiente",
+    "WelcomeDialogBackButton": "Atrás",
+    "WelcomeDialogSkipButton": "Omitir por ahora",
+    "WelcomeDialogSetupTitle": "Empieza en minutos",
+    "WelcomeDialogSetupIntro": "Elija cómo desea ejecutar el elemento web. Puede cambiar esto en cualquier momento en la configuración.",
+    "WelcomeDialogOptionApiTitle": "Conectar la API Guest Sponsor",
+    "WelcomeDialogOptionApiBody": "Experiencia completa impulsada por una Azure Function. Requiere configuración única en Azure — recomendado para producción.",
+    "WelcomeDialogOptionApiDocsLabel": "Ver la guía de configuración en GitHub",
+    "WelcomeDialogOptionDemoTitle": "Explorar en modo demo",
+    "WelcomeDialogOptionDemoBody": "Pruebe el elemento web con datos de patrocinadores simulados — sin configuración de Azure. Cambie a la API real desde la configuración en cualquier momento.",
+    "WelcomeDialogFunctionUrlRequired": "Introduzca la URL base de la API Guest Sponsor.",
+    "WelcomeDialogDoneApiTitle": "¡API configurada!",
+    "WelcomeDialogDoneApiBody": "La conexión a la API Guest Sponsor se ha guardado. Recuerde guardar la página para que la configuración se aplique a todos.",
+    "WelcomeDialogDoneDemoTitle": "¡Modo demo activado!",
+    "WelcomeDialogDoneDemoBody": "Cambie al modo de visualización para ver el elemento web con tarjetas de patrocinadores simuladas. Conecte la API Guest Sponsor desde la configuración cuando esté listo.",
     "WelcomeDialogDismissButton": "\u00a1Empecemos!",
   }
 });

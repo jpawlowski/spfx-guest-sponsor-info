@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 Workoho GmbH <https://workoho.com>
+// SPDX-FileCopyrightText: 2026 Julian Pawlowski <https://github.com/jpawlowski>
+// SPDX-License-Identifier: AGPL-3.0-only
+
 define([], function() {
   return {
     "PropertyPaneDescription": "Configure o web part de Informações do Patrocinador Convidado.",
@@ -164,6 +168,21 @@ define([], function() {
     "WelcomeDialogBody": "Este Web Part exibe seus patrocinadores do Microsoft 365 — os colegas internos responsáveis pela sua conta de convidado, integração e suporte diário nesta organização.",
     "WelcomeDialogBroughtToYouBy": "Desenvolvido pela Workoho — especialistas em governança, identidade e gerenciamento de acesso de convidados no Microsoft 365.",
     "WelcomeDialogWorkohoLinkLabel": "Visite workoho.com",
+    "WelcomeDialogNextButton": "Próximo",
+    "WelcomeDialogBackButton": "Voltar",
+    "WelcomeDialogSkipButton": "Ignorar por agora",
+    "WelcomeDialogSetupTitle": "Pronto em minutos",
+    "WelcomeDialogSetupIntro": "Escolha como deseja executar o Web Part. Você pode alterar isso a qualquer momento nas configurações.",
+    "WelcomeDialogOptionApiTitle": "Conectar a API Guest Sponsor",
+    "WelcomeDialogOptionApiBody": "Experiência completa com uma Azure Function. Requer configuração única no Azure — recomendado para produção.",
+    "WelcomeDialogOptionApiDocsLabel": "Ver guia de configuração no GitHub",
+    "WelcomeDialogOptionDemoTitle": "Explorar no modo de demonstração",
+    "WelcomeDialogOptionDemoBody": "Experimente o Web Part com dados de sponsors simulados — sem configuração do Azure. Alterne para a API real nas configurações a qualquer momento.",
+    "WelcomeDialogFunctionUrlRequired": "Informe a URL base da API Guest Sponsor.",
+    "WelcomeDialogDoneApiTitle": "API configurada!",
+    "WelcomeDialogDoneApiBody": "A conexão com a API Guest Sponsor foi salva. Lembre-se de salvar a página para que suas configurações sejam aplicadas para todos.",
+    "WelcomeDialogDoneDemoTitle": "Modo de demonstração ativado!",
+    "WelcomeDialogDoneDemoBody": "Alterne para o modo de exibição para ver o Web Part com cartões de sponsors simulados. Conecte a API Guest Sponsor nas configurações quando estiver pronto.",
     "WelcomeDialogDismissButton": "Vamos lá",
   }
 });

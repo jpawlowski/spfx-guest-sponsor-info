@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Workoho GmbH <https://workoho.com>
+# SPDX-FileCopyrightText: 2026 Julian Pawlowski <https://github.com/jpawlowski>
+# SPDX-License-Identifier: AGPL-3.0-only
+
 <#
 .SYNOPSIS
     Grants the Function App's Managed Identity the required Microsoft Graph application roles
@@ -74,7 +78,7 @@ $requiredRoles = @(
 )
 
 $assignedRoles = @()
-$skippedRoles  = @()
+$skippedRoles = @()
 
 foreach ($role in $requiredRoles) {
     Write-Host "Assigning $($role.Name) ..." -ForegroundColor Cyan
@@ -85,7 +89,8 @@ foreach ($role in $requiredRoles) {
             Write-Host "  ⚠ $($role.Name) is not available as an Application permission in this tenant (Microsoft Teams may not be licensed). Skipping — sponsors will be shown without presence status." -ForegroundColor Yellow
             $skippedRoles += $role.Name
             continue
-        } else {
+        }
+        else {
             throw "Required permission '$($role.Name)' was not found on the Microsoft Graph service principal."
         }
     }
@@ -99,11 +104,13 @@ foreach ($role in $requiredRoles) {
             -ErrorAction Stop
         Write-Host "  ✓ $($role.Name) assigned." -ForegroundColor Green
         $assignedRoles += $role.Name
-    } catch {
+    }
+    catch {
         if ($_.Exception.Message -like "*Permission being assigned already exists*") {
             Write-Host "  ✓ $($role.Name) already assigned — skipping." -ForegroundColor Yellow
             $assignedRoles += $role.Name
-        } else {
+        }
+        else {
             throw
         }
     }
@@ -123,7 +130,8 @@ $spWebClientSps = Get-MgServicePrincipal -Filter "displayName eq 'SharePoint Onl
 if ($spWebClientSps) {
     $spWebClientAppIds = @($spWebClientSps | Select-Object -ExpandProperty AppId)
     Write-Host "  Found $($spWebClientAppIds.Count) SP(s): $($spWebClientAppIds -join ', ')" -ForegroundColor Cyan
-} else {
+}
+else {
     # Fall back to the two well-known first-party Microsoft app IDs used across SharePoint Online environments.
     $spWebClientAppIds = @('57fb890c-0dab-4253-a5e0-7188c88b2bb4', '08e18876-6177-487e-b8b5-cf950c1e598c')
     Write-Host "  ⚠ Could not resolve SP by display name — falling back to known app IDs: $($spWebClientAppIds -join ', ')" -ForegroundColor Yellow
@@ -144,7 +152,8 @@ if ($app.IdentifierUris -notcontains $expectedUri) {
     Write-Host "  Setting identifier URI to $expectedUri ..." -ForegroundColor Cyan
     Update-MgApplication -ApplicationId $app.Id -IdentifierUris @($expectedUri) -ErrorAction Stop
     Write-Host "  ✓ Identifier URI set." -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "  ✓ Identifier URI already set." -ForegroundColor Yellow
 }
 
@@ -169,7 +178,8 @@ if (-not $existingScope) {
     $app = Get-MgApplication -Filter "appId eq '$FunctionAppClientId'" -ErrorAction Stop
     $existingScope = $app.Api.Oauth2PermissionScopes | Where-Object { $_.Value -eq 'user_impersonation' }
     Write-Host "  ✓ 'user_impersonation' scope added (id: $($existingScope.Id))." -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "  ✓ 'user_impersonation' scope already exists (id: $($existingScope.Id))." -ForegroundColor Yellow
 }
 
@@ -193,14 +203,17 @@ foreach ($spAppId in $spWebClientAppIds) {
         try {
             Update-MgApplication -ApplicationId $app.Id -Api @{ PreAuthorizedApplications = $updatedPreAuthorized } -ErrorAction Stop
             Write-Host "  ✓ $spAppId pre-authorized." -ForegroundColor Green
-        } catch {
+        }
+        catch {
             if ($_.Exception.Message -like "*cannot be found*") {
                 Write-Host "  ⚠ $spAppId not found in Microsoft's app registry — skipping." -ForegroundColor Yellow
-            } else {
+            }
+            else {
                 throw
             }
         }
-    } else {
+    }
+    else {
         Write-Host "  ✓ $spAppId already pre-authorized." -ForegroundColor Yellow
     }
 }
@@ -213,7 +226,8 @@ if (-not $sp) {
     Write-Host "  Service Principal not found — creating it now (no user has signed in yet)..." -ForegroundColor Cyan
     $sp = New-MgServicePrincipal -AppId $FunctionAppClientId -ErrorAction Stop
     Write-Host "  ✓ Service Principal created (Object ID: $($sp.Id))." -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "  ✓ Service Principal already exists (Object ID: $($sp.Id))." -ForegroundColor Yellow
 }
 
@@ -223,7 +237,8 @@ if ($sp.AppRoleAssignmentRequired) {
     Write-Host "  Disabling appRoleAssignmentRequired on the Enterprise App (was: true) ..." -ForegroundColor Cyan
     Update-MgServicePrincipal -ServicePrincipalId $sp.Id -AppRoleAssignmentRequired:$false -ErrorAction Stop
     Write-Host "  ✓ appRoleAssignmentRequired set to false." -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "  ✓ appRoleAssignmentRequired is already false — no user assignment needed." -ForegroundColor Yellow
 }
 
@@ -235,7 +250,8 @@ if (-not $hasHideApp) {
     $updatedTags = @($sp.Tags) + @('HideApp')
     Update-MgServicePrincipal -ServicePrincipalId $sp.Id -Tags $updatedTags -ErrorAction Stop
     Write-Host "  ✓ Enterprise App hidden from My Apps portal." -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "  ✓ Enterprise App is already hidden from My Apps portal." -ForegroundColor Yellow
 }
 

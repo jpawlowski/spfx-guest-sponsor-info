@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 Workoho GmbH <https://workoho.com>
+// SPDX-FileCopyrightText: 2026 Julian Pawlowski <https://github.com/jpawlowski>
+// SPDX-License-Identifier: AGPL-3.0-only
+
 define([], function() {
   return {
     "PropertyPaneDescription": "Määritä Vieraan sponsoritiedot -verkko-osa.",
@@ -164,6 +168,21 @@ define([], function() {
     "WelcomeDialogBody": "Tämä verkko-osa näyttää Microsoft 365 -sponsorisi — organisaation sisäiset kollegat, jotka vastaavat vieraskäyttäjätilisi hallinnasta, perehdytyksestäsi ja päivittäisestä tuestäsi.",
     "WelcomeDialogBroughtToYouBy": "Workoho on kehittänyt tämän verkko-osan — asiantuntijat Microsoft 365:n hallinnassa, identiteetissä ja vieraskäyttäjien pääsynhallinnassa.",
     "WelcomeDialogWorkohoLinkLabel": "Vieraile workoho.com-sivustolla",
+    "WelcomeDialogNextButton": "Seuraava",
+    "WelcomeDialogBackButton": "Takaisin",
+    "WelcomeDialogSkipButton": "Ohita toistaiseksi",
+    "WelcomeDialogSetupTitle": "Valmis muutamassa minuutissa",
+    "WelcomeDialogSetupIntro": "Valitse, miten haluat käyttää verkko-osaa. Voit muuttaa tätä milloin tahansa asetuksissa.",
+    "WelcomeDialogOptionApiTitle": "Yhdistä Guest Sponsor -ohjelmointirajapinta",
+    "WelcomeDialogOptionApiBody": "Täysimittainen kokemus Azure-funktion avulla. Vaatii kertaluonteisen Azure-määrityksen — suositellaan tuotantokäyttöön.",
+    "WelcomeDialogOptionApiDocsLabel": "Katso asennusopas GitHubissa",
+    "WelcomeDialogOptionDemoTitle": "Tutustu esittelytilassa",
+    "WelcomeDialogOptionDemoBody": "Kokeile verkko-osaa simuloiduilla sponsoritiedoilla — ei Azure-määritystä tarvita. Vaihda oikeaan ohjelmointirajapintaan asetuksista milloin tahansa.",
+    "WelcomeDialogFunctionUrlRequired": "Anna Guest Sponsor -ohjelmointirajapinnan perus-URL.",
+    "WelcomeDialogDoneApiTitle": "Ohjelmointirajapinta määritetty!",
+    "WelcomeDialogDoneApiBody": "Yhteys Guest Sponsor -ohjelmointirajapintaan on tallennettu. Muista tallentaa sivu, jotta asetukset otetaan käyttöön kaikille.",
+    "WelcomeDialogDoneDemoTitle": "Esittelytila aktivoitu!",
+    "WelcomeDialogDoneDemoBody": "Vaihda näyttötilaan nähdäksesi verkko-osan simuloitujen sponsorikorttien kanssa. Yhdistä Guest Sponsor -ohjelmointirajapinta asetuksista, kun olet valmis.",
     "WelcomeDialogDismissButton": "Aloitetaan",
   }
 });

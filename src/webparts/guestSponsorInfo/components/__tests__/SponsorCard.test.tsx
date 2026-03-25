@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 Workoho GmbH <https://workoho.com>
+// SPDX-FileCopyrightText: 2026 Julian Pawlowski <https://github.com/jpawlowski>
+// SPDX-License-Identifier: AGPL-3.0-only
+
 // Mock Fluent UI v9 components so they render inline (avoids portal / ResizeObserver issues).
 // All rendered children are still fully exercised.
 // NOTE: jest.mock must be placed before imports so the linting rule is satisfied

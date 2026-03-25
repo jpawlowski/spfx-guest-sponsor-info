@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 Workoho GmbH <https://workoho.com>
+# SPDX-FileCopyrightText: 2026 Julian Pawlowski <https://github.com/jpawlowski>
+# SPDX-License-Identifier: AGPL-3.0-only
+#
 # Post-provision hook for Azure Developer CLI (azd).
 # Runs after Bicep deployment to grant the Function App's Managed Identity
 # the required Microsoft Graph application roles:
@@ -67,7 +71,7 @@ assign_role() {
       --method POST \
       --url "https://graph.microsoft.com/v1.0/servicePrincipals/${MANAGED_IDENTITY_OBJECT_ID}/appRoleAssignments" \
       --body "{\"principalId\":\"${MANAGED_IDENTITY_OBJECT_ID}\",\"resourceId\":\"${GRAPH_SP_ID}\",\"appRoleId\":\"${ROLE_ID}\"}" \
-      > /dev/null
+      >/dev/null
     echo "  ${ROLE_NAME} assigned."
   fi
 }

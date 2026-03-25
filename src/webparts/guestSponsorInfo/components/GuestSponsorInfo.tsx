@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 Workoho GmbH <https://workoho.com>
+// SPDX-FileCopyrightText: 2026 Julian Pawlowski <https://github.com/jpawlowski>
+// SPDX-License-Identifier: AGPL-3.0-only
+
 import * as React from 'react';
 import { DisplayMode } from '@microsoft/sp-core-library';
 import { FluentProvider, MessageBar, MessageBarBody, Skeleton, SkeletonItem, makeStyles, mergeClasses, tokens, webLightTheme, webDarkTheme } from '@fluentui/react-components';
@@ -400,7 +404,8 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
   onProxyStatusChange,
   onVersionMismatch,
   onTitleChange,
-  instanceId,
+  welcomeSeen,
+  onWelcomeComplete,
   fluentProviderId,
   theme,
 }) => {
@@ -440,23 +445,14 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
   const [guestHasTeamsAccess, setGuestHasTeamsAccess] = React.useState<boolean | undefined>(undefined);
   const [versionMismatch, setVersionMismatch] = React.useState(false);
 
-  // First-run welcome dialog: shown once per instance per browser (localStorage).
-  const welcomeKey = `gsi.welcome.${instanceId}`;
-  const [showWelcomeDialog, setShowWelcomeDialog] = React.useState<boolean>(() => {
-    if (isEditMode) return false;
-    try {
-      return !localStorage.getItem(welcomeKey);
-    } catch {
-      // localStorage may be unavailable in some browser security configurations.
-      return false;
-    }
-  });
-  const handleWelcomeDismiss = (): void => {
-    try {
-      localStorage.setItem(welcomeKey, '1');
-    } catch {
-      // Ignore; the dialog will reappear on next visit but won't block usage.
-    }
+  // First-run welcome wizard: shown in edit mode until the admin completes or skips it.
+  // The flag is stored in the web part property bag (SharePoint) so it is shared across
+  // all users and devices — once any editor dismisses the wizard, it stays gone.
+  const [showWelcomeDialog, setShowWelcomeDialog] = React.useState<boolean>(
+    isEditMode && !welcomeSeen
+  );
+  const handleWelcomeComplete = (config: import('./IGuestSponsorInfoProps').IWelcomeSetupConfig): void => {
+    onWelcomeComplete(config);
     setShowWelcomeDialog(false);
   };
   // Signed token issued by getGuestSponsors; passed to getPresence so the function
@@ -703,6 +699,19 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
   // Edit mode: always show a live preview using mock sponsor cards so page authors
   // can see the real layout and adjust display settings before going live.
   if (isEditMode) {
+    // First-run wizard takes priority. Render it inline, full-width, instead of
+    // the sponsor preview — no portals, no z-index conflict with SP chrome.
+    // The property pane opens automatically once the admin finishes the wizard.
+    if (showWelcomeDialog) {
+      return (
+        <RendererProvider renderer={griffelRenderer}>
+        <FluentProvider theme={v9Theme} id={`${fluentProviderId}-edit`}>
+          <WelcomeDialog open onComplete={handleWelcomeComplete} />
+        </FluentProvider>
+        </RendererProvider>
+      );
+    }
+
     const visibleMockSponsors = mockSponsors.slice(0, maxSponsorCount);
     const mockCompact = cardLayout === 'compact' || (cardLayout === 'auto' && visibleMockSponsors.length >= cardLayoutAutoThreshold);
     // Hide the sponsor list only when simulating "No sponsors found" — in that
@@ -834,19 +843,13 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
     (noActiveSponsor && someUnavailable && showSponsorUnavailableHint) ||
     (noActiveSponsor && !someUnavailable && showNoSponsorsHint) ||
     (guestHasTeamsAccess === false && showTeamsAccessPendingHint) ||
-    (versionMismatch && showVersionMismatchHint) ||
-    showWelcomeDialog;
+    (versionMismatch && showVersionMismatchHint);
   if (!hasVisibleContent) return null;
   const noResults = !loading && !error && visibleActive.length === 0 && !someUnavailable;
   const contentClassNames = (loading || error || noResults) ? mergeClasses(classes.webPart, classes.webPartContent) : classes.webPart;
   return (
     <RendererProvider renderer={griffelRenderer}>
     <FluentProvider theme={v9Theme} id={`${fluentProviderId}-view`}>
-      <WelcomeDialog
-        open={showWelcomeDialog}
-        onDismiss={handleWelcomeDismiss}
-        v9Theme={v9Theme}
-      />
       <section className={contentClassNames}>
         {title && (
           <h2 className={mergeClasses(

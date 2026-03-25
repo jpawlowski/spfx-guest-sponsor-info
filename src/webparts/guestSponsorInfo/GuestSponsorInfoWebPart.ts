@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 Workoho GmbH <https://workoho.com>
+// SPDX-FileCopyrightText: 2026 Julian Pawlowski <https://github.com/jpawlowski>
+// SPDX-License-Identifier: AGPL-3.0-only
+
 import * as React from 'react';
 import * as ReactDom from 'react-dom';
 import { Version } from '@microsoft/sp-core-library';
@@ -98,6 +102,13 @@ export interface IGuestSponsorInfoWebPartProps {
   showManagerDepartment: boolean;
   /** Use informal address ("du"/"tu") instead of formal ("Sie"/"vous"). Default: false. */
   useInformalAddress: boolean;
+  /**
+   * Tracks whether the first-run welcome dialog has been dismissed for this instance.
+   * Stored as a web part property so all users and admins share the same flag —
+   * the dialog disappears for everyone once any editor has clicked through it.
+   * Resets automatically when the web part is removed and re-added (new instance).
+   */
+  welcomeSeen: boolean;
 }
 
 export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGuestSponsorInfoWebPartProps> {
@@ -175,7 +186,27 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
         showManagerDepartment: this.properties.showManagerDepartment ?? false,
         useInformalAddress: this.properties.useInformalAddress ?? false,
         clientVersion: this.manifest.version,
-        instanceId: this.context.instanceId,
+        welcomeSeen: this.properties.welcomeSeen ?? false,
+        onWelcomeComplete: ({ chosenPath, apiUrl, clientId }) => {
+          this.properties.welcomeSeen = true;
+          if (chosenPath === 'api') {
+            // Strip protocol and trailing slash to match the stored URL format.
+            this.properties.functionUrl = (apiUrl ?? '').replace(/^https?:\/\//i, '').replace(/\/$/, '');
+            this.properties.functionClientId = clientId ?? '';
+            this.properties.mockMode = false;
+          } else if (chosenPath === 'demo') {
+            this.properties.mockMode = true;
+          }
+          // 'skip': only sets welcomeSeen = true; other properties stay as-is.
+          this.render();
+          // After finishing the wizard, open the property pane so the admin can
+          // review and fine-tune all settings. Deferred by one tick to let React
+          // finish its synchronous render cycle first.
+          // 'skip' is omitted intentionally — the admin chose not to engage.
+          if (chosenPath !== 'skip') {
+            setTimeout(() => this.context.propertyPane.open(), 0);
+          }
+        },
         fluentProviderId: `gsi-${this.context.instanceId}`,
         onProxyStatusChange: (status: 'checking' | 'ok' | 'error') => {
           this._proxyStatus = status;
@@ -221,28 +252,38 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
   };
 
   /**
-   * Fetches the latest release tag from GitHub and compares it against the
-   * current manifest version. When a newer release exists the property pane
-   * badge is updated so the page editor can navigate straight to the download.
+   * Queries the Azure Function's `/api/getLatestRelease` endpoint for the latest
+   * published GitHub release version.  The function caches the result of its own
+   * periodic GitHub API call in memory, so multiple web part clients share a
+   * single outbound GitHub request per six-hour window without any browser → GitHub
+   * traffic.  When the function is not configured this method is a no-op.
+   *
    * Called lazily from onPropertyPaneOpened the first time the pane is opened;
    * errors are silently ignored because this is purely informational.
    */
   private _checkGitHubRelease(): void {
-    fetch(
-      'https://api.github.com/repos/workoho/spfx-guest-sponsor-info/releases/latest',
-      { headers: { Accept: 'application/vnd.github+json' } }
-    )
-      .then((res): Promise<{ tag_name: string; html_url: string } | null> =>
-        res.ok ? (res.json() as Promise<{ tag_name: string; html_url: string }>) : Promise.resolve(null)
+    const functionUrl = this.properties.functionUrl;
+    const aadHttpClient = this._aadHttpClient;
+    // No function configured or client not yet acquired — skip silently.
+    if (!functionUrl || !aadHttpClient) return;
+
+    const releaseCheckUrl =
+      `https://${functionUrl.replace(/^https?:\/\//i, '').replace(/\/$/, '')}/api/getLatestRelease`;
+
+    aadHttpClient
+      .get(releaseCheckUrl, AadHttpClient.configurations.v1)
+      .then((res): Promise<{ latestVersion: string | null; url: string | null } | null> =>
+        res.ok
+          ? (res.json() as Promise<{ latestVersion: string | null; url: string | null }>)
+          : Promise.resolve(null)
       )
       .then((data) => {
-        const tag = data?.tag_name;
-        const releaseUrl = data?.html_url;
-        // No valid tag or URL means an API error or unexpected shape — don't cache;
-        // a retry is acceptable on the next pane open.
-        if (typeof tag !== 'string' || !tag) return;
+        const latest = data?.latestVersion;
+        const releaseUrl = data?.url;
+        // Null values mean the timer hasn't completed its first run yet — don't cache;
+        // the next pane open will try again.
+        if (typeof latest !== 'string' || !latest) return;
         if (typeof releaseUrl !== 'string' || !releaseUrl) return;
-        const latest = tag.replace(/^v/, '');
         const current = this.manifest.version.split('.').slice(0, 3).join('.');
         const newer = this._isNewerVersion(latest, current);
         // Persist both outcomes so the next pane open (even after a view↔edit
@@ -317,10 +358,16 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
 
   protected onPropertyPaneOpened(): void {
     if (this._githubCheckDone) return;
+    // Only perform the release check when a function URL is configured.
+    // Without a function the web part has no indirect path to GitHub, so we
+    // skip the check entirely (no direct browser → GitHub API calls).
+    // Leave _githubCheckDone = false so the check can still run later in the
+    // same editing session if the admin configures a function URL.
+    if (!this.properties.functionUrl) return;
     this._githubCheckDone = true;
     // Restore from sessionStorage cache so that view↔edit mode switches or page
     // saves (which re-instantiate the web part without a full browser reload)
-    // don't trigger a redundant GitHub API call.
+    // don't trigger a redundant Function API call.
     try {
       const raw = sessionStorage.getItem(this._githubCacheKey);
       if (raw) {
@@ -347,6 +394,9 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
       propertyPath === 'functionClientId'
     ) {
       this._proxyStatus = 'checking';
+      // Allow the release check to re-run after the function URL changes so the
+      // update badge appears without requiring a full page reload.
+      this._githubCheckDone = false;
       this.context.propertyPane.refresh();
     } else if (
       propertyPath === 'mockMode' ||
