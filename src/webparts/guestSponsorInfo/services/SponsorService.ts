@@ -2,8 +2,7 @@
 // SPDX-FileCopyrightText: 2026 Julian Pawlowski <https://github.com/jpawlowski>
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { MSGraphClientV3, AadHttpClient } from '@microsoft/sp-http';
-import { ResponseType } from '@microsoft/microsoft-graph-client';
+import { AadHttpClient } from '@microsoft/sp-http';
 import { ISponsor } from './ISponsor';
 
 /** Result returned by getSponsors. */
@@ -56,11 +55,6 @@ export interface ISponsorsResult {
   sponsorOrder?: string[];
 }
 
-interface IPresenceSnapshot {
-  availability?: string;
-  activity?: string;
-}
-
 /**
  * Returns true when the SPFx login name belongs to a Microsoft Entra guest account.
  * Guest UPNs always contain the "#EXT#" marker introduced by Entra external identity.
@@ -69,190 +63,6 @@ export function isGuestUser(loginName: string): boolean {
   return loginName.indexOf('#EXT#') !== -1;
 }
 
-/**
- * Converts an ArrayBuffer containing JPEG bytes into a base64-encoded data URL.
- * Avoids Blob-URL leaks because data URLs do not require explicit cleanup.
- *
- * Uses chunked processing (8 KB at a time) so the main thread is never blocked
- * by a long loop over tens of thousands of individual bytes.
- */
-function arrayBufferToDataUrl(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer);
-  const chunkSize = 8192;
-  const chunks: string[] = [];
-  for (let i = 0; i < bytes.byteLength; i += chunkSize) {
-    chunks.push(String.fromCharCode(...Array.from(bytes.subarray(i, i + chunkSize))));
-  }
-  return `data:image/jpeg;base64,${btoa(chunks.join(''))}`;
-}
-
-/**
- * Checks whether a sponsor user still exists and retrieves their manager profile
- * in a single Graph call via $expand (saving one request per sponsor compared
- * to two separate calls).
- *
- * Returns `exists: false` only on HTTP 404 (hard-deleted or past soft-delete
- * recycle-bin period).  Any other error is treated as "still exists" (fail-open)
- * so a transient Graph outage does not incorrectly hide a sponsor card.
- *
- * Note: accountEnabled requires User.Read.All, which exceeds the declared
- * permission scope and is therefore not checked here.
- */
-async function fetchSponsorDetails(
-  client: MSGraphClientV3,
-  userId: string
-): Promise<{ exists: boolean; managerDisplayName?: string; managerGivenName?: string; managerSurname?: string; managerJobTitle?: string; managerDepartment?: string; managerId?: string }> {
-  try {
-    const user = await client
-      .api(`/users/${userId}`)
-      .select('id')
-      .expand('manager($select=id,displayName,givenName,surname,jobTitle,department)')
-      .get() as Record<string, unknown>;
-    const managerRaw = user.manager as Record<string, unknown> | null | undefined;
-    if (!managerRaw) return { exists: true };
-    return {
-      exists: true,
-      managerId: (managerRaw.id as string) || undefined,
-      managerDisplayName: (managerRaw.displayName as string) || undefined,
-      managerGivenName: (managerRaw.givenName as string) || undefined,
-      managerSurname: (managerRaw.surname as string) || undefined,
-      managerJobTitle: (managerRaw.jobTitle as string) || undefined,
-      managerDepartment: (managerRaw.department as string) || undefined,
-    };
-  } catch (error) {
-    if ((error as { statusCode?: number }).statusCode === 404) return { exists: false };
-    return { exists: true }; // Fail-open on transient errors.
-  }
-}
-
-/**
- * Fetches the sponsors of the signed-in user via Microsoft Graph.
- * For each sponsor the function checks existence and retrieves manager details
- * in a single Graph call (via $expand), then fetches presence for all sponsors
- * in one batched call — both fan-outs run concurrently.
- *
- * Required delegated permissions (declared in package-solution.json):
- *   - User.Read          – read the signed-in user's own /me/sponsors relationship.
- *   - User.ReadBasic.All – read existence and profile photos of the sponsor users.
- *                          This is the narrowest permission that covers reading
- *                          another user's directory object.  "ReadBasic" exposes
- *                          only: displayName, givenName, surname, mail, photo.
- *                          It does NOT expose accountEnabled (which requires
- *                          User.Read.All and is therefore out of scope).
- */
-/**
- * Fetches presence for a list of user IDs in a single batched Graph call.
- * Uses the Presence.Read.All delegated permission when consented.
- * Returns a map of userId → availability/activity strings.
- * Silently returns an empty map on any error (presence is optional).
- */
-export async function fetchPresences(
-  client: MSGraphClientV3,
-  userIds: string[]
-): Promise<Map<string, IPresenceSnapshot>> {
-  const map = new Map<string, IPresenceSnapshot>();
-  if (userIds.length === 0) return map;
-  try {
-    const response = await client
-      .api('/communications/getPresencesByUserId')
-      .post({ ids: userIds });
-    if (response?.value) {
-      for (const entry of response.value as Array<{ id: string; availability?: string; activity?: string }>) {
-        const availability = entry.availability && /^[A-Za-z]+$/.test(entry.availability)
-          ? entry.availability
-          : undefined;
-        const activity = entry.activity && /^[A-Za-z]+$/.test(entry.activity)
-          ? entry.activity
-          : undefined;
-        if (entry.id && (availability || activity)) {
-          map.set(entry.id, { availability, activity });
-        }
-      }
-    }
-  } catch {
-    // Presence is supplemental — silently degrade when the call fails
-    // (e.g. permission not yet granted by tenant admin).
-  }
-  return map;
-}
-
-export async function getSponsors(client: MSGraphClientV3): Promise<ISponsorsResult> {
-  const response = await client
-    .api('/me/sponsors')
-    .select('id,displayName,givenName,surname,mail,jobTitle,department,officeLocation,streetAddress,postalCode,state,city,country,businessPhones,mobilePhone')
-    .get();
-
-  if (!response?.value) return { activeSponsors: [], unavailableCount: 0 };
-
-  const items = response.value as Record<string, unknown>[];
-  const candidates: ISponsor[] = items.map(item => ({
-    id: item.id as string,
-    displayName: (item.displayName as string) || '',
-    givenName: (item.givenName as string) || undefined,
-    surname: (item.surname as string) || undefined,
-    mail: (item.mail as string) || undefined,
-    jobTitle: (item.jobTitle as string) || undefined,
-    department: (item.department as string) || undefined,
-    officeLocation: (item.officeLocation as string) || undefined,
-    streetAddress: (item.streetAddress as string) || undefined,
-    postalCode: (item.postalCode as string) || undefined,
-    state: (item.state as string) || undefined,
-    city: (item.city as string) || undefined,
-    country: (item.country as string) || undefined,
-    businessPhones: (item.businessPhones as string[]) || [],
-    mobilePhone: (item.mobilePhone as string) || undefined,
-  }));
-
-  const sponsorIds = candidates.map(s => s.id);
-
-  // Fetch presence for all sponsors in one batched call, concurrently with per-sponsor work.
-  const [presenceMap, perSponsorResults] = await Promise.all([
-    fetchPresences(client, sponsorIds),
-    Promise.all(
-      candidates.map(async sponsor => {
-        const { exists, ...managerInfo } = await fetchSponsorDetails(client, sponsor.id);
-        return { sponsor: { ...sponsor, ...managerInfo }, exists };
-      })
-    ),
-  ]);
-
-  const activeSponsors = perSponsorResults
-    .filter(r => r.exists)
-    .map(r => {
-      const presence = presenceMap.get(r.sponsor.id);
-      return {
-        ...r.sponsor,
-        presence: presence?.availability,
-        presenceActivity: presence?.activity,
-      };
-    });
-  const unavailableSponsors = perSponsorResults
-    .filter(r => !r.exists)
-    .map(r => {
-      const { id, displayName, givenName, surname, jobTitle, department } = r.sponsor;
-      return { id, displayName, givenName, surname, jobTitle, department } as ISponsor;
-    });
-  const unavailableCount = unavailableSponsors.length;
-  return {
-    activeSponsors,
-    unavailableCount,
-    sponsorOrder: candidates.map(s => s.id),
-    ...(unavailableSponsors.length > 0 ? { unavailableSponsors } : {}),
-  };
-}
-
-/**
- * Fetches sponsor data via the Azure Function proxy instead of calling Graph directly.
- * The proxy authenticates the caller via EasyAuth and calls Graph with application
- * permissions (User.Read.All, optionally Presence.Read.All) using its Managed Identity.
- *
- * @param proxyUrl      - Full URL of the Azure Function endpoint.
- * @param aadHttpClient - Pre-acquired AAD HTTP client scoped to the function App Registration.
- * @param clientVersion - Optional web part version string sent as X-Client-Version request header
- *                        so the function can log a warning when versions differ.
- */
-
-/**
 /**
  * Lightweight health check against the Azure Function's `/api/ping` endpoint.
  * No Graph calls or guest-context required — used in edit mode to verify connectivity.
@@ -381,61 +191,56 @@ export async function getPresencesViaProxy(
 }
 
 /**
- * Progressively fetches photos for a list of sponsors and their managers,
- * calling onUpdate for each sponsor as soon as its photo (or its manager's
- * photo) arrives.  Errors are silently swallowed — the card stays in its
- * initials-fallback state.
+ * Progressively fetches manager photos for a list of sponsors via the Azure Function
+ * photo proxy endpoint (`/api/getPhoto`), calling onUpdate for each sponsor as soon
+ * as the manager photo arrives.  Errors are silently swallowed — the card falls back
+ * to initials.
  *
- * Fire-and-forget: the caller does not need to await this.  Each resolved
- * photo triggers an individual React state update so cards light up one
- * by one instead of all at once after a long wait.
+ * Sponsor photos are already included in the initial `getSponsorsViaProxy` response
+ * and do not need to be fetched separately.
  *
- * @param client    MSGraphClientV3 with User.ReadBasic.All permission.
- * @param sponsors  The list returned by getSponsors / getSponsorsViaProxy.
- * @param onUpdate  Called per sponsor once photo data is ready.
- *                  Receives the sponsor ID plus the two (possibly undefined)
- *                  data-URL strings so the caller can do a targeted state update.
+ * Fire-and-forget: the caller does not need to await this.  Each resolved photo
+ * triggers an individual React state update so manager avatars light up one by one.
+ *
+ * @param photoUrl      - Full URL of the Azure Function `/api/getPhoto` endpoint.
+ * @param aadHttpClient - Pre-acquired AAD HTTP client scoped to the Function App Registration.
+ * @param presenceToken - Optional signed token from the last getGuestSponsors response.
+ *                        When present, the function validates the userId without an extra Graph call.
+ * @param sponsors      - The active sponsor list from getSponsorsViaProxy.
+ * @param onUpdate      - Called per sponsor once the manager photo is ready (or undefined on failure).
  */
-export function loadPhotosProgressively(
-  client: MSGraphClientV3,
+export function loadManagerPhotosViaProxy(
+  photoUrl: string,
+  aadHttpClient: AadHttpClient,
+  presenceToken: string | undefined,
   sponsors: ISponsor[],
-  onUpdate: (sponsorId: string, photoUrl: string | undefined, managerPhotoUrl: string | undefined) => void
+  onUpdate: (sponsorId: string, managerPhotoUrl: string | undefined) => void
 ): void {
   const fetchOne = async (sponsor: ISponsor): Promise<void> => {
-    let photoUrl: string | undefined;
-    let managerPhotoUrl: string | undefined;
-
-    // Fetch sponsor photo and manager photo concurrently.
-    await Promise.all([
-      (async () => {
-        try {
-          const buffer: ArrayBuffer = await client
-            .api(`/users/${sponsor.id}/photo/$value`)
-            .responseType(ResponseType.ARRAYBUFFER)
-            .get();
-          photoUrl = arrayBufferToDataUrl(buffer);
-        } catch {
-          // No photo — initials fallback stays.
-        }
-      })(),
-      (async () => {
-        if (!sponsor.managerId) return;
-        try {
-          const buffer: ArrayBuffer = await client
-            .api(`/users/${sponsor.managerId}/photo/$value`)
-            .responseType(ResponseType.ARRAYBUFFER)
-            .get();
-          managerPhotoUrl = arrayBufferToDataUrl(buffer);
-        } catch {
-          // No manager photo — initials fallback stays.
-        }
-      })(),
-    ]);
-
-    onUpdate(sponsor.id, photoUrl, managerPhotoUrl);
+    if (!sponsor.managerId) return;
+    try {
+      const params = new URLSearchParams({ userId: sponsor.managerId });
+      const url = `${photoUrl}?${params.toString()}`;
+      const headers: Record<string, string> = {};
+      if (presenceToken) headers['X-Presence-Token'] = presenceToken;
+      const response = await aadHttpClient.get(
+        url,
+        AadHttpClient.configurations.v1,
+        Object.keys(headers).length > 0 ? { headers } : undefined
+      );
+      if (!response.ok) {
+        onUpdate(sponsor.id, undefined);
+        return;
+      }
+      const data = await response.json() as { photoUrl?: string };
+      onUpdate(sponsor.id, data.photoUrl);
+    } catch {
+      onUpdate(sponsor.id, undefined);
+    }
   };
 
   for (const sponsor of sponsors) {
     fetchOne(sponsor).catch(() => undefined);
   }
 }
+

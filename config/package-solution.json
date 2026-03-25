@@ -7,7 +7,7 @@
     "version": "0.21.0.0",
     "includeClientSideAssets": true,
     "skipFeatureDeployment": true,
-    "isDomainIsolated": false,
+    "isDomainIsolated": true,
     "iconPath": "images/icon.png",
     "supportedLocales": [
       "da-DK",
@@ -34,29 +34,41 @@
     },
     "metadata": {
       "shortDescription": {
-        "default": "Shows the Microsoft Entra sponsors of the signed-in guest user on a SharePoint landing page."
+        "default": "Let your guests know who to call — live sponsor cards with contact details and Teams presence.",
+        "da-dk": "Gæster ser straks deres kontaktperson – sponsorkort med kontaktoplysninger og Teams-tilstedeværelse.",
+        "de-de": "Gäste sehen sofort ihren Ansprechpartner – Sponsorkarten mit Kontaktdetails und Teams-Präsenz.",
+        "es-es": "Tus invitados saben al instante a quién llamar: sponsor cards con contacto y presencia en Teams.",
+        "fi-fi": "Anna vieraidesi tietää, kenelle soittaa – live-sponsorikortit yhteystiedoilla ja Teams-tilalla.",
+        "fr-fr": "Vos invités savent immédiatement qui contacter – cartes sponsor avec coordonnées et présence Teams.",
+        "it-it": "I tuoi ospiti sanno subito chi chiamare: schede sponsor con contatti e presenza Teams.",
+        "ja-jp": "誰に連絡すればよいかがすぐわかる — リアルタイムのスポンサーカードと Teams のプレゼンス表示。",
+        "nb-no": "Gjestene dine vet straks hvem de skal ringe – sponsorkort med kontaktinfo og Teams-tilstedeværelse.",
+        "nl-nl": "Gasten weten meteen wie ze moeten bellen – sponsorkaarten met contactgegevens en Teams-aanwezigheid.",
+        "pl-pl": "Goście od razu wiedzą, do kogo dzwonić – karty sponsorów z danymi kontaktowymi i obecnością w Teams.",
+        "pt-br": "Seus convidados sabem na hora quem ligar – cards de sponsor com contatos e presença no Teams.",
+        "sv-se": "Dina gäster vet direkt vem de ska ringa – live-sponsorkort med kontaktuppgifter och Teams-närvaro.",
+        "zh-cn": "让访客即时知道该联系谁——实时显示保荐人卡片、联系方式与 Teams 状态。"
       },
       "longDescription": {
-        "default": "The Guest Sponsor Info web part displays the sponsor cards for the currently signed-in Microsoft Entra guest user. Each card shows the sponsor's photo (or an initials fallback), display name, and job title. Hovering or focusing a card reveals the sponsor's email address, phone number, office location, and department. The web part is invisible to member (non-guest) users in view mode and shows a lightweight placeholder in edit mode so page authors can place and configure it without being a guest themselves. Sponsor availability is determined via Microsoft Graph using the least-privilege User.ReadBasic.All permission."
+        "default": "Shows every B2B guest their Microsoft Entra sponsors: profile photo, job title, live Teams presence, and one-click options for chat, call, and email. Configurable layout, optional map view, and manager display. Invisible to non-guest users.",
+        "da-dk": "Viser alle B2B-gæster deres Microsoft Entra-sponsorer: profilbillede, jobtitel, live Teams-tilstedeværelse og ét-klik-muligheder for chat, opkald og e-mail. Konfigurerbart layout, kortvisning og ledervisning. Usynlig for ikke-gæster.",
+        "de-de": "Zeigt jedem B2B-Gast seine Microsoft Entra-Sponsoren: Profilfoto, Jobtitel, Live-Teams-Präsenz und Direktoptionen für Chat, Anruf und E-Mail. Konfigurierbares Layout, optionale Kartenansicht und Manager-Anzeige. Für Nicht-Gäste unsichtbar.",
+        "es-es": "Muestra a cada usuario B2B sus sponsors de Microsoft Entra: foto, puesto, presencia en Teams y opciones de chat, llamada y correo en un clic. Diseño configurable, vista de mapa opcional y visualización del responsable. Invisible para no invitados.",
+        "fi-fi": "Näyttää jokaiselle B2B-vieraalle heidän Microsoft Entra -sponsorinsa: profiilikuva, työnimike, live Teams -tila ja pikayhteystoiminnot chatille, puhelulle ja sähköpostille. Konfiguroitava asettelu, karttanäkymä ja esimiestiedot. Piilotettu ei-vierailta.",
+        "fr-fr": "Affiche à chaque invité B2B ses sponsors Microsoft Entra : photo, titre, présence Teams en direct et accès en un clic au chat, à l'appel et à l'e-mail. Mise en page configurable, vue carte et affichage du responsable. Invisible pour les non-invités.",
+        "it-it": "Mostra a ogni ospite B2B i propri sponsor Microsoft Entra: foto, qualifica, presenza Teams e opzioni rapide per chat, chiamata ed e-mail. Layout configurabile, mappa opzionale e visualizzazione responsabile. Invisibile ai non-ospiti.",
+        "ja-jp": "B2B ゲストに Microsoft Entra スポンサーを表示: プロフィール写真、役職、Teams のリアルタイム プレゼンス、ワンクリックでチャット・通話・メールが可能。レイアウト変更、地図表示、上司情報の表示に対応。非ゲストユーザーには表示されません。",
+        "nb-no": "Viser enhver B2B-gjest sine Microsoft Entra-sponsorer: profilbilde, stilling, live Teams-tilstedeværelse og ett-klikks-alternativer for chat, samtale og e-post. Konfigurerbart oppsett, valgfri kartvisning og ledervisning. Usynlig for ikke-gjester.",
+        "nl-nl": "Toont elke B2B-gast zijn Microsoft Entra-sponsors: profielfoto, functietitel, live Teams-aanwezigheid en directe opties voor chat, bellen en e-mail. Instelbare weergave, optionele kaartweergave en managerinfo. Onzichtbaar voor niet-gasten.",
+        "pl-pl": "Pokazuje każdemu gościowi B2B jego sponsorów Microsoft Entra: zdjęcie, stanowisko, obecność w Teams na żywo oraz opcje czatu, połączenia i e-maila jednym kliknięciem. Konfigurowalny układ, mapa i wyświetlanie przełożonego. Niewidoczny dla niegości.",
+        "pt-br": "Exibe para cada convidado B2B seus sponsors do Microsoft Entra: foto, cargo, presença ao vivo no Teams e opções com um clique para chat, ligação e e-mail. Layout configurável, mapa opcional e exibição do gestor. Invisível para não convidados.",
+        "sv-se": "Visar varje B2B-gäst deras Microsoft Entra-sponsorer: profilfoto, befattning, live Teams-närvaro och snabbval för chatt, samtal och e-post. Konfigurerbar layout, valfri kartvy och chefsvisning. Osynlig för icke-gäster.",
+        "zh-cn": "为每位 B2B 访客展示其 Microsoft Entra 保荐人：头像、职位、实时 Teams 在线状态，以及一键聊天、通话和发送邮件。支持灵活布局、可选地图视图和上级信息显示。非访客用户不可见。"
       },
       "screenshotPaths": [],
       "videoUrl": "",
       "categories": ["Collaboration", "Social"]
     },
-    "webApiPermissionRequests": [
-      {
-        "resource": "Microsoft Graph",
-        "scope": "User.Read"
-      },
-      {
-        "resource": "Microsoft Graph",
-        "scope": "User.ReadBasic.All"
-      },
-      {
-        "resource": "Microsoft Graph",
-        "scope": "Presence.Read.All"
-      }
-    ],
     "features": [
       {
         "title": "Guest Sponsor Info",

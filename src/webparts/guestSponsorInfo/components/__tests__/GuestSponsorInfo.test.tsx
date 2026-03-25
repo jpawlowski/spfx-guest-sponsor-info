@@ -27,9 +27,9 @@ jest.mock('../../services/SponsorService');
 const GuestSponsorInfo = (require('../GuestSponsorInfo') as { default: React.ComponentType<IGuestSponsorInfoProps> }).default;
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const _service = require('../../services/SponsorService') as { isGuestUser: jest.Mock; getSponsors: jest.Mock };
+const _service = require('../../services/SponsorService') as { isGuestUser: jest.Mock; getSponsorsViaProxy: jest.Mock };
 const mockIsGuestUser = _service.isGuestUser;
-const mockGetSponsors = _service.getSponsors;
+const mockGetSponsors = _service.getSponsorsViaProxy;
 
 // DisplayMode values that match the @microsoft/sp-core-library shim (Read=1, Edit=2).
 // Imported via the shim; redefining here avoids importing the SPFx package in tests.
@@ -75,7 +75,6 @@ function renderWebPart(overrides: Partial<IGuestSponsorInfoProps> = {}): void {
     loginName: 'guest_contoso.com#EXT#@fabrikam.onmicrosoft.com',
     isExternalGuestUser: true,
     displayMode: DisplayMode.Read,
-    graphClient: {} as never, // The actual client object is irrelevant; getSponsors is mocked.
     title: 'My Sponsors',
     mockMode: false,
     maxSponsorCount: 2,
@@ -84,11 +83,12 @@ function renderWebPart(overrides: Partial<IGuestSponsorInfoProps> = {}): void {
     cardLayout: 'auto',
     cardLayoutAutoThreshold: 3,
     hostTenantId: 'aaaabbbb-0000-0000-0000-000000000001',
-    functionUrl: undefined,
+    functionUrl: 'https://func.example.com/api/getGuestSponsors',
     presenceUrl: undefined,
     pingUrl: undefined,
+    photoUrl: undefined,
     functionClientId: undefined,
-    aadHttpClient: undefined,
+    aadHttpClient: {} as never,
     showBusinessPhones: true,
     showMobilePhone: true,
     showWorkLocation: true,
@@ -179,8 +179,8 @@ describe('GuestSponsorInfo', () => {
   // ── View mode – guest visitor ────────────────────────────────────────────────
 
   describe('view mode – guest visitor', () => {
-    it('does not call getSponsors when the Graph client is not yet ready', () => {
-      act(() => { renderWebPart({ graphClient: undefined }); });
+    it('does not call getSponsorsViaProxy when neither functionUrl nor aadHttpClient is provided', () => {
+      act(() => { renderWebPart({ functionUrl: undefined, aadHttpClient: undefined }); });
       expect(mockGetSponsors).not.toHaveBeenCalled();
     });
 

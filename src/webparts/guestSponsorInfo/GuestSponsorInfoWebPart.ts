@@ -18,7 +18,7 @@ import {
 } from '@microsoft/sp-property-pane';
 import { PropertyPaneCustomField } from '@microsoft/sp-property-pane/lib/propertyPaneFields/propertyPaneCustomField/PropertyPaneCustomField';
 import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
-import { MSGraphClientV3, AadHttpClient } from '@microsoft/sp-http';
+import { AadHttpClient } from '@microsoft/sp-http';
 import { ThemeProvider, IReadonlyTheme, ThemeChangedEventArgs } from '@microsoft/sp-component-base';
 import { FluentProvider, MessageBar, MessageBarBody, webLightTheme, webDarkTheme } from '@fluentui/react-components';
 import { createV9Theme } from '@fluentui/react-migration-v8-v9';
@@ -113,7 +113,6 @@ export interface IGuestSponsorInfoWebPartProps {
 
 export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGuestSponsorInfoWebPartProps> {
 
-  private _graphClient: MSGraphClientV3 | undefined;
   private _aadHttpClient: AadHttpClient | undefined;
   private _proxyStatus: 'checking' | 'ok' | 'error' = 'checking';
   private _versionMismatch = false;
@@ -141,7 +140,6 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
         loginName: this.context.pageContext.user.loginName,
         isExternalGuestUser: this.context.pageContext.user.isExternalGuestUser,
         displayMode: this.displayMode,
-        graphClient: this._graphClient, // undefined until onInit resolves
         title: this.properties.title,
         titleSize: this.properties.titleSize ?? 'medium',
         mockMode: this.properties.mockMode ?? false,
@@ -163,6 +161,9 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
           : undefined,
         pingUrl: this.properties.functionUrl
           ? `https://${this.properties.functionUrl.replace(/^https?:\/\//i, '').replace(/\/$/, '')}/api/ping`
+          : undefined,
+        photoUrl: this.properties.functionUrl
+          ? `https://${this.properties.functionUrl.replace(/^https?:\/\//i, '').replace(/\/$/, '')}/api/getPhoto`
           : undefined,
         functionClientId: this.properties.functionClientId || undefined,
         aadHttpClient: this._aadHttpClient,
@@ -328,23 +329,18 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
    * is safe to use here without needing Promise.allSettled (ES2020).
    */
   private _acquireClientsInBackground(): void {
-    const graphPromise = this.context.msGraphClientFactory.getClient('3')
-      .then(client => { this._graphClient = client; })
-      .catch(() => { /* Graph unavailable — component renders in placeholder state */ });
-
     const clientId = this.properties.functionClientId;
     const aadPromise = clientId
       ? this.context.aadHttpClientFactory.getClient(clientId)
           .then(client => { this._aadHttpClient = client; })
-          .catch(() => { /* AAD client unavailable — falls back to direct Graph path */ })
+          .catch(() => { /* AAD client unavailable — proxy path stays disabled */ })
       : Promise.resolve();
 
-    // Both sub-promises have their own .catch() and always resolve — Promise.all is safe here.
     // The trailing .catch() satisfies @typescript-eslint/no-floating-promises without the
     // void operator (which no-void disallows). In practice this catch is never reached.
-    Promise.all([graphPromise, aadPromise]).then(() => {
+    aadPromise.then(() => {
       this.render();
-    }).catch(() => { /* sub-promises never reject; unreachable */ });
+    }).catch(() => { /* unreachable */ });
   }
 
   protected onDispose(): void {

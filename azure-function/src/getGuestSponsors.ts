@@ -5,7 +5,7 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
 import { createHmac, randomUUID, timingSafeEqual } from 'crypto';
 import { DefaultAzureCredential } from '@azure/identity';
-import { Client, GraphError } from '@microsoft/microsoft-graph-client';
+import { Client, GraphError, ResponseType } from '@microsoft/microsoft-graph-client';
 import { TokenCredentialAuthenticationProvider } from '@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials';
 import packageJson from '../package.json';
 import { isNewerVersion, latestGitHubVersion, latestGitHubReleaseUrl } from './releaseState.js';
@@ -44,6 +44,7 @@ const MAX_SPONSORS = 5;
 const DEFAULT_SPONSOR_LOOKUP_TIMEOUT_MS = 5000;
 const DEFAULT_PRESENCE_TIMEOUT_MS = 2500;
 const DEFAULT_BATCH_TIMEOUT_MS = 4000;
+const DEFAULT_PHOTO_TIMEOUT_MS = 5000;
 
 /**
  * In-memory sliding-window rate limiter, keyed by an arbitrary string.
@@ -103,13 +104,14 @@ const PRESENCE_TOKEN_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
  * Creates a signed presence token for the given caller and sponsor IDs.
  * Returns undefined when PRESENCE_TOKEN_SECRET is not configured.
  */
-function createPresenceToken(callerOid: string, sponsorIds: string[]): string | undefined {
+function createPresenceToken(callerOid: string, sponsorIds: string[], managerIds: string[]): string | undefined {
   const secret = process.env.PRESENCE_TOKEN_SECRET;
   if (!secret) return undefined;
   const payload = JSON.stringify({
     jti: randomUUID(),
     oid: callerOid,
     ids: sponsorIds,
+    ...(managerIds.length > 0 ? { managerIds } : {}),
     iat: Date.now(),
     exp: Date.now() + PRESENCE_TOKEN_TTL_MS,
   });
@@ -151,10 +153,10 @@ function verifyPresenceToken(token: string, callerOid: string): Set<string> | un
   }
   if (!sigValid) return undefined;
 
-  let payload: { jti?: unknown; oid?: unknown; ids?: unknown; iat?: unknown; exp?: unknown };
+  let payload: { jti?: unknown; oid?: unknown; ids?: unknown; managerIds?: unknown; iat?: unknown; exp?: unknown };
   try {
     payload = JSON.parse(Buffer.from(payloadB64, 'base64url').toString('utf8')) as {
-      jti?: unknown; oid?: unknown; ids?: unknown; iat?: unknown; exp?: unknown;
+      jti?: unknown; oid?: unknown; ids?: unknown; managerIds?: unknown; iat?: unknown; exp?: unknown;
     };
   } catch {
     return undefined;
@@ -167,7 +169,14 @@ function verifyPresenceToken(token: string, callerOid: string): Set<string> | un
   const ids = (payload.ids as unknown[])
     .filter((id): id is string => typeof id === 'string' && isValidGuid(id))
     .slice(0, MAX_SPONSORS);
-  return new Set(ids);
+  // Also include manager IDs in the authorised set — the photo endpoint uses the
+  // same token to validate both sponsor and manager photo requests.
+  const managerIds = Array.isArray(payload.managerIds)
+    ? (payload.managerIds as unknown[])
+        .filter((id): id is string => typeof id === 'string' && isValidGuid(id))
+        .slice(0, MAX_SPONSORS * 2)
+    : [];
+  return new Set([...ids, ...managerIds]);
 }
 
 /** Cached optional-permission flags for MailboxSettings.Read, Presence.Read.All, and TeamMember.Read.All. */
@@ -401,6 +410,14 @@ class TimeoutError extends Error {
 }
 
 /**
+ * Converts an ArrayBuffer (binary photo data from Graph) into a base64-encoded
+ * data URL suitable for embedding directly in a JSON response body.
+ */
+function arrayBufferToDataUrl(buffer: ArrayBuffer, mimeType = 'image/jpeg'): string {
+  return `data:${mimeType};base64,${Buffer.from(buffer).toString('base64')}`;
+}
+
+/**
  * Validates that a string is a well-formed Entra / Azure AD object ID (GUID).
  * Used as a defence-in-depth guard before embedding any ID in a Graph API URL,
  * even though EasyAuth and Microsoft Graph already validate their own inputs.
@@ -463,6 +480,8 @@ interface ISponsor {
   managerDepartment?: string;
   /** Manager's Entra ID — used by the SPFx client to fetch the manager photo progressively. */
   managerId?: string;
+  /** Base64-encoded data URL of the sponsor's profile photo. Populated by the function. */
+  photoUrl?: string;
   /** True when the sponsor has an active Microsoft Teams license. */
   hasTeams?: boolean;
 }
@@ -1140,7 +1159,7 @@ export async function getGuestSponsors(
       });
     }
 
-    const [presenceMap, batchResults] = await Promise.all([
+    const [presenceMap, batchResults, rawPhotoResults] = await Promise.all([
       // Include callerOid so we can use the guest's own presence as a provisioning signal.
       hasPresenceReadAll ? fetchPresences(client, [...sponsorIds, callerOid], context) : Promise.resolve(new Map<string, { availability?: string; activity?: string }>()),
       executeBatch(
@@ -1149,7 +1168,28 @@ export async function getGuestSponsors(
         getTimeoutMs('BATCH_TIMEOUT_MS', DEFAULT_BATCH_TIMEOUT_MS),
         'Graph sponsor detail batch'
       ),
+      // Fetch profile photos for all candidate sponsors in parallel with the batch.
+      // Each photo is fetched independently; failures silently fall back to initials.
+      Promise.allSettled(
+        candidates.map(s =>
+          withTimeout(
+            (client.api(`/users/${s.id}/photo/$value`).responseType(ResponseType.ARRAYBUFFER).get() as Promise<ArrayBuffer>)
+              .then(buf => ({ id: s.id, dataUrl: arrayBufferToDataUrl(buf) }))
+              .catch(() => ({ id: s.id, dataUrl: undefined })),
+            getTimeoutMs('PHOTO_TIMEOUT_MS', DEFAULT_PHOTO_TIMEOUT_MS),
+            `photo for ${redactGuid(s.id)}`
+          ).catch(() => ({ id: s.id, dataUrl: undefined }))
+        )
+      ),
     ]);
+
+    // Build a photo lookup map to attach photoUrl to each active sponsor below.
+    const photoMap = new Map<string, string>();
+    for (const r of rawPhotoResults) {
+      if (r.status === 'fulfilled' && r.value.dataUrl !== undefined) {
+        photoMap.set(r.value.id, r.value.dataUrl);
+      }
+    }
 
     // Extract joinedTeams count from the batch response (if included).
     let guestJoinedTeamsCount: number | undefined;
@@ -1285,6 +1325,8 @@ export async function getGuestSponsors(
         const presence = presenceMap.get(s.id);
         if (presence?.availability !== undefined) out.presence = presence.availability;
         if (presence?.activity !== undefined)     out.presenceActivity = presence.activity;
+        const photo = photoMap.get(s.id);
+        if (photo !== undefined)                  out.photoUrl = photo;
         return out;
       });
     const unavailableCount = perSponsorResults.filter(r => !r.exists).length;
@@ -1341,9 +1383,16 @@ export async function getGuestSponsors(
     if (unavailableSponsors.length > 0) result.unavailableSponsors = unavailableSponsors;
     if (guestHasTeamsAccess !== undefined) result.guestHasTeamsAccess = guestHasTeamsAccess;
 
-    // Issue a signed presence token so subsequent getPresence polls can be
+    // Issue a signed presence token so subsequent getPresence and getPhoto polls can be
     // validated without server-side state or extra Graph calls.
-    const presenceToken = createPresenceToken(callerOid, sponsorIds);
+    // Include manager IDs so the photo endpoint can authorise manager photo requests
+    // using the same token without an additional Graph lookup.
+    const managerIds = [...new Set(
+      activeSponsors
+        .filter(s => s.managerId !== undefined)
+        .map(s => s.managerId as string)
+    )];
+    const presenceToken = createPresenceToken(callerOid, sponsorIds, managerIds);
     if (presenceToken !== undefined) result.presenceToken = presenceToken;
 
     return jsonResponse(result, 200, request, correlationId);
@@ -1873,6 +1922,258 @@ app.http('ping', {
  * No caller-identity or Graph work is performed here.  EasyAuth gates access
  * at the infrastructure level (same as /api/ping).
  */
+/**
+ * HTTP GET – returns the profile photo of a sponsor or their manager, proxied via
+ * the function's Managed Identity (User.Read.All).
+ *
+ * This allows the SPFx web part to lazy-load manager photos without making direct
+ * Microsoft Graph calls, which is required when isDomainIsolated: true is set on
+ * the solution package (isolated iFrames cannot acquire Graph tokens for guest callers).
+ *
+ * Query parameter:
+ *   userId – Entra object ID of the user whose photo to return.
+ *            Must be a sponsor or manager of one of the caller's sponsors
+ *            (validated via the presence token or a live Graph lookup).
+ *
+ * Header (optional but recommended):
+ *   X-Presence-Token – the signed token issued by getGuestSponsors.
+ *                      When present, enables stateless zero-Graph-call validation.
+ *
+ * Returns:
+ *   200 { photoUrl: "data:image/jpeg;base64,…" }
+ *   404 when Graph returns 404 (no photo set for this user)
+ */
+export async function getPhoto(
+  request: HttpRequest,
+  context: InvocationContext
+): Promise<HttpResponseInit> {
+  const correlationId = getCorrelationId(request);
+
+  if (request.method === 'OPTIONS') {
+    return { status: 204, headers: { 'x-correlation-id': correlationId, ...corsHeaders(request) } };
+  }
+
+  if (request.method !== 'GET') {
+    return {
+      status: 405,
+      body: JSON.stringify({ error: 'Method Not Allowed' }),
+      headers: {
+        'Content-Type': 'application/json',
+        Allow: 'GET, OPTIONS',
+        'x-correlation-id': correlationId,
+        ...corsHeaders(request),
+      },
+    };
+  }
+
+  const userId = request.query.get('userId') ?? '';
+  if (!isValidGuid(userId)) {
+    return jsonErrorResponse(
+      request, 400, correlationId,
+      'Bad Request', 'INVALID_USER_ID',
+      'userId must be a valid Entra object ID (GUID)', false
+    );
+  }
+
+  const callerOid = resolveCallerOid(request);
+  if (!callerOid) {
+    const clientIp = getClientIp(request);
+    const anonLimit = checkRateLimit(
+      `anon:${clientIp}`,
+      ANON_RATE_LIMIT_MAX_REQUESTS,
+      ANON_RATE_LIMIT_WINDOW_MS
+    );
+    if (!anonLimit.allowed) {
+      const resp = jsonErrorResponse(
+        request, 429, correlationId,
+        'Too Many Requests', 'AUTH_RATE_LIMITED',
+        'Request rate limit exceeded. Retry after the provided delay.', true
+      );
+      resp.headers = { ...(resp.headers ?? {}), 'Retry-After': String(anonLimit.retryAfterSeconds ?? 60) };
+      return resp;
+    }
+    context.warn('getPhoto: anonymous caller rejected', { correlationId });
+    return jsonErrorResponse(
+      request, 401, correlationId,
+      'Unauthorized', 'AUTH_CALLER_OID_MISSING',
+      'Authenticated caller could not be resolved from EasyAuth headers', false
+    );
+  }
+
+  if (process.env.NODE_ENV === 'production') {
+    const principal = parseEasyAuthPrincipal(request);
+    if (!principal) {
+      return jsonErrorResponse(
+        request, 401, correlationId,
+        'Unauthorized', 'AUTH_PRINCIPAL_MISSING',
+        'EasyAuth principal header is missing or invalid', false
+      );
+    }
+    const validation = validateClientAuthorization(principal, context);
+    if (!validation.authorized) {
+      const reasonCode = validation.reasonCode ?? 'AUTH_VALIDATION_FAILED';
+      logRejection(context, reasonCode, validation.reason ?? 'Authorization failure', { correlationId });
+      return jsonErrorResponse(
+        request, 403, correlationId,
+        'Forbidden', reasonCode,
+        'Request token failed tenant validation', false
+      );
+    }
+  }
+
+  const rateLimitConfig = getRateLimitConfig();
+  if (rateLimitConfig.enabled) {
+    const rateLimitResult = checkRateLimit(callerOid, rateLimitConfig.maxRequests, rateLimitConfig.windowMs);
+    if (!rateLimitResult.allowed) {
+      const resp = jsonErrorResponse(
+        request, 429, correlationId,
+        'Too Many Requests', 'AUTH_RATE_LIMITED',
+        'Request rate limit exceeded. Retry after the provided delay.', true
+      );
+      resp.headers = { ...(resp.headers ?? {}), 'Retry-After': String(rateLimitResult.retryAfterSeconds ?? 60) };
+      return resp;
+    }
+  }
+
+  // Validate that the caller is authorised to fetch this user's photo.
+  // Fast path: verify the HMAC-signed token issued by getGuestSponsors
+  // (which now includes both sponsor IDs and manager IDs).
+  // Fallback: re-fetch sponsor list + manager IDs from Graph.
+  const rawToken = request.headers.get('x-presence-token') ?? '';
+  let authorizedIds: Set<string> | undefined;
+
+  if (rawToken) {
+    authorizedIds = verifyPresenceToken(rawToken, callerOid);
+    if (!authorizedIds) {
+      context.warn('getPhoto: presence token invalid or expired — falling back to Graph validation', {
+        callerOid: redactGuid(callerOid),
+        correlationId,
+        hasSecret: !!process.env.PRESENCE_TOKEN_SECRET,
+      });
+    }
+  }
+
+  const credential = new DefaultAzureCredential();
+  const authProvider = new TokenCredentialAuthenticationProvider(credential, {
+    scopes: ['https://graph.microsoft.com/.default'],
+  });
+  const client = Client.initWithMiddleware({ authProvider });
+
+  if (!authorizedIds) {
+    // Fallback: build the authorised ID set from Graph.
+    try {
+      const sponsorResponse = await withTimeout(
+        client.api(`/users/${callerOid}/sponsors`).select('id').top(MAX_SPONSORS).get(),
+        getTimeoutMs('SPONSOR_LOOKUP_TIMEOUT_MS', DEFAULT_SPONSOR_LOOKUP_TIMEOUT_MS),
+        'sponsor ID lookup for photo validation'
+      );
+      const sponsorIds = ((sponsorResponse?.value ?? []) as Array<{ id?: unknown }>)
+        .map(u => u.id)
+        .filter((id): id is string => typeof id === 'string' && isValidGuid(id))
+        .slice(0, MAX_SPONSORS);
+
+      // Also include manager IDs so callers can load manager photos without a token.
+      const expandedIds = [...sponsorIds];
+      if (sponsorIds.length > 0) {
+        const batchReqs: IBatchRequest[] = sponsorIds.map((id, i) => ({
+          id: `m-${i}`, method: 'GET',
+          url: `/users/${id}?$select=id&$expand=manager($select=id)`,
+        }));
+        const batchRes = await executeBatch(
+          client, batchReqs,
+          getTimeoutMs('BATCH_TIMEOUT_MS', DEFAULT_BATCH_TIMEOUT_MS),
+          'manager ID batch for photo validation'
+        );
+        for (let i = 0; i < sponsorIds.length; i++) {
+          const item = batchRes.get(`m-${i}`);
+          const mgr = item?.body?.manager as Record<string, unknown> | null | undefined;
+          if (mgr && typeof mgr.id === 'string' && isValidGuid(mgr.id)) {
+            expandedIds.push(mgr.id);
+          }
+        }
+      }
+      authorizedIds = new Set(expandedIds);
+    } catch (err) {
+      // Fail-open for transient errors only — the photo remains unavailable for
+      // callers who cannot be validated; better than silently leaking photos.
+      context.warn('getPhoto: sponsor validation lookup failed — failing open for this request', err);
+      authorizedIds = new Set([userId]);
+    }
+  }
+
+  if (!authorizedIds.has(userId)) {
+    context.warn('getPhoto: requested userId not in authorized set', {
+      correlationId,
+      callerOid: redactGuid(callerOid),
+      userId: redactGuid(userId),
+    });
+    return jsonErrorResponse(
+      request, 403, correlationId,
+      'Forbidden', 'PHOTO_ACCESS_DENIED',
+      'The requested user ID is not in the caller\'s authorized photo set', false
+    );
+  }
+
+  try {
+    const buffer = await withTimeout(
+      client.api(`/users/${userId}/photo/$value`).responseType(ResponseType.ARRAYBUFFER).get() as Promise<ArrayBuffer>,
+      getTimeoutMs('PHOTO_TIMEOUT_MS', DEFAULT_PHOTO_TIMEOUT_MS),
+      'Graph photo fetch'
+    );
+    return jsonResponse({ photoUrl: arrayBufferToDataUrl(buffer) }, 200, request, correlationId);
+  } catch (error) {
+    if (error instanceof GraphError && error.statusCode === 404) {
+      return {
+        status: 404,
+        body: JSON.stringify({ error: 'Not Found', reasonCode: 'PHOTO_NOT_FOUND' }),
+        headers: {
+          'Content-Type': 'application/json',
+          'x-correlation-id': correlationId,
+          'x-api-version': FUNCTION_VERSION,
+          ...corsHeaders(request),
+        },
+      };
+    }
+    context.warn('getPhoto: error fetching photo', { userId: redactGuid(userId), error });
+    const status = error instanceof TimeoutError
+      ? 504
+      : getValidHttpStatus(
+          error instanceof GraphError ? error.statusCode : (error as { statusCode?: number }).statusCode
+        );
+    return jsonErrorResponse(
+      request, status, correlationId,
+      'Failed to retrieve photo.',
+      status === 504 ? 'PHOTO_TIMEOUT' : 'PHOTO_FETCH_FAILED',
+      'Photo retrieval failed in backend processing',
+      status >= 500 || status === 429
+    );
+  }
+}
+
+async function safeGetPhoto(
+  request: HttpRequest,
+  context: InvocationContext
+): Promise<HttpResponseInit> {
+  try {
+    const response = await getPhoto(request, context);
+    return { ...response, status: getValidHttpStatus(response.status) };
+  } catch (error) {
+    const correlationId = getCorrelationId(request);
+    context.error('Unhandled exception in safeGetPhoto:', error);
+    return jsonErrorResponse(
+      request, 500, correlationId,
+      'Failed to retrieve photo.', 'UNHANDLED_EXCEPTION',
+      'Unexpected backend exception occurred', true
+    );
+  }
+}
+
+app.http('getPhoto', {
+  methods: ['GET', 'OPTIONS'],
+  authLevel: 'anonymous', // Authentication is enforced by EasyAuth, not the function key.
+  handler: safeGetPhoto,
+});
+
 app.http('getLatestRelease', {
   methods: ['GET', 'OPTIONS'],
   authLevel: 'anonymous', // Authentication is enforced by EasyAuth, not the function key.

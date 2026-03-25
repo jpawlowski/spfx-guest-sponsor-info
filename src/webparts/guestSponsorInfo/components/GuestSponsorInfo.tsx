@@ -11,7 +11,7 @@ import { createDOMRenderer, RendererProvider } from '@griffel/react';
 import * as strings from 'GuestSponsorInfoWebPartStrings';
 import type { IGuestSponsorInfoProps } from './IGuestSponsorInfoProps';
 import { ISponsor } from '../services/ISponsor';
-import { isGuestUser, getSponsors, getSponsorsViaProxy, pingProxy, loadPhotosProgressively, fetchPresences, getPresencesViaProxy } from '../services/SponsorService';
+import { isGuestUser, getSponsorsViaProxy, pingProxy, loadManagerPhotosViaProxy, getPresencesViaProxy } from '../services/SponsorService';
 import { MOCK_SPONSORS } from '../services/MockSponsorService';
 import SponsorCard from './SponsorCard';
 import WelcomeDialog from './WelcomeDialog';
@@ -363,7 +363,6 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
   loginName,
   isExternalGuestUser,
   displayMode,
-  graphClient,
   title,
   titleSize,
   mockMode,
@@ -380,6 +379,7 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
   functionUrl,
   presenceUrl,
   pingUrl,
+  photoUrl,
   aadHttpClient,
   showBusinessPhones,
   showMobilePhone,
@@ -515,9 +515,8 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
     // Only fetch sponsors when in view mode, the user is a guest, and a data source is ready.
     if (!isGuest) return;
 
-    // Prefer the function proxy when configured; fall back to direct Graph.
-    const useProxy = functionUrl !== undefined && aadHttpClient !== undefined;
-    if (!useProxy && graphClient === undefined) return;
+    // All Graph calls go through the Azure Function proxy (isDomainIsolated: true).
+    if (functionUrl === undefined || aadHttpClient === undefined) return;
 
     let cancelled = false;
     setLoading(true);
@@ -525,16 +524,12 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
     setIsPermissionError(false);
     setVersionMismatch(false);
     setGuestHasTeamsAccess(undefined);
-    const loadFn = useProxy
-      ? () => getSponsorsViaProxy(functionUrl as string, aadHttpClient!, clientVersion)
-      : () => getSponsors(graphClient!);
 
-    loadFn()
+    getSponsorsViaProxy(functionUrl, aadHttpClient, clientVersion)
       .then(result => {
         if (!cancelled) {
-          // Photo rendering is always client-side from direct Graph photo endpoints.
-          // Strip proxy-provided photo fields defensively to keep this contract explicit.
-          const active = result.activeSponsors.map(({ photoUrl: _photoUrl, managerPhotoUrl: _managerPhotoUrl, ...s }) => s);
+          // Sponsor photos are bundled in the proxy response; keep them as-is.
+          const active = result.activeSponsors;
           setSponsors(active);
           sponsorIdsRef.current = active.map(s => s.id);
           setSponsorOrder(result.sponsorOrder ?? active.map(s => s.id));
@@ -550,14 +545,13 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
             setVersionMismatch(true);
           }
 
-          // Phase 2: progressively fetch photos without blocking the initial render.
-          // graphClient is always obtained in onInit regardless of proxy mode,
-          // so it is safe to use here even on the proxy path.
-          if (graphClient && active.length > 0) {
-            loadPhotosProgressively(graphClient, active, (sponsorId, photoUrl, managerPhotoUrl) => {
+          // Phase 2: lazily fetch manager photos via the proxy photo endpoint.
+          // Sponsor photos already arrived inline; only manager photos need a round-trip.
+          if (photoUrl && active.length > 0) {
+            loadManagerPhotosViaProxy(photoUrl, aadHttpClient, result.presenceToken, active, (sponsorId, managerPhotoUrl) => {
               if (!cancelled) {
                 setSponsors(prev => prev.map(s =>
-                  s.id === sponsorId ? { ...s, photoUrl, managerPhotoUrl } : s
+                  s.id === sponsorId ? { ...s, managerPhotoUrl } : s
                 ));
               }
             });
@@ -601,7 +595,7 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
       });
 
     return () => { cancelled = true; };
-  }, [isGuest, isEditMode, graphClient, mockMode, mockSponsorCount, functionUrl, aadHttpClient, clientVersion, retryCount]);
+  }, [isGuest, isEditMode, mockMode, mockSponsorCount, functionUrl, aadHttpClient, clientVersion, retryCount]);
 
   // Presence refresh: poll faster while a card is actively open and the tab is visible,
   // but back off when the tab is hidden to reduce Graph traffic.
@@ -616,16 +610,12 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
   const PRESENCE_REFRESH_HIDDEN_MS = 5 * 60 * 1000;
   React.useEffect(() => {
     if (isEditMode || mockMode || !isGuest || loading || error) return;
-    const useProxy = !!(presenceUrl && aadHttpClient);
-    if (!useProxy && !graphClient) return;
+    if (!presenceUrl || !aadHttpClient) return;
 
     const refreshPresence = (): void => {
       const ids = sponsorIdsRef.current;
       if (ids.length === 0) return;
-      const presencePromise = (presenceUrl && aadHttpClient)
-        ? getPresencesViaProxy(presenceUrl, aadHttpClient, ids, presenceToken)
-        : fetchPresences(graphClient!, ids).then(presenceMap => ({ map: presenceMap, presenceToken: undefined }));
-      presencePromise
+      getPresencesViaProxy(presenceUrl, aadHttpClient, ids, presenceToken)
         .then(({ map: presenceMap, presenceToken: renewedToken }) => {
           if (renewedToken) setPresenceToken(renewedToken);
           setSponsors(prev => prev.map(s => {
@@ -672,7 +662,7 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
       clearInterval(id);
       document.removeEventListener('visibilitychange', onVisibilityChange);
     };
-  }, [isEditMode, mockMode, isGuest, loading, error, graphClient, hasActiveCard, presenceUrl, aadHttpClient, presenceToken]);
+  }, [isEditMode, mockMode, isGuest, loading, error, hasActiveCard, presenceUrl, aadHttpClient, presenceToken]);
 
   // Guard: SPFx AMD locale bundles load asynchronously. On the very first synchronous
   // render (edit mode renders immediately, before AMD resolves), strings may still be

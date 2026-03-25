@@ -335,8 +335,10 @@ default (HTTP 403). Two solutions — see
 - **App Catalog permissions:** Grant Read to *All Users (membership)* + enable external
   sharing on the App Catalog site. *Everyone except external users* does **not** work.
 
-`isDomainIsolated: true` is intentionally not used — it has known issues with guest token
-acquisition.
+`isDomainIsolated: true` is set. Sponsor photos are fetched in parallel by the Azure
+Function and bundled in the `getGuestSponsors` response. Manager photos are fetched
+lazily via the `/api/getPhoto` endpoint using `AadHttpClient`. No direct Microsoft
+Graph calls remain in the web part — all data flows through the Azure Function proxy.
 
 ## UI Behaviour
 

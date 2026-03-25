@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2026 Julian Pawlowski <https://github.com/jpawlowski>
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { MSGraphClientV3, AadHttpClient } from '@microsoft/sp-http';
+import { AadHttpClient } from '@microsoft/sp-http';
 import { DisplayMode } from '@microsoft/sp-core-library';
 import type { IReadonlyTheme } from '@microsoft/sp-component-base';
 
@@ -27,8 +27,11 @@ export interface IGuestSponsorInfoProps {
   isExternalGuestUser: boolean;
   /** Current display mode supplied by the SPFx page context. */
   displayMode: DisplayMode;
-  /** Initialised Graph client; undefined while onInit is pending. */
-  graphClient: MSGraphClientV3 | undefined;
+  /**
+   * URL of the Azure Function photo endpoint (`/api/getPhoto`). Derived from the same
+   * Function App base URL as `functionUrl`. Used for lazy manager photo loading.
+   */
+  photoUrl: string | undefined;
   /** Optional heading shown above the sponsor cards. */
   title: string;
   /** Size of the title. Defaults to 'medium' (24 px, Subtitle1). */
