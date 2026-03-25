@@ -236,7 +236,7 @@ employees, but to the outside world.
 Here is a practical structure that works well in both simple and more complex collaboration
 scenarios:
 
-**1. A short welcome and context statement**
+#### 1. A short welcome and context statement
 
 Confirm they are in the right place, name the organization that invited them, and briefly
 describe the nature of the collaboration. Two or three sentences is enough. The guest should
@@ -247,13 +247,13 @@ same page, set the display style to look like plain content rather than a naviga
 and apply audience targeting to the web part itself. It is a small trick, but it gets the
 job done without extra infrastructure.
 
-**2. Where to go first**
+#### 2. Where to go first
 
 Not a comprehensive index of every resource — just the most important first step. A Teams
 team, a shared channel, a project site. Prioritize the one or two things they are most likely
 to need in their first session.
 
-**3. Tenant-scoped deep links to key tools**
+#### 3. Tenant-scoped deep links to key tools
 
 - **Microsoft Teams**: A direct link to the relevant team or channel, with your tenant ID
   included. This ensures the Teams client loads in your tenant context, not the guest's.
@@ -270,7 +270,7 @@ to need in their first session.
   exactly why pointing guests to a tenant-scoped Teams or SharePoint link *first* matters:
   it establishes the correct session before they navigate further.
 
-**4. Direct links to relevant resources**
+#### 4. Direct links to relevant resources
 
 SharePoint sites, document libraries, project wikis, or Microsoft Loop workspaces. The
 specific ones they will need in the first week. Not a complete sitemap — a curated shortlist.
@@ -281,7 +281,7 @@ applies to Teams links, the MyApps link should include a tenant ID parameter so 
 opens in the correct organizational context:
 `https://myapps.microsoft.com/?tenantid={yourTenantId}`
 
-**5. A news or announcements section**
+#### 5. A news or announcements section
 
 For most organizations, email is the only channel that reliably reaches guest users. The
 Entrance Area can change that. A simple news section — a SharePoint News web part scoped to
