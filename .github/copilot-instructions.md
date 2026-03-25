@@ -53,7 +53,7 @@ The release workflow is documented in `docs/development.md` → "Publishing a Re
 - Before adding any package, verify compatibility with the current SPFx version.
 - **Never run `npm audit fix --force`** — it would downgrade SPFx build-rig packages and break
   the build. Audit warnings in transitive SPFx dependencies cannot be fixed independently.
-- **Never run `npm update`** on `@microsoft/sp-*`, `@rushstack/*`, `react`, or `@fluentui/react`.
+- **Never run `npm update`** on `@microsoft/sp-*`, `@rushstack/*`, `react`, or `@types/react`.
   These are managed as a coordinated set via `scripts/upgrade-spfx.sh`.
 
 ## Feature behaviour
@@ -69,9 +69,10 @@ The release workflow is documented in `docs/development.md` → "Publishing a Re
 
 - All code comments and documentation in English. User-facing chat may stay in German.
 - No bundled placeholder images. Use live profile photos from Graph; fall back to initials.
-- Styles live in `GuestSponsorInfo.module.scss` (CSS Modules, camelCase class names).
-- Locale strings follow the SPFx AMD `define()` pattern in `loc/*.js`; add new keys to all five locale files
-  (en-us, de-de, fr-fr, es-es, it-it).
+- Styles use `makeStyles` + `tokens` from `@fluentui/react-components` (Griffel) for all component-level
+  styles. `GuestSponsorInfo.module.scss` is a legacy file — do not add new classes there.
+- Locale strings follow the SPFx AMD `define()` pattern in `loc/*.js`; add new keys to all 14 locale files
+  (en-us, de-de, fr-fr, es-es, it-it, da-dk, fi-fi, ja-jp, nb-no, nl-nl, pl-pl, pt-br, sv-se, zh-cn).
 
 ## Shell scripts (`scripts/*.sh`)
 

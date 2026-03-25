@@ -207,19 +207,27 @@ For import patterns, check the existing components — `GuestSponsorInfo.tsx` an
 
 ### Styles
 
-Use CSS Modules (`.module.scss`) for all styling — **not** `makeStyles` / Griffel.
-`mergeClasses` from `@fluentui/react-components` is fine for combining class names.
+Use **`makeStyles`** from `@fluentui/react-components` (Griffel) for all component-level
+styles, with **`tokens`** from `@fluentui/react-components` for all colour and spacing values.
+Use `mergeClasses()` for conditional class composition.
+
+`GuestSponsorInfo.module.scss` is a **legacy** CSS Modules file from before the Fluent v9
+migration. **Do not add new SCSS classes there.** All new styles must use `makeStyles`.
 
 ### Forbidden patterns
 
 ```typescript
-// ❌ v8 components
+// ❌ v8 components — project has fully migrated to v9
 import { Persona, Callout, Panel, ActionButton, IconButton,
          Icon, TooltipHost, MessageBar } from '@fluentui/react';
 // ❌ v8 icon font
 initializeIcons();
-// ❌ Griffel (use CSS Modules instead)
-const useStyles = makeStyles({ ... });
+// ❌ v8 styling APIs
+import { mergeStyles, mergeStyleSets } from '@fluentui/merge-styles';
+// ❌ Hardcoded colour values — use tokens instead
+const style = { color: '#0078d4' };
+// ❌ New SCSS classes — add to makeStyles hooks instead
+// (reading legacy styles from GuestSponsorInfo.module.scss is fine for existing code)
 ```
 
 ### Key component equivalents
@@ -235,7 +243,7 @@ const useStyles = makeStyles({ ... });
 | `TooltipHost` | `Tooltip` with `relationship="label"` |
 | `Link` | `Link` from `@fluentui/react-components` |
 | `MessageBar` + `MessageBarType` | `MessageBar` + `MessageBarBody` with `intent` prop |
-| `IButtonStyles` | CSS Modules (`.module.scss`) — not `makeStyles` |
+| `IButtonStyles` | `makeStyles` with `tokens` (Griffel hook) |
 
 ### Theme integration
 
