@@ -33,17 +33,36 @@ const useWebPartStyles = makeStyles({
     minHeight: '200px',
   },
   title: {
-    fontSize: tokens.fontSizeBase500,
+    fontSize: tokens.fontSizeBase600,
     fontWeight: tokens.fontWeightSemibold,
     margin: `0 0 ${tokens.spacingVerticalL}`,
     color: tokens.colorNeutralForeground1,
     '@container (max-width: 319px)': {
-      fontSize: tokens.fontSizeBase300,
+      fontSize: tokens.fontSizeBase400,
       marginBottom: tokens.spacingVerticalMNudge,
     },
     '@container (min-width: 320px) and (max-width: 479px)': {
-      fontSize: tokens.fontSizeBase400,
+      fontSize: tokens.fontSizeBase500,
       marginBottom: tokens.spacingVerticalM,
+    },
+  },
+  // Extra styles applied to the title only in edit mode: signals editability
+  // via a subtle dashed underline and a text cursor, matching the pattern used
+  // by modern Microsoft first-party web parts (e.g. Text, Quick Links).
+  titleEditable: {
+    cursor: 'text',
+    outline: 'none',
+    borderRadius: tokens.borderRadiusSmall,
+    '&:empty::before': {
+      content: 'attr(data-placeholder)',
+      color: tokens.colorNeutralForeground4,
+    },
+    '&:hover': {
+      backgroundColor: tokens.colorNeutralBackground2,
+    },
+    '&:focus': {
+      backgroundColor: tokens.colorNeutralBackground2,
+      boxShadow: `inset 0 0 0 2px ${tokens.colorBrandStroke1}`,
     },
   },
   sponsorGrid: {
@@ -354,6 +373,7 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
   clientVersion,
   onProxyStatusChange,
   onVersionMismatch,
+  onTitleChange,
   fluentProviderId,
   theme,
 }) => {
@@ -657,7 +677,17 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
       <RendererProvider renderer={griffelRenderer}>
       <FluentProvider theme={v9Theme} id={`${fluentProviderId}-edit`}>
         <section className={classes.webPart}>
-          {title && <h2 className={classes.title}>{title}</h2>}
+          {title || isEditMode ? (
+            <h2
+              className={mergeClasses(classes.title, isEditMode && classes.titleEditable)}
+              contentEditable={isEditMode || undefined}
+              suppressContentEditableWarning={isEditMode || undefined}
+              data-placeholder={strings.TitleFieldLabel}
+              onBlur={isEditMode ? (e) => onTitleChange?.(e.currentTarget.textContent ?? '') : undefined}
+            >
+              {title}
+            </h2>
+          ) : null}
           {showMockCards && (
           <SponsorList
             sponsors={visibleMockSponsors}

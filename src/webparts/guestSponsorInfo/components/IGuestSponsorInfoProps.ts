@@ -122,6 +122,12 @@ export interface IGuestSponsorInfoProps {
    */
   onVersionMismatch?: (detected: boolean) => void;
   /**
+   * Called when the user edits the title inline (edit mode only).
+   * The web part class persists the new value via `this.properties.title = value`
+   * so the change is saved with the page.
+   */
+  onTitleChange?: (newTitle: string) => void;
+  /**
    * Unique prefix derived from the SPFx web part instance ID.
    * Passed as `id` to every FluentProvider so multiple web part instances
    * on the same page do not produce conflicting Fluent UI style-tag IDs.

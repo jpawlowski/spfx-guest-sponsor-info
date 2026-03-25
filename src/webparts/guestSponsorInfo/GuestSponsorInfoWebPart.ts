@@ -186,6 +186,9 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
             this.context.propertyPane.refresh();
           }
         },
+        onTitleChange: (newTitle: string) => {
+          this.properties.title = newTitle;
+        },
         theme: this._theme,
       }
     );
@@ -600,9 +603,6 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
               groupName: strings.BasicGroupName,
               isCollapsed: false,
               groupFields: [
-                PropertyPaneTextField('title', {
-                  label: strings.TitleFieldLabel
-                }),
                 PropertyPaneHorizontalRule(),
                 PropertyPaneSlider('maxSponsorCount', {
                   label: strings.MaxSponsorCountFieldLabel,
