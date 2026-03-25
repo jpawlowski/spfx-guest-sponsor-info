@@ -38,6 +38,7 @@ define([], function() {
     "PresenceOutOfOfficeSuffix": ", fora do escritório",
     "PresenceOffline": "Offline",
 
+    "CloseLabel": "Fechar",
     "ContactDetailsAriaLabel": "Detalhes de contato para {0}",
     "ContactActionsAriaLabel": "Ações de contato",
     "ChatTitle": "Iniciar um chat com {name}",

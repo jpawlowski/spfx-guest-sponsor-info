@@ -1152,7 +1152,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
                     appearance="subtle"
                     icon={<DismissRegular />}
                     onClick={onScheduleDeactivate}
-                    aria-label="Close"
+                    aria-label={strings.CloseLabel}
                   />
                 }
               >

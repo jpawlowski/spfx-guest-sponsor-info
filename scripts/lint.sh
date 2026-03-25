@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run all linters (TypeScript/ESLint, SCSS, Markdown, Bicep, Shell) for both
+# Run all linters (TypeScript/ESLint, Markdown, Bicep, Shell) for both
 # the SPFx web part and the Azure Function.
 #
 # Usage:
@@ -33,16 +33,7 @@ else
 fi
 
 echo ""
-echo "${C_BLD}[ 3/6 ] Stylelint (SCSS)…${C_RST}"
-if npm run lint:scss; then
-  echo "  ${C_GRN}✓${C_RST} Stylelint passed"
-else
-  echo "  ${C_RED}✗${C_RST} Stylelint found issues"
-  EXIT=1
-fi
-
-echo ""
-echo "${C_BLD}[ 4/6 ] Markdownlint (Docs)…${C_RST}"
+echo "${C_BLD}[ 3/5 ] Markdownlint (Docs)…${C_RST}"
 if npm run lint:md; then
   echo "  ${C_GRN}✓${C_RST} Markdownlint passed"
 else
@@ -51,7 +42,7 @@ else
 fi
 
 echo ""
-echo "${C_BLD}[ 5/6 ] Bicep lint (Azure Function infra)…${C_RST}"
+echo "${C_BLD}[ 4/5 ] Bicep lint (Azure Function infra)…${C_RST}"
 if npm run lint:bicep; then
   echo "  ${C_GRN}✓${C_RST} Bicep lint passed"
 else
@@ -60,7 +51,7 @@ else
 fi
 
 echo ""
-echo "${C_BLD}[ 6/6 ] shellcheck (Shell scripts)…${C_RST}"
+echo "${C_BLD}[ 5/5 ] shellcheck (Shell scripts)…${C_RST}"
 if npm run lint:sh; then
   echo "  ${C_GRN}✓${C_RST} shellcheck passed"
 else

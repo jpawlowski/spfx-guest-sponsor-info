@@ -353,16 +353,36 @@ if [[ "${DO_COMMIT}" == "true" ]]; then
   if [[ "$BICEP_COMPILED" == "true" ]]; then
     git add azure-function/infra/azuredeploy.json
   fi
-  git commit -m "chore: release ${VTAG}"
-  git tag -a "${VTAG}" -m "Release ${VTAG}"
+
+  RETAG=false
+  if git diff --cached --quiet; then
+    # Nothing staged — version files are already at SEMVER (re-tagging scenario).
+    # Move the tag to HEAD without creating an empty commit.
+    echo "${C_YLW}⚠${C_RST}  No file changes (already at ${C_CYN}${SEMVER}${C_RST}) — moving tag ${C_BLD}${VTAG}${C_RST} to HEAD."
+    git tag -f -a "${VTAG}" -m "Release ${VTAG}"
+    RETAG=true
+  else
+    git commit -m "chore: release ${VTAG}"
+    git tag -a "${VTAG}" -m "Release ${VTAG}"
+  fi
+
   echo ""
-  echo "${C_GRN}✓${C_RST} Created commit and tag ${C_BLD}${VTAG}${C_RST}."
+  echo "${C_GRN}✓${C_RST} Tag ${C_BLD}${VTAG}${C_RST} set at HEAD."
   if [[ "${DO_PUSH}" == "true" ]]; then
     echo "${C_DIM}Pushing to origin…${C_RST}"
     git push
-    git push --tags
+    if [[ "$RETAG" == "true" ]]; then
+      # The tag already exists on the remote — force-push it to its new position.
+      git push --force origin "refs/tags/${VTAG}"
+    else
+      git push --tags
+    fi
     echo "${C_GRN}✓${C_RST} Pushed. The release workflow will start automatically."
   else
-    echo "${C_DIM}Push with:  git push && git push --tags${C_RST}"
+    if [[ "$RETAG" == "true" ]]; then
+      echo "${C_DIM}Push with:  git push && git push --force origin refs/tags/${VTAG}${C_RST}"
+    else
+      echo "${C_DIM}Push with:  git push && git push --tags${C_RST}"
+    fi
   fi
 fi

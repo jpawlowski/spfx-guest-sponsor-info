@@ -110,6 +110,7 @@ declare interface IGuestSponsorInfoWebPartStrings {
   // Rich contact card
   ContactDetailsAriaLabel: string;  // contains "{0}" placeholder for the name
   ContactActionsAriaLabel: string;
+  CloseLabel: string;
   ChatTitle: string;
   EmailTitle: string;
   CallTitle: string;

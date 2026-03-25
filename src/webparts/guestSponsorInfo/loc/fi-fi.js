@@ -38,6 +38,7 @@ define([], function() {
     "PresenceOutOfOfficeSuffix": ", poissa toimistosta",
     "PresenceOffline": "Offline",
 
+    "CloseLabel": "Sulje",
     "ContactDetailsAriaLabel": "{0} yhteystiedot",
     "ContactActionsAriaLabel": "Yhteydenottomahdollisuudet",
     "ChatTitle": "Aloita chat – {name}",

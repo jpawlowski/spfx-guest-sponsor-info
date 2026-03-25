@@ -38,6 +38,7 @@ define([], function() {
     "PresenceOutOfOfficeSuffix": ", niet op kantoor",
     "PresenceOffline": "Offline",
 
+    "CloseLabel": "Sluiten",
     "ContactDetailsAriaLabel": "Contactgegevens voor {0}",
     "ContactActionsAriaLabel": "Contactacties",
     "ChatTitle": "Chat starten met {name}",

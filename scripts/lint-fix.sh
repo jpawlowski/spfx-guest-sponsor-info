@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Auto-fix all lint issues (TypeScript/ESLint, SCSS, Markdown, JSON, shell) for both
+# Auto-fix all lint issues (TypeScript/ESLint, Markdown, JSON, shell) for both
 # the SPFx web part and the Azure Function.
 #
 # Usage:
@@ -28,22 +28,17 @@ npm run fix:ts:func
 echo "  ✓ done"
 
 echo ""
-echo "[ 3/6 ] Stylelint --fix (SCSS)..."
-npm run fix:scss
-echo "  ✓ done"
-
-echo ""
-echo "[ 4/6 ] Markdownlint --fix (Docs)..."
+echo "[ 3/5 ] Markdownlint --fix (Docs)..."
 npm run fix:md
 echo "  ✓ done"
 
 echo ""
-echo "[ 5/6 ] Prettier --write (JSON/JSONC)..."
+echo "[ 4/5 ] Prettier --write (JSON/JSONC)..."
 npm run fix:json
 echo "  ✓ done"
 
 echo ""
-echo "[ 6/6 ] shfmt --write (shell scripts)..."
+echo "[ 5/5 ] shfmt --write (shell scripts)..."
 npm run fix:sh
 echo "  ✓ done"
 

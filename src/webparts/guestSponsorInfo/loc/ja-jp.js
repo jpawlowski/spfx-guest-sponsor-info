@@ -38,6 +38,7 @@ define([], function() {
     "PresenceOutOfOfficeSuffix": "、外出中",
     "PresenceOffline": "オフライン",
 
+    "CloseLabel": "閉じる",
     "ContactDetailsAriaLabel": "{0} の連絡先の詳細",
     "ContactActionsAriaLabel": "連絡先のアクション",
     "ChatTitle": "{name} とチャットを開始",

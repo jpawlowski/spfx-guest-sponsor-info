@@ -40,6 +40,7 @@ define([], function() {
 
     "ContactDetailsAriaLabel": "Contact details for {0}",
     "ContactActionsAriaLabel": "Contact actions",
+    "CloseLabel": "Close",
     "ChatTitle": "Start a chat with {name}",
     "EmailTitle": "Send email to {name}",
     "CallTitle": "Start an audio call with {name}",

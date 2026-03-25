@@ -33,16 +33,16 @@ const useWebPartStyles = makeStyles({
     minHeight: '200px',
   },
   title: {
-    fontSize: '20px',
-    fontWeight: 600,
+    fontSize: tokens.fontSizeBase500,
+    fontWeight: tokens.fontWeightSemibold,
     margin: '0 0 16px',
     color: tokens.colorNeutralForeground1,
     '@container (max-width: 319px)': {
-      fontSize: '16px',
+      fontSize: tokens.fontSizeBase300,
       marginBottom: '10px',
     },
     '@container (min-width: 320px) and (max-width: 479px)': {
-      fontSize: '18px',
+      fontSize: tokens.fontSizeBase400,
       marginBottom: '12px',
     },
   },

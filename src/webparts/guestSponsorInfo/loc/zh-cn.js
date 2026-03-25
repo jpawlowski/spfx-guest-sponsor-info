@@ -38,6 +38,7 @@ define([], function() {
     "PresenceOutOfOfficeSuffix": "，不在办公室",
     "PresenceOffline": "脱机",
 
+    "CloseLabel": "关闭",
     "ContactDetailsAriaLabel": "{0} 的联系人详细信息",
     "ContactActionsAriaLabel": "联系人操作",
     "ChatTitle": "与 {name} 开始聊天",
