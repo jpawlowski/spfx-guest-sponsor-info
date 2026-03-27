@@ -178,8 +178,8 @@ define([], function() {
     "TitleSizeNormalOption": "Normal",
 
     "WelcomeDialogTitle": "Configurar Información del patrocinador invitado",
-    "WelcomeDialogBody": "Muestra a cada usuario invitado sus sponsors de Microsoft Entra directamente en la página de inicio de SharePoint — su cadena de responsabilidad para los accesos de invitados visible donde importa.",
-    "WelcomeDialogBroughtToYouBy": "Un proyecto de código abierto de Workoho.",
+    "WelcomeDialogBody": "Este elemento web muestra a cada usuario invitado sus sponsors de Microsoft Entra en su página de inicio de SharePoint. Para que el elemento web sea útil, las asignaciones de sponsors deben gestionarse activamente y ya debe existir un proceso de ciclo de vida para los invitados — hace visible esa responsabilidad, pero no reemplaza la gobernanza subyacente.",
+    "WelcomeDialogBroughtToYouBy": "Desarrollado por Workoho — especialistas en gobernanza de invitados y gestión del ciclo de vida.",
     "WelcomeDialogWorkohoLinkLabel": "workoho.com",
     "WelcomeDialogNextButton": "Siguiente",
     "WelcomeDialogBackButton": "Atrás",

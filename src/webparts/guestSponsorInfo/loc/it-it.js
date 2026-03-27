@@ -180,8 +180,8 @@ define([], function() {
     "TitleSizeNormalOption": "Normale",
 
     "WelcomeDialogTitle": "Configura Info sponsor ospite",
-    "WelcomeDialogBody": "Mostra a ciascun utente guest i propri sponsor Microsoft Entra direttamente nella pagina SharePoint di destinazione — la catena di responsabilità degli accessi guest visibile dove conta.",
-    "WelcomeDialogBroughtToYouBy": "Un progetto open source di Workoho.",
+    "WelcomeDialogBody": "Questa web part mostra a ciascun utente ospite i propri sponsor Microsoft Entra nella pagina SharePoint di destinazione. Perché la web part sia utile, le assegnazioni degli sponsor devono essere gestite attivamente e deve essere già in atto un processo di ciclo di vita per gli ospiti — rende visibile quella responsabilità, ma non sostituisce la governance sottostante.",
+    "WelcomeDialogBroughtToYouBy": "Sviluppato da Workoho — specialisti nella governance degli ospiti e nella gestione del ciclo di vita.",
     "WelcomeDialogWorkohoLinkLabel": "workoho.com",
     "WelcomeDialogNextButton": "Avanti",
     "WelcomeDialogBackButton": "Indietro",

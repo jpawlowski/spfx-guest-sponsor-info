@@ -177,8 +177,8 @@ define([], function() {
     "TitleSizeNormalOption": "Normal",
 
     "WelcomeDialogTitle": "Set Up Guest Sponsor Info",
-    "WelcomeDialogBody": "Surfaces each guest user's Microsoft Entra sponsors directly on your SharePoint landing page — making your guest accountability chain visible where it matters.",
-    "WelcomeDialogBroughtToYouBy": "An open-source project by Workoho.",
+    "WelcomeDialogBody": "This web part shows each guest user their Microsoft Entra sponsors on your SharePoint landing page. For the web part to be meaningful, sponsor assignments should be actively governed and a guest lifecycle management process should already be in place — it makes that accountability visible, but does not replace the underlying governance.",
+    "WelcomeDialogBroughtToYouBy": "Built by Workoho — specialists in guest governance and lifecycle management.",
     "WelcomeDialogWorkohoLinkLabel": "workoho.com",
     "WelcomeDialogDismissButton": "Let's go",
     "WelcomeDialogNextButton": "Next",

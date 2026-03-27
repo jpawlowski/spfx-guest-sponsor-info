@@ -179,8 +179,8 @@ define([], function() {
     "TitleSizeNormalOption": "標準",
 
     "WelcomeDialogTitle": "ゲストスポンサー情報をセットアップ",
-    "WelcomeDialogBody": "各ゲスト ユーザーの Microsoft Entra スポンサーを SharePoint ランディング ページに直接表示します — ゲスト アクセスの責任連鎖を重要な場所で可視化します。",
-    "WelcomeDialogBroughtToYouBy": "Workoho によるオープンソース プロジェクト。",
+    "WelcomeDialogBody": "この Web パーツは、各ゲスト ユーザーの Microsoft Entra スポンサーを SharePoint ランディング ページに表示します。この Web パーツを有効に活用するには、スポンサーの割り当てが適切に管理され、ゲストのライフサイクル管理プロセスがすでに確立されている必要があります — 責任の所在を可視化しますが、背後にあるガバナンスの代替にはなりません。",
+    "WelcomeDialogBroughtToYouBy": "Workoho による開発 — ゲスト ガバナンスとライフサイクル管理の専門家。",
     "WelcomeDialogWorkohoLinkLabel": "workoho.com",
     "WelcomeDialogNextButton": "次へ",
     "WelcomeDialogBackButton": "戻る",

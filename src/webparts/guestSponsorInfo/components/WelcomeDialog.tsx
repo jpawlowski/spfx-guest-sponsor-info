@@ -17,18 +17,19 @@ import {
 } from '@fluentui/react-components';
 import {
   BeakerRegular,
-  CheckmarkCircleRegular,
   CheckmarkRegular,
   ChevronLeftRegular,
   ChevronRightRegular,
   CloudRegular,
   DismissRegular,
-  PeopleTeamRegular,
 } from '@fluentui/react-icons';
 import * as strings from 'GuestSponsorInfoWebPartStrings';
 import type { IWelcomeSetupConfig } from './IGuestSponsorInfoProps';
 import { isValidFunctionUrl, isValidGuid } from '../utils/fieldValidation';
 import workohoLogo from '../assets/workoho-default-logo.svg';
+import welcomeIllustration from '../assets/welcome-illustration.svg';
+import wizardConnectIllustration from '../assets/wizard-connect.svg';
+import wizardSuccessIllustration from '../assets/wizard-success.svg';
 
 /**
  * URL of the Azure Function deployment guide on GitHub.
@@ -130,6 +131,11 @@ const useStyles = makeStyles({
     justifyContent: 'center',
     marginBottom: tokens.spacingVerticalL,
     paddingTop: tokens.spacingVerticalS,
+  },
+  illustrationImg: {
+    maxWidth: '200px',
+    width: '100%',
+    display: 'block',
   },
   illustrationCircle: {
     // ILLUSTRATION PLACEHOLDER — Step 1 (Welcome):
@@ -351,15 +357,14 @@ interface IWelcomeDialogProps {
 /** Step 1 — Welcome intro + Workoho branding. */
 const Step1Welcome: React.FC<{ classes: ReturnType<typeof useStyles> }> = ({ classes }) => (
   <>
-    {/* ILLUSTRATION PLACEHOLDER — replace <div> with <img src={yourAsset} alt="" /> */}
     <div className={classes.illustrationWrap}>
-      <div className={classes.illustrationCircle}>
-        <PeopleTeamRegular style={{ width: 40, height: 40 }} className={classes.illustrationIcon} />
-      </div>
+      <img src={welcomeIllustration} alt="" className={classes.illustrationImg} />
     </div>
     <Text block className={classes.body}>{strings.WelcomeDialogBody}</Text>
     <div className={classes.workohoRow}>
-      <img src={workohoLogo} alt="Workoho" className={classes.workohoLogo} />
+      <Link href="https://workoho.com?utm_source=guest-sponsor-info-webpart&utm_medium=sharepoint-webpart&utm_campaign=setup-wizard&utm_content=branding-logo" target="_blank" rel="noopener noreferrer" aria-label="Workoho">
+        <img src={workohoLogo} alt="" className={classes.workohoLogo} />
+      </Link>
       <Text className={classes.muted}>
         {strings.WelcomeDialogBroughtToYouBy}{' '}
         <Link href="https://workoho.com?utm_source=guest-sponsor-info-webpart&utm_medium=sharepoint-webpart&utm_campaign=setup-wizard&utm_content=branding-link" target="_blank" rel="noopener noreferrer">
@@ -458,6 +463,9 @@ const Step3Connect: React.FC<IStep3ConnectProps> = ({
   classes, apiUrl, clientId, urlError, clientIdError, onApiUrlChange, onClientIdChange,
 }) => (
   <>
+    <div className={classes.illustrationWrap}>
+      <img src={wizardConnectIllustration} alt="" className={classes.illustrationImg} />
+    </div>
     <Text block className={classes.setupIntro}>{strings.WelcomeDialogConnectApiIntro}</Text>
     <div className={classes.apiFields}>
       <Field
@@ -494,11 +502,8 @@ const Step4Done: React.FC<{
   skippedCredentials?: boolean;
 }> = ({ classes, choice, skippedCredentials }) => (
   <>
-    {/* ILLUSTRATION PLACEHOLDER — replace <div> with <img src={yourSuccessAsset} alt="" /> */}
     <div className={classes.illustrationWrap}>
-      <div className={classes.illustrationCircleSuccess}>
-        <CheckmarkCircleRegular style={{ width: 40, height: 40 }} className={classes.illustrationIconSuccess} />
-      </div>
+      <img src={wizardSuccessIllustration} alt="" className={classes.illustrationImg} />
     </div>
     <Text block className={classes.body}>
       {choice === 'api'

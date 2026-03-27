@@ -177,8 +177,8 @@ define([], function() {
     "TitleSizeNormalOption": "正文",
 
     "WelcomeDialogTitle": "设置访客赞助商信息",
-    "WelcomeDialogBody": "直接在 SharePoint 登录页上向每位来宾用户显示其 Microsoft Entra 担保人 — 让来宾访问的责任链在关键位置清晰可见。",
-    "WelcomeDialogBroughtToYouBy": "Workoho 的开源项目。",
+    "WelcomeDialogBody": "此 Web 部件在 SharePoint 登录页上向每位来宾用户显示其 Microsoft Entra 担保人。要使此 Web 部件有意义，担保人分配应得到主动管理，且来宾生命周期管理流程应已就位 — 它让责任可见，但不能替代背后的治理。",
+    "WelcomeDialogBroughtToYouBy": "由 Workoho 开发 — 专注于来宾治理和生命周期管理。",
     "WelcomeDialogWorkohoLinkLabel": "workoho.com",
     "WelcomeDialogNextButton": "下一步",
     "WelcomeDialogBackButton": "返回",

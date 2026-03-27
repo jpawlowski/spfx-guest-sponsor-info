@@ -174,8 +174,8 @@ define([], function() {
     "TitleSizeNormalOption": "Normal",
 
     "WelcomeDialogTitle": "Configurer Infos sur le sponsor invité",
-    "WelcomeDialogBody": "Affiche les sponsors Microsoft Entra de chaque utilisateur invité directement sur votre page d'accueil SharePoint — votre chaîne de responsabilité pour les accès invités visible là où cela compte.",
-    "WelcomeDialogBroughtToYouBy": "Un projet open source de Workoho.",
+    "WelcomeDialogBody": "Ce composant affiche les sponsors Microsoft Entra de chaque utilisateur invité sur votre page d'accueil SharePoint. Pour que le composant soit utile, les attributions de sponsors doivent être gérées activement et un processus de cycle de vie des invités doit déjà être en place — il rend cette responsabilité visible, mais ne remplace pas la gouvernance sous-jacente.",
+    "WelcomeDialogBroughtToYouBy": "Développé par Workoho — spécialistes de la gouvernance des invités et de la gestion du cycle de vie.",
     "WelcomeDialogWorkohoLinkLabel": "workoho.com",
     "WelcomeDialogNextButton": "Suivant",
     "WelcomeDialogBackButton": "Retour",

@@ -179,8 +179,8 @@ define([], function() {
     "TitleSizeNormalOption": "Normaali",
 
     "WelcomeDialogTitle": "Määritä Vieraan sponsoritiedot",
-    "WelcomeDialogBody": "Näyttää jokaisen vieraskäyttäjän Microsoft Entra -sponsorit suoraan SharePoint-aloitussivullasi — vieraskäytön vastuuketju näkyvillä siellä, missä se on tärkeintä.",
-    "WelcomeDialogBroughtToYouBy": "Workoho:n avoimen lähdekoodin projekti.",
+    "WelcomeDialogBody": "Tämä verkko-osa näyttää jokaiselle vieraskäyttäjälle heidän Microsoft Entra -sponsorinsa SharePoint-aloitussivullasi. Jotta verkko-osa olisi hyödyllinen, sponsoriosoitusten tulisi olla aktiivisesti hallittuja ja vieraskäyttäjien elinkaarihallinnan tulisi jo olla käytössä — se tekee vastuun näkyväksi, mutta ei korvaa taustalla olevaa hallintoa.",
+    "WelcomeDialogBroughtToYouBy": "Workoho:n kehittämä — asiantuntijat vierashallinnassa ja elinkaarenhallinnassa.",
     "WelcomeDialogWorkohoLinkLabel": "workoho.com",
     "WelcomeDialogNextButton": "Seuraava",
     "WelcomeDialogBackButton": "Takaisin",

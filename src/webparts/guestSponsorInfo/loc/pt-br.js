@@ -177,8 +177,8 @@ define([], function() {
     "TitleSizeNormalOption": "Normal",
 
     "WelcomeDialogTitle": "Configurar Informações do Patrocinador Convidado",
-    "WelcomeDialogBody": "Exibe os sponsors do Microsoft Entra de cada usuário convidado diretamente na página de entrada do SharePoint — a cadeia de responsabilidade pelo acesso de convidados visível onde importa.",
-    "WelcomeDialogBroughtToYouBy": "Um projeto de código aberto da Workoho.",
+    "WelcomeDialogBody": "Esta Web Part exibe a cada usuário convidado seus sponsors do Microsoft Entra na página de entrada do SharePoint. Para que a Web Part seja útil, as atribuições de sponsors devem ser gerenciadas ativamente e um processo de ciclo de vida para convidados já deve estar em vigor — ela torna essa responsabilidade visível, mas não substitui a governança subjacente.",
+    "WelcomeDialogBroughtToYouBy": "Desenvolvido pela Workoho — especialistas em governança de convidados e gerenciamento de ciclo de vida.",
     "WelcomeDialogWorkohoLinkLabel": "workoho.com",
     "WelcomeDialogNextButton": "Próximo",
     "WelcomeDialogBackButton": "Voltar",

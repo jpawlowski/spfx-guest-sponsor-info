@@ -180,8 +180,8 @@ define([], function() {
     "TitleSizeNormalOption": "Normal",
 
     "WelcomeDialogTitle": "Gast-Sponsor-Info einrichten",
-    "WelcomeDialogBody": "Zeigt jedem Gastbenutzer seine Microsoft Entra-Sponsoren direkt auf der SharePoint-Einstiegsseite — die Verantwortlichen für den Gastzugang sichtbar, wo es zählt.",
-    "WelcomeDialogBroughtToYouBy": "Ein Open-Source-Projekt von Workoho.",
+    "WelcomeDialogBody": "Dieses Webpart zeigt jedem Gastbenutzer seine Microsoft Entra-Sponsoren auf der SharePoint-Einstiegsseite. Damit das Webpart sinnvoll eingesetzt werden kann, sollten Sponsorzuweisungen aktiv gepflegt und ein Lifecycle-Prozess für Gäste bereits etabliert sein — es macht diese Verantwortung sichtbar, ersetzt aber nicht die zugrundeliegende Governance.",
+    "WelcomeDialogBroughtToYouBy": "Entwickelt von Workoho – Experten für Gast-Governance und Lifecycle-Management.",
     "WelcomeDialogWorkohoLinkLabel": "workoho.com",
     "WelcomeDialogNextButton": "Weiter",
     "WelcomeDialogBackButton": "Zurück",

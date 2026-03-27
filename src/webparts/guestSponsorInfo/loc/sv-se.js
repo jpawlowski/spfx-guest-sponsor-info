@@ -177,8 +177,8 @@ define([], function() {
     "TitleSizeNormalOption": "Normal",
 
     "WelcomeDialogTitle": "Konfigurera Gästsponsorsinfo",
-    "WelcomeDialogBody": "Visar varje gästanvändares Microsoft Entra-sponsorer direkt på din SharePoint-startsida — ansvarskedjan för gäståtkomst synlig där det spelar roll.",
-    "WelcomeDialogBroughtToYouBy": "Ett öppen källkodsprojekt av Workoho.",
+    "WelcomeDialogBody": "Den här webbdelen visar varje gästanvändare deras Microsoft Entra-sponsorer på din SharePoint-startsida. För att webbdelen ska vara meningsfull bör sponsortilldelningar aktivt förvaltas och en livscykelprocess för gäster redan finnas på plats — den synliggör det ansvaret, men ersätter inte den underliggande styrningen.",
+    "WelcomeDialogBroughtToYouBy": "Utvecklat av Workoho — specialister på gäststyrning och livscykelhantering.",
     "WelcomeDialogWorkohoLinkLabel": "workoho.com"
     "WelcomeDialogNextButton": "Nästa",
     "WelcomeDialogBackButton": "Tillbaka",
