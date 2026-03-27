@@ -1,5 +1,9 @@
 # Guest Sponsor Info
 
+<p align="center">
+  <img src="images/icon-rounded.svg" width="96" height="96" alt="Guest Sponsor Info icon" />
+</p>
+
 A SharePoint Online web part for landing pages in Microsoft Entra **resource
 tenants** that shows the sponsors of the currently signed-in **guest user**.
 
