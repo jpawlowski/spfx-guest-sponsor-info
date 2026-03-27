@@ -83,6 +83,9 @@ The release workflow is documented in `docs/development.md` → "Publishing a Re
 - Use the callout box functions from `scripts/colors.sh` for developer-facing messages
   that must not be missed: `hint` (cyan — tips), `next_steps` (green — what to do next),
   `important` (yellow — critical action items). Pass each line as a separate argument.
+- Callout boxes are for **interactive** scripts only (ones a developer runs in a terminal).
+  Automated hooks (e.g. `azd` pre/post-provision) must use plain `echo` — no `colors.sh`
+  dependency, no visual formatting. Prioritise efficiency and robustness there.
 - After every change run `npm run lint:sh` (`shellcheck -x`). Fix all warnings — do not
   suppress them with `# shellcheck disable` without a comment explaining why.
 - Bash parameter expansions and non-obvious constructs must have an inline comment.

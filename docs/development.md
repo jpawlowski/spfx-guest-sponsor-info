@@ -313,7 +313,8 @@ To test the full web part → function → Graph pipeline locally:
 
 1. Start the function: `./scripts/dev-function.sh`
 2. Start the web part: `./scripts/dev-webpart.sh`
-3. In the web part property pane, set **Function URL** to `localhost:7071`.
+3. In the web part property pane, open the **Guest Sponsor API** section and set
+   **Guest Sponsor API Base URL** to `localhost:7071`.
 
 The web part constructs `https://localhost:7071/api/getGuestSponsors`
 (always HTTPS). To make this work:

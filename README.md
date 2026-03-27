@@ -214,26 +214,31 @@ The Graph `/me/sponsors` API requires a directory role — impractical for
 guests at scale. The included **Guest Sponsor API** calls Graph with application
 permissions instead (powered by a custom Azure Function).
 
+Create the App Registration
+([PowerShell 7+](https://learn.microsoft.com/powershell/scripting/install/installing-powershell)
+required — no clone needed):
+
 ```powershell
-# Create the App Registration
-./azure-function/infra/setup-app-registration.ps1 -TenantId "<tenant-id>"
+& ([scriptblock]::Create((iwr 'https://github.com/workoho/spfx-guest-sponsor-info/releases/latest/download/setup-app-registration.ps1'))) -TenantId "<tenant-id>"
 ```
 
-Then deploy to Azure:
+Then click the button to deploy to Azure:
 
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fjpawlowski%2Fspfx-guest-sponsor-info%2Fmain%2Fazure-function%2Finfra%2Fazuredeploy.json)
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fgithub.com%2Fworkoho%2Fspfx-guest-sponsor-info%2Freleases%2Flatest%2Fdownload%2Fazuredeploy.json)
 
-After deployment, grant Graph permissions and configure the web part:
+After deployment, grant Graph permissions and configure the App Registration:
 
 ```powershell
-./azure-function/infra/setup-graph-permissions.ps1 `
+& ([scriptblock]::Create((iwr 'https://github.com/workoho/spfx-guest-sponsor-info/releases/latest/download/setup-graph-permissions.ps1'))) `
   -ManagedIdentityObjectId "<oid-from-deployment-output>" `
   -TenantId "<tenant-id>" `
   -FunctionAppClientId "<client-id>"
 ```
 
-In the web part property pane, enter the **Azure Function Base URL** and the
-**Sponsor API Client ID**.
+In the web part property pane, open the **Guest Sponsor API** section and enter
+the **Guest Sponsor API Base URL** and the **Guest Sponsor API Client ID
+(App Registration)**. The Client ID comes from the App Registration named
+**"Guest Sponsor Info – SharePoint Web Part Auth"** in your Entra tenant.
 
 > Full deployment details (Flex Consumption, Deployment Stacks, Azure Maps,
 > updating, security assessment, legacy options without the Guest Sponsor API):

@@ -162,6 +162,39 @@ is not self-scoped — GDPR concern). The function sidesteps all of this.
   set `RATE_LIMIT_ENABLED=true` (with optional `RATE_LIMIT_MAX_REQUESTS` / `RATE_LIMIT_WINDOW_MS`)
   to activate per-user limiting as an incident-response measure.
 
+### Silent Token Acquisition and Pre-Authorization
+
+SPFx web parts do not have their own OAuth client identity. When a web part
+calls `AadHttpClientFactory.getClient()` to obtain a token for a custom API,
+SharePoint delegates this to the
+[SharePoint Online Web Client Extensibility](https://learn.microsoft.com/sharepoint/dev/spfx/use-aadhttpclient#known-issues)
+first-party application (two well-known app IDs across SharePoint Online
+environments). This application acts as the MSAL confidential client that
+requests tokens from Entra ID on behalf of the signed-in user (OAuth 2.0
+On-Behalf-Of flow).
+
+For this to work **silently** (no consent prompt, no page redirect), the
+target API — in our case the EasyAuth App Registration — must
+[pre-authorize](https://learn.microsoft.com/entra/identity-platform/permissions-consent-overview#preauthorization)
+the SharePoint client application for its `user_impersonation` scope.
+Pre-authorization tells Entra: *"This client is already trusted; issue tokens
+without prompting the user for consent."*
+
+Without pre-authorization, Entra would require an interactive consent flow.
+Inside an embedded web part iframe, an interactive prompt either triggers a
+full page reload (to break out of the iframe for the redirect) or a blocked
+popup — both of which break the user experience.
+
+The `setup-graph-permissions.ps1` script (and the `azd` post-provision hook)
+configure this automatically:
+
+1. Expose a `user_impersonation` delegated scope on the App Registration.
+2. Add both known SharePoint Online Web Client Extensibility app IDs as
+   pre-authorized applications for that scope.
+3. Set `appRoleAssignmentRequired = false` on the Service Principal so all
+   tenant users (including guests) can acquire tokens without individual
+   assignment.
+
 ### Data Filtering
 
 - Sponsors: must resolve in Graph active view, `accountEnabled !== false`.

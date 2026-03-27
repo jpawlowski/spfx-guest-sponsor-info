@@ -259,20 +259,45 @@ The Azure Function uses [EasyAuth](https://learn.microsoft.com/azure/app-service
 (Azure App Service Authentication). EasyAuth needs an Entra App Registration
 as its identity provider.
 
-Run the included script (requires `Microsoft.Graph` PowerShell module):
+**Option A — run directly from the web** (no clone required,
+[PowerShell 7+](https://learn.microsoft.com/powershell/scripting/install/installing-powershell)):
+
+```powershell
+& ([scriptblock]::Create((iwr 'https://github.com/workoho/spfx-guest-sponsor-info/releases/latest/download/setup-app-registration.ps1'))) -TenantId "<your-tenant-id>"
+```
+
+**Option B — from a local clone:**
 
 ```powershell
 ./azure-function/infra/setup-app-registration.ps1 -TenantId "<your-tenant-id>"
 ```
 
+<details>
+<summary>Option C — download and run manually</summary>
+
+```powershell
+# Download the script first, then review and execute it.
+Invoke-WebRequest `
+  'https://github.com/workoho/spfx-guest-sponsor-info/releases/latest/download/setup-app-registration.ps1' `
+  -OutFile setup-app-registration.ps1
+
+# Review the script content before running it:
+Get-Content setup-app-registration.ps1
+
+# Run it:
+./setup-app-registration.ps1 -TenantId "<your-tenant-id>"
+```
+
+</details>
+
 Copy the **Client ID** printed at the end.
 
 <details>
-<summary>Manual alternative (Azure Portal)</summary>
+<summary>Option D — manual alternative (Azure Portal)</summary>
 
 1. **Microsoft Entra admin center → App registrations → New registration**.
-2. Name: `Guest Sponsor Info Proxy`; Supported account types: *Accounts in
-   this organizational directory only*.
+2. Name: `Guest Sponsor Info – SharePoint Web Part Auth`; Supported
+   account types: *Accounts in this organizational directory only*.
 3. **Expose an API → Set** Application ID URI:
    `api://guest-sponsor-info-proxy/<clientId>`.
 4. Copy the **Client ID** — this is used as `ALLOWED_AUDIENCE`.
@@ -281,7 +306,9 @@ Copy the **Client ID** printed at the end.
 
 ### Deploy to Azure
 
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fjpawlowski%2Fspfx-guest-sponsor-info%2Fmain%2Fazure-function%2Finfra%2Fazuredeploy.json)
+Click the button to start the deployment:
+
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fgithub.com%2Fworkoho%2Fspfx-guest-sponsor-info%2Freleases%2Flatest%2Fdownload%2Fazuredeploy.json)
 
 Or from [Azure Cloud Shell](https://shell.azure.com) (no local tooling
 required; also works for updates — ARM deployments are idempotent):
@@ -389,6 +416,18 @@ Outputs**:
 
 ### Grant Graph permissions and configure the App Registration
 
+**Option A — run directly from the web** (no clone required,
+[PowerShell 7+](https://learn.microsoft.com/powershell/scripting/install/installing-powershell)):
+
+```powershell
+& ([scriptblock]::Create((iwr 'https://github.com/workoho/spfx-guest-sponsor-info/releases/latest/download/setup-graph-permissions.ps1'))) `
+  -ManagedIdentityObjectId "<oid-from-deployment-output>" `
+  -TenantId "<your-tenant-id>" `
+  -FunctionAppClientId "<client-id-from-pre-step>"
+```
+
+**Option B — from a local clone:**
+
 ```powershell
 ./azure-function/infra/setup-graph-permissions.ps1 `
   -ManagedIdentityObjectId "<oid-from-deployment-output>" `
@@ -402,8 +441,12 @@ This script:
    `Presence.Read.All` (optional; requires Microsoft Teams), and
    `MailboxSettings.Read` (optional; filters shared/room/equipment mailboxes).
 2. **App Registration setup for silent token acquisition** — exposes a
-   `user_impersonation` scope and pre-authorizes *SharePoint Online Web Client
-   Extensibility*. Without this, the web part would trigger full page reloads.
+   `user_impersonation` scope and
+   [pre-authorizes](https://learn.microsoft.com/entra/identity-platform/permissions-consent-overview#preauthorization)
+   *SharePoint Online Web Client Extensibility* so the web part can acquire
+   tokens silently without consent prompts or page reloads. See
+   [Silent Token Acquisition and Pre-Authorization](architecture.md#silent-token-acquisition-and-pre-authorization)
+   in the architecture guide for the full explanation.
 
 ### Configure the web part
 
@@ -411,7 +454,9 @@ In the property pane (**Guest Sponsor API** group):
 
 - **Guest Sponsor API Base URL** — e.g.
   `https://guest-sponsor-info-xyz.azurewebsites.net`
-- **Guest Sponsor API Client ID** — the Client ID from the pre-step
+- **Guest Sponsor API Client ID (App Registration)** — the Client ID from the
+  App Registration named **"Guest Sponsor Info – SharePoint Web Part Auth"**
+  in your Entra tenant (created in the pre-step)
 
 ---
 

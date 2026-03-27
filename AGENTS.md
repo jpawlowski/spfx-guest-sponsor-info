@@ -201,6 +201,11 @@ important "Edit azure-function/local.settings.json" \
 Prefer these box functions over plain `echo` for any message a developer should
 not miss (setup instructions, next steps, required configuration).
 
+Callout boxes are for **interactive** scripts only — ones a developer runs in a
+terminal. Automated hooks (e.g. `azd` pre/post-provision hooks in
+`azure-function/infra/hooks/`) must use plain `echo` — no `colors.sh` dependency,
+no visual formatting. Prioritise efficiency and robustness there.
+
 ### Comments
 
 Bash is not self-documenting. Comment non-obvious constructs, especially:
