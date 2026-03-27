@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 104" fill="none">
+  <!-- Guest: dashed circle signals external/guest status -->
+  <circle cx="44" cy="52" r="32" fill="#1F3A4F" stroke="#4FC3F7" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <!-- Guest person: head -->
+  <circle cx="44" cy="42" r="9" fill="#2E5A7A" stroke="#4FC3F7" stroke-width="1.5"/>
+  <!-- Guest person: body arch -->
+  <path d="M30 58 C30 50 58 50 58 58 Z" fill="#2E5A7A" stroke="#4FC3F7" stroke-width="1.5" stroke-linejoin="round"/>
+  <!-- Connecting lines -->
+  <line x1="76" y1="46" x2="140" y2="26" stroke="#2E5A7A" stroke-width="2" stroke-dasharray="5 3"/>
+  <line x1="76" y1="58" x2="140" y2="78" stroke="#2E5A7A" stroke-width="2" stroke-dasharray="5 3"/>
+  <!-- Sponsor 1: solid circle -->
+  <circle cx="162" cy="24" r="22" fill="#0078D4"/>
+  <!-- Sponsor 1: person head (dark bg) -->
+  <circle cx="162" cy="16" r="6" fill="#1B2A38"/>
+  <!-- Sponsor 1: person body arch -->
+  <path d="M150 28 C150 22 174 22 174 28 Z" fill="#1B2A38"/>
+  <!-- Sponsor 2: solid circle -->
+  <circle cx="162" cy="80" r="22" fill="#0078D4"/>
+  <!-- Sponsor 2: person head (dark bg) -->
+  <circle cx="162" cy="72" r="6" fill="#1B2A38"/>
+  <!-- Sponsor 2: person body arch -->
+  <path d="M150 84 C150 78 174 78 174 84 Z" fill="#1B2A38"/>
+</svg>

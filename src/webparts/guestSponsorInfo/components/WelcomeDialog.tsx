@@ -28,8 +28,11 @@ import type { IWelcomeSetupConfig } from './IGuestSponsorInfoProps';
 import { isValidFunctionUrl, isValidGuid } from '../utils/fieldValidation';
 import workohoLogo from '../assets/workoho-default-logo.svg';
 import welcomeIllustration from '../assets/welcome-illustration.svg';
+import welcomeIllustrationDark from '../assets/welcome-illustration-dark.svg';
 import wizardConnectIllustration from '../assets/wizard-connect.svg';
+import wizardConnectIllustrationDark from '../assets/wizard-connect-dark.svg';
 import wizardSuccessIllustration from '../assets/wizard-success.svg';
+import wizardSuccessIllustrationDark from '../assets/wizard-success-dark.svg';
 
 /**
  * URL of the Azure Function deployment guide on GitHub.
@@ -348,6 +351,8 @@ interface IWelcomeDialogProps {
    * URL when undefined.
    */
   semver?: string;
+  /** When true the wizard switches to dark-mode illustration variants. */
+  isDark?: boolean;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -355,10 +360,10 @@ interface IWelcomeDialogProps {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Step 1 — Welcome intro + Workoho branding. */
-const Step1Welcome: React.FC<{ classes: ReturnType<typeof useStyles> }> = ({ classes }) => (
+const Step1Welcome: React.FC<{ classes: ReturnType<typeof useStyles>; isDark?: boolean }> = ({ classes, isDark }) => (
   <>
     <div className={classes.illustrationWrap}>
-      <img src={welcomeIllustration} alt="" className={classes.illustrationImg} />
+      <img src={isDark ? welcomeIllustrationDark : welcomeIllustration} alt="" className={classes.illustrationImg} />
     </div>
     <Text block className={classes.body}>{strings.WelcomeDialogBody}</Text>
     <div className={classes.workohoRow}>
@@ -450,6 +455,7 @@ const Step2Setup: React.FC<IStep2SetupProps> = ({
 
 interface IStep3ConnectProps {
   classes: ReturnType<typeof useStyles>;
+  isDark?: boolean;
   apiUrl: string;
   clientId: string;
   urlError: string;
@@ -460,11 +466,11 @@ interface IStep3ConnectProps {
 
 /** Step 3 — Connect Guest Sponsor API (optional credentials, API path only). */
 const Step3Connect: React.FC<IStep3ConnectProps> = ({
-  classes, apiUrl, clientId, urlError, clientIdError, onApiUrlChange, onClientIdChange,
+  classes, isDark, apiUrl, clientId, urlError, clientIdError, onApiUrlChange, onClientIdChange,
 }) => (
   <>
     <div className={classes.illustrationWrap}>
-      <img src={wizardConnectIllustration} alt="" className={classes.illustrationImg} />
+      <img src={isDark ? wizardConnectIllustrationDark : wizardConnectIllustration} alt="" className={classes.illustrationImg} />
     </div>
     <Text block className={classes.setupIntro}>{strings.WelcomeDialogConnectApiIntro}</Text>
     <div className={classes.apiFields}>
@@ -498,12 +504,13 @@ const Step3Connect: React.FC<IStep3ConnectProps> = ({
 /** Step 4 — Confirmation (content differs by chosen path and whether credentials were skipped). */
 const Step4Done: React.FC<{
   classes: ReturnType<typeof useStyles>;
+  isDark?: boolean;
   choice: 'api' | 'demo';
   skippedCredentials?: boolean;
-}> = ({ classes, choice, skippedCredentials }) => (
+}> = ({ classes, isDark, choice, skippedCredentials }) => (
   <>
     <div className={classes.illustrationWrap}>
-      <img src={wizardSuccessIllustration} alt="" className={classes.illustrationImg} />
+      <img src={isDark ? wizardSuccessIllustrationDark : wizardSuccessIllustration} alt="" className={classes.illustrationImg} />
     </div>
     <Text block className={classes.body}>
       {choice === 'api'
@@ -517,7 +524,7 @@ const Step4Done: React.FC<{
 // Main dialog component
 // ─────────────────────────────────────────────────────────────────────────────
 
-const WelcomeDialog: React.FC<IWelcomeDialogProps> = ({ open, onCommit, onSkip, onDismiss, semver }) => {
+const WelcomeDialog: React.FC<IWelcomeDialogProps> = ({ open, onCommit, onSkip, onDismiss, semver, isDark }) => {
   const classes = useStyles();
   const [step, setStep] = React.useState(0);
   const [choice, setChoice] = React.useState<'api' | 'demo'>('demo');
@@ -646,7 +653,7 @@ const WelcomeDialog: React.FC<IWelcomeDialogProps> = ({ open, onCommit, onSkip, 
           })}
         </div>
 
-        {step === 0 && <Step1Welcome classes={classes} />}
+        {step === 0 && <Step1Welcome classes={classes} isDark={isDark} />}
         {step === 1 && (
           <Step2Setup
             classes={classes}
@@ -658,6 +665,7 @@ const WelcomeDialog: React.FC<IWelcomeDialogProps> = ({ open, onCommit, onSkip, 
         {step === 2 && (
           <Step3Connect
             classes={classes}
+            isDark={isDark}
             apiUrl={apiUrl}
             clientId={clientId}
             urlError={urlError}
@@ -666,7 +674,7 @@ const WelcomeDialog: React.FC<IWelcomeDialogProps> = ({ open, onCommit, onSkip, 
             onClientIdChange={setClientId}
           />
         )}
-        {step === 3 && <Step4Done classes={classes} choice={choice} skippedCredentials={skippedApiCreds} />}
+        {step === 3 && <Step4Done classes={classes} isDark={isDark} choice={choice} skippedCredentials={skippedApiCreds} />}
 
         <div className={classes.stepActions}>
           {step === 0 && (

@@ -772,7 +772,7 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
       return (
         <RendererProvider renderer={griffelRenderer}>
         <FluentProvider theme={v9Theme} id={`${fluentProviderId}-edit`}>
-          <WelcomeDialog open onCommit={handleWelcomeCommit} onSkip={handleWelcomeSkip} onDismiss={handleWelcomeDismiss} semver={clientVersion?.split('.').slice(0, 3).join('.')} />
+          <WelcomeDialog open onCommit={handleWelcomeCommit} onSkip={handleWelcomeSkip} onDismiss={handleWelcomeDismiss} semver={clientVersion?.split('.').slice(0, 3).join('.')} isDark={theme?.isInverted} />
         </FluentProvider>
         </RendererProvider>
       );
