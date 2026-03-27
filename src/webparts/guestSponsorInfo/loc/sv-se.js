@@ -177,9 +177,9 @@ define([], function() {
     "TitleSizeNormalOption": "Normal",
 
     "WelcomeDialogTitle": "Konfigurera Gästsponsorsinfo",
-    "WelcomeDialogBody": "Den här webbdelen visar dina Microsoft 365-sponsorer — de interna kollegor som ansvarar för ditt gästkonto, din introduktion och ditt dagliga stöd i den här organisationen.",
-    "WelcomeDialogBroughtToYouBy": "Utvecklat av Workoho — specialister på Microsoft 365-styrning, identitet och hantering av gäståtkomst.",
-    "WelcomeDialogWorkohoLinkLabel": "Besök workoho.com",
+    "WelcomeDialogBody": "Visar varje gästanvändares Microsoft Entra-sponsorer direkt på din SharePoint-startsida — ansvarskedjan för gäståtkomst synlig där det spelar roll.",
+    "WelcomeDialogBroughtToYouBy": "Ett öppen källkodsprojekt av Workoho.",
+    "WelcomeDialogWorkohoLinkLabel": "workoho.com"
     "WelcomeDialogNextButton": "Nästa",
     "WelcomeDialogBackButton": "Tillbaka",
     "WelcomeDialogSkipButton": "Inte nu",
@@ -188,7 +188,7 @@ define([], function() {
     "InvalidUrlFormat": "Ange en giltig URL (t.ex. my-app.azurewebsites.net)",
     "InvalidGuidFormat": "Ange ett giltigt GUID (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)",
     "WelcomeDialogSetupTitle": "Igång på några minuter",
-    "WelcomeDialogSetupIntro": "Välj hur du vill köra webbdelen. Du kan ändra detta när som helst i inställningarna.",
+    "WelcomeDialogSetupIntro": "Välj din driftsättningsväg. Du kan växla mellan båda alternativen när som helst via webbdelens inställningar.",
     "WelcomeDialogOptionApiTitle": "Använd Guest Sponsor API",
     "WelcomeDialogOptionApiBody": "Fullständig upplevelse via en Azure Function. Kräver engångskonfiguration i Azure — rekommenderas för produktion.",
     "WelcomeDialogOptionApiDocsLabel": "Visa installationsguide",

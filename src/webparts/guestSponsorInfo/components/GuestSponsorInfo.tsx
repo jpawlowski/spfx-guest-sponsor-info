@@ -28,7 +28,11 @@ const griffelRenderer = createDOMRenderer(document, {
 
 const useWebPartStyles = makeStyles({
   webPart: {
-    padding: `${tokens.spacingVerticalS} 0`,
+    // No top/side padding — the SharePoint section provides uniform spacing on
+    // all sides, so adding top padding here would make the gap above the title
+    // larger than the natural left/right gaps (mismatching first-party web parts
+    // like Quick Links). Bottom padding keeps breathing room below the last card.
+    padding: `0 0 ${tokens.spacingVerticalS}`,
     overflow: 'visible',
     maxWidth: '100%',
     boxSizing: 'border-box',

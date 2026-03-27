@@ -179,12 +179,15 @@ const useStyles = makeStyles({
     display: 'flex',
     alignItems: 'center',
     gap: tokens.spacingHorizontalS,
-    marginTop: tokens.spacingVerticalL,
+    marginTop: tokens.spacingVerticalXL,
     paddingTop: tokens.spacingVerticalM,
     borderTop: `1px solid ${tokens.colorNeutralStroke2}`,
+    // Visually de-emphasised: slightly smaller than body text so the attribution
+    // reads as a footer note rather than content, without hiding it from review.
+    fontSize: tokens.fontSizeBase200,
   },
   workohoLogo: {
-    height: '20px',
+    height: '16px',
     display: 'block',
     flexShrink: 0,
   },

@@ -335,6 +335,15 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
 
   protected async onInit(): Promise<void> {
     await super.onInit();
+    // Pre-populate the title when the web part is first added to a page.
+    // strings is resolved by SPFx to the editor's current UI culture, so this
+    // produces a localized default (e.g. "My Sponsors" / "Meine Sponsoren") at
+    // the moment of first drop without any extra runtime language detection.
+    // Use strict undefined check — an empty string means the editor explicitly
+    // cleared the title and wants it to remain empty.
+    if (this.properties.title === undefined) {
+      this.properties.title = strings.TitlePlaceholder;
+    }
     // Consume the SPFx ThemeProvider service so the FluentProvider can receive the
     // host site's v8-style theme and convert it to a v9 theme via createV9Theme.
     this._themeProvider = this.context.serviceScope.consume(ThemeProvider.serviceKey);
