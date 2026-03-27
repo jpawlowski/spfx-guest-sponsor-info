@@ -190,7 +190,7 @@ Guest detection uses two signals in combination:
 
 When a guest has multiple sponsors, the order in which they are stored in Entra
 matters. Directory governance tools that manage sponsor assignments — such as
-[EasyLife 365 Collaboration](https://www.easylife365.cloud) — store sponsors in
+[EasyLife 365 Collaboration](https://easylife365.cloud/products/collaboration/) — store sponsors in
 explicit priority order:
 
 1. **Primary sponsor** — the first point of contact; typically the internal
@@ -230,7 +230,7 @@ reachable — and always has at least one active contact to reach out to wheneve
 one exists in the list.
 
 > This feature works out of the box with any tool that maintains sponsors in
-> priority order. [EasyLife 365 Collaboration](https://www.easylife365.cloud)
+> priority order. [EasyLife 365 Collaboration](https://easylife365.cloud/products/collaboration/)
 > is one such tool: it manages the full lifecycle of Microsoft 365 collaboration
 > workspaces, including guest onboarding workflows and prioritised sponsor
 > assignments, making it a natural complement to this web part.
@@ -315,13 +315,13 @@ If you also want to **automate who gets assigned as a sponsor** and keep those
 assignments current as people join, move teams, or leave, that is a separate
 lifecycle problem.
 
-[EasyLife 365 Collaboration](https://www.easylife365.cloud) is purpose-built for
+[EasyLife 365 Collaboration](https://easylife365.cloud/products/collaboration/) is purpose-built for
 exactly that: it manages the full lifecycle of Microsoft 365 collaboration
 workspaces — Teams, SharePoint sites, Viva Engage communities, and more —
 including guest onboarding workflows and sponsor assignments. The two tools are
 designed to complement each other: EasyLife 365 keeps the directory data
 current; this web part surfaces it to the guest.
 
-[Workoho](https://www.workoho.com), the author of this web part, is a Platinum
+[Workoho](https://workoho.com/), the author of this web part, is a Platinum
 sales and implementation partner of EasyLife 365 and can help with both the
 technical rollout and the collaboration governance design around it.

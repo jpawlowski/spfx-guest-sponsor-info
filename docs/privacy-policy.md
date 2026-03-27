@@ -140,9 +140,8 @@ resource group.
 Microsoft uses this GUID to forward **aggregated Azure consumption figures**
 (compute hours, storage, etc.) for that resource group to Workoho via Partner
 Center. **No personal data, tenant IDs, user names, or resource configurations
-are shared.** See the
-[Data Collection and Telemetry](deployment.md#data-collection-and-telemetry)
-section of the deployment guide for details and opt-out instructions.
+are shared.** See [telemetry.md](telemetry.md) for details and opt-out
+instructions.
 
 ### GitHub Release Check
 
@@ -207,6 +206,19 @@ The following commitments apply to the Solution as a marketplace offering:
 
 No third-party analytics, advertising, or tracking services are used.
 
+### UTM Parameters on Admin and Setup Links
+
+Links displayed in the **setup wizard** (Welcome Dialog) and **property pane**
+(the SharePoint admin configuration area of the web part) include static UTM
+parameters (`utm_source`, `utm_medium`, `utm_campaign`, `utm_content`). These
+parameters contain only campaign metadata — for example, which area of the
+web part the admin clicked from — and do **not** contain tenant IDs, user IDs,
+email addresses, or any other personal identifiers.
+
+These UTM parameters are **not** added to links opened by end users (for
+example, links to map providers such as Bing, Google Maps, or OpenStreetMap
+are passed without any UTM parameters).
+
 ---
 
 ## Data Subject Rights
@@ -239,7 +251,11 @@ assignment). To exercise data-subject rights, the guest should contact:
 For privacy-related questions about this Solution:
 
 **Workoho GmbH**\
-<https://workoho.com>
+[privacy@workoho.com](mailto:privacy@workoho.com)\
+[workoho.com](https://workoho.com?utm_source=guest-sponsor-info-webpart&utm_medium=documentation&utm_campaign=docs&utm_content=privacy-policy-contact)
+
+For responsible disclosure of security vulnerabilities related to this
+Solution, contact [security@workoho.com](mailto:security@workoho.com).
 
 For questions about Microsoft's data processing, refer to the
 [Microsoft Privacy Statement](https://privacy.microsoft.com/privacystatement).

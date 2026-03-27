@@ -2,7 +2,8 @@
 
 **Product:** Guest Sponsor Info for SharePoint Online\
 **Publisher:** Workoho GmbH\
-**Effective date:** 2026-03-25
+**Author:** Julian Pawlowski\
+**Effective date:** 2026-03-26
 
 ---
 
@@ -17,15 +18,15 @@ Use. If you do not agree, do not deploy or use the Solution.
 ## License
 
 The Solution is published under the
-[GNU Affero General Public License v3.0 (AGPL-3.0)](../LICENSE).
+[PolyForm Shield License 1.0.0](../LICENSE).
 
-Key obligations under AGPL-3.0:
+Licensor: Workoho GmbH
 
-- You may use, copy, modify, and distribute the Solution.
-- Any modified version you distribute or make available over a network **must
-  also be released under AGPL-3.0** and its source code made publicly
-  available.
-- The full license text must be included with any distribution.
+Author: Julian Pawlowski
+
+This license permits use, modification, and distribution of the Solution,
+except for uses that compete with products or services provided by the
+licensor or its affiliates.
 
 See the [LICENSE](../LICENSE) file for the complete terms.
 
@@ -75,5 +76,8 @@ document reflects the date of the most recent revision.
 
 ## Contact
 
+For questions about these Terms of Use:
+
 **Workoho GmbH**\
-<https://workoho.com>
+[yourfriends@workoho.com](mailto:yourfriends@workoho.com)\
+[workoho.com](https://workoho.com?utm_source=guest-sponsor-info-webpart&utm_medium=documentation&utm_campaign=docs&utm_content=terms-contact)
