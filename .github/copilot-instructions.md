@@ -7,15 +7,39 @@ Authoritative versions are in `package.json` (`engines`, `dependencies`, `devDep
 
 ## After every code change
 
-Always validate your changes before considering a task done:
+Validate changes before considering a task done, but use the right level of
+validation for the situation. Running the full lint suite after every small edit
+wastes time — use targeted checks during development and the full suite only
+before committing.
 
-1. **Lint** — always run `npm run lint` after every change (fast, catches most issues early).
-   Per-type: `npm run lint:ts` · `npm run lint:md` · `npm run lint:loc` · `npm run lint:sh`
-   Auto-fix: `npm run fix` (runs ESLint · Stylelint · Prettier for JSON · shfmt for shell · Markdownlint)
-2. **Test** — run `npm test` when you changed logic, components, or services.
-   Skip for pure documentation, config, or style-only changes.
-3. **Build** — run `npm run build` only when the packaging artifact (`.sppkg`) is relevant,
+### Targeted lint (after each edit — fast, 2–5 s)
+
+Run **only** the linter that matches the files you changed:
+
+| Changed files | Command |
+| --- | --- |
+| `src/**/*.{ts,tsx}` | `npm run lint:ts` |
+| `azure-function/src/**/*.ts` | `npm run lint:ts:func` |
+| `**/*.md` | `npm run lint:md` |
+| `.github/**/*.yml`, `azure.yaml`, `website/**/*.yml` | `npm run lint:yml` |
+| `scripts/*.sh` | `npm run lint:sh` |
+| `src/**/loc/*.js` | `npm run lint:loc` |
+
+If you changed files spanning multiple types, run the relevant subset — not the
+full suite.
+
+### Full validation (before committing)
+
+1. **Fix** — `npm run fix` (auto-correct formatting: ESLint, Prettier, shfmt, Markdownlint)
+2. **Lint** — `npm run lint` (full suite — catches anything `fix` could not resolve)
+3. **Test** — `npm test` only when you changed logic, components, or services.
+   Skip for pure documentation, config, locale, or style-only changes.
+4. **Build** — `npm run build` only when the packaging artifact (`.sppkg`) is relevant,
    e.g. before a release. Not needed for regular development changes.
+
+The pre-commit hook (`lint-staged`) already runs `fix` + `lint` on staged files
+automatically, so if you followed the targeted-lint workflow above the commit
+hook will catch any remaining issues.
 
 For interactive development use `npm start` (hosted workbench with hot-reload; requires `SPFX_SERVE_TENANT_DOMAIN` —
 set in `.env` or as a host OS env var, see `.devcontainer/devcontainer.json`).
@@ -62,8 +86,9 @@ The release workflow is documented in `docs/development.md` → "Publishing a Re
 - In **view mode**: render nothing for non-guest users; render sponsor cards for guests.
 - In **edit mode**: always show a lightweight text placeholder — no Graph calls, no photos.
 - Guest detection: `#EXT#` marker in `pageContext.user.loginName`.
-- Microsoft Graph permissions in use: `User.Read` and `User.ReadBasic.All` only.
-  Do not introduce `User.Read.All` or broader scopes.
+- The web part has no Microsoft Graph permissions of its own. All data fetching goes through
+  the Azure Function via `AadHttpClient`. Do not add `webApiPermissionRequests` entries or
+  introduce direct Graph calls.
 
 ## Code style
 
@@ -94,7 +119,7 @@ The release workflow is documented in `docs/development.md` → "Publishing a Re
 
 ## Key files
 
-- `src/webparts/guestSponsorInfo/services/SponsorService.ts` — all Graph logic
+- `src/webparts/guestSponsorInfo/services/SponsorService.ts` — all proxy call logic (Azure Function API)
 - `src/webparts/guestSponsorInfo/components/GuestSponsorInfo.tsx` — main component
 - `src/webparts/guestSponsorInfo/components/SponsorCard.tsx` — individual card
 - `docs/architecture.md` — design decisions and known limitations
