@@ -140,12 +140,31 @@ node_modules/.bin/husky -- --version      # ✅ safe
 
 ## Code Validation Checklist
 
-After **every** code change:
+### During development (after each edit — fast, 2–5 s)
 
-1. **Lint** → `npm run lint` (catches 95% of issues)
-2. **Test** → `npm test` (if logic changed)
-3. **Fix** → `npm run fix` (auto-correct before committing)
-4. **Validate** → `npm run lint` again (final check)
+Run **only** the linter matching the files you touched:
+
+| Changed files | Command |
+|---|---|
+| `src/**/*.{ts,tsx}` | `npm run lint:ts` |
+| `azure-function/src/**/*.ts` | `npm run lint:ts:func` |
+| `**/*.md` | `npm run lint:md` |
+| `.github/**/*.yml`, `azure.yaml`, `website/**/*.yml` | `npm run lint:yml` |
+| `scripts/*.sh` | `npm run lint:sh` |
+| `src/**/loc/*.js` | `npm run lint:loc` |
+
+If the change spans multiple file types, run only the matching subset.
+Do **not** run `npm run lint` (full suite) after every individual edit.
+
+### Before committing (full validation)
+
+1. **Fix** → `npm run fix` (auto-correct formatting)
+2. **Lint** → `npm run lint` (full suite — catches anything fix could not resolve)
+3. **Test** → `npm test` (only when logic, components, or services changed —
+   skip for docs, config, locale, or style-only changes)
+
+The pre-commit hook (`lint-staged`) already runs targeted fix + lint on staged
+files, so step 1–2 is a safety net more than a strict requirement.
 
 **Never push with lint errors or test failures.**
 
