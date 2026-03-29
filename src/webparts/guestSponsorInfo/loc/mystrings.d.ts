@@ -145,6 +145,21 @@ declare interface IGuestSponsorInfoWebPartStrings {
   AuthorSectionDeploymentGuideLabel: string;
   NewReleaseAvailableLabel: string;
 
+  // Guest Accessibility diagnostics group
+  DiagnosticsGroupName: string;
+  DiagnosticsGroupHint: string;
+  DiagnosticsChecking: string;
+  DiagPublicCdnOk: string;
+  DiagPrivateCdnInfo: string;
+  DiagSiteColCatalogOk: string;
+  DiagTenantCatalogEveryoneOk: string;
+  DiagTenantCatalogEveryoneDenied: string;
+  DiagTenantCatalogEveryoneUnknown: string;
+  DiagAssetSourceUnknown: string;
+  DiagSiteEveryoneOk: string;
+  DiagSiteEveryoneMissing: string;
+  DiagSiteEveryoneUnknown: string;
+
   // Presence labels
   PresenceAvailable: string;
   PresenceAvailableIdle: string;

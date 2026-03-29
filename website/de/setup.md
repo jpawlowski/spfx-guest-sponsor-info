@@ -14,76 +14,112 @@ github_doc: deployment.md
 
 ## SharePoint-Bereitstellung
 
-### Site Collection App Catalog aktivieren
+### Installation aus dem Microsoft AppSource
 
-Das Web-Part-Bundle wird in einem
-[**Site Collection App Catalog**](https://learn.microsoft.com/sharepoint/dev/general-development/site-collection-app-catalog)
-direkt auf der Gast-Landingpage-Site gehostet. Da Gastbenutzer bereits
-Lesezugriff auf diese Site benötigen, sind keine CDN-Konfiguration oder
-zusätzliche Berechtigungen für den globalen App-Catalog erforderlich.
+Das Web Part ist im
+[**Microsoft Commercial Marketplace (AppSource)**](https://appsource.microsoft.com/)
+verfügbar. Die Installation über AppSource stellt das Web Part mandantenweit
+über den Tenant App Catalog bereit — kein Site Collection App Catalog und kein
+manueller Datei-Upload erforderlich.
 
-Aktivieren Sie den Site Collection App Catalog einmalig. Für diesen
-Schritt gibt es keine GUI-Option — PowerShell ist erforderlich. Das
-ausführende Konto muss **alle drei** unten aufgeführten Bedingungen
-erfüllen:
+**Installation über das SharePoint Admin Center:**
 
-**Erforderliche Bedingungen:**
+1. Öffne **SharePoint Admin Center → Weitere Features → Apps → Öffnen**.
+2. Klicke auf **Apps aus Marketplace holen** und suche nach *Guest Sponsor Info*.
+3. Wähle die App aus und klicke auf **Jetzt holen**.
 
-1. [**SharePoint-Administrator**](https://learn.microsoft.com/sharepoint/sharepoint-admin-role)-Rolle
-   in Microsoft 365. Ein globaler Administrator erfüllt dies implizit.
-2. **Websitesammlungsadministrator auf dem mandantenweiten App Catalog**
-   (typischerweise `https://<tenant>.sharepoint.com/sites/appcatalog`).
-   Falls nötig, fügen Sie Ihr Konto zuerst hinzu:
+Die Lösung verwendet `skipFeatureDeployment: false` — das Web Part wird **nicht**
+automatisch mandantenweit verfügbar. Nach der Installation im Tenant App Catalog
+muss ein Site Collection-Administrator die App explizit auf der gewünschten Site
+hinzufügen: **Websiteinhalte → App hinzufügen → Guest Sponsor Info**.
+Dies ist beabsichtigt und verhindert eine versehentliche Bereitstellung auf
+nicht vorgesehenen Sites.
 
-   ```powershell
-   Set-SPOUser -Site "https://<tenant>.sharepoint.com/sites/appcatalog" `
-       -LoginName "<admin@tenant.onmicrosoft.com>" `
-       -IsSiteCollectionAdmin $true
-   ```
+Die erforderlichen Microsoft Graph-Berechtigungen (`User.Read`,
+`User.ReadBasic.All`, `Presence.Read.All`) sind von Microsoft für SharePoint
+Online vorautorisiert — die **API-Zugriff**-Warteschlange ist leer und keine
+manuelle Zustimmung erforderlich.
 
-3. **Websitesammlungsadministrator auf der Landingpage-Site** selbst.
+### Web Part für Gastbenutzer zugänglich machen
 
-> **Voraussetzung — der mandantenweite App Catalog muss zuerst existieren:**
-> Ein App Catalog wird auf einem neuen Microsoft-365-Mandanten *nicht*
-> automatisch erstellt. Falls er noch nicht vorhanden ist, öffnen Sie
-> **SharePoint Admin Center → Weitere Features → Apps → Öffnen** — dies
-> löst die automatische Erstellung aus.
+Bei der Installation über AppSource oder den Tenant App Catalog wird das
+JavaScript-Bundle des Web Parts aus der `ClientSideAssets`-Bibliothek des
+Tenant App Catalogs bereitgestellt. B2B-Gastbenutzer können auf diese
+Bibliothek nicht zugreifen, bevor sie sich beim Host-Mandanten authentifiziert
+haben — was vor dem Seitenaufruf nicht garantiert ist. Wenn Gäste das Bundle
+nicht laden können, wird das Web Part lautlos nicht gerendert.
 
-Unter Windows ist die
-[**SharePoint Online Management Shell**](https://learn.microsoft.com/powershell/sharepoint/sharepoint-online/connect-sharepoint-online)
-die einfachste Option:
+Das integrierte **Gastzugänglichkeits-Diagnose**-Panel des Web Parts
+(Eigenschaftsbereich) erkennt das aktuelle Szenario und zeigt das Ergebnis
+jeder Prüfung mit einer Empfehlung an.
+
+**Option A — Office 365 Public CDN aktivieren (empfohlen)**
+
+Wenn das Office 365 Public CDN aktiviert ist, repliziert SharePoint die
+Web-Part-Bundles auf Microsofts Edge-CDN
+(`publiccdn.sharepointonline.com`), das anonym zugänglich ist — ohne
+SharePoint-Authentifizierung. Das ist der zuverlässigste Ansatz für
+Gastbenutzer.
+
+**Erforderliche Rolle:** SharePoint-Administrator.
 
 ```powershell
+# SharePoint Online Management Shell (Windows):
 Connect-SPOService -Url "https://<tenant>-admin.sharepoint.com"
-Add-SPOSiteCollectionAppCatalog -Site "https://<tenant>.sharepoint.com/sites/<landing-site>"
+Set-SPOTenantCdnEnabled -CdnType Public -Enable $true
+
+# Prüfen, ob der ClientSideAssets-Ursprung enthalten ist (wird standardmäßig hinzugefügt):
+Get-SPOTenantCdnOrigins -CdnType Public
+# Erwartete Ausgabe enthält: */CLIENTSIDEASSETS
 ```
 
-Unter macOS oder Linux verwenden Sie
-[PnP PowerShell](https://pnp.github.io/powershell/). Aktuelle Versionen
-erfordern eine eigene Entra-App-Registrierung:
+Falls `*/CLIENTSIDEASSETS` fehlt, manuell hinzufügen:
 
 ```powershell
-Connect-PnPOnline -Url "https://<tenant>-admin.sharepoint.com" `
-    -ClientId "<ihre-pnp-app-client-id>" -Interactive
-Add-PnPSiteCollectionAppCatalog -Site "https://<tenant>.sharepoint.com/sites/<landing-site>"
+Add-SPOTenantCdnOrigin -CdnType Public -OriginUrl "*/CLIENTSIDEASSETS"
 ```
 
-### Hochladen und installieren
+```powershell
+# PnP PowerShell (plattformübergreifend):
+Connect-PnPOnline -Url "https://<tenant>-admin.sharepoint.com" `
+    -ClientId "<your-pnp-app-client-id>" -Interactive
+Set-PnPTenantCdnEnabled -CdnType Public -Enable $true
+```
 
-1. Laden Sie die neueste `guest-sponsor-info.sppkg` von
-   [Releases](https://github.com/workoho/spfx-guest-sponsor-info/releases)
-   herunter.
-2. Öffnen Sie den Site Collection App Catalog und laden Sie die
-   `.sppkg`-Datei hoch.
+> Die CDN-Propagierung dauert **15–30 Minuten**. Danach ändert sich die
+> Bundle-URL automatisch auf `publiccdn.sharepointonline.com` — keine
+> Neukonfiguration erforderlich.
 
-   > **Navigationstipp — verwenden Sie die direkte URL:**
-   > Der Site Collection App Catalog ist eine Dokumentbibliothek namens
-   > **Apps für SharePoint** in der Landingpage-Site. Am zuverlässigsten
-   > finden Sie ihn unter:
-   > `https://<tenant>.sharepoint.com/sites/<landing-site>/AppCatalog/`
+**Option B — Jeder-Gruppe Lesezugriff auf den Tenant App Catalog gewähren**
 
-3. Das Web Part ist sofort auf allen Seiten dieser Websitesammlung
-   verfügbar — kein zusätzlicher „App hinzufügen"-Schritt erforderlich.
+Falls das Public CDN nicht aktiviert werden kann, der integrierten
+**Jeder**-Gruppe Lesezugriff auf die Tenant App Catalog-Site gewähren.
+
+**Erforderliche Rollen:** SharePoint-Administrator und Site Collection
+Administrator der Tenant App Catalog-Site
+(`https://<tenant>.sharepoint.com/sites/appcatalog`).
+
+```powershell
+# SharePoint Online Management Shell (Windows):
+Connect-SPOService -Url "https://<tenant>-admin.sharepoint.com"
+Add-SPOUser -Site "https://<tenant>.sharepoint.com/sites/appcatalog" `
+    -LoginName "c:0(.s|true" -Group "App Catalog Visitors"
+```
+
+```powershell
+# PnP PowerShell (direkte Verbindung zur App Catalog-Site):
+Connect-PnPOnline -Url "https://<tenant>.sharepoint.com/sites/appcatalog" `
+    -ClientId "<your-pnp-app-client-id>" -Interactive
+Add-PnPGroupMember -LoginName "c:0(.s|true" -Group "App Catalog Visitors"
+```
+
+> **Einschränkung:** Betrifft nur Gäste, die sich bereits beim Host-Mandanten
+> authentifiziert haben. Das Public CDN (Option A) hat diese Einschränkung
+> nicht.
+
+Für eine erweiterte Alternative (Site Collection App Catalog, ohne
+Marketplace) siehe das vollständige
+[Deployment-Handbuch auf GitHub](https://github.com/workoho/spfx-guest-sponsor-info/blob/main/docs/deployment.md#option-c--use-a-site-collection-app-catalog).
 
 ### Gastzugriff auf die Landingpage-Site prüfen
 

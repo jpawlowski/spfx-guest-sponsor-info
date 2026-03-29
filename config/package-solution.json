@@ -6,7 +6,7 @@
     "id": "6cdf9494-9c67-40af-8ac8-7b36be245848",
     "version": "0.21.0.0",
     "includeClientSideAssets": true,
-    "skipFeatureDeployment": true,
+    "skipFeatureDeployment": false,
     "isDomainIsolated": true,
     "iconPath": "images/icon.png",
     "supportedLocales": [

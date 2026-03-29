@@ -4,7 +4,7 @@
     "solutionName": "Guest Sponsor Info",
     "environment": "spo",
     "packageManager": "npm",
-    "skipFeatureDeployment": true,
+    "skipFeatureDeployment": false,
     "useGulp": false,
     "componentType": "webpart",
     "template": "react",

@@ -110,52 +110,37 @@ this web part, is a Platinum EasyLife 365 partner and happy to advise.
 > For a visual overview of all setup steps and required admin roles, see the
 > [Setup diagram](docs/architecture-diagram.md#setup--two-admin-roles-recommended-path).
 
-### 1. Deploy the web part
+### 1. Install the web part
 
-The web part's bundle is hosted in a **Site Collection App Catalog** directly
-on the guest landing page site itself. Because guest users already need read
-access to that site, no CDN configuration or extra permissions on the global
-App Catalog are required.
+The web part is available in the
+[**Microsoft commercial marketplace (AppSource)**](https://appsource.microsoft.com/).
 
-**Enable the Site Collection App Catalog** (once; no GUI — PowerShell
-required). Three conditions must all be met: **SharePoint Admin** role,
-**Site Collection Admin on the tenant App Catalog**, and **Site Collection
-Admin on the landing-page site**. The tenant App Catalog must also exist
-first. See the [full prerequisites](docs/deployment.md#enable-the-site-collection-app-catalog)
-before running any command.
+**Install via SharePoint Admin Center:**
 
-On Windows, use the [**SharePoint Online Management Shell**](https://learn.microsoft.com/powershell/sharepoint/sharepoint-online/connect-sharepoint-online)
-— no additional setup needed:
+1. Open **SharePoint Admin Center → More features → Apps → Open**.
+2. Click **Get apps from marketplace** and search for *Guest Sponsor Info*.
+3. Select the app and click **Get it now** — it deploys to the Tenant App
+   Catalog automatically. A Site Collection Administrator must then add the
+   app to the desired site via **Site Contents → Add an app → Guest Sponsor
+   Info** before the web part appears in the page editor.
+
+The required Microsoft Graph permissions (`User.Read`, `User.ReadBasic.All`,
+`Presence.Read.All`) are pre-authorized by Microsoft — the **API access**
+queue will be empty and no manual consent is needed.
+
+**Enable the Office 365 Public CDN** so that guest users can load the web part
+bundle. By default, the Tenant App Catalog asset library is not accessible to
+B2B guests before authentication. The Public CDN serves the bundle anonymously
+from Microsoft's edge network:
 
 ```powershell
 Connect-SPOService -Url "https://<tenant>-admin.sharepoint.com"
-Add-SPOSiteCollectionAppCatalog -Site "https://<tenant>.sharepoint.com/sites/<landing-site>"
+Set-SPOTenantCdnEnabled -CdnType Public -Enable $true
 ```
 
-On macOS/Linux, use [PnP PowerShell](https://pnp.github.io/powershell/)
-(requires your own Entra app registration; pass its Client ID via `-ClientId`):
-
-```powershell
-Connect-PnPOnline -Url "https://<tenant>-admin.sharepoint.com" `
-    -ClientId "<your-pnp-app-client-id>" -Interactive
-Add-PnPSiteCollectionAppCatalog -Site "https://<tenant>.sharepoint.com/sites/<landing-site>"
-```
-
-**Upload and install the package:**
-
-1. Download the latest `guest-sponsor-info.sppkg` from
-   [Releases](../../releases).
-2. Open the Site Collection App Catalog and upload the `.sppkg` file.
-   The easiest path is the direct URL:
-   `https://<tenant>.sharepoint.com/sites/<landing-site>/AppCatalog/`
-   (The gear menu's *Add an app* leads to the marketplace, not the catalog;
-   alternatively go via **Site Contents → Apps for SharePoint**.)
-3. The web part becomes available on all pages in this site collection
-   immediately — no additional "Add App" step is required.
-4. The required Microsoft Graph permissions (`User.Read`, `User.ReadBasic.All`,
-   `Presence.Read.All`) are pre-authorized by Microsoft for SharePoint Online —
-   the **SharePoint Admin Center → Advanced → API access** queue will simply
-   be empty and no manual consent is needed.
+> **Alternative deployment options** (Everyone on Tenant App Catalog, or Site
+> Collection App Catalog from GitHub Releases):
+> **[docs/deployment.md — SharePoint Deployment](docs/deployment.md#make-the-web-part-accessible-to-guest-users)**
 
 ### 2. Verify external sharing
 

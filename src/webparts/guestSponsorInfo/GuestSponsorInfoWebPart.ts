@@ -18,7 +18,7 @@ import {
 } from '@microsoft/sp-property-pane';
 import { PropertyPaneCustomField } from '@microsoft/sp-property-pane/lib/propertyPaneFields/propertyPaneCustomField/PropertyPaneCustomField';
 import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
-import { AadHttpClient } from '@microsoft/sp-http';
+import { AadHttpClient, SPHttpClient } from '@microsoft/sp-http';
 import { ThemeProvider, IReadonlyTheme, ThemeChangedEventArgs } from '@microsoft/sp-component-base';
 import { FluentProvider, MessageBar, MessageBarBody, Tooltip, webLightTheme, webDarkTheme, type Theme } from '@fluentui/react-components';
 import { createV9Theme } from '@fluentui/react-migration-v8-v9';
@@ -170,6 +170,20 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
   private _versionMismatch = false;
   private _newVersionAvailable: { version: string; url: string } | false = false;
   private _githubCheckDone = false;
+  private _diagnosticsCheckDone = false;
+  private _diagnosticsResult:
+    | {
+        assetSource:
+          | 'publicCdn'
+          | 'privateCdn'
+          | 'tenantCatalog'
+          | 'siteCollectionCatalog'
+          | 'unknown';
+        /** Only populated when assetSource === 'tenantCatalog'. */
+        tenantCatalogEveryoneAccess: 'ok' | 'denied' | 'unknown';
+        siteEveryoneAccess: 'ok' | 'missing' | 'unknown';
+      }
+    | undefined;
 
   /**
    * sessionStorage key for the cached GitHub release check result.
@@ -408,6 +422,78 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
   }
 
   /**
+   * Checks whether the web part's JavaScript bundle is accessible to B2B guest
+   * users and whether the current site's Visitor group includes Everyone.
+   *
+   * Asset-source detection uses the SPFx manifest's `loaderConfig.internalModuleBaseUrls`
+   * field which is populated at runtime by the SPFx loader and reliably indicates
+   * where the bundle was actually fetched from.
+   *
+   * The Everyone Visitor check uses the SharePoint REST API (spHttpClient).
+   * A 403 response on the Tenant App Catalog yields 'unknown' — gracefully handled.
+   *
+   * Results are stored in `_diagnosticsResult` and trigger a property pane refresh.
+   */
+  private async _runDiagnostics(): Promise<void> {
+    // ── Step 1: Determine asset source (synchronous, no network) ─────────────
+    const baseUrls: string[] = (this.manifest as unknown as {
+      loaderConfig?: { internalModuleBaseUrls?: string[] };
+    }).loaderConfig?.internalModuleBaseUrls ?? [];
+
+    const legacyCtx = this.context.pageContext.legacyPageContext as Record<string, unknown>;
+    const corporateCatalogUrl = (typeof legacyCtx?.corporateCatalogUrl === 'string'
+      ? legacyCtx.corporateCatalogUrl
+      : ''
+    ).replace(/\/$/, '');
+    const siteUrl = this.context.pageContext.site.absoluteUrl.replace(/\/$/, '');
+
+    let assetSource: 'publicCdn' | 'privateCdn' | 'tenantCatalog' | 'siteCollectionCatalog' | 'unknown';
+    if (baseUrls.some(u => u.includes('publiccdn.sharepointonline.com'))) {
+      assetSource = 'publicCdn';
+    } else if (baseUrls.some(u => u.includes('privatecdn.sharepointonline.com'))) {
+      assetSource = 'privateCdn';
+    } else if (corporateCatalogUrl && baseUrls.some(u => u.startsWith(corporateCatalogUrl))) {
+      assetSource = 'tenantCatalog';
+    } else if (baseUrls.some(u => u.startsWith(siteUrl))) {
+      assetSource = 'siteCollectionCatalog';
+    } else {
+      assetSource = 'unknown';
+    }
+
+    // ── Step 2: Tenant App Catalog Everyone access (only when relevant) ───────
+    let tenantCatalogEveryoneAccess: 'ok' | 'denied' | 'unknown' = 'unknown';
+    if (assetSource === 'tenantCatalog' && corporateCatalogUrl) {
+      try {
+        const url = `${corporateCatalogUrl}/_api/web/roleassignments?$expand=Member&$select=Member/LoginName`;
+        const resp = await this.context.spHttpClient.get(url, SPHttpClient.configurations.v1);
+        if (resp.ok) {
+          const data = await resp.json() as { value: Array<{ Member: { LoginName: string } }> };
+          const hasEveryone = data.value.some(ra => ra.Member.LoginName === 'c:0(.s|true');
+          tenantCatalogEveryoneAccess = hasEveryone ? 'ok' : 'denied';
+        }
+        // 403 or other non-ok = leave as 'unknown'
+      } catch { /* network error — leave as 'unknown' */ }
+    }
+
+    // ── Step 3: Site Everyone access (always check) ───────────────────────────
+    let siteEveryoneAccess: 'ok' | 'missing' | 'unknown' = 'unknown';
+    try {
+      const url = `${siteUrl}/_api/web/roleassignments?$expand=Member&$select=Member/LoginName`;
+      const resp = await this.context.spHttpClient.get(url, SPHttpClient.configurations.v1);
+      if (resp.ok) {
+        const data = await resp.json() as { value: Array<{ Member: { LoginName: string } }> };
+        const hasEveryone = data.value.some(ra => ra.Member.LoginName === 'c:0(.s|true');
+        siteEveryoneAccess = hasEveryone ? 'ok' : 'missing';
+      }
+    } catch { /* network error — leave as 'unknown' */ }
+
+    this._diagnosticsResult = { assetSource, tenantCatalogEveryoneAccess, siteEveryoneAccess };
+    if (this.context.propertyPane.isPropertyPaneOpen()) {
+      this.context.propertyPane.refresh();
+    }
+  }
+
+  /**
    * Starts Graph and AAD HTTP client acquisition concurrently without blocking
    * the SPFx page lifecycle. Calls render() once both have settled so the React
    * component receives real clients in a single props update (avoids triggering
@@ -440,6 +526,14 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
   }
 
   protected onPropertyPaneOpened(): void {
+    // Run the guest-accessibility diagnostics once per editing session.
+    // Not gated on functionUrl — the check is about bundle delivery and site
+    // permissions, which are independent of the proxy configuration.
+    if (!this._diagnosticsCheckDone) {
+      this._diagnosticsCheckDone = true;
+      this._runDiagnostics().catch(() => { /* informational only — silent on failure */ });
+    }
+
     if (this._githubCheckDone) return;
     // Only perform the release check when a function URL is configured.
     // Without a function the web part has no indirect path to GitHub, so we
@@ -1446,6 +1540,93 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
                     },
                   }) as unknown as IPropertyPaneField<unknown>
                 ] : [])
+              ]
+            },
+            {
+              groupName: strings.DiagnosticsGroupName,
+              isCollapsed: true,
+              groupFields: [
+                this._descriptionField('diagnosticsGroupHint', strings.DiagnosticsGroupHint),
+                // ── Check 1: Asset source / bundle delivery ─────────────────
+                PropertyPaneCustomField({
+                  key: 'diagAssetSourceField',
+                  onRender: (element: HTMLElement | undefined) => {
+                    if (!element) return;
+                    const diag = this._diagnosticsResult;
+                    let text: string;
+                    let intent: 'info' | 'success' | 'warning' | 'error' = 'info';
+                    if (!diag) {
+                      text = strings.DiagnosticsChecking;
+                      intent = 'info';
+                    } else {
+                      switch (diag.assetSource) {
+                        case 'publicCdn':
+                          text = strings.DiagPublicCdnOk;
+                          intent = 'success';
+                          break;
+                        case 'privateCdn':
+                          text = strings.DiagPrivateCdnInfo;
+                          intent = 'info';
+                          break;
+                        case 'siteCollectionCatalog':
+                          text = strings.DiagSiteColCatalogOk;
+                          intent = 'success';
+                          break;
+                        case 'tenantCatalog':
+                          if (diag.tenantCatalogEveryoneAccess === 'ok') {
+                            text = strings.DiagTenantCatalogEveryoneOk;
+                            intent = 'success';
+                          } else if (diag.tenantCatalogEveryoneAccess === 'denied') {
+                            text = strings.DiagTenantCatalogEveryoneDenied;
+                            intent = 'error';
+                          } else {
+                            text = strings.DiagTenantCatalogEveryoneUnknown;
+                            intent = 'warning';
+                          }
+                          break;
+                        default:
+                          text = strings.DiagAssetSourceUnknown;
+                          intent = 'warning';
+                      }
+                    }
+                    this._renderInfoBox(element, 'diagAssetSource', text, intent);
+                  },
+                  onDispose: (element: HTMLElement | undefined) => {
+                    if (element) ReactDom.unmountComponentAtNode(element);
+                  },
+                }) as unknown as IPropertyPaneField<unknown>,
+                // ── Check 2: Site Everyone access ───────────────────────────
+                PropertyPaneCustomField({
+                  key: 'diagSiteEveryoneField',
+                  onRender: (element: HTMLElement | undefined) => {
+                    if (!element) return;
+                    const diag = this._diagnosticsResult;
+                    let text: string;
+                    let intent: 'info' | 'success' | 'warning' | 'error' = 'info';
+                    if (!diag) {
+                      // Still loading — render nothing; diagAssetSourceField shows the spinner
+                      element.innerHTML = '';
+                      return;
+                    }
+                    switch (diag.siteEveryoneAccess) {
+                      case 'ok':
+                        text = strings.DiagSiteEveryoneOk;
+                        intent = 'success';
+                        break;
+                      case 'missing':
+                        text = strings.DiagSiteEveryoneMissing;
+                        intent = 'warning';
+                        break;
+                      default:
+                        text = strings.DiagSiteEveryoneUnknown;
+                        intent = 'info';
+                    }
+                    this._renderInfoBox(element, 'diagSiteEveryone', text, intent);
+                  },
+                  onDispose: (element: HTMLElement | undefined) => {
+                    if (element) ReactDom.unmountComponentAtNode(element);
+                  },
+                }) as unknown as IPropertyPaneField<unknown>,
               ]
             },
             {

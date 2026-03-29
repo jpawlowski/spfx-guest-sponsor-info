@@ -166,6 +166,22 @@ define([], function() {
     "DeployToAzureClickHint": "Klicken Sie auf die Schaltfl\u00e4che, um die Bereitstellung zu starten:",
     "AuthorSectionDeploymentGuideLabel": "Deployment-Anleitung",
     "NewReleaseAvailableLabel": "Neue Version verfügbar – GitHub Releases öffnen",
+
+    // Diagnose: Gastzugänglichkeit
+    "DiagnosticsGroupName": "Gastzugänglichkeit",
+    "DiagnosticsGroupHint": "Prüft, ob das JavaScript-Bundle des Web Parts und die Landingpage-Site für B2B-Gastbenutzer erreichbar sind.",
+    "DiagnosticsChecking": "Gastzugänglichkeit wird geprüft…",
+    "DiagPublicCdnOk": "Bundle wird über das öffentliche Office 365 CDN ausgeliefert – anonymer Zugriff, keine besonderen Berechtigungen für Gastbenutzer erforderlich.",
+    "DiagPrivateCdnInfo": "Bundle wird über das private Office 365 CDN ausgeliefert – Gäste mit Lesezugriff auf die Site können es laden. Stellen Sie sicher, dass die Landingpage-Site für Gäste zugänglich ist.",
+    "DiagSiteColCatalogOk": "Bundle wird aus dem Site Collection App Catalog dieser Site ausgeliefert – der Gastzugriff richtet sich nach den Berechtigungen der Site.",
+    "DiagTenantCatalogEveryoneOk": "Bundle wird aus dem mandantenweiten App Catalog ausgeliefert. Die Gruppe 'Jeder' hat Lesezugriff auf den App Catalog – Gastbenutzer können das Bundle laden.",
+    "DiagTenantCatalogEveryoneDenied": "Bundle wird aus dem mandantenweiten App Catalog ausgeliefert, aber 'Jeder' hat keinen Lesezugriff. Gastbenutzer können das Web Part nicht laden. Empfehlung: Aktivieren Sie das öffentliche Office 365 CDN oder erteilen Sie 'Jeder' Besucherzugriff auf die App Catalog-Site.",
+    "DiagTenantCatalogEveryoneUnknown": "Bundle wird aus dem mandantenweiten App Catalog ausgeliefert. Ob 'Jeder' Lesezugriff hat, konnte nicht geprüft werden (fehlende Berechtigungen). Bitte prüfen Sie manuell, ob Gastbenutzer den App Catalog erreichen können, oder aktivieren Sie das öffentliche Office 365 CDN.",
+    "DiagAssetSourceUnknown": "Die Bundle-Quelle konnte nicht ermittelt werden. Bitte prüfen Sie manuell, ob Gastbenutzer das JavaScript-Bundle des Web Parts laden können.",
+    "DiagSiteEveryoneOk": "'Jeder' ist in der Besuchergruppe der Site – neu akzeptierte Gäste erhalten sofort Lesezugriff auf die Landingpage.",
+    "DiagSiteEveryoneMissing": "'Jeder' ist nicht in der Besuchergruppe der Site. Der Gastzugriff erfolgt möglicherweise über eine statische Entra-Sicherheitsgruppe (akzeptabel) oder eine dynamische Gruppe (bis zu 24 Stunden Verzögerung für neue Gäste). Wenn keine gastfreundliche Gruppe konfiguriert ist, sehen Gäste eine Zugriff-verweigert-Seite.",
+    "DiagSiteEveryoneUnknown": "Die Besucherberechtigungen der Site konnten nicht geprüft werden. Bitte sicherstellen, dass Gastbenutzer mindestens Lesezugriff auf diese Site haben.",
+
     "ShowSponsorJobTitleFieldLabel": "Berufsbezeichnung des Sponsors anzeigen",
     "ShowManagerJobTitleFieldLabel": "Berufsbezeichnung der Führungskraft anzeigen",
     "ShowSponsorDepartmentFieldLabel": "Abteilung des Sponsors anzeigen",

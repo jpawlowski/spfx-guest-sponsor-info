@@ -16,6 +16,10 @@ For security and telemetry details, see
 ## Table of Contents
 
 - [SharePoint Deployment](#sharepoint-deployment)
+  - [Install from Microsoft AppSource](#install-from-microsoft-appsource)
+  - [Make the web part accessible to guest users](#make-the-web-part-accessible-to-guest-users)
+  - [Verify guest access to the landing page site](#verify-guest-access-to-the-landing-page-site)
+  - [External sharing](#external-sharing)
 - [Guest Sponsor API](#guest-sponsor-api)
 - [Administration and Operations](#administration-and-operations)
 
@@ -23,13 +27,140 @@ For security and telemetry details, see
 
 ## SharePoint Deployment
 
-### Enable the Site Collection App Catalog
+### Install from Microsoft AppSource
 
-The web part's bundle is hosted in a
-[**Site Collection App Catalog**](https://learn.microsoft.com/sharepoint/dev/general-development/site-collection-app-catalog)
-directly on the guest landing page site. Because guest users already need read
-access to that site, no CDN configuration or additional permissions on the
-global App Catalog are required.
+The web part is available in the
+[**Microsoft commercial marketplace (AppSource)**](https://appsource.microsoft.com/).
+Installing from there deploys it tenant-wide via the Tenant App Catalog — no
+Site Collection App Catalog or file upload required.
+
+**Install via SharePoint Admin Center:**
+
+1. Open [**SharePoint Admin Center → More features → Apps → Open**](https://admin.microsoft.com/sharepoint).
+2. Click **Get apps from marketplace** and search for *Guest Sponsor Info*.
+3. Select the app and click **Get it now**.
+
+The solution uses `skipFeatureDeployment: false`. The web part is **not**
+automatically available on all pages after installation. A Site Collection
+Administrator must first add the app to the desired site:
+**Site Contents → Add an app → Guest Sponsor Info**.
+This is intentional — it prevents the web part from being accidentally placed
+on unintended sites.
+
+The required Microsoft Graph permissions (`User.Read`, `User.ReadBasic.All`,
+`Presence.Read.All`) are pre-authorized by Microsoft for SharePoint Online.
+The **SharePoint Admin Center → Advanced → API access** queue will be empty —
+no manual consent action is needed.
+
+---
+
+### Make the web part accessible to guest users
+
+When installed via AppSource or the Tenant App Catalog, the web part JavaScript
+bundle is served from the Tenant App Catalog's `ClientSideAssets` library by
+default. B2B guest users cannot access this library before authenticating to
+the host tenant — which is not guaranteed before the page load. If guests
+cannot load the bundle, the web part silently fails to render.
+
+The web part's built-in **Guest Accessibility** diagnostics panel (property
+pane) detects the current scenario and shows the result of each check with
+a recommendation.
+
+Choose **one** of the following options:
+
+#### Option A — Enable the Office 365 Public CDN (recommended)
+
+When the Office 365 Public CDN is enabled, SharePoint automatically replicates
+web part bundles to Microsoft's edge CDN network
+(`publiccdn.sharepointonline.com`), which is accessible anonymously without
+any SharePoint authentication. This is the most reliable approach for guest
+users and requires no per-site configuration.
+
+**Required role:** SharePoint Administrator.
+
+```powershell
+# SharePoint Online Management Shell (Windows):
+# Install once: Install-Module Microsoft.Online.SharePoint.PowerShell -Scope CurrentUser
+Connect-SPOService -Url "https://<tenant>-admin.sharepoint.com"
+
+# Enable the Public CDN:
+Set-SPOTenantCdnEnabled -CdnType Public -Enable $true
+
+# Verify the ClientSideAssets origin is included (added by default):
+Get-SPOTenantCdnOrigins -CdnType Public
+# Expected output includes: */CLIENTSIDEASSETS
+```
+
+If `*/CLIENTSIDEASSETS` is not listed, add it:
+
+```powershell
+Add-SPOTenantCdnOrigin -CdnType Public -OriginUrl "*/CLIENTSIDEASSETS"
+```
+
+```powershell
+# PnP PowerShell (cross-platform):
+# Install once (PowerShell 7+): Install-Module PnP.PowerShell -Scope CurrentUser
+Connect-PnPOnline -Url "https://<tenant>-admin.sharepoint.com" `
+    -ClientId "<your-pnp-app-client-id>" -Interactive
+Set-PnPTenantCdnEnabled -CdnType Public -Enable $true
+```
+
+*Cmdlet references:
+[`Set-SPOTenantCdnEnabled`](https://learn.microsoft.com/powershell/module/sharepoint-online/set-spotenantcdnenabled) ·
+[`Get-SPOTenantCdnOrigins`](https://learn.microsoft.com/powershell/module/sharepoint-online/get-spotenantcdnorigins) ·
+[`Add-SPOTenantCdnOrigin`](https://learn.microsoft.com/powershell/module/sharepoint-online/add-spotenantcdnorigin) ·
+[Office 365 CDN documentation](https://learn.microsoft.com/sharepoint/dev/general-development/office-365-cdn-with-spo-ps)*
+
+> CDN propagation typically takes **15–30 minutes** after enabling. Once active,
+> the bundle URL changes from the Tenant App Catalog to
+> `publiccdn.sharepointonline.com` automatically — no reconfiguration is needed.
+
+#### Option B — Grant Everyone read access to the Tenant App Catalog
+
+If enabling the Public CDN is not possible in your environment, grant the
+built-in **Everyone** group (`c:0(.s|true`) read access to the Tenant App
+Catalog site. This allows B2B guests who have already accepted their invitation
+to load the bundle directly from the App Catalog.
+
+**Required roles:** SharePoint Administrator and Site Collection Administrator
+on the Tenant App Catalog site (typically
+`https://<tenant>.sharepoint.com/sites/appcatalog`).
+
+```powershell
+# SharePoint Online Management Shell (Windows):
+Connect-SPOService -Url "https://<tenant>-admin.sharepoint.com"
+Add-SPOUser -Site "https://<tenant>.sharepoint.com/sites/appcatalog" `
+    -LoginName "c:0(.s|true" -Group "App Catalog Visitors"
+```
+
+```powershell
+# PnP PowerShell (cross-platform; connect to the App Catalog site directly):
+Connect-PnPOnline -Url "https://<tenant>.sharepoint.com/sites/appcatalog" `
+    -ClientId "<your-pnp-app-client-id>" -Interactive
+Add-PnPGroupMember -LoginName "c:0(.s|true" -Group "App Catalog Visitors"
+```
+
+*Cmdlet references:
+[`Add-SPOUser`](https://learn.microsoft.com/powershell/module/sharepoint-online/add-spouser) ·
+[`Add-PnPGroupMember`](https://pnp.github.io/powershell/cmdlets/Add-PnPGroupMember.html)*
+
+> **Limitation:** This covers only guests who have already authenticated to the
+> host tenant. Guests who have never visited the tenant (e.g. before accepting a
+> full invitation) cannot load the bundle. The Public CDN (Option A) does not
+> have this limitation.
+
+#### Option C — Use a Site Collection App Catalog
+
+As an alternative to the AppSource / Tenant App Catalog path, deploy the web
+part bundle in a Site Collection App Catalog directly on the guest landing page
+site. This bypasses the Tenant App Catalog entirely — the bundle is served from
+a library the guest already has access to. No CDN configuration or separate
+Everyone grant on the App Catalog is needed.
+
+**This option does not use the Microsoft commercial marketplace.** Download the
+`.sppkg` from
+[GitHub Releases](https://github.com/workoho/spfx-guest-sponsor-info/releases)
+instead.
 
 Enable the Site Collection App Catalog once. There is no GUI option for this
 step — PowerShell is required. The executing account must satisfy **all three**
@@ -100,10 +231,10 @@ Add-PnPSiteCollectionAppCatalog -Site "https://<tenant>.sharepoint.com/sites/<la
 [`Add-PnPSiteCollectionAppCatalog`](https://pnp.github.io/powershell/cmdlets/Add-PnPSiteCollectionAppCatalog.html) ·
 [register an Entra app](https://pnp.github.io/powershell/articles/registerapplication.html)*
 
-### Upload and install
+**Upload and install:**
 
 1. Download the latest `guest-sponsor-info.sppkg` from
-   [Releases](https://github.com/workoho/spfx-guest-sponsor-info/releases).
+   [GitHub Releases](https://github.com/workoho/spfx-guest-sponsor-info/releases).
 2. Open the Site Collection App Catalog and upload the `.sppkg` file.
 
    > **Navigation tip — use the direct URL:**\
@@ -117,7 +248,7 @@ Add-PnPSiteCollectionAppCatalog -Site "https://<tenant>.sharepoint.com/sites/<la
    > down to find **Apps for SharePoint** → open it.
 
 3. The web part becomes available on all pages within this site collection
-   immediately — no additional “Add App” step is required.
+   immediately — no additional "Add App" step is required.
 
 ### Verify guest access to the landing page site
 

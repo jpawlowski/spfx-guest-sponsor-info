@@ -163,6 +163,22 @@ define([], function() {
     "DeployToAzureClickHint": "Click the button to start the deployment:",
     "AuthorSectionDeploymentGuideLabel": "Deployment guide",
     "NewReleaseAvailableLabel": "New release available — click to open GitHub Releases",
+
+    // Guest Accessibility diagnostics
+    "DiagnosticsGroupName": "Guest Accessibility",
+    "DiagnosticsGroupHint": "Checks whether the web part's JavaScript bundle and the landing page site are accessible to B2B guest users.",
+    "DiagnosticsChecking": "Running guest accessibility checks…",
+    "DiagPublicCdnOk": "Bundle served via Office 365 Public CDN — anonymous delivery, no special permissions required for guest users.",
+    "DiagPrivateCdnInfo": "Bundle served via Office 365 Private CDN — guests with site read access can load it. Ensure the landing page site is accessible to guests.",
+    "DiagSiteColCatalogOk": "Bundle served from the site collection app catalog of this site — guest access follows the site's own permissions.",
+    "DiagTenantCatalogEveryoneOk": "Bundle served from the tenant app catalog. The 'Everyone' claim has read access to the app catalog — guest users can load the bundle.",
+    "DiagTenantCatalogEveryoneDenied": "Bundle served from the tenant app catalog, but 'Everyone' does not have read access. Guest users cannot load the web part. Recommendation: enable the Office 365 Public CDN, or grant 'Everyone' Visitor access to the tenant app catalog site.",
+    "DiagTenantCatalogEveryoneUnknown": "Bundle served from the tenant app catalog. Could not verify whether 'Everyone' has read access (insufficient permissions to check). Please verify manually that guest users can reach the app catalog or enable the Office 365 Public CDN.",
+    "DiagAssetSourceUnknown": "Bundle source could not be determined. Please verify manually that guest users can access the web part's JavaScript bundle.",
+    "DiagSiteEveryoneOk": "'Everyone' is in the site's Visitor group — newly accepted guests get immediate read access to the landing page.",
+    "DiagSiteEveryoneMissing": "'Everyone' is not in the site's Visitor group. Guest access may rely on a static Entra security group (acceptable) or dynamic group (up to 24 h delay for new guests). If no guest-inclusive group is configured, guests will see an access-denied page.",
+    "DiagSiteEveryoneUnknown": "Could not verify site visitor permissions. Please check that guest users have at least Read access to this site.",
+
     "ShowSponsorJobTitleFieldLabel": "Show sponsor's job title",
     "ShowManagerJobTitleFieldLabel": "Show manager's job title",
     "ShowSponsorDepartmentFieldLabel": "Show sponsor's department",
