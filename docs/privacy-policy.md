@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Product:** Guest Sponsor Info for SharePoint Online\
+**Product:** Guest Sponsor Info for Microsoft Entra B2B\
 **Publisher:** Workoho GmbH\
 **Effective date:** 2026-03-25
 
@@ -8,9 +8,9 @@
 
 ## Overview
 
-This Privacy Policy describes how the **Guest Sponsor Info** SharePoint web
-part and its companion Azure Function API ("the Solution") handle personal data
-while running inside your Microsoft 365 and Azure tenant.
+This Privacy Policy describes how the **Guest Sponsor Info for Microsoft Entra B2B**
+SharePoint web part and its companion **Guest Sponsor API for Microsoft Entra B2B** (Azure Function, "the Solution")
+handle personal data while running inside your Microsoft 365 and Azure tenant.
 
 **The Solution does not collect, store, or transmit personal data to Workoho
 or any third party.** All data remains within your Microsoft 365 and Azure
@@ -51,18 +51,18 @@ data is stored beyond the current browser session or function invocation.
 | Data | Source | Purpose | Stored? |
 |-|-|-|-|
 | Guest user's UPN / `loginName` | SharePoint page context | Detect the `#EXT#` marker to identify guest accounts | No — evaluated in memory only, never transmitted |
-| Guest user's Entra object ID (OID) | Entra ID token (via MSAL) | Authenticate requests to the Azure Function API | No — present only in the short-lived Bearer token |
-| Sponsor display name, given name, surname | Azure Function API | Render the sponsor name on the card | No — held in browser memory for the page lifetime |
-| Sponsor job title, department | Azure Function API | Display role context on the card | No |
+| Guest user's Entra object ID (OID) | Entra ID token (via MSAL) | Authenticate requests to the Guest Sponsor API for Microsoft Entra B2B | No — present only in the short-lived Bearer token |
+| Sponsor display name, given name, surname | Guest Sponsor API for Microsoft Entra B2B | Render the sponsor name on the card | No — held in browser memory for the page lifetime |
+| Sponsor job title, department | Guest Sponsor API for Microsoft Entra B2B | Display role context on the card | No |
 | Sponsor profile photo | Microsoft Graph CDN | Show a visual identifier on the card; initials fallback when absent | No — decoded in browser memory |
-| Sponsor email address | Azure Function API | Render mailto link on the card | No |
-| Sponsor phone numbers (business, mobile) | Azure Function API | Render click-to-call links on the card | No |
-| Sponsor office location, city, country, address | Azure Function API | Render address and map hint on the card | No |
-| Sponsor Teams presence (availability, activity) | Azure Function API | Show presence indicator on the card | No — polled periodically, held in browser memory |
-| Sponsor's manager: display name, job title, department, photo | Azure Function API | Render manager context on the card | No |
+| Sponsor email address | Guest Sponsor API for Microsoft Entra B2B | Render mailto link on the card | No |
+| Sponsor phone numbers (business, mobile) | Guest Sponsor API for Microsoft Entra B2B | Render click-to-call links on the card | No |
+| Sponsor office location, city, country, address | Guest Sponsor API for Microsoft Entra B2B | Render address and map hint on the card | No |
+| Sponsor Teams presence (availability, activity) | Guest Sponsor API for Microsoft Entra B2B | Show presence indicator on the card | No — polled periodically, held in browser memory |
+| Sponsor's manager: display name, job title, department, photo | Guest Sponsor API for Microsoft Entra B2B | Render manager context on the card | No |
 | Guest's own Teams provisioning status | Azure Function (via Microsoft Graph) | Enable/disable Teams chat and call buttons | No |
 
-### Azure Function API (runs in your Azure subscription)
+### Guest Sponsor API for Microsoft Entra B2B (Azure Function, runs in your Azure subscription)
 
 The Azure Function processes personal data only for the duration of a single
 HTTP request:
@@ -102,15 +102,15 @@ own consent.
 
 | Permission | Purpose | Required? |
 |-|-|-|
-| `User.ReadBasic.All` | Read sponsor basic profile fields (display name, given name, surname, mail, photo) | **Required** minimum — one of `User.ReadBasic.All`, `User.Read.All`, or `Directory.Read.All` must be granted |
-| `User.Read.All` | Read any user's full profile including `accountEnabled` status; enables filtering of disabled accounts | Optional (replaces `User.ReadBasic.All`; recommended for full functionality) |
+| `User.Read.All` | Read sponsor profiles, sponsor list (`/users/{id}/sponsors`), and `accountEnabled` status to filter disabled accounts | **Required** — assigned by the setup script. The function also accepts `User.ReadBasic.All` or `Directory.Read.All` as minimal alternatives (lose `accountEnabled` filtering); these require manual assignment. |
 | `Presence.Read.All` | Read real-time Teams presence status for sponsors and detect guest Teams provisioning | Optional — presence indicators disabled without it |
 | `MailboxSettings.Read` | Read `mailboxSettings.userPurpose` to filter shared mailboxes, room accounts, and equipment accounts from the sponsor list | Optional — filter is skipped without it |
 | `TeamMember.Read.All` | Read the guest's joined Teams to determine whether their Teams account has been provisioned | Optional — Teams chat/call buttons default to enabled without it |
 
 By default, the `setup-graph-permissions.ps1` script grants **all four
-permissions**. A tenant administrator may choose to omit optional permissions;
-doing so reduces functionality as described in the table above.
+permissions** (one required, three optional). A tenant administrator may choose
+to omit the optional permissions; doing so reduces functionality as described
+in the table above.
 
 ---
 

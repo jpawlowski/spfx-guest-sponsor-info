@@ -111,7 +111,7 @@ Set-PnPTenantCdnEnabled -CdnType Public -Enable $true
 [`Add-SPOTenantCdnOrigin`](https://learn.microsoft.com/powershell/module/sharepoint-online/add-spotenantcdnorigin) ·
 [Office 365 CDN documentation](https://learn.microsoft.com/sharepoint/dev/general-development/office-365-cdn-with-spo-ps)*
 
-> CDN propagation typically takes **15–30 minutes** after enabling. Once active,
+> CDN propagation typically takes **15-30 minutes** after enabling. Once active,
 > the bundle URL changes from the Tenant App Catalog to
 > `publiccdn.sharepointonline.com` automatically — no reconfiguration is needed.
 
@@ -478,7 +478,7 @@ deployment.
 |---|---|
 | `hostingPlan` | `Consumption` (default) or `FlexConsumption`. See below. |
 | `alwaysReadyInstances` | Pre-warmed instances (Flex only). `1` eliminates cold starts. Default: `1`. |
-| `maximumFlexInstances` | **Required for Flex.** Hard upper bound on scale-out (cost ceiling). 1–1000. |
+| `maximumFlexInstances` | **Required for Flex.** Hard upper bound on scale-out (cost ceiling). 1-1000. |
 | `instanceMemoryMB` | `512` or `2048` (Flex only). Default: `2048`. |
 | `dailyMemoryTimeQuotaGBs` | Daily GB-s budget (Consumption only). Default: `10000`. |
 
@@ -501,17 +501,17 @@ az deployment group create \
 ```
 
 The initial ZIP upload is automated via a short-lived Azure CLI container
-(~2–5 min). The provisioning script resource is retained for 2 hours for
+(~2-5 min). The provisioning script resource is retained for 2 hours for
 troubleshooting, then removed automatically.
 
 | | **Consumption** (default) | **Flex Consumption** |
 |---|---|---|
 | Free tier | 1M exec + 400K GB-s/month | None |
-| Cold starts | ~2–5 s after ~20 min idle | Eliminated with `alwaysReadyInstances=1` |
+| Cold starts | ~2-5 s after ~20 min idle | Eliminated with `alwaysReadyInstances=1` |
 | OS | Windows | Linux only |
 | Deploy to Azure button | Supported | Supported |
 | Cost guard | `dailyMemoryTimeQuota` | `maximumFlexInstances` |
-| Estimated cost | Free (within grant) | ~€2–5/month with 1 warm instance |
+| Estimated cost | Free (within grant) | ~€2-5/month with 1 warm instance |
 
 ### Deployment outputs
 

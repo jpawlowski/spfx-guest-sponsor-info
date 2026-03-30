@@ -65,7 +65,8 @@ unaffected.
       │
 [Guest Browser – SPFx Web Part]
   - Renders sponsor cards (one-time on page load)
-  - Loads profile photos directly from Graph (delegated token, progressive)
+  - Loads manager photos via Azure Function photo proxy (`/api/getPhoto`)
+    (sponsor photos are already embedded in the function response)
 
 [Presence polling – ongoing, separate from initial load]
   - Web part polls Guest Sponsor API at adaptive intervals:
@@ -86,12 +87,15 @@ holds `User.Read.All`; the guest never sees that permission.
 | `User.Read.All` | `/users/{oid}/sponsors`, `$batch` profile checks, `accountEnabled` |
 | `Presence.Read.All` | **Optional.** `/communications/getPresencesByUserId`. Requires Teams licensing. Skipped when absent — sponsors render without presence indicator. |
 | `MailboxSettings.Read` | **Optional.** Filter shared/room/equipment mailboxes. Skipped when absent. |
+| `TeamMember.Read.All` | **Optional.** Detect whether the guest has a Teams account via `/users/{id}/joinedTeams`. Skipped when absent — Teams chat/call buttons default to enabled. |
 
 ## Profile Photos
 
-Always fetched client-side (delegated token) via `/users/{id}/photo/$value`, even when
-the Guest Sponsor API is used for sponsor/presence data. Returned as `ArrayBuffer` → base64
-data URL to avoid `Blob` URL leaks. Failed photo requests fall back to initials silently.
+Sponsor photos are returned inline by the Azure Function as part of the
+`getSponsorsViaProxy` response. Manager photos are fetched progressively
+via the Function's `/api/getPhoto` proxy endpoint — the web part calls this
+with the same `AadHttpClient` used for all other API requests. Returned as
+a base64 data URL. Failed photo requests fall back to initials silently.
 
 ## Presence Display
 

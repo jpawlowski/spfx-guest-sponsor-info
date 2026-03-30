@@ -162,7 +162,7 @@ flowchart TB
     MI         -- "sponsors · profiles · presence (app perms)" --> Graph
     Func       -- "⑤ full sponsor list (one-time)"       --> WP
     Func       -. "telemetry"                            .-> AI
-    WP         -- "⑥ profile photos (delegated · direct)" --> Graph
+    WP         -- "⑥ manager photos (via proxy)"         --> EasyAuth
 
     WP         -. "⑦ presence poll (token auto-refreshed)" .-> EasyAuth
     Func       -. "⑦ presence status only"               .-> WP
@@ -187,8 +187,8 @@ flowchart TB
     linkStyle 9     stroke:#059669,stroke-width:2px
     %% 10    telemetry: Func→AI
     linkStyle 10    stroke:#94a3b8,stroke-width:1px
-    %% 11    photos: WP→Graph
-    linkStyle 11    stroke:#3b82f6,stroke-width:2px
+    %% 11    manager photos: WP→EasyAuth (via proxy)
+    linkStyle 11    stroke:#1d4ed8,stroke-width:1.5px
     %% 12–13 presence polling: WP→EasyAuth, Func→WP
     linkStyle 12,13 stroke:#0891b2,stroke-width:1.5px
 ```
@@ -202,7 +202,7 @@ flowchart TB
 | ③ | Only after a valid token is in hand does the web part call the Guest Sponsor API, with the Bearer token attached. There is no direct path to the function without this token. |
 | ④ | [EasyAuth](https://learn.microsoft.com/azure/app-service/overview-authentication-authorization) (Microsoft Azure App Service Authentication) intercepts the request at the Azure Function boundary and validates the token before any function code runs. An invalid or missing token is rejected immediately (HTTP 401); the function never sees the request. |
 | ⑤ | The function identifies the guest from the EasyAuth-confirmed OID and calls Microsoft Graph using its own Managed Identity. It returns the full sponsor list — sponsors, profiles, and manager — in one response. This happens **once on page load**. |
-| ⑥ | Profile photos are loaded **directly** from Graph using the guest's own delegated token. They bypass the function entirely. |
+| ⑥ | Manager photos are fetched via the Azure Function's `/api/getPhoto` proxy endpoint. Sponsor photos are already embedded in the ⑤ response and need no separate request. |
 | ⑦ | After the initial load, the web part polls the Guest Sponsor API for **presence status only** at adaptive intervals — **30 seconds** while a sponsor card is hovered, **2 minutes** while the browser tab is visible, **5 minutes** while the tab is in the background. The token is silently refreshed by the browser before it expires; the EasyAuth gate applies on every poll just as on the initial call. The full sponsor list is never re-fetched during polling. |
 
 ---

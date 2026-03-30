@@ -1,4 +1,4 @@
-# Guest Sponsor Info
+# Guest Sponsor Info for Microsoft Entra B2B
 
 <p align="center">
   <img src="images/icon-rounded.svg" width="96" height="96" alt="Guest Sponsor Info icon" />
@@ -90,7 +90,7 @@ this web part, is a Platinum EasyLife 365 partner and happy to advise.
   list with default permissions, and there's no good way to grant that right
   granularly. The included **Guest Sponsor API** acts as a secure proxy so that
   problem never reaches your guests (powered by a custom Azure Function)
-- **14 languages** — including an informal salutation mode (`du`/`tu`) for
+- **17 languages** — including an informal salutation mode (`du`/`tu`) for
   German, French, Spanish, Italian, and Dutch
 
 > **Tip:** Want to automate who gets assigned as a sponsor — and keep those

@@ -53,7 +53,7 @@ The following steps require manual action after the container has started:
    rebuild. For a persistent setup, configure your git identity on the host OS
    — the container reads it from `~/.gitconfig` automatically at startup.
 
-In **GitHub Codespaces** steps 1–4 are handled automatically.
+In **GitHub Codespaces** steps 1-4 are handled automatically.
 
 ## Development Environment
 

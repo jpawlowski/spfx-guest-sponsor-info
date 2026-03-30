@@ -34,26 +34,24 @@ footer = """
 | `main.bicep` | Bicep source template — for customisation before compiling to ARM |
 | `setup-app-registration.ps1` | Creates the Entra App Registration for EasyAuth |
 | `setup-graph-permissions.ps1` | Grants Graph permissions and configures silent token acquisition |
-| `Write-Callout.ps1` | Helper for coloured output (optional, included for local use) |
 
 ### Quick setup (PowerShell 7+, no clone required)
 
 ```powershell
 # 1. Create the App Registration
 {% if version -%}
-& ([scriptblock]::Create((iwr 'https://github.com/workoho/spfx-guest-sponsor-info/releases/download/{{ version }}/setup-app-registration.ps1'))) -TenantId "<tenant-id>"
+& ([scriptblock]::Create((iwr 'https://github.com/workoho/spfx-guest-sponsor-info/releases/download/{{ version }}/setup-app-registration.ps1')))
 {% else -%}
-& ([scriptblock]::Create((iwr 'https://github.com/workoho/spfx-guest-sponsor-info/releases/latest/download/setup-app-registration.ps1'))) -TenantId "<tenant-id>"
+& ([scriptblock]::Create((iwr 'https://github.com/workoho/spfx-guest-sponsor-info/releases/latest/download/setup-app-registration.ps1')))
 {% endif %}
 # 2. Deploy to Azure (use the azuredeploy.json from this release)
 
 # 3. Grant Graph permissions
 {% if version -%}
-& ([scriptblock]::Create((iwr 'https://github.com/workoho/spfx-guest-sponsor-info/releases/download/{{ version }}/setup-graph-permissions.ps1'))) `
+& ([scriptblock]::Create((iwr 'https://github.com/workoho/spfx-guest-sponsor-info/releases/download/{{ version }}/setup-graph-permissions.ps1')))
 {% else -%}
-& ([scriptblock]::Create((iwr 'https://github.com/workoho/spfx-guest-sponsor-info/releases/latest/download/setup-graph-permissions.ps1'))) `
-{% endif -%}
-  -ManagedIdentityObjectId "<oid>" -TenantId "<tenant-id>" -FunctionAppClientId "<client-id>"
+& ([scriptblock]::Create((iwr 'https://github.com/workoho/spfx-guest-sponsor-info/releases/latest/download/setup-graph-permissions.ps1')))
+{% endif %}
 ```
 
 > Full deployment guide: [docs/deployment.md](https://github.com/workoho/spfx-guest-sponsor-info/blob/main/docs/deployment.md)

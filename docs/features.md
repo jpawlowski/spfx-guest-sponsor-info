@@ -275,16 +275,17 @@ something is genuinely unrecoverable:
 
 ---
 
-## Multilingual — 14 locales
+## Multilingual — 17 locales
 
-Every user-facing string ships in 14 languages:
+Every user-facing string ships in 17 languages:
 
 English · German · French · Spanish · Italian · Danish · Finnish · Norwegian ·
-Swedish · Japanese · Chinese (Simplified) · Portuguese (Brazil) · Polish · Dutch
+Swedish · Japanese · Chinese (Simplified) · Portuguese · Polish · Dutch ·
+Czech · Hungarian · Romanian
 
 ### Informal salutation mode
 
-Languages with a T–V distinction (German `du/Sie`, French `tu/vous`, Spanish
+Languages with a T-V distinction (German `du/Sie`, French `tu/vous`, Spanish
 `tú/usted`, Italian `tu/Lei`, Dutch `je/u`) support an optional **informal
 salutation mode**, configurable per web part instance in the property pane.
 
