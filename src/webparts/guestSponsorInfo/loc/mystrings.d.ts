@@ -131,14 +131,11 @@ declare interface IGuestSponsorInfoWebPartStrings {
 
   // Author/company information section
   AuthorSectionGroupName: string;
+  AuthorSectionCreatedBy: string;
   AuthorSectionIntro: string;
   AuthorSectionWebsiteLinkLabel: string;
   AuthorSectionConsultingText: string;
-  AuthorSectionPartnerPrefix: string;
-  AuthorSectionPartnerLinkLabel: string;
-  AuthorSectionPartnerSuffix: string;
-  AuthorSectionPartnerTagline: string;
-  AuthorSectionSourceCodeLabel: string;
+  AuthorSectionAppWebsiteLabel: string;
   AuthorSectionVersionLabel: string;
   AuthorSectionDeployToAzureLabel: string;
   DeployToAzureClickHint: string;

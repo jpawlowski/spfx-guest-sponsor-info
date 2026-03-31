@@ -31,6 +31,7 @@ import { IGuestSponsorInfoProps } from './components/IGuestSponsorInfoProps';
 import { isValidFunctionUrl, isValidGuid } from './utils/fieldValidation';
 import { MapProvider, MapProviderConfig, getEffectiveMapProvider } from './utils/mapProviderUtils';
 import workohoDefaultLogo from './assets/workoho-default-logo.svg';
+import appIcon from './assets/app-icon-rounded.svg';
 
 // Scoped Griffel renderer — must use the same salt as GuestSponsorInfo.tsx so
 // both modules produce identical class-name hashes. See the comment in that file.
@@ -793,13 +794,11 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
 
     // Read resolved colour tokens from the cached Fluent v9 theme.
     const t = this._v9Theme;
-    const linkColor          = t.colorBrandForegroundLink;
-    const bodySubtextColor   = t.colorNeutralForeground3;
-    const neutralLighterBg   = t.colorNeutralBackground3;
-    const neutralQuatBorder  = t.colorNeutralStroke2;
-    const themeLighterBg     = t.colorBrandBackground2;
-    const themeLightBorder   = t.colorBrandStroke2;
-    const themeDarkColor     = t.colorBrandForeground2;
+    const linkColor           = t.colorBrandForegroundLink;
+    const bodySubtextColor    = t.colorNeutralForeground3;   // tertiary – used for labels/meta
+    const themeLighterBg      = t.colorBrandBackground2;
+    const themeLightBorder    = t.colorBrandStroke2;
+    const themeDarkColor      = t.colorBrandForeground2;
 
     const createParagraph = (
       text: string,
@@ -827,12 +826,12 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
       ctaLink.style.border = `1px solid ${linkColor}`;
       ctaLink.style.borderRadius = '4px';
       ctaLink.style.fontWeight = '600';
-      ctaLink.style.fontSize = '12px';
+      ctaLink.style.fontSize = '13px';
       ctaLink.style.textDecoration = 'none';
       return ctaLink;
     };
 
-    const createGitHubIcon = (): SVGSVGElement => {
+    const createGlobeIcon = (): SVGSVGElement => {
       const svgNs = 'http://www.w3.org/2000/svg';
       const icon = document.createElementNS(svgNs, 'svg');
       icon.setAttribute('viewBox', '0 0 16 16');
@@ -845,14 +844,21 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
       const path = document.createElementNS(svgNs, 'path');
       path.setAttribute(
         'd',
-        'M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38' +
-        ' 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13' +
-        '-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66' +
-        '.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15' +
-        '-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.54 7.54 0 012-.27c.68 0 1.36.09' +
-        ' 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15' +
-        ' 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2' +
-        ' 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z'
+        'M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0zM1.052 8.634a6.977 6.977 0 0 1-.04-' +
+        '1.27c.24.073.49.135.75.184C1.86 9.222 2.38 10.74 3.14 11.9a6.98 6.98 0 0 1-' +
+        '2.088-3.266zM8 14c-.68 0-1.47-.9-2.046-2.38-.17-.43-.31-.9-.425-1.389a14.517' +
+        ' 14.517 0 0 0 2.47.209c.86 0 1.69-.073 2.472-.209a10.51 10.51 0 0 1-.426 1.389' +
+        'C9.471 13.1 8.68 14 8 14zm-2.72-4.838A13.35 13.35 0 0 1 5.09 8c0-.388.02-.768' +
+        '.058-1.137a15.65 15.65 0 0 0 2.853.267c1 0 1.963-.092 2.854-.267.038.369.058' +
+        '.749.058 1.137 0 .405-.022.8-.063 1.175A15.63 15.63 0 0 1 8 9.42a15.63 15.63' +
+        ' 0 0 1-2.72-.258zM12.86 11.9c.76-1.16 1.28-2.678 1.377-4.282.26-.049.51-.11' +
+        '.75-.184a6.977 6.977 0 0 1-.04 1.27A6.98 6.98 0 0 1 12.86 11.9zM8 2c.68 0 1.47' +
+        '.9 2.046 2.38.17.43.31.9.425 1.389A14.517 14.517 0 0 0 8 5.56a14.517 14.517 0' +
+        ' 0 0-2.472.209A10.51 10.51 0 0 1 5.954 4.38C6.529 2.9 7.32 2 8 2zM3.14 4.1' +
+        'A6.98 6.98 0 0 1 5.228 1.834c-.46.617-.854 1.393-1.16 2.265-.19.532-.341 1.1-' +
+        '.452 1.693a7.16 7.16 0 0 1-.476-.184V5.6A6.99 6.99 0 0 1 3.14 4.1zm9.72 0a6.99' +
+        ' 6.99 0 0 1 0 1.5v.008a7.16 7.16 0 0 1-.476.184 10.52 10.52 0 0 0-.452-1.693' +
+        'c-.306-.872-.7-1.648-1.16-2.265A6.98 6.98 0 0 1 12.86 4.1z'
       );
       path.setAttribute('fill', 'currentColor');
 
@@ -860,74 +866,52 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
       return icon;
     };
 
-    const logoLink = document.createElement('a');
-    logoLink.href = 'https://workoho.com/?utm_source=guest-sponsor-info-webpart&utm_medium=sharepoint-webpart&utm_campaign=property-pane&utm_content=author-logo';
-    logoLink.target = '_blank';
-    logoLink.rel = 'noopener noreferrer';
-    logoLink.style.display = 'block';
-    logoLink.style.width = '100%';
-    logoLink.style.margin = '0 0 12px 0';
-    logoLink.style.textDecoration = 'none';
+    // --- App info box: icon · name · meta · munich (centered) ---
+    const appBox = document.createElement('div');
+    appBox.style.display = 'flex';
+    appBox.style.flexDirection = 'column';
+    appBox.style.alignItems = 'center';
+    appBox.style.textAlign = 'center';
 
-    const logo = document.createElement('img');
-    logo.src = workohoDefaultLogo;
-    logo.alt = 'Workoho GmbH logo';
-    logo.style.display = 'block';
-    logo.style.width = 'min(150px, 50%)';
-    logo.style.height = 'auto';
-    logo.style.maxWidth = '150px';
-    logo.style.aspectRatio = '4 / 1';
-    logo.style.objectFit = 'contain';
-    logoLink.appendChild(logo);
-    element.appendChild(logoLink);
+    // App icon with link to the app homepage
+    const appIconLink = document.createElement('a');
+    appIconLink.href = 'https://guest-sponsor-info.workoho.cloud/?utm_source=guest-sponsor-info-webpart&utm_medium=sharepoint-webpart&utm_campaign=property-pane&utm_content=app-icon';
+    appIconLink.target = '_blank';
+    appIconLink.rel = 'noopener noreferrer';
+    appIconLink.style.display = 'inline-block';
+    appIconLink.style.marginBottom = '6px';
+    appIconLink.style.textDecoration = 'none';
 
-    element.appendChild(createParagraph(strings.AuthorSectionIntro, '8px', '700'));
-    element.appendChild(createParagraph(strings.AuthorSectionConsultingText));
-    element.appendChild(createCtaLink(strings.AuthorSectionWebsiteLinkLabel, 'https://workoho.com/?utm_source=guest-sponsor-info-webpart&utm_medium=sharepoint-webpart&utm_campaign=property-pane&utm_content=author-cta'));
+    const appIconImg = document.createElement('img');
+    appIconImg.src = appIcon;
+    appIconImg.alt = 'Guest Sponsor Info';
+    appIconImg.style.display = 'block';
+    appIconImg.style.width = '56px';
+    appIconImg.style.height = '56px';
+    appIconLink.appendChild(appIconImg);
+    appBox.appendChild(appIconLink);
 
-    // semver is used below for the version link in the footer.
+    // App name
+    const appName = document.createElement('div');
+    appName.textContent = 'Guest Sponsor Info';
+    appName.style.fontWeight = '700';
+    appName.style.fontSize = '15px';
+    appName.style.marginBottom = '8px';
+    appBox.appendChild(appName);
+
+    // Meta line: source code · version [· update/new-release badges]
+    const metaLine = document.createElement('div');
+    metaLine.style.fontSize = '13px';
+    metaLine.style.color = bodySubtextColor;
+    metaLine.style.marginBottom = '6px';
+
+    // semver is used below for the version link.
     const semver = this.manifest.version.split('.').slice(0, 3).join('.');
 
-    const partnerLine = document.createElement('p');
-    partnerLine.style.margin = '0 0 8px 0';
-    partnerLine.style.fontWeight = '700';
-    partnerLine.style.lineHeight = '1.45';
-    partnerLine.append(`${strings.AuthorSectionPartnerPrefix} `);
-
-    const easyLifeLink = document.createElement('a');
-    easyLifeLink.textContent = strings.AuthorSectionPartnerLinkLabel;
-    easyLifeLink.href = 'https://easylife365.cloud/products/collaboration/';
-    easyLifeLink.target = '_blank';
-    easyLifeLink.rel = 'noopener noreferrer';
-    easyLifeLink.style.color = linkColor;
-    easyLifeLink.style.fontWeight = '500';
-    easyLifeLink.style.textDecoration = 'none';
-
-    partnerLine.appendChild(easyLifeLink);
-    partnerLine.append(` ${strings.AuthorSectionPartnerSuffix}`);
-
-    const easyLifeBox = document.createElement('div');
-    easyLifeBox.style.backgroundColor = neutralLighterBg;
-    easyLifeBox.style.border = `1px solid ${neutralQuatBorder}`;
-    easyLifeBox.style.borderRadius = '6px';
-    easyLifeBox.style.padding = '10px 12px';
-    easyLifeBox.style.margin = '0';
-
-    easyLifeBox.appendChild(partnerLine);
-    easyLifeBox.appendChild(createParagraph(strings.AuthorSectionPartnerTagline, '0'));
-    element.appendChild(easyLifeBox);
-
-    const footer = document.createElement('div');
-    footer.style.marginTop = '10px';
-    footer.style.fontSize = '12px';
-    footer.style.color = bodySubtextColor;
-
-    const metaLine = document.createElement('div');
-
     const sourceLink = document.createElement('a');
-    sourceLink.appendChild(createGitHubIcon());
-    sourceLink.append(strings.AuthorSectionSourceCodeLabel);
-    sourceLink.href = 'https://github.com/workoho/spfx-guest-sponsor-info';
+    sourceLink.appendChild(createGlobeIcon());
+    sourceLink.append(strings.AuthorSectionAppWebsiteLabel);
+    sourceLink.href = 'https://guest-sponsor-info.workoho.cloud/?utm_source=guest-sponsor-info-webpart&utm_medium=sharepoint-webpart&utm_campaign=property-pane&utm_content=meta-website';
     sourceLink.target = '_blank';
     sourceLink.rel = 'noopener noreferrer';
     sourceLink.style.display = 'inline';
@@ -944,17 +928,6 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
     versionLink.rel = 'noopener noreferrer';
     versionLink.style.color = linkColor;
     versionLink.style.textDecoration = 'none';
-
-    const munichLine = document.createElement('span');
-    munichLine.textContent = 'Built in Munich, World City with ❤';
-    munichLine.style.display = 'inline-block';
-    munichLine.style.marginTop = '8px';
-    munichLine.style.padding = '2px 8px';
-    munichLine.style.borderRadius = '999px';
-    munichLine.style.backgroundColor = themeLighterBg;
-    munichLine.style.color = themeDarkColor;
-    munichLine.style.fontWeight = '600';
-    munichLine.style.fontSize = '11px';
 
     metaLine.appendChild(sourceLink);
     metaLine.appendChild(separator);
@@ -973,7 +946,7 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
       updateBadge.style.color = themeDarkColor;
       updateBadge.style.border = `1px solid ${themeLightBorder}`;
       updateBadge.style.fontWeight = '700';
-      updateBadge.style.fontSize = '11px';
+      updateBadge.style.fontSize = '12px';
       updateBadge.style.cursor = 'help';
       metaLine.appendChild(updateSep);
       metaLine.appendChild(updateBadge);
@@ -996,16 +969,87 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
       newRelBadge.style.color = t.colorPaletteGreenForeground1;
       newRelBadge.style.border = `1px solid ${t.colorPaletteGreenBorder1}`;
       newRelBadge.style.fontWeight = '700';
-      newRelBadge.style.fontSize = '11px';
+      newRelBadge.style.fontSize = '12px';
       newRelBadge.style.textDecoration = 'none';
       metaLine.appendChild(newRelSep);
       metaLine.appendChild(newRelBadge);
     }
 
-    footer.appendChild(metaLine);
-    footer.appendChild(document.createElement('br'));
-    footer.appendChild(munichLine);
-    element.appendChild(footer);
+    appBox.appendChild(metaLine);
+
+    const munichLine = document.createElement('span');
+    munichLine.textContent = 'Built in Munich, World City with \u2764';
+    munichLine.style.display = 'inline-block';
+    munichLine.style.marginTop = '6px';
+    munichLine.style.padding = '3px 10px';
+    munichLine.style.borderRadius = '999px';
+    munichLine.style.backgroundColor = themeLighterBg;
+    munichLine.style.color = themeDarkColor;
+    munichLine.style.fontWeight = '600';
+    munichLine.style.fontSize = '12px';
+    appBox.appendChild(munichLine);
+
+    element.appendChild(appBox);
+
+    // --- Divider ---
+    const divider = document.createElement('div');
+    divider.setAttribute('role', 'separator');
+    divider.setAttribute('aria-hidden', 'true');
+    divider.style.height = '1px';
+    divider.style.background = `linear-gradient(to right, transparent, ${t.colorNeutralStroke1} 20%, ${t.colorNeutralStroke1} 80%, transparent)`;
+    divider.style.margin = '20px 0';
+    element.appendChild(divider);
+
+    // --- Creator section ---
+    const creatorSection = document.createElement('div');
+
+    const createdByLabel = document.createElement('div');
+    createdByLabel.textContent = strings.AuthorSectionCreatedBy;
+    createdByLabel.style.fontSize = '13px';
+    createdByLabel.style.color = t.colorNeutralForeground2;
+    createdByLabel.style.textAlign = 'center';
+    createdByLabel.style.marginBottom = '4px';
+    creatorSection.appendChild(createdByLabel);
+
+    const logoLink = document.createElement('a');
+    logoLink.href = 'https://workoho.com/?utm_source=guest-sponsor-info-webpart&utm_medium=sharepoint-webpart&utm_campaign=property-pane&utm_content=author-logo';
+    logoLink.target = '_blank';
+    logoLink.rel = 'noopener noreferrer';
+    logoLink.style.display = 'flex';
+    logoLink.style.justifyContent = 'center';
+    logoLink.style.marginBottom = '12px';
+    logoLink.style.textDecoration = 'none';
+
+    const logo = document.createElement('img');
+    logo.src = workohoDefaultLogo;
+    logo.alt = 'Workoho GmbH';
+    logo.style.display = 'block';
+    logo.style.width = 'min(150px, 50%)';
+    logo.style.height = 'auto';
+    logo.style.maxWidth = '150px';
+    logo.style.aspectRatio = '4 / 1';
+    logo.style.objectFit = 'contain';
+    logo.style.opacity = '0.6';
+    logoLink.appendChild(logo);
+    creatorSection.appendChild(logoLink);
+
+    const introPara = createParagraph(strings.AuthorSectionIntro, '8px', '700');
+    introPara.style.color = t.colorNeutralForeground2;
+    introPara.style.fontSize = '12px';
+    creatorSection.appendChild(introPara);
+    const consultingPara = createParagraph(strings.AuthorSectionConsultingText);
+    consultingPara.style.color = t.colorNeutralForeground2;
+    consultingPara.style.fontSize = '12px';
+    creatorSection.appendChild(consultingPara);
+
+    const ctaWrapper = document.createElement('div');
+    ctaWrapper.style.textAlign = 'center';
+    const ctaLink = createCtaLink(strings.AuthorSectionWebsiteLinkLabel, 'https://workoho.com/?utm_source=guest-sponsor-info-webpart&utm_medium=sharepoint-webpart&utm_campaign=property-pane&utm_content=author-cta');
+    ctaLink.style.margin = '0';
+    ctaWrapper.appendChild(ctaLink);
+    creatorSection.appendChild(ctaWrapper);
+
+    element.appendChild(creatorSection);
   }
 
   protected getPropertyPaneConfiguration(): IPropertyPaneConfiguration {
