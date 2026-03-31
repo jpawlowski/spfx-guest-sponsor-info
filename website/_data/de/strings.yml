@@ -211,6 +211,7 @@ made_by:
     SharePoint-Websites, Viva Engage und weitere Microsoft 365
     Arbeitsumgebungen — einschließlich Gäste-Onboarding und
     Sponsor-Verwaltung.
+  partner_cta: Demo buchen
 
 problem:
   title: Ein Gast hat Ihre Einladung angenommen. Und jetzt?
@@ -255,7 +256,6 @@ footer:
   source_code: Source Code
   docs: Dokumentation
   deployment: Setup
-  architecture: Architektur
   operations: Operations
   support: Support
   legal: Rechtliches

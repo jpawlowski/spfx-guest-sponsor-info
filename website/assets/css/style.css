@@ -555,12 +555,12 @@ ul {
   color: var(--color-dark);
 }
 
-.made-by-partner {
+.made-by-easylife {
   flex: 0 1 360px;
   min-width: 280px;
 }
 
-.partner-badge-link {
+.easylife-card {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -570,29 +570,21 @@ ul {
   border-radius: var(--radius);
   border: 1px solid rgba(0, 0, 0, 0.08);
   text-align: center;
-  text-decoration: none;
-  color: inherit;
-  transition: box-shadow var(--transition), transform var(--transition);
 }
 
-.partner-badge-link:hover {
-  box-shadow: var(--shadow);
-  transform: translateY(-2px);
-}
-
-.partner-logo {
+.easylife-logo {
   height: 32px;
   width: auto;
 }
 
-.partner-tagline {
+.easylife-tagline {
   font-size: 0.85rem;
   color: var(--color-text-muted);
   line-height: 1.5;
   margin: 0;
 }
 
-.partner-tier {
+.easylife-tier {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
@@ -604,6 +596,20 @@ ul {
   background: var(--color-teal-light);
   padding: 0.25rem 0.75rem;
   border-radius: 100px;
+}
+
+.easylife-cta {
+  display: inline-block;
+  margin-top: 0.25rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-teal);
+  text-decoration: none;
+  transition: color var(--transition);
+}
+
+.easylife-cta:hover {
+  color: var(--color-dark);
 }
 
 /* ============================================================

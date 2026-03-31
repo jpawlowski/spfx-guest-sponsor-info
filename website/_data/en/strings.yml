@@ -203,6 +203,7 @@ made_by:
     EasyLife 365 automates lifecycle management for Teams, SharePoint
     sites, Viva Engage, and other Microsoft 365 workspaces — including
     guest onboarding and sponsor assignments.
+  partner_cta: Book a Demo
 
 problem:
   title: A guest accepted your invitation. Now what?
@@ -244,7 +245,6 @@ footer:
   source_code: Source Code
   docs: Documentation
   deployment: Setup
-  architecture: Architecture
   operations: Operations
   support: Support
   legal: Legal

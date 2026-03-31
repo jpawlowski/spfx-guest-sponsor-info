@@ -160,9 +160,6 @@ site.
 
 ## Guest Sponsor API
 
-The [architecture diagram]({{ '/en/architecture/' | relative_url }})
-gives a visual overview of all admin roles and setup steps involved.
-
 ### Pre-step: create the App Registration
 
 The Azure Function uses

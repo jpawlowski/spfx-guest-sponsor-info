@@ -163,10 +163,6 @@ Sites können nicht freizügiger sein als der Mandant erlaubt.
 
 ## Guest Sponsor API
 
-Das [Architekturdiagramm]({{ '/de/architecture/' | relative_url }})
-gibt einen visuellen Überblick über alle Administratorrollen und
-Setup-Schritte.
-
 ### Vorbereitung: App-Registrierung erstellen
 
 Die Azure Function verwendet
