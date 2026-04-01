@@ -41,20 +41,22 @@ Provide enough detail to reproduce and assess the issue:
 
 ## What to Expect
 
-| Milestone | Target |
-| --- | --- |
-| Acknowledgement | Within **5 business days** |
-| Initial assessment | Within **10 business days** |
-| Fix or mitigation published | Severity-dependent (see below) |
+This is a volunteer-maintained open-source project. There are no paid staff
+or commercial support agreements. Response times are therefore **best effort**
+and cannot be guaranteed.
 
-Severity is assessed using [CVSS v3.1][cvss]. Typical timelines:
+There is **no bug bounty programme**. We do not offer monetary or any other
+compensation for vulnerability reports.
 
-| CVSS rating | Target fix timeline |
-| --- | --- |
-| Critical (9.0–10.0) | ≤ 7 days |
-| High (7.0–8.9) | ≤ 14 days |
-| Medium (4.0–6.9) | Next scheduled release |
-| Low (0.1–3.9) | Best effort |
+We will make reasonable efforts to:
+
+- Acknowledge the report once we have had a chance to review it
+- Assess the severity and scope of the issue
+- Publish a fix or mitigation as time permits, prioritising higher-severity issues
+
+Severity is assessed using [CVSS v3.1][cvss]. Critical and high-severity issues
+will be given priority over lower-severity ones, but no specific timelines are
+promised.
 
 You will be notified when a fix is available and may be credited in the
 release notes unless you prefer to remain anonymous.

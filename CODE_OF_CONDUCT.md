@@ -47,17 +47,11 @@ representative at an online or offline event).
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behaviour may be
-reported to the project maintainer:
+reported via the contact form at [workoho.com](https://workoho.com).
 
-- **Julian Pawlowski** — via [GitHub](https://github.com/jpawlowski) (use
-  the private "Report abuse" option or contact via a repository issue marked
-  **Confidential**)
-- **Workoho GmbH** — via the contact form at
-  [workoho.com](https://workoho.com)
-
-All complaints will be reviewed and investigated promptly and fairly.
-The project team is obligated to maintain confidentiality with respect to
-the reporter of an incident.
+All complaints will be reviewed on a best-effort basis. The project maintainers
+will make reasonable efforts to handle reports with discretion and respect for
+the privacy of the reporter.
 
 ## Enforcement Guidelines
 
