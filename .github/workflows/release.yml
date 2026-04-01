@@ -10,34 +10,20 @@ on:
 permissions:
   contents: write
 
+# Each tag is unique, so cancellation is not needed.
+# The group guard still prevents two releases from running in parallel.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
-  # ── Job 1: verify the code is green before touching any release artefact ──
-  test:
-    name: Build & test
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-
-      - name: Set up Node.js
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
-        with:
-          node-version: "22"
-          cache: "npm"
-
-      - name: Install dependencies
-        run: npm ci
-
-      # Compiles TypeScript, runs ESLint, bundles with webpack, and runs Jest.
-      - name: Build and test
-        run: npm test
-
-  # ── Job 2: package and publish – only runs when job 1 is green ────────────
+  # Single job: validate, build, package, and publish in one pass.
+  # build.sh already compiles, bundles, tests, and packages — no separate
+  # test job needed. Running everything once avoids a double npm ci + double
+  # test execution that the previous two-job layout produced.
   release:
-    name: Package & publish .sppkg
+    name: Build, package & publish
     runs-on: ubuntu-latest
-    needs: test
     env:
       # Opt into Node.js 24 for action runners now, ahead of the June 2026 forced
       # migration. Silences deprecation warnings from actions that still ship a
@@ -76,23 +62,23 @@ jobs:
           FORCE_COLOR_IN_CI: "1"
         run: ./scripts/set-version.sh "${{ github.ref_name }}"
 
-      # Full production build: npm ci → compile/bundle/test → package .sppkg
+      # Full production build: npm ci × 2 (web part + function), compile,
+      # bundle, test, and package .sppkg. Tests run here — no separate job needed.
       - name: Build and package
         env:
           FORCE_COLOR_IN_CI: "1"
         run: ./scripts/build.sh
 
-      # Build the Azure Function ZIP package.
-      - name: Build Azure Function package
+      # build.sh already ran npm ci + build for the Azure Function.
+      # Only the ZIP packaging step needs to run here.
+      - name: Package Azure Function as ZIP
         working-directory: azure-function
-        run: |
-          npm ci
-          npm run package
-
-      - name: Set up Bicep
-        uses: anthony-c-martin/setup-bicep@0f6b30d69264f211ac1229412a2ad4ed893c272f # v0.3
+        run: npm run package
 
       # Compile the Bicep infra template to ARM JSON for the Deploy-to-Azure button.
+      # Uses the Azure CLI (pre-installed on GitHub runners) instead of the
+      # third-party anthony-c-martin/setup-bicep action — az bicep is maintained
+      # directly by Microsoft and needs no separate setup step.
       # Normally set-version.sh already does this locally before tagging, so the
       # committed azuredeploy.json should already be up to date. This step is a
       # self-healing safety net for tags created directly on GitHub (bypassing the
@@ -102,7 +88,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          bicep build azure-function/infra/main.bicep --outfile "$RUNNER_TEMP/azuredeploy-fresh.json"
+          az bicep install
+          az bicep build --file azure-function/infra/main.bicep --outfile "$RUNNER_TEMP/azuredeploy-fresh.json"
 
           if diff -q "$RUNNER_TEMP/azuredeploy-fresh.json" azure-function/infra/azuredeploy.json > /dev/null 2>&1; then
             echo "azuredeploy.json is already up to date — no action needed."
@@ -132,5 +119,7 @@ jobs:
             azure-function/guest-sponsor-info-function.zip
             azure-function/infra/azuredeploy.json
             azure-function/infra/main.bicep
+            azure-function/infra/main.parameters.json
+            azure-function/infra/modules/monitoring.bicep
             azure-function/infra/setup-app-registration.ps1
             azure-function/infra/setup-graph-permissions.ps1
