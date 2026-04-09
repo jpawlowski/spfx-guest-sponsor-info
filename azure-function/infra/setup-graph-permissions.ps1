@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Grants the Function App's Managed Identity the required Microsoft Graph application roles
     and configures the App Registration so the SharePoint web part can silently acquire tokens.
@@ -116,7 +116,7 @@ function Write-Hint {
   param([Parameter(ValueFromRemainingArguments)][string[]]$Lines)
   Write-Box -Title 'HINT' -Color Cyan @Lines
 }
-function Write-NextSteps {
+function Write-NextStep {
   param([Parameter(ValueFromRemainingArguments)][string[]]$Lines)
   Write-Box -Title 'NEXT STEPS' -Color Green @Lines
 }
@@ -631,4 +631,4 @@ $summaryLines += "  - Scope 'user_impersonation' exposed and SharePoint pre-auth
 $summaryLines += ''
 $summaryLines += 'The SharePoint web part can now acquire tokens silently.'
 $summaryLines += 'No page reloads or consent prompts.'
-Write-NextSteps @summaryLines
+Write-NextStep @summaryLines

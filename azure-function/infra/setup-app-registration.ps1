@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Creates or updates the Entra App Registration needed for the Azure Function
     proxy (EasyAuth).
@@ -109,7 +109,7 @@ function Write-Hint {
   param([Parameter(ValueFromRemainingArguments)][string[]]$Lines)
   Write-Box -Title 'HINT' -Color Cyan @Lines
 }
-function Write-NextSteps {
+function Write-NextStep {
   param([Parameter(ValueFromRemainingArguments)][string[]]$Lines)
   Write-Box -Title 'NEXT STEPS' -Color Green @Lines
 }
@@ -463,10 +463,11 @@ else {
     -ForegroundColor Yellow
 }
 
-Write-Important `
-  'Copy this Client ID and use it as the ''functionClientId''' `
-  'parameter when deploying the ARM template. In the SPFx web part,' `
-  'paste it into the ''Guest Sponsor API Client ID (App Registration)''' `
-  'field (property pane → Guest Sponsor API).' `
-  '' `
+Write-Important -Lines @(
+  'Copy this Client ID and use it as the ''functionClientId'''
+  'parameter when deploying the ARM template. In the SPFx web part,'
+  'paste it into the ''Guest Sponsor API Client ID (App Registration)'''
+  'field (property pane → Guest Sponsor API).'
+  ''
   "  Guest Sponsor API Client ID (App Registration): $clientId"
+)

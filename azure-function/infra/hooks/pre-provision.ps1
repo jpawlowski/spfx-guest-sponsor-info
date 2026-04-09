@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 # SPDX-FileCopyrightText: 2026 Workoho GmbH <https://workoho.com>
 # SPDX-FileCopyrightText: 2026 Julian Pawlowski <https://github.com/jpawlowski>
 # SPDX-License-Identifier: LicenseRef-PolyForm-Shield-1.0.0
@@ -45,7 +45,11 @@ if ($envValues -notmatch 'AZURE_SHAREPOINT_TENANT_NAME=') {
       -o tsv 2>$null
     $derived = $raw -replace '\.onmicrosoft\.com$', ''
   }
-  catch { }
+  catch {
+    # az rest for tenant detection is best-effort; failure is handled by the
+    # Read-Host prompt below.
+    Write-Verbose "Tenant name detection via az rest failed: $_"
+  }
 
   if ($derived) {
     Write-Host "Detected SharePoint tenant name: $derived"
