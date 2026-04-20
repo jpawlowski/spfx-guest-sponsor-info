@@ -24,8 +24,6 @@ Ob Teams für diesen Gast funktioniert — und ob Kontaktbuttons auf einer Landi
 überhaupt etwas tun — hängt ausschließlich davon ab, *wie* die Person eingeladen
 wurde.
 
----
-
 ## Zwei Einladungswege, zwei sehr verschiedene Ergebnisse {#zwei-wege}
 
 ### Direkte Einladung in ein Teams-Team oder eine SharePoint-Site
@@ -57,8 +55,6 @@ flowchart TD
 Dieser Zustand ist für den Gast unsichtbar — und bleibt ohne explizites Feedback
 völlig verborgen.
 
----
-
 ## Was ein Gast sieht {#was-ein-gast-sieht}
 
 Auf einer SharePoint-Landingpage könnte eine Sponsor-Visitenkarte folgendes zeigen:
@@ -73,8 +69,6 @@ Auf einer SharePoint-Landingpage könnte eine Sponsor-Visitenkarte folgendes zei
 > Es gibt keinen Fehler. Keine Erklärung. Der Gast hat keine Möglichkeit zu
 > erkennen, ob der Button defekt ist, ob er etwas falsch gemacht hat, oder ob
 > die Funktion für ihn schlicht noch nicht bereit ist.
-
----
 
 ## Was dieses Web Part macht {#was-das-web-part-macht}
 
@@ -96,6 +90,13 @@ Ein Gast, dessen Teams-Zugang noch bereitgestellt wird, kann seinen Sponsor per
 E-Mail erreichen und weiß, dass Teams in Kürze folgt. Keine Verwirrung. Kein
 lautloses Scheitern.
 
----
-
-Bereit loszulegen? Zur [Installationsanleitung]({{ '/de/setup/' | relative_url }}).
+<div class="doc-cta-box">
+  <div>
+    <p class="doc-cta-title">Bereit loszulegen?</p>
+    <p class="doc-cta-sub">Der integrierte Setup-Assistent führt Sie durch den Rest.</p>
+  </div>
+  <div class="doc-cta-actions">
+    <a href="{{ '/de/setup/' | relative_url }}" class="btn btn-teal">Installationsanleitung</a>
+    <a href="{{ '/de/features/' | relative_url }}" class="btn btn-outline">Features entdecken</a>
+  </div>
+</div>

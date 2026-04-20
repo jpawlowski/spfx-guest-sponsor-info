@@ -23,8 +23,6 @@ What is *not* guaranteed: that they can actually reach anyone.
 Whether Teams works for this guest — and whether contact buttons on a landing page
 do anything at all — depends entirely on *how* they were invited.
 
----
-
 ## Two Invitation Paths, Two Very Different Outcomes {#two-paths}
 
 ### Directly added to a Teams team or SharePoint site
@@ -56,8 +54,6 @@ flowchart TD
 This state is invisible to the guest — and entirely invisible without something
 that explicitly surfaces it.
 
----
-
 ## What the Guest Sees {#what-the-guest-sees}
 
 On a SharePoint landing page, a sponsor contact card might show:
@@ -72,8 +68,6 @@ On a SharePoint landing page, a sponsor contact card might show:
 > There is no error. There is no explanation. The guest has no way to know
 > whether the button is broken, whether they did something wrong, or whether
 > this feature simply isn't ready for them yet.
-
----
 
 ## What This Web Part Does {#what-this-web-part-does}
 
@@ -92,6 +86,13 @@ after accepting an invitation. It does two things:
 A guest whose Teams access is still being provisioned can reach their sponsor by
 email and knows that Teams is on its way. No confusion. No silent failure.
 
----
-
-Ready to set it up? See the [Setup Guide]({{ '/en/setup/' | relative_url }}).
+<div class="doc-cta-box">
+  <div>
+    <p class="doc-cta-title">Ready to set it up?</p>
+    <p class="doc-cta-sub">The built-in Setup Wizard guides you through the rest.</p>
+  </div>
+  <div class="doc-cta-actions">
+    <a href="{{ '/en/setup/' | relative_url }}" class="btn btn-teal">Setup Guide</a>
+    <a href="{{ '/en/features/' | relative_url }}" class="btn btn-outline">Explore Features</a>
+  </div>
+</div>
