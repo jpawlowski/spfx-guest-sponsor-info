@@ -235,20 +235,32 @@ Add-PnPSiteCollectionAppCatalog -Site "https://<tenant>.sharepoint.com/sites/<la
 
 1. Download the latest `guest-sponsor-info.sppkg` from
    [GitHub Releases](https://github.com/workoho/spfx-guest-sponsor-info/releases).
-2. Open the Site Collection App Catalog and upload the `.sppkg` file.
+2. Open the Site Collection App Catalog, upload the `.sppkg` file, and click
+   **Deploy** in the dialog that appears.
 
    > **Navigation tip — use the direct URL:**\
    > The Site Collection App Catalog is a document library called
    > **Apps for SharePoint** inside the landing-page site, but there is no
-   > obvious link to it in the SharePoint UI. The gear menu's **Add an app**
-   > entry leads to the app marketplace, not the catalog library. The most
-   > reliable way to get there is the direct URL:
+   > obvious link to it in the SharePoint UI. The most reliable way to get
+   > there is the direct URL:
    > `https://<tenant>.sharepoint.com/sites/<landing-site>/AppCatalog/`\
    > Alternatively: **Site Contents** (gear icon → Site contents) → scroll
    > down to find **Apps for SharePoint** → open it.
 
-3. The web part becomes available on all pages within this site collection
-   immediately — no additional "Add App" step is required.
+3. Go to **Site Contents → Add an app**, find **Guest Sponsor Info** in the
+   list, and click it to install the app on the site. The web part then
+   appears in the page editor.
+
+   Because this solution uses `skipFeatureDeployment: false`, the app must be
+   explicitly added to each site where the web part is needed — even when
+   using a Site Collection App Catalog.
+
+   > **Updating to a new version:** Re-upload the `.sppkg` to
+   > **Apps for SharePoint** and click **Deploy**. SharePoint will then show
+   > an **Update** banner on the installed app in **Site Contents** — click it
+   > to apply the update. If the banner does not appear, remove the app
+   > (**Site Contents** → hover the app → **Remove**) and add it again via
+   > **Add an app**.
 
 ### Verify guest access to the landing page site
 
