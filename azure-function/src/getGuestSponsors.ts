@@ -683,7 +683,8 @@ function validateClientAuthorization(
     return {
       authorized: false,
       reasonCode: 'AUTH_APPID_MISMATCH',
-      reason: 'Calling application does not match ALLOWED_CLIENT_APP_ID',
+      reason: 'Calling application is not the authorized SharePoint Web Client Extensibility app',
+
     };
   }
 
