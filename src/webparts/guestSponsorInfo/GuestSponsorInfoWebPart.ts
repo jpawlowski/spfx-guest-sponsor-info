@@ -22,7 +22,7 @@ import { AadHttpClient, SPHttpClient } from '@microsoft/sp-http';
 import { ThemeProvider, IReadonlyTheme, ThemeChangedEventArgs } from '@microsoft/sp-component-base';
 import { FluentProvider, MessageBar, MessageBarBody, Tooltip, webLightTheme, webDarkTheme, type Theme } from '@fluentui/react-components';
 import { createV9Theme } from '@fluentui/react-migration-v8-v9';
-import { createDOMRenderer, RendererProvider } from '@griffel/react';
+import { RendererProvider } from '@griffel/react';
 import { InfoRegular } from '@fluentui/react-icons';
 
 import * as strings from 'GuestSponsorInfoWebPartStrings';
@@ -32,12 +32,7 @@ import { isValidFunctionUrl, isValidGuid } from './utils/fieldValidation';
 import { MapProvider, MapProviderConfig, getEffectiveMapProvider } from './utils/mapProviderUtils';
 import workohoDefaultLogo from './assets/workoho-default-logo.svg';
 import appIcon from './assets/app-icon-rounded.svg';
-
-// Scoped Griffel renderer — must use the same salt as GuestSponsorInfo.tsx so
-// both modules produce identical class-name hashes. See the comment in that file.
-const griffelRenderer = createDOMRenderer(document, {
-  classNameHashSalt: '16be4020-0cfb-4b1b-9d50-d3d4af2e90e6',
-});
+import { griffelRenderer } from './griffelRenderer';
 
 /**
  * Builds a MapProviderConfig object from flat property-pane storage properties.
@@ -311,7 +306,15 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
       }
     );
 
-    this._renderReactTree(element, this.domElement);
+    // Wrap in the scoped RendererProvider so that useWebPartStyles() inside
+    // GuestSponsorInfo (called before its own inner RendererProvider JSX)
+    // uses the salted renderer instead of the default one. Without this, the
+    // class-name hashes are unsalted and collide with SharePoint Online's own
+    // Griffel instance, causing missing/overwritten CSS on page load.
+    this._renderReactTree(
+      React.createElement(RendererProvider, { renderer: griffelRenderer } as React.ComponentProps<typeof RendererProvider>, element),
+      this.domElement
+    );
   }
 
   protected async onInit(): Promise<void> {

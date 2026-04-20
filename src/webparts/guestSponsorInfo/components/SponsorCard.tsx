@@ -21,6 +21,8 @@ import {
   mergeClasses,
 } from '@fluentui/react-components';
 import type { PresenceBadgeStatus, Theme } from '@fluentui/react-components';
+import { RendererProvider } from '@griffel/react';
+import { griffelRenderer } from '../griffelRenderer';
 import {
   bundleIcon,
   ChatRegular,
@@ -1176,6 +1178,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
           position="bottom"
           onOpenChange={(_, data) => { if (!data.open) onForceDeactivate(); }}
         >
+          <RendererProvider renderer={griffelRenderer}>
           <FluentProvider theme={v9Theme}>
             <DrawerHeader>
               <DrawerHeaderTitle
@@ -1195,6 +1198,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
               {richBody}
             </DrawerBody>
           </FluentProvider>
+          </RendererProvider>
         </OverlayDrawer>
       )}
       {!readOnly && !isMobile && isActive && (
@@ -1219,9 +1223,11 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
             onMouseEnter={onActivate}
             onMouseLeave={onScheduleDeactivate}
           >
+            <RendererProvider renderer={griffelRenderer}>
             <FluentProvider theme={v9Theme}>
               {richBody}
             </FluentProvider>
+            </RendererProvider>
           </PopoverSurface>
         </Popover>
       )}
