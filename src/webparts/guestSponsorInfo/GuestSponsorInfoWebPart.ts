@@ -168,6 +168,9 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
   private _githubCheckDone = false;
   private _diagnosticsCheckDone = false;
   private _diagnosticsCheckInProgress = false;
+  private _diagAssetSourceEl: HTMLElement | undefined;
+  private _diagSiteEveryoneEl: HTMLElement | undefined;
+  private _diagRetryButtonEl: HTMLElement | undefined;
   private _diagnosticsResult:
     | {
         assetSource:
@@ -489,21 +492,44 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
     }
 
     // ── Step 3: Site Everyone access (always check) ───────────────────────────
+    // "Everyone" (c:0(.s|true) may be assigned as a direct role assignment OR as a
+    // member of the associated Visitors / Members group (the common UI-driven path).
+    // We check both to avoid a false-negative "missing" report.
     let siteEveryoneAccess: 'ok' | 'missing' | 'unknown' = 'unknown';
     try {
-      const url = `${siteUrl}/_api/web/roleassignments?$expand=Member&$select=Member/LoginName`;
-      const resp = await this._spGetWithTimeout(url);
-      if (resp.ok) {
-        const data = await resp.json() as { value: Array<{ Member: { LoginName: string } }> };
-        const hasEveryone = data.value.some(ra => ra.Member.LoginName === 'c:0(.s|true');
-        siteEveryoneAccess = hasEveryone ? 'ok' : 'missing';
+      const directUrl = `${siteUrl}/_api/web/roleassignments?$expand=Member&$select=Member/LoginName`;
+      const directResp = await this._spGetWithTimeout(directUrl);
+      if (directResp.ok) {
+        const data = await directResp.json() as { value: Array<{ Member: { LoginName: string } }> };
+        const foundDirect = data.value.some(ra => ra.Member.LoginName === 'c:0(.s|true');
+        if (foundDirect) {
+          siteEveryoneAccess = 'ok';
+        } else {
+          // Fall back to checking if "Everyone" is a member of the standard Visitor or Member group
+          // (added via the SharePoint UI "Share" flow).
+          try {
+            const [visitorResp, memberResp] = await Promise.all([
+              this._spGetWithTimeout(`${siteUrl}/_api/web/associatedvisitorgroup/users?$select=LoginName`),
+              this._spGetWithTimeout(`${siteUrl}/_api/web/associatedmembergroup/users?$select=LoginName`),
+            ]);
+            let foundInGroup = false;
+            if (visitorResp.ok) {
+              const vData = await visitorResp.json() as { value: Array<{ LoginName: string }> };
+              foundInGroup = vData.value.some(u => u.LoginName === 'c:0(.s|true');
+            }
+            if (!foundInGroup && memberResp.ok) {
+              const mData = await memberResp.json() as { value: Array<{ LoginName: string }> };
+              foundInGroup = mData.value.some(u => u.LoginName === 'c:0(.s|true');
+            }
+            siteEveryoneAccess = foundInGroup ? 'ok' : 'missing';
+          } catch { /* group check failed — leave as 'unknown' */ }
+        }
       }
+      // non-ok HTTP (e.g. 403) — leave as 'unknown'
     } catch { /* network error — leave as 'unknown' */ }
 
     this._diagnosticsResult = { assetSource, tenantCatalogEveryoneAccess, siteEveryoneAccess };
-    if (this.context.propertyPane.isPropertyPaneOpen()) {
-      this.context.propertyPane.refresh();
-    }
+    // UI update is triggered by _refreshDiagnosticsFields() in finishDiagnosticsCheck().
   }
 
   /**
@@ -530,6 +556,10 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
     }
 
     this._diagnosticsCheckInProgress = true;
+    // Direct update for already-mounted fields (e.g. button click while pane is open).
+    // propertyPane.refresh() is kept as the fallback for the initial open when element
+    // refs are not yet stored.
+    this._refreshDiagnosticsFields();
     if (this.context.propertyPane.isPropertyPaneOpen()) {
       this.context.propertyPane.refresh();
     }
@@ -537,9 +567,10 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
     const finishDiagnosticsCheck = (): void => {
       this._diagnosticsCheckDone = true;
       this._diagnosticsCheckInProgress = false;
-      if (this.context.propertyPane.isPropertyPaneOpen()) {
-        this.context.propertyPane.refresh();
-      }
+      // Directly update the already-mounted React trees so the result is visible
+      // even when propertyPane.refresh() (called from an async context) does not
+      // reliably re-trigger onRender for custom fields that are already rendered.
+      this._refreshDiagnosticsFields();
     };
 
     this._runDiagnostics().then(
@@ -684,6 +715,10 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
     intent: 'info' | 'warning' | 'success' | 'error' = 'info'
   ): void {
     if (!element) return;
+    // The SPFx property-pane custom-field container may have overflow:hidden which
+    // clips multi-line MessageBar content. Setting overflow visible on the element
+    // lets the box expand to its natural height.
+    element.style.overflow = 'visible';
     this._renderReactTree(
       React.createElement(IdPrefixProvider, { value: `gsi-pp-info-${key}-${this.context.instanceId}-` },
         React.createElement(RendererProvider, { renderer: griffelRenderer } as React.ComponentProps<typeof RendererProvider>,
@@ -734,6 +769,60 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
       ),
       element
     );
+  }
+
+  /** Renders the asset-source diagnostic message box into `element`. */
+  private _renderDiagAssetSourceField(element: HTMLElement | undefined): void {
+    if (!element) return;
+    const diag = this._diagnosticsResult;
+    let text: string;
+    let intent: 'info' | 'success' | 'warning' | 'error' = 'info';
+    if (!diag) {
+      text = strings.DiagnosticsChecking;
+    } else {
+      switch (diag.assetSource) {
+        case 'publicCdn':          text = strings.DiagPublicCdnOk; intent = 'success'; break;
+        case 'privateCdn':         text = strings.DiagPrivateCdnInfo; break;
+        case 'siteCollectionCatalog': text = strings.DiagSiteColCatalogOk; intent = 'success'; break;
+        case 'tenantCatalog':
+          if (diag.tenantCatalogEveryoneAccess === 'ok') {
+            text = strings.DiagTenantCatalogEveryoneOk; intent = 'success';
+          } else if (diag.tenantCatalogEveryoneAccess === 'denied') {
+            text = strings.DiagTenantCatalogEveryoneDenied; intent = 'error';
+          } else {
+            text = strings.DiagTenantCatalogEveryoneUnknown; intent = 'warning';
+          }
+          break;
+        default: text = strings.DiagAssetSourceUnknown; intent = 'warning';
+      }
+    }
+    this._renderInfoBox(element, 'diagAssetSource', text, intent);
+  }
+
+  /** Renders the site-Everyone diagnostic message box into `element`. */
+  private _renderDiagSiteEveryoneField(element: HTMLElement | undefined): void {
+    if (!element) return;
+    const diag = this._diagnosticsResult;
+    if (!diag) { element.innerHTML = ''; return; }
+    let text: string;
+    let intent: 'info' | 'success' | 'warning' | 'error' = 'info';
+    switch (diag.siteEveryoneAccess) {
+      case 'ok':      text = strings.DiagSiteEveryoneOk;      intent = 'success'; break;
+      case 'missing': text = strings.DiagSiteEveryoneMissing; intent = 'warning'; break;
+      default:        text = strings.DiagSiteEveryoneUnknown;
+    }
+    this._renderInfoBox(element, 'diagSiteEveryone', text, intent);
+  }
+
+  /**
+   * Directly updates the diagnostics custom-field React trees using stored element
+   * references. This is more reliable than propertyPane.refresh() when called from
+   * an async context, where SPFx may not re-invoke onRender for already-mounted fields.
+   */
+  private _refreshDiagnosticsFields(): void {
+    this._renderDiagnosticsRetryButton(this._diagRetryButtonEl);
+    this._renderDiagAssetSourceField(this._diagAssetSourceEl);
+    this._renderDiagSiteEveryoneField(this._diagSiteEveryoneEl);
   }
 
   /**
@@ -1766,9 +1855,11 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
                 PropertyPaneCustomField({
                   key: 'diagRetryButtonField',
                   onRender: (element: HTMLElement | undefined) => {
+                    this._diagRetryButtonEl = element;
                     this._renderDiagnosticsRetryButton(element);
                   },
                   onDispose: (element: HTMLElement | undefined) => {
+                    this._diagRetryButtonEl = undefined;
                     if (element) this._unmountReactTree(element);
                   },
                 }) as unknown as IPropertyPaneField<unknown>,
@@ -1776,47 +1867,11 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
                 PropertyPaneCustomField({
                   key: 'diagAssetSourceField',
                   onRender: (element: HTMLElement | undefined) => {
-                    if (!element) return;
-                    const diag = this._diagnosticsResult;
-                    let text: string;
-                    let intent: 'info' | 'success' | 'warning' | 'error' = 'info';
-                    if (!diag) {
-                      text = strings.DiagnosticsChecking;
-                      intent = 'info';
-                    } else {
-                      switch (diag.assetSource) {
-                        case 'publicCdn':
-                          text = strings.DiagPublicCdnOk;
-                          intent = 'success';
-                          break;
-                        case 'privateCdn':
-                          text = strings.DiagPrivateCdnInfo;
-                          intent = 'info';
-                          break;
-                        case 'siteCollectionCatalog':
-                          text = strings.DiagSiteColCatalogOk;
-                          intent = 'success';
-                          break;
-                        case 'tenantCatalog':
-                          if (diag.tenantCatalogEveryoneAccess === 'ok') {
-                            text = strings.DiagTenantCatalogEveryoneOk;
-                            intent = 'success';
-                          } else if (diag.tenantCatalogEveryoneAccess === 'denied') {
-                            text = strings.DiagTenantCatalogEveryoneDenied;
-                            intent = 'error';
-                          } else {
-                            text = strings.DiagTenantCatalogEveryoneUnknown;
-                            intent = 'warning';
-                          }
-                          break;
-                        default:
-                          text = strings.DiagAssetSourceUnknown;
-                          intent = 'warning';
-                      }
-                    }
-                    this._renderInfoBox(element, 'diagAssetSource', text, intent);
+                    this._diagAssetSourceEl = element;
+                    this._renderDiagAssetSourceField(element);
                   },
                   onDispose: (element: HTMLElement | undefined) => {
+                    this._diagAssetSourceEl = undefined;
                     if (element) this._unmountReactTree(element);
                   },
                 }) as unknown as IPropertyPaneField<unknown>,
@@ -1824,31 +1879,11 @@ export default class GuestSponsorInfoWebPart extends BaseClientSideWebPart<IGues
                 PropertyPaneCustomField({
                   key: 'diagSiteEveryoneField',
                   onRender: (element: HTMLElement | undefined) => {
-                    if (!element) return;
-                    const diag = this._diagnosticsResult;
-                    let text: string;
-                    let intent: 'info' | 'success' | 'warning' | 'error' = 'info';
-                    if (!diag) {
-                      // Still loading — render nothing; diagAssetSourceField shows the spinner
-                      element.innerHTML = '';
-                      return;
-                    }
-                    switch (diag.siteEveryoneAccess) {
-                      case 'ok':
-                        text = strings.DiagSiteEveryoneOk;
-                        intent = 'success';
-                        break;
-                      case 'missing':
-                        text = strings.DiagSiteEveryoneMissing;
-                        intent = 'warning';
-                        break;
-                      default:
-                        text = strings.DiagSiteEveryoneUnknown;
-                        intent = 'info';
-                    }
-                    this._renderInfoBox(element, 'diagSiteEveryone', text, intent);
+                    this._diagSiteEveryoneEl = element;
+                    this._renderDiagSiteEveryoneField(element);
                   },
                   onDispose: (element: HTMLElement | undefined) => {
+                    this._diagSiteEveryoneEl = undefined;
                     if (element) this._unmountReactTree(element);
                   },
                 }) as unknown as IPropertyPaneField<unknown>,
