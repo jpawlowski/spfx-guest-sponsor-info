@@ -5,6 +5,7 @@
     "FUNCTIONS_WORKER_RUNTIME": "node",
     "TENANT_ID": "<your-entra-tenant-id>",
     "ALLOWED_AUDIENCE": "<function-client-id>",
+    "ALLOWED_CLIENT_APP_ID": "<spo-web-client-extensibility-client-id>",
     "CORS_ALLOWED_ORIGIN": "https://<tenant>.sharepoint.com",
     "SPONSOR_LOOKUP_TIMEOUT_MS": "5000",
     "BATCH_TIMEOUT_MS": "4000",

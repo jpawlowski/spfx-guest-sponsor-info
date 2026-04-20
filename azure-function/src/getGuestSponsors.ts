@@ -592,11 +592,18 @@ function getPrincipalClaim(principal: IEasyAuthPrincipal, claimTypes: string[]):
 }
 
 /**
- * Validates that the authenticated EasyAuth principal belongs to our tenant and API audience.
+ * Validates that the authenticated EasyAuth principal belongs to our tenant and API audience,
+ * and that the request originated from a specific Entra application.
  *
- * Performs two checks on EasyAuth principal claims:
+ * Checks performed on EasyAuth principal claims:
  * 1. tid claim matches our tenant ID
  * 2. aud claim matches our API's audience URI
+ * 3. appid claim matches ALLOWED_CLIENT_APP_ID
+ *
+ * Check 3 ensures that only a specific Entra application (e.g. the "SharePoint
+ * Online Web Client Extensibility" app used by SPFx AadHttpClient) can call
+ * this API. Without it, any Entra client that has been granted the API scope
+ * could make requests.
  *
  * @returns validation result with details
  */
@@ -649,6 +656,37 @@ function validateClientAuthorization(
       authorized: false,
       reasonCode: 'AUTH_AUDIENCE_MISMATCH',
       reason: 'Principal audience does not match ALLOWED_AUDIENCE',
+    };
+  }
+
+  // Check 3: Calling application must match the expected client app.
+  // The appid (v1 tokens) or azp (v2 tokens) claim identifies the Entra
+  // application that acquired the token. For SPFx web parts the calling app is
+  // the tenant-specific "SharePoint Online Web Client Extensibility" enterprise
+  // application — find its Application (client) ID in Entra admin center →
+  // Identity → Applications → Enterprise applications.
+  const allowedClientAppId = process.env.ALLOWED_CLIENT_APP_ID;
+  if (!allowedClientAppId) {
+    context.error('ALLOWED_CLIENT_APP_ID environment variable not configured');
+    return { authorized: false, reasonCode: 'AUTH_CONFIG_APPID_MISSING', reason: 'Server configuration error: ALLOWED_CLIENT_APP_ID not set' };
+  }
+  const appid = getPrincipalClaim(principal, [
+    'appid',
+    'azp',
+    'http://schemas.microsoft.com/identity/claims/appid',
+  ]);
+  if (!appid) {
+    return {
+      authorized: false,
+      reasonCode: 'AUTH_CLAIM_MISSING_APPID',
+      reason: 'Principal missing appid/azp (calling application) claim',
+    };
+  }
+  if (appid !== allowedClientAppId) {
+    return {
+      authorized: false,
+      reasonCode: 'AUTH_APPID_MISMATCH',
+      reason: 'Calling application does not match ALLOWED_CLIENT_APP_ID',
     };
   }
 
