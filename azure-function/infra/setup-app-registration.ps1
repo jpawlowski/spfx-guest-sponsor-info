@@ -928,12 +928,16 @@ else {
   $_graphPermCmd = "& ([scriptblock]::Create((iwr 'https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/main/azure-function/infra/setup-graph-permissions.ps1').Content))"
 }
 
+# The Deploy to Azure portal URL does not support pre-filled parameters —
+# the standard ARM portal form always shows all input fields regardless of
+# what is appended to the URL.  Show the Client ID prominently so the user
+# can copy-paste it into the 'functionClientId' field during deployment.
+$_deployUrl = 'https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fworkoho%2Fspfx-guest-sponsor-info%2Fmain%2Fazure-function%2Finfra%2Fazuredeploy.json'
+
 $_importantLines = @(
-  'Use this Client ID as the ''functionClientId'' parameter in the'
-  'ARM template deployment, and in the web part property pane'
-  '(Guest Sponsor API → Application (client) ID).'
+  'Copy this Client ID — you will need it in the next step:'
   ''
-  "  Guest Sponsor API Application (client) ID: $clientId"
+  "  functionClientId:  $clientId"
 )
 if ($clientId -ne '<not-created-in-WhatIf-mode>') {
   $_importantLines += ''
@@ -942,15 +946,13 @@ if ($clientId -ne '<not-created-in-WhatIf-mode>') {
 }
 Write-Important -Lines $_importantLines
 
-# "Deploy to Azure" deep link — opens the ARM template in the Azure portal.
-Write-Link `
-  -Url 'https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fworkoho%2Fspfx-guest-sponsor-info%2Fmain%2Fazure-function%2Finfra%2Fazuredeploy.json' `
-  -Text 'Deploy to Azure — provision the Function App (ARM template)'
-
 Write-NextStep @(
-  'After the Azure deployment completes, run the next setup script'
-  'to grant Graph permissions to the Function''s Managed Identity:'
+  'Step 1 — Deploy the Function App to Azure (link below).'
+  "         Paste the Client ID above into the 'functionClientId' field."
+  ''
+  'Step 2 — After deployment completes, return here and run:'
   ''
   "  $_graphPermCmd"
 )
+Write-Link -Url $_deployUrl -Text 'Deploy to Azure — Function App + EasyAuth (ARM template)'
 #endregion
