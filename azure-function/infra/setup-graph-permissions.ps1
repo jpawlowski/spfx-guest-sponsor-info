@@ -95,7 +95,7 @@ function Write-Box {
   )
   # Use the script-scope Unicode capability flag set at startup.
   if ($_u) {
-    $H = [char]0x2500; $TL = [char]0x256D; $V = [char]0x2502; $BL = [char]0x2570
+    $H = [string][char]0x2500; $TL = [string][char]0x256D; $V = [string][char]0x2502; $BL = [string][char]0x2570
   }
   else {
     $H = '-'; $TL = '+'; $V = '|'; $BL = '+'
@@ -598,11 +598,18 @@ else {
 }
 # Service Management Reference — shown under Enterprise App → Properties.
 # Points to the GitHub Issues tracker so Ops teams know where to file tickets.
+# Note: serviceManagementReference is not in the default Get-MgServicePrincipal
+# property set, so fetch it explicitly. Update-MgServicePrincipal also does not
+# expose it as a named parameter, so use Invoke-MgGraphRequest PATCH instead.
 $desiredSmRef = 'https://github.com/workoho/spfx-guest-sponsor-info/issues'
-if ($sp.ServiceManagementReference -ne $desiredSmRef) {
+$currentSmRef = (Invoke-MgGraphRequest -Method GET `
+    -Uri "https://graph.microsoft.com/v1.0/servicePrincipals/$($sp.Id)?`$select=serviceManagementReference" `
+    -ErrorAction Stop).serviceManagementReference
+if ($currentSmRef -ne $desiredSmRef) {
   Write-Host "  Setting Service Management Reference ..." -ForegroundColor Cyan
-  Update-MgServicePrincipal -ServicePrincipalId $sp.Id `
-    -ServiceManagementReference $desiredSmRef -ErrorAction Stop
+  Invoke-MgGraphRequest -Method PATCH `
+    -Uri "https://graph.microsoft.com/v1.0/servicePrincipals/$($sp.Id)" `
+    -Body @{ serviceManagementReference = $desiredSmRef } -ErrorAction Stop
   Write-Host "  $_chk Service Management Reference set." -ForegroundColor Green
 }
 else {

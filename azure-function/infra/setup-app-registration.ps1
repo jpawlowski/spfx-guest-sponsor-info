@@ -88,7 +88,7 @@ function Write-Box {
   )
   # Use the script-scope Unicode capability flag set at startup.
   if ($_u) {
-    $H = [char]0x2500; $TL = [char]0x256D; $V = [char]0x2502; $BL = [char]0x2570
+    $H = [string][char]0x2500; $TL = [string][char]0x256D; $V = [string][char]0x2502; $BL = [string][char]0x2570
   }
   else {
     $H = '-'; $TL = '+'; $V = '|'; $BL = '+'
@@ -346,8 +346,18 @@ $desiredInfo = @{
   MarketingUrl        = $repoUrl
 }
 
-# Logo file — uploaded from the repo if present.
-$logoPath = Join-Path $PSScriptRoot '../../sharepoint/images/icon-300.png'
+# Logo file — resolved from the local repo clone when available; otherwise
+# downloaded from GitHub so the script works when run directly via iwr.
+$_localLogoPath = if ($PSScriptRoot) {
+  Join-Path $PSScriptRoot '../../sharepoint/images/icon-300.png'
+}
+else { $null }
+$logoPath = if ($_localLogoPath -and (Test-Path $_localLogoPath)) {
+  $_localLogoPath
+}
+else { $null }
+$logoRawUrl = "$repoUrl" -replace 'https://github\.com', 'https://raw.githubusercontent.com'
+$logoRawUrl = "$logoRawUrl/main/sharepoint/images/icon-300.png"
 
 # ── Find or create ────────────────────────────────────────────────────────────
 Write-Host "Checking for existing App Registration '$DisplayName'..." `
@@ -456,7 +466,7 @@ else {
 # ── Logo upload ───────────────────────────────────────────────────────────────
 # The Graph SDK does not support logo upload via Update-MgApplication.
 # Use Invoke-MgGraphRequest to PUT the image bytes directly.
-if (Test-Path $logoPath) {
+if ($logoPath) {
   Write-Host "  Uploading logo from $logoPath ..." -ForegroundColor Cyan
   $logoBytes = [System.IO.File]::ReadAllBytes((Resolve-Path $logoPath))
   Invoke-MgGraphRequest -Method PUT `
@@ -467,8 +477,21 @@ if (Test-Path $logoPath) {
   Write-Host "  $_chk Logo uploaded." -ForegroundColor Green
 }
 else {
-  Write-Host "  $_wrn Logo file not found at $logoPath — skipping." `
-    -ForegroundColor Yellow
+  # Local file not available (e.g. script run via iwr) — download from GitHub.
+  Write-Host "  Downloading logo from $logoRawUrl ..." -ForegroundColor Cyan
+  try {
+    $logoBytes = (Invoke-WebRequest -Uri $logoRawUrl -UseBasicParsing -ErrorAction Stop).Content
+    Invoke-MgGraphRequest -Method PUT `
+      -Uri "https://graph.microsoft.com/v1.0/applications/$objectId/logo" `
+      -ContentType 'image/png' `
+      -Body $logoBytes `
+      -ErrorAction Stop
+    Write-Host "  $_chk Logo uploaded." -ForegroundColor Green
+  }
+  catch {
+    Write-Host "  $_wrn Logo download failed — skipping. ($_)" `
+      -ForegroundColor Yellow
+  }
 }
 
 Write-Important -Lines @(
