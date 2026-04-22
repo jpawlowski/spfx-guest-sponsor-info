@@ -125,13 +125,46 @@ function Write-Important {
   param([Parameter(ValueFromRemainingArguments)][string[]]$Lines)
   Write-Box -Title 'IMPORTANT' -Color Yellow @Lines
 }
+function Write-Failure {
+  param([Parameter(ValueFromRemainingArguments)][string[]]$Lines)
+  Write-Box -Title 'ERROR' -Color Red @Lines
+}
+
+# Script-level trap: on Graph authorization errors (401/403), print role
+# guidance instead of a raw HTTP exception. Other errors re-throw normally.
+trap {
+  $_httpCode = $null
+  if ($_.Exception -and $null -ne $_.Exception.Response) {
+    try { $_httpCode = [int]$_.Exception.Response.StatusCode }
+    catch { $null = $_ <# cast may fail if StatusCode is not numeric — ignore #> }
+  }
+  $_errMsg = if ($_.Exception -and $_.Exception.Message) { $_.Exception.Message } else { [string]$_ }
+  if ($_httpCode -in @(401, 403) -or
+    $_errMsg -match 'Authorization_RequestDenied|Forbidden|Unauthorized|insufficient.privilege') {
+    Write-Failure -Lines @(
+      'The request was denied — your account lacks the required permissions.'
+      ''
+      'Required Entra role:  Application Administrator'
+      '  (or Cloud Application Administrator, or Global Administrator)'
+      ''
+      'Entra admin center → Roles and administrators:'
+      '  https://entra.microsoft.com/#view/Microsoft_AAD_IAM/RolesManagementMenuBlade/~/AllRoles'
+    )
+    break
+  }
+  # Not a permission error — let PowerShell display the raw error and exit.
+}
 
 # ── Module prerequisite helper ────────────────────────────────────────────────
 # Checks whether a required PowerShell module is installed and, if not, offers
 # to install it from the PowerShell Gallery. Handles:
+#   - Explicit user confirmation before any installation attempt
 #   - Windows PowerShell 5.1 and PowerShell 7+ on Windows, Linux, and macOS
-#   - Scope selection (CurrentUser / AllUsers) on Windows
-#   - OneDrive Known Folder Move (KFM) warning when CurrentUser is chosen
+#   - Running as admin: offer AllUsers (default) or CurrentUser
+#   - Not running as admin on Windows:
+#       [1] Elevate temporarily via UAC to install AllUsers (recommended)
+#       [2] Install CurrentUser — with OneDrive KFM warning if applicable
+#       [3] Abort — install manually and re-run this script
 #   - NuGet package provider bootstrap (required by Install-Module on PS 5.1)
 #   - Prefers Install-PSResource (PSResourceGet) on PS 7+ when available
 function Install-RequiredModule {
@@ -147,51 +180,43 @@ function Install-RequiredModule {
 
   Write-Host ''
   Write-Host "  Module '$Name' is not installed." -ForegroundColor Yellow
-  $answer = (Read-Host "  Install '$Name' from the PowerShell Gallery? [Y/n]").Trim()
+  Write-Host '  This module is required — it cannot be skipped.'
+  Write-Host ''
+  Write-Host '  To install manually and then re-run this script:'
+  Write-Host "    Install-Module -Name '$Name' -Scope CurrentUser" -ForegroundColor Cyan
+  Write-Host ''
+  $answer = (Read-Host "  Proceed with automatic installation? [Y/n]").Trim()
   if ($answer -ne '' -and $answer -notmatch '^[Yy]') {
     Write-Host "  Aborted. '$Name' is required — cannot continue." -ForegroundColor Red
     exit 1
   }
 
   # ── Choose installation scope ─────────────────────────────────────────────
-  # On Windows (PS 5.1, which only runs on Windows, and PS 7+ when $IsWindows)
-  # prompt the user to choose a scope. On Linux/macOS only CurrentUser applies.
-  $scope = 'CurrentUser'
   # PS 5.1 has no $IsWindows; major version < 6 implies Windows-only runtime.
   $onWindows = ($PSVersionTable.PSVersion.Major -lt 6) -or $IsWindows
+  $scope = 'CurrentUser'
 
   if ($onWindows) {
     $isAdmin = ([Security.Principal.WindowsPrincipal] `
         [Security.Principal.WindowsIdentity]::GetCurrent()
     ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 
-    Write-Host ''
-    Write-Host '  Installation scope:' -ForegroundColor Cyan
-    Write-Host '    [1] CurrentUser  – installed in your profile folder (no admin required)'
-    Write-Host '    [2] AllUsers     – installed system-wide               (requires admin)'
-    Write-Host ''
-
-    if (-not $isAdmin) {
-      Write-Host '  Note: You are not running as administrator.' -ForegroundColor DarkGray
-      Write-Host '  AllUsers scope requires elevation. Defaulting to CurrentUser.' -ForegroundColor DarkGray
-      $scopeChoice = '1'
-    }
-    else {
+    if ($isAdmin) {
+      # Running as administrator: offer AllUsers (default) or CurrentUser.
+      Write-Host ''
+      Write-Host '  Installation scope:' -ForegroundColor Cyan
+      Write-Host '    [1] AllUsers     – installed system-wide              (recommended)'
+      Write-Host '    [2] CurrentUser  – installed in your profile folder'
+      Write-Host ''
       do {
         $scopeChoice = (Read-Host '  Scope [1/2, default: 1]').Trim()
         if ($scopeChoice -eq '') { $scopeChoice = '1' }
       } while ($scopeChoice -notin @('1', '2'))
+      $scope = if ($scopeChoice -eq '2') { 'CurrentUser' } else { 'AllUsers' }
     }
-
-    $scope = if ($scopeChoice -eq '2') { 'AllUsers' } else { 'CurrentUser' }
-
-    # ── OneDrive Known Folder Move (KFM) warning ──────────────────────────
-    # When OneDrive "Folder Backup" (Known Folder Move) redirects the Documents
-    # folder to OneDrive, the CurrentUser PowerShell module path lives inside
-    # that synced folder. Installed module DLLs are then uploaded to OneDrive,
-    # which can cause DLL-lock conflicts during sync and slow first-use on every
-    # machine sharing the same OneDrive account.
-    if ($scope -eq 'CurrentUser') {
+    else {
+      # Not running as admin. Check whether CurrentUser installs would land
+      # inside an OneDrive-synced folder (Known Folder Move / KFM).
       $docsPath = [Environment]::GetFolderPath(
         [Environment+SpecialFolder]::MyDocuments)
       # Check all known OneDrive environment variables (personal, commercial, generic).
@@ -205,26 +230,81 @@ function Install-RequiredModule {
         }
       }
 
+      Write-Host ''
+      Write-Host '  You are not running as administrator.' -ForegroundColor DarkGray
       if ($kfmActive) {
         Write-Host ''
-        Write-Host "  $_wrn  OneDrive Folder Backup is active (Known Folder Move / KFM)." `
+        Write-Host "  $_wrn OneDrive Folder Backup (KFM) is active." -ForegroundColor Yellow
+        Write-Host "       CurrentUser modules would be stored in:" -ForegroundColor Yellow
+        Write-Host "       $docsPath" -ForegroundColor DarkCyan
+        Write-Host '       This folder syncs to OneDrive — DLL-lock conflicts are possible.' `
           -ForegroundColor Yellow
-        Write-Host '     Your Documents folder is currently synced to OneDrive:' -ForegroundColor Yellow
-        Write-Host "     $docsPath" -ForegroundColor DarkCyan
         Write-Host ''
-        Write-Host '  PowerShell modules installed in CurrentUser scope are stored inside'
-        Write-Host '  your Documents folder and will therefore be synced to OneDrive.'
-        Write-Host '  This may cause:'
-        Write-Host '    - DLL files locked by the OneDrive sync client during module load'
-        Write-Host '    - Sync conflicts when the same account is active on another computer'
-        Write-Host '    - Slow availability after installation until OneDrive sync completes'
+        Write-Host '  Choose an option:' -ForegroundColor Cyan
+        Write-Host '    [1] Elevate to install system-wide   (recommended — opens a UAC prompt)'
+        Write-Host '    [2] Install in profile anyway        (stored in OneDrive, not recommended)'
+        Write-Host '    [3] Abort — install manually and re-run this script'
+      }
+      else {
         Write-Host ''
-        Write-Host '  Recommendation: choose AllUsers scope (option 2) instead, or pause'
-        Write-Host '  OneDrive sync while installing the modules.'
-        Write-Host ''
-        $cont = (Read-Host '  Continue with CurrentUser scope anyway? [y/N]').Trim()
-        if ($cont -notmatch '^[Yy]') {
-          Write-Host '  Aborted.' -ForegroundColor Red
+        Write-Host '  Choose an option:' -ForegroundColor Cyan
+        Write-Host '    [1] Elevate to install system-wide   (recommended — opens a UAC prompt)'
+        Write-Host '    [2] Install in profile folder        (CurrentUser — no admin required)'
+        Write-Host '    [3] Abort — install manually and re-run this script'
+      }
+      Write-Host ''
+      do {
+        $installChoice = (Read-Host '  Option [1/2/3, default: 1]').Trim()
+        if ($installChoice -eq '') { $installChoice = '1' }
+      } while ($installChoice -notin @('1', '2', '3'))
+
+      switch ($installChoice) {
+        '1' {
+          # Elevate: run Install-Module as a local admin in a new elevated window.
+          # Start-Process -Verb RunAs triggers UAC; -Wait blocks until it finishes.
+          # $psExe uses the same PowerShell major version that is currently running.
+          $psExe = if ($PSVersionTable.PSVersion.Major -ge 7) { 'pwsh' } else { 'powershell' }
+          # The inner command wraps Install-Module in try/catch and exits with code 1
+          # on failure so the caller can detect the error after the window closes.
+          $innerCmd = "try { Install-Module -Name '$Name' -Scope AllUsers " +
+          "-Force -AllowClobber -ErrorAction Stop } catch { exit 1 }"
+          Write-Host ''
+          Write-Host "  Launching elevated installer for '$Name' (AllUsers) …" -ForegroundColor Cyan
+          Write-Host '  A UAC prompt will appear — approve it to continue.' -ForegroundColor DarkGray
+          try {
+            $proc = Start-Process -FilePath $psExe `
+              -ArgumentList "-NoProfile -NonInteractive -Command `"$innerCmd`"" `
+              -Verb RunAs -Wait -PassThru -ErrorAction Stop
+            if ($null -ne $proc.ExitCode -and $proc.ExitCode -ne 0) {
+              throw "Elevated installer exited with code $($proc.ExitCode)."
+            }
+            Write-Host "  $_chk '$Name' installed system-wide." -ForegroundColor Green
+          }
+          catch {
+            Write-Host ''
+            Write-Host "  $_wrn Elevation failed or was cancelled: $($_.Exception.Message)" `
+              -ForegroundColor Red
+            Write-Host ''
+            Write-Host '  Install manually and then re-run this script:' -ForegroundColor Yellow
+            Write-Host "    Install-Module -Name '$Name' -Scope AllUsers" -ForegroundColor Cyan
+            Write-Host ''
+            exit 1
+          }
+          Import-Module -Name $Name
+          Write-Host "  $_chk '$Name' imported." -ForegroundColor Green
+          Write-Host ''
+          return
+        }
+        '2' {
+          $scope = 'CurrentUser'
+        }
+        '3' {
+          Write-Host ''
+          Write-Host '  Install manually and then re-run this script:' -ForegroundColor Yellow
+          Write-Host "    Install-Module -Name '$Name' -Scope AllUsers" -ForegroundColor Cyan
+          Write-Host "    Install-Module -Name '$Name' -Scope CurrentUser  # no admin required" `
+            -ForegroundColor DarkGray
+          Write-Host ''
           exit 1
         }
       }
@@ -258,18 +338,41 @@ function Install-RequiredModule {
   # PowerShell 7+ with PSResourceGet: use Install-PSResource when available.
   # PSResourceGet is the modern package manager that ships with PS 7.4+ and
   # handles dependency resolution, side-by-side versions, and parallel downloads.
-  if ($PSVersionTable.PSVersion.Major -ge 7 -and
-    (Get-Command Install-PSResource -ErrorAction SilentlyContinue)) {
-    Install-PSResource -Name $Name -Scope $scope -TrustRepository -Quiet `
-      -ErrorAction Stop
+  try {
+    if ($PSVersionTable.PSVersion.Major -ge 7 -and
+      (Get-Command Install-PSResource -ErrorAction SilentlyContinue)) {
+      Install-PSResource -Name $Name -Scope $scope -TrustRepository -Quiet `
+        -ErrorAction Stop
+    }
+    else {
+      # PowerShell 5.1 and PS 7 without PSResourceGet: use Install-Module.
+      Install-Module -Name $Name -Scope $scope -Force -AllowClobber -ErrorAction Stop
+    }
   }
-  else {
-    # PowerShell 5.1 and PS 7 without PSResourceGet: use Install-Module.
-    Install-Module -Name $Name -Scope $scope -Force -AllowClobber -ErrorAction Stop
+  catch {
+    Write-Host ''
+    Write-Host "  $_wrn Auto-installation failed: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host ''
+    Write-Host '  Install the module manually and then re-run this script:' -ForegroundColor Yellow
+    Write-Host "    Install-Module -Name '$Name' -Scope CurrentUser" -ForegroundColor Cyan
+    Write-Host ''
+    exit 1
   }
 
   Import-Module -Name $Name
   Write-Host "  $_chk '$Name' installed and imported." -ForegroundColor Green
+  Write-Host ''
+}
+
+# ── PowerShell version check ──────────────────────────────────────────────────
+# PowerShell 7+ is recommended for stable JSON deserialization from
+# Invoke-MgGraphRequest. Windows PowerShell 5.1 is supported but may behave
+# differently with complex nested objects.
+if ($PSVersionTable.PSVersion.Major -lt 7) {
+  Write-Host ''
+  Write-Host "  $_wrn Running on Windows PowerShell $($PSVersionTable.PSVersion) — PowerShell 7 is recommended." `
+    -ForegroundColor Yellow
+  Write-Host '       Download: https://aka.ms/install-powershell' -ForegroundColor DarkCyan
   Write-Host ''
 }
 
@@ -305,6 +408,14 @@ if (-not $TenantId) {
   Write-Host ''
 }
 
+Write-Hint -Lines @(
+  'Required Entra role:  Application Administrator'
+  '  (or Cloud Application Administrator, or Global Administrator)'
+  ''
+  'Entra admin center → Roles and administrators:'
+  '  https://entra.microsoft.com/#view/Microsoft_AAD_IAM/RolesManagementMenuBlade/~/AllRoles'
+)
+
 Connect-MgGraph -TenantId $TenantId -Scopes "Application.ReadWrite.All"
 
 # ── Desired state ─────────────────────────────────────────────────────────────
@@ -325,18 +436,19 @@ $appDescription = @(
   'behalf of signed-in guest users to retrieve their Entra sponsor',
   'information. Tokens are acquired silently via pre-authorized',
   'SharePoint Online Web Client Extensibility.',
-  "Source: $repoUrl"
+  'Docs: https://guest-sponsor-info.workoho.cloud'
 ) -join ' '
 
 # Internal notes for the App Registration (visible on the Overview blade).
 $appNotes = @(
-  'Managed by: Workoho GmbH.',
   'Do not delete — the "Guest Sponsor Info" SharePoint web part depends',
   'on this for guest sponsor lookups via Microsoft Graph.',
   'The associated Azure Function uses a system-assigned Managed Identity',
   'for Graph API calls (User.Read.All, Presence.Read.All,',
   'MailboxSettings.Read, TeamMember.Read.All).',
-  "Source & docs: $repoUrl"
+  'The Managed Identity Object ID and its Graph app role assignments are',
+  'configured by setup-graph-permissions.ps1.',
+  'Docs: https://guest-sponsor-info.workoho.cloud'
 ) -join ' '
 
 # Info URLs shown on the App Registration "Branding & properties" blade.
@@ -346,7 +458,7 @@ $desiredInfo = @{
   termsOfServiceUrl   = "$repoUrl/blob/main/docs/terms-of-use.md"
   privacyStatementUrl = "$repoUrl/blob/main/docs/privacy-policy.md"
   supportUrl          = "$repoUrl/issues"
-  marketingUrl        = $repoUrl
+  marketingUrl        = 'https://guest-sponsor-info.workoho.cloud'
 }
 
 # Logo file — resolved from the local repo clone when available; otherwise
