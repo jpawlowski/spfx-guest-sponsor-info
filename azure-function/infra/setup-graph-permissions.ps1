@@ -281,8 +281,9 @@ function Install-RequiredModule {
 }
 
 # ── Module bootstrap ───────────────────────────────────────────────────
+# Only Microsoft.Graph.Authentication is required — all Graph operations
+# go through Invoke-MgGraphRequest, which ships in that module.
 Install-RequiredModule -Name 'Microsoft.Graph.Authentication'
-Install-RequiredModule -Name 'Microsoft.Graph.Applications'
 
 # ── Interactive parameter prompts ─────────────────────────────────────────────
 # Each prompt shows a title, a short description, and where to find the value,
@@ -361,7 +362,10 @@ if (-not $FunctionAppClientId) {
 Connect-MgGraph -TenantId $TenantId -Scopes "AppRoleAssignment.ReadWrite.All", "Application.ReadWrite.All"
 
 Write-Host "Resolving Microsoft Graph service principal..." -ForegroundColor Cyan
-$graphSp = Get-MgServicePrincipal -Filter "appId eq '00000003-0000-0000-c000-000000000000'"
+$graphSpResp = Invoke-MgGraphRequest -Method GET `
+  -Uri "https://graph.microsoft.com/v1.0/servicePrincipals?`$filter=appId eq '00000003-0000-0000-c000-000000000000'&`$select=id,appRoles" `
+  -OutputType PSObject -ErrorAction Stop
+$graphSp = if ($graphSpResp.value) { $graphSpResp.value[0] } else { $null }
 if (-not $graphSp) {
   throw "Could not find the Microsoft Graph service principal in tenant '$TenantId'."
 }
@@ -394,12 +398,13 @@ foreach ($role in $requiredRoles) {
   }
 
   try {
-    $null = New-MgServicePrincipalAppRoleAssignment `
-      -ServicePrincipalId $ManagedIdentityObjectId `
-      -PrincipalId $ManagedIdentityObjectId `
-      -ResourceId $graphSp.Id `
-      -AppRoleId $appRole.Id `
-      -ErrorAction Stop
+    $null = Invoke-MgGraphRequest -Method POST `
+      -Uri "https://graph.microsoft.com/v1.0/servicePrincipals/$ManagedIdentityObjectId/appRoleAssignments" `
+      -Body @{
+      principalId = $ManagedIdentityObjectId
+      resourceId  = $graphSp.id
+      appRoleId   = $appRole.id
+    } -ErrorAction Stop
     Write-Host "  $_chk $($role.Name) assigned." -ForegroundColor Green
     $assignedRoles += $role.Name
   }
@@ -424,9 +429,12 @@ Write-Host "`nConfiguring App Registration for silent token acquisition by the S
 # The actual app IDs vary across SharePoint Online environments. We resolve them dynamically
 # from the tenant rather than hardcoding, then fall back to the two known canonical IDs.
 Write-Host "  Resolving SharePoint Online Web Client Extensibility service principal(s)..." -ForegroundColor Cyan
-$spWebClientSps = Get-MgServicePrincipal -Filter "displayName eq 'SharePoint Online Web Client Extensibility'" -All -ErrorAction SilentlyContinue
+$spWebClientResp = Invoke-MgGraphRequest -Method GET `
+  -Uri "https://graph.microsoft.com/v1.0/servicePrincipals?`$filter=displayName eq 'SharePoint Online Web Client Extensibility'&`$select=appId" `
+  -OutputType PSObject -ErrorAction SilentlyContinue
+$spWebClientSps = if ($spWebClientResp -and $spWebClientResp.value) { $spWebClientResp.value } else { $null }
 if ($spWebClientSps) {
-  $spWebClientAppIds = @($spWebClientSps | Select-Object -ExpandProperty AppId)
+  $spWebClientAppIds = @($spWebClientSps | Select-Object -ExpandProperty appId)
   Write-Host "  Found $($spWebClientAppIds.Count) SP(s): $($spWebClientAppIds -join ', ')" -ForegroundColor Cyan
 }
 else {
@@ -435,20 +443,25 @@ else {
   Write-Host "  $_wrn Could not resolve SP by display name — falling back to known app IDs: $($spWebClientAppIds -join ', ')" -ForegroundColor Yellow
 }
 
-$app = Get-MgApplication -Filter "appId eq '$FunctionAppClientId'" -ErrorAction Stop
+$appResp = Invoke-MgGraphRequest -Method GET `
+  -Uri "https://graph.microsoft.com/v1.0/applications?`$filter=appId eq '$FunctionAppClientId'" `
+  -OutputType PSObject -ErrorAction Stop
+$app = if ($appResp.value) { $appResp.value[0] } else { $null }
 if (-not $app) {
   throw "Could not find App Registration with client ID '$FunctionAppClientId'. Verify the -FunctionAppClientId parameter."
 }
 
-if ($app.SignInAudience -ne 'AzureADMyOrg') {
-  throw "App Registration '$FunctionAppClientId' is not single-tenant (SignInAudience=$($app.SignInAudience)). Set it to AzureADMyOrg before continuing."
+if ($app.signInAudience -ne 'AzureADMyOrg') {
+  throw "App Registration '$FunctionAppClientId' is not single-tenant (SignInAudience=$($app.signInAudience)). Set it to AzureADMyOrg before continuing."
 }
 
 # Ensure the identifier URI is set — required for the api:// audience used by EasyAuth.
 $expectedUri = "api://guest-sponsor-info-proxy/$FunctionAppClientId"
-if ($app.IdentifierUris -notcontains $expectedUri) {
+if ($app.identifierUris -notcontains $expectedUri) {
   Write-Host "  Setting identifier URI to $expectedUri ..." -ForegroundColor Cyan
-  Update-MgApplication -ApplicationId $app.Id -IdentifierUris @($expectedUri) -ErrorAction Stop
+  Invoke-MgGraphRequest -Method PATCH `
+    -Uri "https://graph.microsoft.com/v1.0/applications/$($app.id)" `
+    -Body @{ identifierUris = @($expectedUri) } -ErrorAction Stop
   Write-Host "  $_chk Identifier URI set." -ForegroundColor Green
 }
 else {
@@ -456,50 +469,57 @@ else {
 }
 
 # Expose a 'user_impersonation' OAuth2 scope if not already present.
-$existingScope = $app.Api.Oauth2PermissionScopes | Where-Object { $_.Value -eq 'user_impersonation' }
+$existingScope = $app.api.oauth2PermissionScopes | Where-Object { $_.value -eq 'user_impersonation' }
 if (-not $existingScope) {
   Write-Host "  Adding 'user_impersonation' scope ..." -ForegroundColor Cyan
   $scopeId = [System.Guid]::NewGuid().ToString()
   $newScope = @{
-    Id                      = $scopeId
-    Value                   = 'user_impersonation'
-    Type                    = 'User'
-    AdminConsentDisplayName = 'Access Guest Sponsor Info web part proxy as the signed-in user'
-    AdminConsentDescription = 'Allows the SharePoint web part to call the Azure Function proxy on behalf of the signed-in user.'
-    UserConsentDisplayName  = 'Access Guest Sponsor Info web part proxy'
-    UserConsentDescription  = 'Allows the app to call the Azure Function proxy on your behalf.'
-    IsEnabled               = $true
+    id                      = $scopeId
+    value                   = 'user_impersonation'
+    type                    = 'User'
+    adminConsentDisplayName = 'Access Guest Sponsor Info web part proxy as the signed-in user'
+    adminConsentDescription = 'Allows the SharePoint web part to call the Azure Function proxy on behalf of the signed-in user.'
+    userConsentDisplayName  = 'Access Guest Sponsor Info web part proxy'
+    userConsentDescription  = 'Allows the app to call the Azure Function proxy on your behalf.'
+    isEnabled               = $true
   }
-  $updatedScopes = @($newScope)
-  Update-MgApplication -ApplicationId $app.Id -Api @{ Oauth2PermissionScopes = $updatedScopes } -ErrorAction Stop
+  Invoke-MgGraphRequest -Method PATCH `
+    -Uri "https://graph.microsoft.com/v1.0/applications/$($app.id)" `
+    -Body @{ api = @{ oauth2PermissionScopes = @($newScope) } } -ErrorAction Stop
   # Re-fetch to get the assigned scope ID (may differ from what we sent).
-  $app = Get-MgApplication -Filter "appId eq '$FunctionAppClientId'" -ErrorAction Stop
-  $existingScope = $app.Api.Oauth2PermissionScopes | Where-Object { $_.Value -eq 'user_impersonation' }
-  Write-Host "  $_chk 'user_impersonation' scope added (id: $($existingScope.Id))." -ForegroundColor Green
+  $app = Invoke-MgGraphRequest -Method GET `
+    -Uri "https://graph.microsoft.com/v1.0/applications/$($app.id)" `
+    -OutputType PSObject -ErrorAction Stop
+  $existingScope = $app.api.oauth2PermissionScopes | Where-Object { $_.value -eq 'user_impersonation' }
+  Write-Host "  $_chk 'user_impersonation' scope added (id: $($existingScope.id))." -ForegroundColor Green
 }
 else {
-  Write-Host "  $_chk 'user_impersonation' scope already exists (id: $($existingScope.Id))." -ForegroundColor Yellow
+  Write-Host "  $_chk 'user_impersonation' scope already exists (id: $($existingScope.id))." -ForegroundColor Yellow
 }
 
 # Pre-authorize the SharePoint Online Web Client Extensibility app(s) to call the scope.
 # This is what makes token acquisition silent — no per-user consent prompt, no page redirect.
 foreach ($spAppId in $spWebClientAppIds) {
-  $alreadyPreAuthorized = $app.Api.PreAuthorizedApplications | Where-Object {
-    $_.AppId -eq $spAppId -and
-    $_.DelegatedPermissionIds -contains $existingScope.Id
+  $alreadyPreAuthorized = $app.api.preAuthorizedApplications | Where-Object {
+    $_.appId -eq $spAppId -and
+    $_.delegatedPermissionIds -contains $existingScope.id
   }
   if (-not $alreadyPreAuthorized) {
     Write-Host "  Pre-authorizing $spAppId ..." -ForegroundColor Cyan
     # Re-fetch the current state before each update to avoid overwriting parallel changes.
-    $app = Get-MgApplication -Filter "appId eq '$FunctionAppClientId'" -ErrorAction Stop
-    $otherPreAuthorized = $app.Api.PreAuthorizedApplications | Where-Object { $_.AppId -ne $spAppId }
+    $app = Invoke-MgGraphRequest -Method GET `
+      -Uri "https://graph.microsoft.com/v1.0/applications/$($app.id)" `
+      -OutputType PSObject -ErrorAction Stop
+    $otherPreAuthorized = $app.api.preAuthorizedApplications | Where-Object { $_.appId -ne $spAppId }
     $newPreAuth = @{
-      AppId                  = $spAppId
-      DelegatedPermissionIds = @($existingScope.Id)
+      appId                  = $spAppId
+      delegatedPermissionIds = @($existingScope.id)
     }
     $updatedPreAuthorized = @($otherPreAuthorized) + @($newPreAuth)
     try {
-      Update-MgApplication -ApplicationId $app.Id -Api @{ PreAuthorizedApplications = $updatedPreAuthorized } -ErrorAction Stop
+      Invoke-MgGraphRequest -Method PATCH `
+        -Uri "https://graph.microsoft.com/v1.0/applications/$($app.id)" `
+        -Body @{ api = @{ preAuthorizedApplications = $updatedPreAuthorized } } -ErrorAction Stop
       Write-Host "  $_chk $spAppId pre-authorized." -ForegroundColor Green
     }
     catch {
@@ -519,21 +539,29 @@ foreach ($spAppId in $spWebClientAppIds) {
 # Ensure appRoleAssignmentRequired is false on the Service Principal (Enterprise App).
 # Normally created on first user sign-in, but since we run this script before any user
 # has consented, we create it explicitly here.
-$sp = Get-MgServicePrincipal -Filter "appId eq '$FunctionAppClientId'" -ErrorAction SilentlyContinue
+$spResp = Invoke-MgGraphRequest -Method GET `
+  -Uri "https://graph.microsoft.com/v1.0/servicePrincipals?`$filter=appId eq '$FunctionAppClientId'&`$select=id,appRoleAssignmentRequired,tags,description,notes" `
+  -OutputType PSObject -ErrorAction SilentlyContinue
+$sp = if ($spResp -and $spResp.value) { $spResp.value[0] } else { $null }
 if (-not $sp) {
   Write-Host "  Service Principal not found — creating it now (no user has signed in yet)..." -ForegroundColor Cyan
-  $sp = New-MgServicePrincipal -AppId $FunctionAppClientId -ErrorAction Stop
-  Write-Host "  $_chk Service Principal created (Object ID: $($sp.Id))." -ForegroundColor Green
+  $sp = Invoke-MgGraphRequest -Method POST `
+    -Uri "https://graph.microsoft.com/v1.0/servicePrincipals" `
+    -Body @{ appId = $FunctionAppClientId } `
+    -OutputType PSObject -ErrorAction Stop
+  Write-Host "  $_chk Service Principal created (Object ID: $($sp.id))." -ForegroundColor Green
 }
 else {
-  Write-Host "  $_chk Service Principal already exists (Object ID: $($sp.Id))." -ForegroundColor Yellow
+  Write-Host "  $_chk Service Principal already exists (Object ID: $($sp.id))." -ForegroundColor Yellow
 }
 
 # appRoleAssignmentRequired=false: all users (including guests) can acquire tokens without
 # individual assignment — even with pre-authorization in place.
-if ($sp.AppRoleAssignmentRequired) {
+if ($sp.appRoleAssignmentRequired) {
   Write-Host "  Disabling appRoleAssignmentRequired on the Enterprise App (was: true) ..." -ForegroundColor Cyan
-  Update-MgServicePrincipal -ServicePrincipalId $sp.Id -AppRoleAssignmentRequired:$false -ErrorAction Stop
+  Invoke-MgGraphRequest -Method PATCH `
+    -Uri "https://graph.microsoft.com/v1.0/servicePrincipals/$($sp.id)" `
+    -Body @{ appRoleAssignmentRequired = $false } -ErrorAction Stop
   Write-Host "  $_chk appRoleAssignmentRequired set to false." -ForegroundColor Green
 }
 else {
@@ -542,11 +570,13 @@ else {
 
 # Hide from My Apps portal (tags: HideApp). This is a backend auth proxy — it should not
 # appear as a launchable app in users' My Apps page.
-$hasHideApp = $sp.Tags -contains 'HideApp'
+$hasHideApp = $sp.tags -contains 'HideApp'
 if (-not $hasHideApp) {
   Write-Host "  Hiding Enterprise App from My Apps portal (visible to users: No) ..." -ForegroundColor Cyan
-  $updatedTags = @($sp.Tags) + @('HideApp')
-  Update-MgServicePrincipal -ServicePrincipalId $sp.Id -Tags $updatedTags -ErrorAction Stop
+  $updatedTags = @($sp.tags) + @('HideApp')
+  Invoke-MgGraphRequest -Method PATCH `
+    -Uri "https://graph.microsoft.com/v1.0/servicePrincipals/$($sp.id)" `
+    -Body @{ tags = $updatedTags } -ErrorAction Stop
   Write-Host "  $_chk Enterprise App hidden from My Apps portal." -ForegroundColor Green
 }
 else {
@@ -577,20 +607,22 @@ $spNotes = @(
   'Source & docs: https://github.com/workoho/spfx-guest-sponsor-info'
 ) -join ' '
 
-if ($sp.Description -ne $spDescription) {
+if ($sp.description -ne $spDescription) {
   Write-Host "  Setting Enterprise App description ..." -ForegroundColor Cyan
-  Update-MgServicePrincipal -ServicePrincipalId $sp.Id `
-    -Description $spDescription -ErrorAction Stop
+  Invoke-MgGraphRequest -Method PATCH `
+    -Uri "https://graph.microsoft.com/v1.0/servicePrincipals/$($sp.id)" `
+    -Body @{ description = $spDescription } -ErrorAction Stop
   Write-Host "  $_chk Description set." -ForegroundColor Green
 }
 else {
   Write-Host "  $_chk Enterprise App description already set." -ForegroundColor Yellow
 }
 
-if ($sp.Notes -ne $spNotes) {
+if ($sp.notes -ne $spNotes) {
   Write-Host "  Setting Enterprise App notes ..." -ForegroundColor Cyan
-  Update-MgServicePrincipal -ServicePrincipalId $sp.Id `
-    -Notes $spNotes -ErrorAction Stop
+  Invoke-MgGraphRequest -Method PATCH `
+    -Uri "https://graph.microsoft.com/v1.0/servicePrincipals/$($sp.id)" `
+    -Body @{ notes = $spNotes } -ErrorAction Stop
   Write-Host "  $_chk Notes set." -ForegroundColor Green
 }
 else {
@@ -617,15 +649,19 @@ else {
 }
 
 # Homepage URL — visible under Enterprise App → Properties.
+# Graph requires homePageUrl to be set on the Application object (web.homePageUrl);
+# the ServicePrincipal mirrors it automatically. Setting it directly on the SP fails
+# with "does not match the application object" (400). Read current value via $app.
 $desiredHomepage = 'https://github.com/workoho/spfx-guest-sponsor-info'
-if ($sp.Homepage -ne $desiredHomepage) {
-  Write-Host "  Setting Enterprise App homepage URL ..." -ForegroundColor Cyan
-  Update-MgServicePrincipal -ServicePrincipalId $sp.Id `
-    -Homepage $desiredHomepage -ErrorAction Stop
+if ($app.web.homePageUrl -ne $desiredHomepage) {
+  Write-Host "  Setting App Registration homepage URL ..." -ForegroundColor Cyan
+  Invoke-MgGraphRequest -Method PATCH `
+    -Uri "https://graph.microsoft.com/v1.0/applications/$($app.id)" `
+    -Body @{ web = @{ homePageUrl = $desiredHomepage } } -ErrorAction Stop
   Write-Host "  $_chk Homepage URL set." -ForegroundColor Green
 }
 else {
-  Write-Host "  $_chk Enterprise App homepage URL already set." -ForegroundColor Yellow
+  Write-Host "  $_chk App Registration homepage URL already set." -ForegroundColor Yellow
 }
 # Build a summary of assigned and skipped roles for the callout box.
 $summaryLines = @('The Managed Identity can now call Microsoft Graph with:')

@@ -274,8 +274,9 @@ function Install-RequiredModule {
 }
 
 # ── Module bootstrap ──────────────────────────────────────────────────────────
+# Only Microsoft.Graph.Authentication is needed — all Graph API calls use
+# Invoke-MgGraphRequest directly (no higher-level SDK module required).
 Install-RequiredModule -Name 'Microsoft.Graph.Authentication'
-Install-RequiredModule -Name 'Microsoft.Graph.Applications'
 
 # ── Interactive parameter prompts ─────────────────────────────────────────────
 # Each prompt shows a title, a short description, and where to find the value,
@@ -339,11 +340,13 @@ $appNotes = @(
 ) -join ' '
 
 # Info URLs shown on the App Registration "Branding & properties" blade.
+# Keys are camelCase to match the Graph REST API JSON property names used in
+# Invoke-MgGraphRequest PATCH bodies.
 $desiredInfo = @{
-  TermsOfServiceUrl   = "$repoUrl/blob/main/docs/terms-of-use.md"
-  PrivacyStatementUrl = "$repoUrl/blob/main/docs/privacy-policy.md"
-  SupportUrl          = "$repoUrl/issues"
-  MarketingUrl        = $repoUrl
+  termsOfServiceUrl   = "$repoUrl/blob/main/docs/terms-of-use.md"
+  privacyStatementUrl = "$repoUrl/blob/main/docs/privacy-policy.md"
+  supportUrl          = "$repoUrl/issues"
+  marketingUrl        = $repoUrl
 }
 
 # Logo file — resolved from the local repo clone when available; otherwise
@@ -362,26 +365,34 @@ $logoRawUrl = "$logoRawUrl/main/sharepoint/images/icon-300.png"
 # ── Find or create ────────────────────────────────────────────────────────────
 Write-Host "Checking for existing App Registration '$DisplayName'..." `
   -ForegroundColor Cyan
-$app = Get-MgApplication -Filter "displayName eq '$DisplayName'" -Top 1
+$_appListResponse = Invoke-MgGraphRequest -Method GET `
+  -Uri "https://graph.microsoft.com/v1.0/applications?`$filter=displayName eq '$DisplayName'&`$top=1" `
+  -ErrorAction Stop
+$app = if ($_appListResponse.value.Count -gt 0) { $_appListResponse.value[0] } else { $null }
 
 if ($app) {
-  $clientId = $app.AppId
-  $objectId = $app.Id
+  $clientId = $app.appId
+  $objectId = $app.id
   Write-Host "App Registration already exists. Client ID: $clientId" `
     -ForegroundColor Yellow
 }
 else {
   Write-Host "Creating App Registration '$DisplayName'..." `
     -ForegroundColor Cyan
-  $app = New-MgApplication -DisplayName $DisplayName `
-    -SignInAudience 'AzureADMyOrg' `
-    -Description $appDescription `
-    -Notes $appNotes `
-    -Info $desiredInfo `
-    -Web @{ HomePageUrl = $repoUrl } `
-    -Api @{ RequestedAccessTokenVersion = $desiredTokenVersion }
-  $clientId = $app.AppId
-  $objectId = $app.Id
+  $app = Invoke-MgGraphRequest -Method POST `
+    -Uri 'https://graph.microsoft.com/v1.0/applications' `
+    -Body @{
+    displayName    = $DisplayName
+    signInAudience = 'AzureADMyOrg'
+    description    = $appDescription
+    notes          = $appNotes
+    info           = $desiredInfo
+    web            = @{ homePageUrl = $repoUrl }
+    api            = @{ requestedAccessTokenVersion = $desiredTokenVersion }
+  } `
+    -ErrorAction Stop
+  $clientId = $app.appId
+  $objectId = $app.id
   Write-Host "  Created — Client ID: $clientId" -ForegroundColor Green
 }
 
@@ -389,67 +400,74 @@ else {
 $changes = @()
 
 # 1. Description
-if ($app.Description -ne $appDescription) {
+if ($app.description -ne $appDescription) {
   Write-Host "  Fixing Description" -ForegroundColor Yellow
-  Update-MgApplication -ApplicationId $objectId `
-    -Description $appDescription
+  Invoke-MgGraphRequest -Method PATCH `
+    -Uri "https://graph.microsoft.com/v1.0/applications/$objectId" `
+    -Body @{ description = $appDescription } -ErrorAction Stop
   $changes += 'Description'
 }
 
 # 2. Notes
-if ($app.Notes -ne $appNotes) {
+if ($app.notes -ne $appNotes) {
   Write-Host "  Fixing Notes" -ForegroundColor Yellow
-  Update-MgApplication -ApplicationId $objectId `
-    -Notes $appNotes
+  Invoke-MgGraphRequest -Method PATCH `
+    -Uri "https://graph.microsoft.com/v1.0/applications/$objectId" `
+    -Body @{ notes = $appNotes } -ErrorAction Stop
   $changes += 'Notes'
 }
 
 # 3. Info URLs (terms, privacy, support, marketing/homepage)
 $infoChanged = $false
-if ($app.Info.TermsOfServiceUrl -ne $desiredInfo.TermsOfServiceUrl) { $infoChanged = $true }
-if ($app.Info.PrivacyStatementUrl -ne $desiredInfo.PrivacyStatementUrl) { $infoChanged = $true }
-if ($app.Info.SupportUrl -ne $desiredInfo.SupportUrl) { $infoChanged = $true }
-if ($app.Info.MarketingUrl -ne $desiredInfo.MarketingUrl) { $infoChanged = $true }
+if ($app.info.termsOfServiceUrl -ne $desiredInfo.termsOfServiceUrl) { $infoChanged = $true }
+if ($app.info.privacyStatementUrl -ne $desiredInfo.privacyStatementUrl) { $infoChanged = $true }
+if ($app.info.supportUrl -ne $desiredInfo.supportUrl) { $infoChanged = $true }
+if ($app.info.marketingUrl -ne $desiredInfo.marketingUrl) { $infoChanged = $true }
 if ($infoChanged) {
   Write-Host "  Fixing Info URLs" -ForegroundColor Yellow
-  Update-MgApplication -ApplicationId $objectId -Info $desiredInfo
+  Invoke-MgGraphRequest -Method PATCH `
+    -Uri "https://graph.microsoft.com/v1.0/applications/$objectId" `
+    -Body @{ info = $desiredInfo } -ErrorAction Stop
   $changes += 'Info'
 }
 
 # 4. Homepage URL (Web section)
-if ($app.Web.HomePageUrl -ne $repoUrl) {
+if ($app.web.homePageUrl -ne $repoUrl) {
   Write-Host "  Fixing HomePageUrl" -ForegroundColor Yellow
-  Update-MgApplication -ApplicationId $objectId `
-    -Web @{ HomePageUrl = $repoUrl }
+  Invoke-MgGraphRequest -Method PATCH `
+    -Uri "https://graph.microsoft.com/v1.0/applications/$objectId" `
+    -Body @{ web = @{ homePageUrl = $repoUrl } } -ErrorAction Stop
   $changes += 'HomePageUrl'
 }
 
 # 5. SignInAudience
-if ($app.SignInAudience -ne 'AzureADMyOrg') {
+if ($app.signInAudience -ne 'AzureADMyOrg') {
   throw ("Existing App Registration '$DisplayName' is not single-tenant " +
-    "(SignInAudience=$($app.SignInAudience)). " +
+    "(SignInAudience=$($app.signInAudience)). " +
     "Configure it to AzureADMyOrg before using this solution.")
 }
 
 # 6. Identifier URI
 $expectedUri = "api://guest-sponsor-info-proxy/$clientId"
 # The null-coalescing operator ?? is PS7+ only; use if/else for PS5.1 compat.
-$currentUris = if ($null -eq $app.IdentifierUris) { @() } else { $app.IdentifierUris }
+$currentUris = if ($null -eq $app.identifierUris) { @() } else { @($app.identifierUris) }
 if ($currentUris -notcontains $expectedUri) {
   Write-Host "  Fixing IdentifierUris: adding $expectedUri" `
     -ForegroundColor Yellow
-  Update-MgApplication -ApplicationId $objectId `
-    -IdentifierUris @($expectedUri)
+  Invoke-MgGraphRequest -Method PATCH `
+    -Uri "https://graph.microsoft.com/v1.0/applications/$objectId" `
+    -Body @{ identifierUris = @($expectedUri) } -ErrorAction Stop
   $changes += 'IdentifierUris'
 }
 
 # 7. Access-token version
-$currentVersion = $app.Api.RequestedAccessTokenVersion
+$currentVersion = $app.api.requestedAccessTokenVersion
 if ($currentVersion -ne $desiredTokenVersion) {
   Write-Host ("  Fixing RequestedAccessTokenVersion: " +
     "$currentVersion -> $desiredTokenVersion") -ForegroundColor Yellow
-  Update-MgApplication -ApplicationId $objectId `
-    -Api @{ RequestedAccessTokenVersion = $desiredTokenVersion }
+  Invoke-MgGraphRequest -Method PATCH `
+    -Uri "https://graph.microsoft.com/v1.0/applications/$objectId" `
+    -Body @{ api = @{ requestedAccessTokenVersion = $desiredTokenVersion } } -ErrorAction Stop
   $changes += 'RequestedAccessTokenVersion'
 }
 
