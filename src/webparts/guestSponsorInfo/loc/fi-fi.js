@@ -141,7 +141,7 @@ define([], function () {
     AdvancedDisplayGroupName: "Lisänäyttöasetukset",
     FunctionGroupName: "Guest Sponsor API",
     FunctionUrlFieldLabel: "Perus-URL",
-    FunctionClientIdFieldLabel: "Sovelluksen (asiakas-) tunnus",
+    EasyAuthClientIdFieldLabel: "Sovelluksen (asiakas-) tunnus",
     PpClientIdHintLabel: "Mistä löydän asiakas-ID:n?",
     PpClientIdHintBody:
       "Kopioi asiakas-ID (sovelluksen tunnus) asennuksen aikana luodusta sovelluksen rekisteröinnistä.",

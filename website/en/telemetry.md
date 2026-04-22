@@ -60,7 +60,7 @@ az deployment group create \
       tenantId=<your-tenant-id> \
       tenantName=<your-tenant-name> \
       functionAppName=<globally-unique-name> \
-      functionClientId=<client-id-from-pre-step> \
+      easyAuthClientId=<client-id-from-pre-step> \
       enableTelemetry=false
 ```
 

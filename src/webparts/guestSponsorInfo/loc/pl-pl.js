@@ -144,7 +144,7 @@ define([], function () {
     AdvancedDisplayGroupName: "Zaawansowane opcje wyświetlania",
     FunctionGroupName: "Guest Sponsor API",
     FunctionUrlFieldLabel: "Podstawowy adres URL",
-    FunctionClientIdFieldLabel: "Identyfikator aplikacji (klienta)",
+    EasyAuthClientIdFieldLabel: "Identyfikator aplikacji (klienta)",
     PpClientIdHintLabel: "Gdzie znajd\u0119 identyfikator klienta?",
     PpClientIdHintBody:
       "Skopiuj identyfikator klienta (identyfikator aplikacji) z rejestracji aplikacji utworzonej podczas konfiguracji.",

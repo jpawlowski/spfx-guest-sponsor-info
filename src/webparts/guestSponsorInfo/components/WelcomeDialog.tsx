@@ -898,7 +898,7 @@ const Step3Connect: React.FC<IStep3ConnectProps> = ({
           </PopoverSurface>
         </Popover>
         <Field
-          label={strings.FunctionClientIdFieldLabel}
+          label={strings.EasyAuthClientIdFieldLabel}
           validationMessage={clientIdError || undefined}
           validationState={clientIdError ? 'error' : 'none'}
         >

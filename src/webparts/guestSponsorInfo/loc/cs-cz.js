@@ -143,7 +143,7 @@ define([], function () {
     AdvancedDisplayGroupName: "Pokročilé možnosti zobrazení",
     FunctionGroupName: "Guest Sponsor API",
     FunctionUrlFieldLabel: "Základní URL",
-    FunctionClientIdFieldLabel: "ID aplikace (klienta)",
+    EasyAuthClientIdFieldLabel: "ID aplikace (klienta)",
     PpClientIdHintLabel: "Kde najdu ID klienta?",
     PpClientIdHintBody: "Zkopírujte ID klienta (ID aplikace) z registrace aplikace vytvořené při nastavení.",
     FunctionEntraLinkLabel: "Najít v Microsoft Entra →",

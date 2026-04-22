@@ -142,7 +142,7 @@ define([], function () {
     AdvancedDisplayGroupName: "詳細な表示オプション",
     FunctionGroupName: "Guest Sponsor API",
     FunctionUrlFieldLabel: "ベース URL",
-    FunctionClientIdFieldLabel: "アプリケーション (クライアント) ID",
+    EasyAuthClientIdFieldLabel: "アプリケーション (クライアント) ID",
     PpClientIdHintLabel: "クライアント ID の確認方法",
     PpClientIdHintBody:
       "セットアップ時に作成したアプリ登録からクライアント ID（アプリケーション ID）をコピーしてください。",
