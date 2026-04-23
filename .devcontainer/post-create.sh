@@ -150,6 +150,13 @@ if ! try_net aka.ms az bicep install >/dev/null; then
     "Run 'az bicep install' once the network is available."
 fi
 
+# Pre-fetch external Bicep extensions used by the infra template so editor
+# diagnostics work immediately in a fresh container.
+if ! try_net mcr.microsoft.com az bicep restore --file azure-function/infra/main.bicep >/dev/null; then
+  warn "Bicep extension restore skipped — network unavailable?" \
+    "Run 'az bicep restore --file azure-function/infra/main.bicep' once the network is available."
+fi
+
 echo ""
 echo "${C_BLD}━━━ Dev Container Ready ━━━${C_RST}"
 echo ""

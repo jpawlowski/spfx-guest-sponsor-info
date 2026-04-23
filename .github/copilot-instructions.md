@@ -22,6 +22,7 @@ Run **only** the linter that matches the files you changed:
 | `azure-function/src/**/*.ts` | `npm run lint:ts:func` |
 | `**/*.md` | `npm run lint:md` |
 | `.github/**/*.yml`, `azure.yaml`, `website/**/*.yml` | `npm run lint:yml` |
+| `azure-function/infra/**/*.bicep` | `npm run lint:bicep` |
 | `scripts/*.sh` | `npm run lint:sh` |
 | `src/**/loc/*.js` | `npm run lint:loc` |
 

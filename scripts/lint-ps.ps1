@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+#!/usr/bin/env -S pwsh -NoLogo -NoProfile
 # Copyright 2026 Workoho GmbH <https://workoho.com>
 # Author: Julian Pawlowski <https://github.com/jpawlowski>
 # Licensed under PolyForm Shield License 1.0.0 <https://polyformproject.org/licenses/shield/1.0.0>
