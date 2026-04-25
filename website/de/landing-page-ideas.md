@@ -4,21 +4,29 @@ lang: de
 title: Landingpage-Ideen
 permalink: /de/landing-page-ideas/
 description: >-
-  Kleine zusätzliche Inspirationen dafür, was auf einer Gast-Landingpage außer
-  dem Web Part noch sinnvoll sein kann — besonders Quick-Links-Bereiche und
-  tenant-fixierte Microsoft-365-Deeplinks.
+  Zusätzliche Ideen für eine SharePoint-Gast-Landingpage in Microsoft Entra
+  B2B — besonders Quick-Links-Bereiche, tenant-fixierte
+  Microsoft-365-Deeplinks und unterstützende Links rund um
+  Sponsor-Sichtbarkeit.
 lead: >-
-  Ein kleines optionales Extra für Administratoren, die auch die Landingpage
-  selbst hilfreicher machen wollen. Diese Ideen ergänzen das Guest Sponsor Info
-  Web Part; sie sind keine Voraussetzung für das Produkt.
+  Ein kleines optionales Extra für Administratoren, die ihre
+  SharePoint-Gast-Landingpage für Microsoft-Entra-B2B-Gäste-Onboarding
+  hilfreicher machen wollen. Diese Ideen ergänzen das Guest Sponsor Info Web
+  Part; sie sind keine Voraussetzung für das Produkt.
 ---
 
 ## Warum Diese Seite Existiert
 
 Diese Seite ist bewusst klein gehalten. Sie soll keinen vollständigen Blueprint
 für eine Landingpage vorgeben, sondern einige bewährte Ideen dafür zeigen, was
-eine gemeinsame Entrance-Seite für Gäste zusätzlich zum Sponsor-Web-Part noch
+eine gemeinsame Landingpage für Gäste zusätzlich zum Sponsor-Web-Part noch
 enthalten kann.
+
+Wichtig ist die Rollenverteilung: **Guest Sponsor Info löst die Sponsor-
+Sichtbarkeit**. Die umgebenden Landingpage-Elemente lösen Orientierung,
+SharePoint-Gastzugriff, Microsoft-365-Einstiegspunkte und Self-Service. Erst
+zusammen wird aus einer generischen Ankunftsseite ein sinnvoller Einstieg für
+B2B-Gäste.
 
 Wenn Sie das SharePoint-**Quick-Links**-Web-Part verwenden, lässt sich vieles
 davon schon ohne eigene Entwicklung umsetzen. Mit aktiviertem Audience
@@ -30,7 +38,8 @@ und `<tenant-domain>`. Ersetzen Sie diese durch Ihre eigenen Werte.
 
 ## Ein Gutes Standardmuster
 
-Für viele Tenants reichen bereits zwei Quick-Links-Web-Parts:
+Für viele Microsoft-Entra-B2B-Tenants reichen bereits zwei
+Quick-Links-Web-Parts für eine praxistaugliche SharePoint-Gast-Landingpage:
 
 - Ein Bereich für **Microsoft 365**-Einstiegspunkte im richtigen Tenant.
 - Ein Bereich für **Mein Gastkonto**-Self-Service-Aktionen.
@@ -41,8 +50,30 @@ Das funktioniert besonders gut, wenn auch die Landingpage selbst Audience
 Targeting verwendet. Mitarbeitende sehen interne Ressourcen, während Gäste nur
 die Links sehen, die ihnen im Ressourcen-Tenant tatsächlich helfen.
 
+Unabhängig von diesen ausgehenden Links kann die Landingpage selbst
+ebenfalls die Hub Site für den Gastbereich sein. Damit gewinnen Sie eine
+gemeinsame Navigationsschicht, Hub-Branding-Optionen und eine klarere
+Identität für den gesamten Bereich, auch wenn noch keine weiteren Sites
+zugeordnet sind.
+
+Das hilft auch bei der Benennung. So kann die zugrunde liegende Site zum
+Beispiel weiterhin einen freundlichen Titel wie `Welcome @ Contoso` tragen,
+während die Hub-Identität und die Hub-Navigation den größeren Bereich als
+`Entrance Area` sichtbar machen.
+
+Wenn später weitere Sites hinzukommen, wird diese Hub Site noch nützlicher.
+Sie können Links zu zugeordneten oder nicht zugeordneten Sites in der Hub-
+Navigation ergänzen und Audience Targeting nutzen, damit Mitarbeitende und
+Gäste nicht dieselben Hub-Links sehen müssen.
+
+So entsteht auf der Seite eine klare Aufgabenverteilung:
+
+- das Sponsor-Web-Part beantwortet **wer hilft mir**
+- die Quick-Links-Bereiche beantworten **wo gehe ich als Nächstes hin**
+- die Konto-Links beantworten **was kann ich selbst lösen**
+
 Der folgende Screenshot zeigt eine mögliche Komposition: eine gemeinsame
-Entrance-Seite mit tenant-fixierten Quick Links weit oben und dem Sponsor-
+Gast-Landingpage mit tenant-fixierten Quick Links weit oben und dem Sponsor-
 Bereich weiter unten auf der Seite.
 
 <img src="{{ '/assets/images/entrance-landingpage-example.jpg' | relative_url }}" alt="Beispiel-Screenshot einer Landingpage.">
@@ -72,6 +103,10 @@ Dieser Bereich gibt Gästen stabile Einstiegspunkte in den Ressourcen-Tenant.
 Wo eine Microsoft-URL `tenantId` unterstützt, sollten Sie sie verwenden. Bei
 SharePoint legt der Tenant-Hostname den Tenant-Kontext bereits selbst fest.
 
+Gerade im Microsoft-Entra-B2B-Gäste-Onboarding ist das wichtiger, als es erst
+einmal klingt. Gäste wissen oft, dass sie eingeladen wurden, aber nicht,
+welcher tenant-spezifische Zielort ihr verlässlicher Startpunkt sein soll.
+
 ### Microsoft Teams
 
 Verwenden Sie einen tenant-fixierten Teams-Einstiegslink, wenn Teams im
@@ -89,9 +124,9 @@ Mitgliedschaft bereits existiert.
 
 ### Microsoft SharePoint
 
-Verlinken Sie auf eine tenant-eigene Übersichtsseite, Hub Site oder
-Site-Navigation, über die Gäste gemeinsame Arbeitsbereiche und Speicherorte
-finden können, ohne zuerst durch Teams navigieren zu müssen.
+Verlinken Sie auf eine tenant-eigene Übersichtsseite, eine andere Hub Site
+oder eine Site-Navigation, über die Gäste gemeinsame Arbeitsbereiche und
+Speicherorte finden können, ohne zuerst durch Teams navigieren zu müssen.
 
 ```text
 https://<tenant-name>.sharepoint.com/teams/overview
@@ -102,21 +137,6 @@ kuratierte Übersichtsseite. Beides ist in Ordnung. Entscheidend ist, dass die
 URL durch den SharePoint-Hostnamen bereits tenant-fixiert ist. Außerdem hilft
 sie dabei, Teams-nahe Speicherorte oder normale Team Sites zu finden, die gar
 nicht "teamified" sind.
-
-Es kann sogar sinnvoll sein, die Landingpage selbst zur **Hub Site** zu machen,
-auch wenn Sie noch gar keine weiteren Sites zuordnen wollen. Sie gewinnen damit
-bereits eine gemeinsame Navigationsschicht, Hub-Branding-Optionen und eine
-klarere Identität für den gesamten Bereich.
-
-Das hilft auch bei der Benennung. So kann die zugrunde liegende Site zum
-Beispiel weiterhin einen freundlichen Titel wie `Welcome @ Contoso` tragen,
-während die Hub-Identität und die Hub-Navigation den größeren Bereich als
-`Entrance Area` sichtbar machen.
-
-Wenn später weitere Sites hinzukommen, wird die Hub Site noch nützlicher. Sie
-können in der Hub-Navigation auf zugeordnete oder nicht zugeordnete Sites
-verlinken und per Audience Targeting steuern, dass Mitarbeitende und Gäste
-nicht dieselben Hub-Links sehen müssen.
 
 ### Viva Engage
 
@@ -151,6 +171,12 @@ Dieser Bereich konzentriert sich auf Self-Service. Er hilft Gästen dabei, ihr
 Konto direkt im richtigen Ressourcen-Tenant zu verwalten, ohne erst selbst den
 Tenant-Wechsel verstehen zu müssen.
 
+Auf einer gut gestalteten SharePoint-Gast-Landingpage ergänzen diese Links den
+Sponsor-Bereich, statt mit ihm zu konkurrieren. Die Sponsor-Beziehung zeigt,
+wer für den Zugriff zuständig ist. Manche Tools nennen dieselbe Rolle
+„Owner“; hier verwenden wir den Microsoft-Begriff Sponsor. Die Self-Service-
+Links helfen bei den Themen, die keinen menschlichen Rückruf brauchen.
+
 ### Gastkonto
 
 Verlinken Sie direkt auf die Kontenansicht des Gasts im richtigen Tenant.
@@ -164,46 +190,54 @@ kontobezogene Hinweise im Ressourcen-Tenant prüfen muss.
 
 ### Sicherheitsinformationen
 
-Dieser Link ist besonders wichtig, wenn der Ressourcen-Tenant MFA-Registrierung
-für Gäste verlangt, wenn kein MFA-Trust besteht oder wenn die Einladung mit
-einer Identität eingelöst wurde, die die nötigen Authentifizierungsmethoden
-noch nicht mitbringt.
+Dieser Link kann hilfreich sein, wenn der Gast Authentifizierungsmethoden im
+Ressourcen-Tenant prüfen oder registrieren muss.
 
 ```text
 https://mysignins.microsoft.com/security-info?tenantId=<tenant-id>
 ```
 
-Wenn der Gast Authentifizierungsmethoden im Ressourcen-Tenant registrieren
-muss, ist das einer der wertvollsten Links auf der gesamten Seite.
+Behandeln Sie dies als praktisches Deeplink-Muster und testen Sie es
+regelmäßig erneut.
 
 ### Nutzungsbedingungen
 
-Akzeptierte Terms of Use gehen in der Portalnavigation leicht unter. Ein
-Direktlink macht sie erneut aufrufbar und nachvollziehbar.
+Wenn Ihr Tenant Terms of Use verwendet, kann ein Direktlink frühere
+Akzeptanzen leichter wieder auffindbar machen.
 
 ```text
 https://myaccount.microsoft.com/termsofuse/myacceptances?tenantId=<tenant-id>
 ```
 
-Das ist hilfreich, wenn Conditional Access im Lauf der Zeit eine oder mehrere
-Nutzungsbedingungen eingeblendet hat und der Gast später noch einmal prüfen
-möchte, was er akzeptiert hat.
+Behandeln Sie dies als praktisches Deeplink-Muster und testen Sie es
+regelmäßig erneut.
 
 ### Gastzugang Löschen
 
-Viele Gäste wissen gar nicht, dass sie eine Organisation auch selbst wieder
-verlassen können. Wenn Sie Datenschutz und sauberes Offboarding unterstützen
-wollen, sollten Sie diese Option sichtbar machen.
+Microsoft dokumentiert das Verlassen einer Organisation über den Bereich
+**Organizations** im My-Account-Portal. Wenn Ihre Landingpage diesen Ausstieg
+direkter anbieten soll, verwenden Sie einen tenant-qualifizierten Leave-
+Deeplink statt nur auf die allgemeine Kontoseite zu verweisen.
 
 ```text
 https://myaccount.microsoft.com/organizations/leave/<tenant-id>?tenant=<tenant-id>
 ```
 
+Das zielt direkter auf denselben Leave-Ablauf. Behandeln Sie dies als
+praktisches Deeplink-Muster und testen Sie es regelmäßig erneut. Falls es in
+Ihrem Tenant irgendwann nicht mehr funktioniert, nutzen Sie als Fallback den
+tenant-fixierten Einstieg in My Account und führen den Gast manuell zu
+**Organizations** -> **Leave**.
+
 Auf der Seite selbst können Sie diesen Link auch etwas expliziter benennen,
 zum Beispiel als **Gastzugang löschen**, **Meinen Gastzugang entfernen** oder
 **Diese Organisation verlassen**.
 
-## Faustregeln Für Deeplinks
+## Faustregeln Für Links Und Deeplinks
+
+Einige Beispiele auf dieser Seite sind echte Deeplinks. Andere sind einfach
+tenant-fixierte URLs, die sich als verlässliche Startpunkte eignen. Dieselbe
+Prüflogik gilt trotzdem für beide Arten von Links.
 
 - Verwenden Sie `tenantId` überall dort, wo der Zieldienst es unterstützt.
 - Nutzen Sie für SharePoint eine tenant-eigene URL statt einer generischen
@@ -228,6 +262,18 @@ Umfeldinhalte sehen.
 - Lassen Sie das Guest Sponsor Info Web Part dort stehen, wo es Mehrwert
   schafft, und nutzen Sie Quick Links darum herum, damit die gesamte Seite wie
   ein bewusst gestalteter Einstieg wirkt.
+
+<div class="doc-cta-box">
+  <div>
+    <p class="doc-cta-title">Die Landingpage als Gesamtsystem denken</p>
+    <p class="doc-cta-sub">Sponsor-Sichtbarkeit, Gast-Self-Service und
+      tenant-fixierte Einstiegspunkte funktionieren zusammen am besten.</p>
+  </div>
+  <div class="doc-cta-actions">
+    <a href="{{ '/de/sponsor-vs-inviter/' | relative_url }}" class="btn btn-outline">Sponsor vs. Einladender</a>
+    <a href="{{ '/de/setup/' | relative_url }}" class="btn btn-teal">Setup-Anleitung</a>
+  </div>
+</div>
 
 ## Passende Microsoft-Dokumentation
 

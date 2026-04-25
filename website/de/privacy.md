@@ -2,11 +2,28 @@
 layout: page
 lang: de
 title: Datenschutz
+meta_title: Datenschutz für Guest Sponsor Info
 permalink: /de/privacy/
 description: >-
-  Datenschutzrichtlinie für Guest Sponsor Info für Microsoft Entra B2B und
-  die Guest Sponsor API für Microsoft Entra B2B — wie Daten verarbeitet
-  werden, welche Berechtigungen verwendet werden und wo Daten gespeichert werden.
+  Datenschutzrichtlinie für das Guest Sponsor Info SharePoint Web Part und die
+  Guest Sponsor API für Microsoft Entra B2B — wie Daten verarbeitet werden,
+  welche Microsoft-Graph-Berechtigungen verwendet werden und wo Daten bleiben.
+lead: >-
+  Verständlicher Überblick darüber, was in Ihrem Tenant bleibt, welche
+  Microsoft-Graph-Berechtigungen genutzt werden und warum keine
+  Laufzeitdaten an Workoho fließen.
+intro_badges:
+  - Daten bleiben im Tenant
+  - Graph nur über Azure Function
+  - Application Insights optional
+intro_actions:
+  - label: Telemetrie ansehen
+    href: /de/telemetry/
+    style: btn-secondary
+  - label: Richtlinie auf GitHub lesen
+    href: https://github.com/workoho/spfx-guest-sponsor-info/blob/main/docs/privacy-policy.md
+    style: btn-primary
+    external: true
 ---
 
 Diese Richtlinie gilt für **Guest Sponsor Info für Microsoft Entra B2B** (das SharePoint
@@ -14,6 +31,10 @@ Web Part) und die **Guest Sponsor API für Microsoft Entra B2B** (die begleitend
 Function). Beide sind mit einer **Privacy-First-Architektur** konzipiert.
 Die gesamte Datenverarbeitung findet innerhalb Ihrer eigenen Microsoft 365
 und Azure Tenant-Grenzen statt.
+
+Wenn Sie speziell nach Azure-Nutzungszuordnung und Opt-out suchen, lesen Sie
+die Seite [Telemetrie](/de/telemetry/). Für die operativen Schritte der
+Bereitstellung lesen Sie die [Setup-Anleitung](/de/setup/).
 
 ## Grundprinzipien
 
@@ -45,3 +66,9 @@ Alle Microsoft Graph-Berechtigungen liegen ausschließlich bei der
 Die vollständige Datenschutzrichtlinie einschließlich Betroffenenrechte,
 GitHub-Release-Prüfungen und Customer Usage Attribution finden Sie in der
 [vollständigen Datenschutzrichtlinie auf GitHub](https://github.com/workoho/spfx-guest-sponsor-info/blob/main/docs/privacy-policy.md).
+
+Für Sicherheitsbewertung und Vertrauensannahmen siehe die
+[Sicherheitsbewertung auf GitHub](https://github.com/workoho/spfx-guest-sponsor-info/blob/main/docs/security-assessment.md).
+
+Für Unterstützungsoptionen rund um Deployment, Anpassung oder Betrieb siehe
+[Support](/de/support/).

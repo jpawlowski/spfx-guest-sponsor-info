@@ -4,17 +4,19 @@ lang: de
 title: Setup-Anleitung
 permalink: /de/setup/
 description: >-
-  Schritt-für-Schritt-Anleitung zum Setup des Guest Sponsor
-  Info Web Parts und der Guest Sponsor API — SharePoint- und Azure-Setup.
+  Schritt-für-Schritt-Anleitung für eine SharePoint-Gast-Landingpage mit
+  Guest Sponsor Info und der Guest Sponsor API — Azure-Setup,
+  SharePoint-Gastzugriff und Sponsor-Sichtbarkeit.
 lead: >-
-  Erstmaliges Setup und Konfigurationsreferenz für
-  SharePoint- und Azure-Administratoren.
+  Umsetzungsleitfaden für SharePoint- und Azure-Administratoren, die ein
+  saubereres Gäste-Onboarding, verlässlichen SharePoint-Gastzugriff und
+  sichtbare Sponsoren auf der Landingpage wollen.
 github_doc: deployment.md
 ---
 
 ## Übersicht
 
-Das Setup von Guest Sponsor Info umfasst drei Phasen:
+Das Setup von Guest Sponsor Info hat drei Phasen:
 
 | Phase | Wo | Mindestrolle |
 |---|---|---|
@@ -33,23 +35,39 @@ Das Setup von Guest Sponsor Info umfasst drei Phasen:
 > oder parallel zum Ausführen des Assistenten, und schließen Sie Phase 3
 > dann direkt im Assistenten ab.
 
-Diese Anleitung geht davon aus, dass Sie eine dedizierte
-**SharePoint-Landingpage** als erstes verlässliches Ziel für Gastbenutzer
-vorbereiten. Wenn Ihr Einladungsprozess oder Ihr Governance-Werkzeug eine
+### Bevor Sie beginnen
+
+Diese Anleitung geht von einer dedizierten **SharePoint-Landingpage** als
+erstem verlässlichen Ziel für Gastbenutzer aus. Wenn Ihr Einladungsprozess
+oder Ihr Governance-Werkzeug eine
 eigene Redirect-URL unterstützt, sollte diese auf diese Seite zeigen statt auf
-ein generisches MyApps-Ziel. MyApps erklärt dem Gast nicht, wer seine
-Sponsoren sind, und ein mandantenbezogener Teams-Deeplink hilft erst dann,
-wenn der Gast bereits mindestens einem Team in Ihrem Mandanten hinzugefügt
-wurde.
+ein generisches My-Apps-Ziel. My Apps ist für App-Start gedacht, nicht für
+Sponsor-Sichtbarkeit, und ein mandantenbezogener Teams-Deeplink hilft erst
+dann, wenn der Gast bereits mindestens einem Team in Ihrem Mandanten
+hinzugefügt wurde.
+
+Außerdem sollten Sie die Begriffe früh sauber trennen: Sponsor und
+Einladender sind in Gäste-Onboarding-Prozessen nicht immer dieselbe Person.
+Manche Tools bezeichnen den Sponsor zusätzlich als „Owner“ der
+Gastbeziehung. Wenn Landingpage, E-Mails oder Admin-Anweisungen diese Rollen
+vermischen, landet der Gast leicht beim falschen Ansprechpartner.
+
+[Vollständige Erklärung zu Sponsor vs. Einladender]({{ '/de/sponsor-vs-inviter/' | relative_url }}).
+
+Für Microsoft-Graph-Berechtigungen und Laufzeit-Datenverarbeitung siehe
+[Datenschutz](/de/privacy/). Für Azure-Nutzungszuordnung und Opt-out siehe
+[Telemetrie](/de/telemetry/). Wenn Sie statt eines Self-Service-Rollouts
+direkte Unterstützung brauchen, siehe [Support](/de/support/).
 
 ## Phase 1 — SharePoint
 
 ### Festlegen, was der Gast zuerst öffnen soll
 
 Bevor Sie etwas installieren, legen Sie fest, welche SharePoint-Seite als
-Entrance-Seite für Gäste dienen soll. Genau diese Seite sollten Sie in
-Onboarding-Mails, Governance-Workflows oder Einladungs-Redirects
-kommunizieren.
+Landingpage für Gäste dienen soll. Genau diese Seite sollte in
+Onboarding-Mails, Governance-Workflows und Einladungs-Redirects auftauchen.
+Sie sollte nach der Annahme der Einladung der erste verlässliche
+SharePoint-Gastzugriffspunkt sein.
 
 - Verwenden Sie eine dedizierte Landingpage und nicht die generische Startseite
   einer Kollaborationssite.
@@ -58,17 +76,19 @@ kommunizieren.
 - Behandeln Sie Teams-Links als nachgelagerten Schritt von dieser Seite aus,
   nicht als einziges erstes Ziel.
 
+### Festlegen, wo die Landingpage liegen soll
+
 Wenn Sie ohnehin eine neue Landingpage aufbauen, sollten Sie außerdem prüfen,
 ob sie mittel- bis langfristig auf der **Root Site** des Mandanten (`/`)
 liegen sollte. Microsoft beschreibt die SharePoint Home Site als zentralen
 organisatorischen Einstiegspunkt, und gerade in jüngeren Tenants ist die Root
-Site häufig noch flexibel genug, um diese Entscheidung früh zu treffen. Wenn
-Sie `/` verwenden, ist die Adresse für Gäste außerdem oft auch ohne zusätzlichen
+Site oft noch flexibel genug, um diese Entscheidung früh zu treffen. Wenn Sie
+`/` verwenden, ist die Adresse für Gäste außerdem oft auch ohne zusätzlichen
 Shortlink-Dienst leicht merkbar.
 
 Das bedeutet nicht, dass Ihr Mitarbeiterportal zwingend auf derselben Seite
 liegen muss. In vielen Organisationen liegen interne Inhalte bereits an
-anderer Stelle, und die gemeinsame Entrance-Seite verlinkt nur dorthin. Mit
+anderer Stelle, und die gemeinsame Landingpage verlinkt nur dorthin. Mit
 SharePoint Audience Targeting können Sie auf derselben Landingpage außerdem
 unterschiedliche Navigation, News und Web-Part-Inhalte für Mitarbeitende und
 Gäste einblenden.
@@ -93,11 +113,13 @@ Siehe auch:
 > **AppSource-Eintrag in Prüfung** — Das Web Part wurde beim Microsoft
 > Commercial Marketplace eingereicht und wartet derzeit auf die Freigabe.
 > Die folgenden Installationsschritte beschreiben den Ablauf, sobald der
-> Eintrag live ist.
+> Eintrag live ist. Wenn Sie vorher bereitstellen müssen, nutzen Sie den
+> [Deployment Guide auf GitHub](https://github.com/workoho/spfx-guest-sponsor-info/blob/main/docs/deployment.md)
+> als Alternative ohne AppSource.
 
-Das Web Part wird im
+Das Web Part ist im
 [**Microsoft Commercial Marketplace (AppSource)**](https://appsource.microsoft.com/)
-verfügbar sein. Die Installation über AppSource stellt das Web Part mandantenweit
+verfügbar. Die Installation über AppSource stellt das Web Part mandantenweit
 über den Tenant App Catalog bereit — kein Datei-Upload und keine manuelle
 Bereitstellung erforderlich.
 
@@ -226,17 +248,17 @@ Falls diese Option ausgegraut ist, erhöhen Sie zuerst den Wert unter
 
 ## Phase 2 — Guest Sponsor API
 
-Die Guest Sponsor API ist eine begleitende Azure Function, die alle Microsoft
-Graph-Aufrufe im Auftrag des Web Parts weiterleitet. Gäste authentifizieren
+Die Guest Sponsor API ist eine begleitende Azure Function, die Microsoft-
+Graph-Aufrufe für das Web Part weiterleitet. Gäste authentifizieren
 sich über
 [EasyAuth](https://learn.microsoft.com/azure/app-service/overview-authentication-authorization),
 und die Function fragt Graph über ihre eigene Managed Identity ab — Gäste
 benötigen keinerlei Verzeichnisberechtigungen in Ihrem Mandanten.
 
-Das Skript `install.ps1` ist der empfohlene Einstiegspunkt. Es lädt das
+Verwenden Sie `install.ps1` als Standard-Einstiegspunkt. Es lädt das
 Infra-Paket herunter, startet den Bereitstellungs-Assistenten, erstellt die
-Entra-App-Registrierung, stellt die gesamte Azure-Infrastruktur bereit und
-weist die erforderlichen Microsoft Graph-Berechtigungen zu — gestützt auf die
+Entra-App-Registrierung, stellt die Azure-Infrastruktur bereit und weist die
+erforderlichen Microsoft Graph-Berechtigungen zu — gestützt auf die
 [Microsoft Graph Bicep-Erweiterung](https://learn.microsoft.com/azure/templates/microsoft.graph/applications).
 
 ### Installer ausführen
@@ -278,7 +300,7 @@ führt durch die Auswahl von Abonnement und Ressourcengruppe, führt eine
 Pre-Provision-Prüfung und die Bicep-Bereitstellung aus und gibt am Ende die
 Web-Part-Konfigurationswerte aus.
 
-### Welche Fragen der Bereitstellungs-Assistent stellt
+### Abfragen des Bereitstellungs-Assistenten
 
 <details markdown="1">
 <summary>Optional: Prompt-für-Prompt-Referenz anzeigen</summary>
@@ -312,7 +334,7 @@ Einige Folgefragen erscheinen nur in bestimmten Fällen:
 
 </details>
 
-### Was der Installer ausführt
+### Ablauf des Installers
 
 <details markdown="1">
 <summary>Optional: Installer-Ablauf anzeigen</summary>
@@ -369,7 +391,7 @@ für die Verfügbarkeit von Flex Consumption.
 
 ### Bereitstellungsausgaben
 
-Am Ende des Laufs gibt der Installer aus:
+Am Ende gibt der Installer aus:
 
 | Wert | Verwendung |
 |---|---|
@@ -382,8 +404,9 @@ Sie können diese Werte auch später abrufen mit `azd env get-values`.
 
 ### Web Part auf der Landingpage einfügen
 
-Wenn Phase 1 und Phase 2 abgeschlossen sind, öffnen Sie die SharePoint-Landingpage
-im Bearbeitungsmodus und fügen Sie das Web Part **Guest Sponsor Info** der Seite hinzu.
+Wenn Phase 1 und Phase 2 abgeschlossen sind, öffnen Sie die
+SharePoint-Landingpage im Bearbeitungsmodus und fügen Sie das Web Part
+**Guest Sponsor Info** der Seite hinzu.
 
 Platzieren Sie es weit oben auf der Seite, noch vor längeren Textblöcken oder
 nachgelagerten Links. Die Landingpage funktioniert am besten, wenn sie zuerst
@@ -393,8 +416,8 @@ wer die Sponsoren des Gasts sind und wie er sie sofort erreichen kann.
 ### Web Part mit der API verbinden
 
 Solange der **Setup-Assistent** noch nicht abgeschlossen wurde, öffnet er sich
-im Bearbeitungsmodus automatisch. Wenn Sie ihn bereits abgeschlossen haben,
-öffnen Sie den **Eigenschaftenbereich** manuell (Zahnrad-Symbol im Bearbeitungsmodus).
+im Bearbeitungsmodus automatisch. Andernfalls öffnen Sie den
+**Eigenschaftenbereich** manuell (Zahnrad-Symbol im Bearbeitungsmodus).
 Wählen Sie dann im Assistenten **Guest Sponsor API** oder tragen Sie die Werte
 direkt in der Eigenschaftsgruppe **Guest Sponsor API** ein:
 

@@ -2,10 +2,12 @@
 layout: doc
 lang: en
 title: Telemetry
+meta_title: Telemetry & Usage Attribution
 permalink: /en/telemetry/
 description: >-
-  What data the Guest Sponsor Info Azure deployment collects,
-  what it does not collect, and how to opt out.
+  Telemetry and Customer Usage Attribution for the Guest Sponsor Info Azure
+  deployment — what Azure usage data is shared, what is not collected, and how
+  to opt out.
 lead: >-
   A plain-language summary of the telemetry built into the Azure
   deployment. No personal data is ever collected or shared.
@@ -31,6 +33,9 @@ This mechanism is called
 and helps Workoho understand how the solution is used and justify continued
 development.
 
+If you are looking for Microsoft Graph permissions, runtime data handling, or
+tenant-boundary details instead, see the [Privacy Policy](/en/privacy/).
+
 ## What is NOT collected
 
 - **No personal data** — no user names, email addresses, or tenant IDs
@@ -39,7 +44,7 @@ development.
   consumption figures with Workoho using existing billing data
 
 For information about personal data processed within your tenant at runtime,
-see the [Privacy Policy](https://github.com/workoho/spfx-guest-sponsor-info/blob/main/docs/privacy-policy.md).
+see the [Privacy Policy](/en/privacy/).
 
 ## What you will see in Azure Portal
 
@@ -62,6 +67,9 @@ Or, when running `deploy-azure.ps1` directly from an extracted infra ZIP:
 ./deploy-azure.ps1 -EnableTelemetry $false
 ```
 
+If you are still deploying the solution, the [Setup Guide](/en/setup/)
+describes where this fits into the overall rollout.
+
 ## Contact
 
 For telemetry and privacy questions about this solution, contact
@@ -69,3 +77,5 @@ For telemetry and privacy questions about this solution, contact
 
 For responsible disclosure of security vulnerabilities, contact
 [security@workoho.com](mailto:security@workoho.com).
+
+For deployment help or managed operations, see [Support](/en/support/).

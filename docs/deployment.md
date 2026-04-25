@@ -16,31 +16,31 @@ For security and telemetry details, see
 ## Table of Contents
 
 - [SharePoint Deployment](#sharepoint-deployment)
-  - [Step 1 - Install the Webpart](#step-1---installation)
+  - [Step 1 - Install the web part](#step-1---install-the-web-part)
   - [Step 2 - Make the web part accessible to guest users](#step-2---make-the-web-part-accessible-to-guest-users)
   - [Step 3 - Verify guest access to the landing page site](#step-3---verify-guest-access-to-the-landing-page-site)
   - [Step 4 - Ensure external sharing is enabled](#step-4---ensure-external-sharing-is-enabled)
 - [Guest Sponsor API](#guest-sponsor-api)
-  - [Standard deployment](#standard-deployment)
-  - [Manual deployment from infra ZIP](#manual-deployment-from-infra-zip)
-  - [Required roles](#required-roles)
-  - [Hosting plan options](#hosting-plan-options)
-  - [Deployment outputs](#deployment-outputs)
-  - [Deploying from a Privileged Access Workstation (PAW)](#deploying-from-a-privileged-access-workstation-paw)
+  - [Step 1 - Confirm prerequisites and required roles](#step-1---confirm-prerequisites-and-required-roles)
+  - [Step 2 - Run the deployment wizard](#step-2---run-the-deployment-wizard)
+  - [Step 2 (Alternative) - Run from a local infra ZIP](#step-2-alternative---run-from-a-local-infra-zip)
+  - [Step 3 (Optional) - Choose hosting plan parameters](#step-3-optional---choose-hosting-plan-parameters)
+  - [Step 4 - Record the deployment outputs](#step-4---record-the-deployment-outputs)
+  - [Advanced scenario - Deploy from a Privileged Access Workstation (PAW)](#advanced-scenario---deploy-from-a-privileged-access-workstation-paw)
 - [Administration and Operations](#administration-and-operations)
 
 ---
 
 ## SharePoint Deployment
 
-### Step 1 - Installation
+### Step 1 - Install the web part
 
 #### Option A - Install from Microsoft AppSource
 
 The web part is available in the
 [**Microsoft commercial marketplace (AppSource)**](https://appsource.microsoft.com/).
-Installing from there deploys it tenant-wide via the Tenant App Catalog — no
-Site Collection App Catalog or file upload required.
+Installing from there places the package in the Tenant App Catalog — no
+manual file upload or Site Collection App Catalog setup required.
 
 **Install via SharePoint Admin Center:**
 
@@ -69,6 +69,12 @@ its Managed Identity.
 [GitHub Releases](https://github.com/workoho/spfx-guest-sponsor-info/releases)
 instead.
 
+Use this option when you want a tenant-wide package source without relying on
+AppSource.
+
+<details>
+<summary>Expand Tenant App Catalog instructions</summary>
+
 > A tenant App Catalog is *not* provisioned automatically on a fresh Microsoft
 > 365 tenant. If it has not been created, open
 > **SharePoint Admin Center → More features → Apps → Open** — this triggers
@@ -96,6 +102,8 @@ instead.
    > (**Site Contents** → hover the app → **Remove**) and add it again via
    > **Add an app**.
 
+</details>
+
 ---
 
 #### Option C — Use a Site Collection App Catalog
@@ -110,6 +118,12 @@ Everyone grant on the App Catalog is needed.
 `.sppkg` from
 [GitHub Releases](https://github.com/workoho/spfx-guest-sponsor-info/releases)
 instead.
+
+Use this option when the landing-page site must stay isolated from the tenant
+App Catalog and you are prepared to manage a site-scoped deployment path.
+
+<details>
+<summary>Expand Site Collection App Catalog instructions</summary>
 
 Enable the Site Collection App Catalog once. There is no GUI option for this
 step — PowerShell is required. The executing account must satisfy **all three**
@@ -211,6 +225,8 @@ Add-PnPSiteCollectionAppCatalog -Site "https://<tenant>.sharepoint.com/sites/<la
    > (**Site Contents** → hover the app → **Remove**) and add it again via
    > **Add an app**.
 
+</details>
+
 ---
 
 ### Step 2 - Make the web part accessible to guest users
@@ -281,6 +297,11 @@ built-in **Everyone** group (`c:0(.s|true`) read access to the Tenant App
 Catalog site. This allows B2B guests who have already accepted their invitation
 to load the bundle directly from the App Catalog.
 
+Use this fallback only when the Public CDN cannot be enabled in your tenant.
+
+<details>
+<summary>Expand Tenant App Catalog permission instructions</summary>
+
 **Required roles:** SharePoint Administrator and Site Collection Administrator
 on the Tenant App Catalog site (typically
 `https://<tenant>.sharepoint.com/sites/appcatalog`).
@@ -308,6 +329,8 @@ Add-PnPGroupMember -LoginName "c:0(.s|true" -Group "App Catalog Visitors"
 > full invitation) cannot load the bundle. The Public CDN (Option A) does not
 > have this limitation.
 
+</details>
+
 ### Step 3 - Verify guest access to the landing page site
 
 If your landing page site is already in use, Visitor access for guests is most
@@ -321,12 +344,12 @@ Guests need at least **Read** (Visitor) permission on the landing page site
 to view it. Rather than a dynamic Entra group — which can take up to 24 hours
 to reflect new members, meaning freshly invited guests may see an access-denied
 page until the next sync — use the built-in **Everyone** group. It covers every
-authenticated user including B2B guests who have accepted their invitation, and
-takes effect immediately.
+authenticated user, and can also cover B2B guests once the tenant is configured
+to grant the **Everyone** claim to external users.
 
-The *Everyone* group is controlled by the `ShowEveryoneClaim` tenant setting,
-which defaults to `$false` on tenants provisioned after March 2018. If
-*Everyone* does not appear in the People Picker, enable it first:
+Do not assume that external users already receive the **Everyone** claim.
+Before relying on this pattern for B2B guests, explicitly set
+`ShowEveryoneClaim` to `$true`:
 
 ```powershell
 # SharePoint Online Management Shell (Windows):
@@ -343,6 +366,9 @@ Set-PnPTenant -ShowEveryoneClaim $true
 [`Set-SPOTenant`](https://learn.microsoft.com/powershell/module/sharepoint-online/set-spotenant) ·
 [`Get-PnPTenant`](https://pnp.github.io/powershell/cmdlets/Get-PnPTenant.html) ·
 [`Set-PnPTenant`](https://pnp.github.io/powershell/cmdlets/Set-PnPTenant.html)*
+
+This setting controls whether external users receive the **Everyone** claim.
+It does not grant site access by itself.
 
 Then add *Everyone* to the site's Visitors group. The easiest path is the GUI:
 **Site Settings → People and Groups → [Site] Visitors → New → Add Users**
@@ -380,21 +406,19 @@ minutes. This contrasts with dynamic Entra groups, where Entra itself must first
 re-evaluate the dynamic membership rule — a process that can take up to 24 hours —
 before SharePoint can reflect the change.
 
-The *Everyone* group remains the **recommended approach**, however, because the
-`c:0(.s|true` claim is evaluated entirely within SharePoint Online's own
-authentication layer: SharePoint simply checks whether the incoming request carries
-a valid, authenticated identity — with no need to query Entra ID for group
-membership at all. A static group still requires SharePoint to resolve the user's
-current Entra group memberships before granting access, which introduces a
-dependency on that resolution path even though it is normally fast.
+Use this alternative only when your guest invitation flow already populates a
+dedicated access group predictably.
 
-> **Tip:** [EasyLife 365 Collaboration](https://easylife365.cloud/products/collaboration/) is purpose-built
-> for automated Microsoft 365 guest lifecycle management and can ensure that a static
-> site-access group is populated for every guest invitation — including guests who
-> would otherwise be invited implicitly through Teams or SharePoint.
-> [Workoho](https://workoho.com/?utm_source=gsiw&utm_medium=docs&utm_campaign=repo&utm_content=deployment),
-> the author of this web part, is a Platinum
-> implementation partner of EasyLife 365.
+<details>
+<summary>Expand static Entra security group guidance</summary>
+
+The *Everyone* group remains the default recommendation because the
+`c:0(.s|true` claim is evaluated directly by SharePoint Online's own
+authentication layer. A static Entra group still requires SharePoint to
+resolve the user's current Entra group memberships before access is granted,
+which adds a dependency on that resolution path even when it is usually fast.
+
+</details>
 
 ### Step 4 - Ensure external sharing is enabled
 
@@ -421,55 +445,16 @@ in the Microsoft documentation.
 > The [Setup diagram](architecture-diagram.md#setup--two-admin-roles-recommended-path)
 > gives a visual overview of all admin roles and deployment steps involved.
 
-### Standard deployment
+This section is ordered by execution sequence. Items marked **Alternative** or
+**Optional** are only needed when your environment or operating model requires them.
 
-The `install.ps1` script is the recommended entry point. It downloads the
-latest infra bundle from GitHub Releases, runs the interactive deployment
-wizard (`deploy-azure.ps1`), and cleans up afterwards. No local repository
-clone is required.
+### Step 1 - Confirm prerequisites and required roles
 
-**Prerequisites:**
+**Required tooling:**
 
 - [PowerShell 7+](https://learn.microsoft.com/powershell/scripting/install/installing-powershell)
-- The required Azure and Entra roles (see [Required roles](#required-roles) below)
 
-Run this command in PowerShell 7+:
-
-```powershell
-& ([scriptblock]::Create((iwr 'https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/main/azure-function/infra/install.ps1').Content))
-```
-
-[Azure Developer CLI (azd)](https://aka.ms/azd) is installed automatically if
-not already present. The wizard walks through selecting a subscription and
-resource group, creates the Entra App Registration, deploys all Azure
-infrastructure, and assigns Microsoft Graph permissions.
-
----
-
-### Manual deployment from infra ZIP
-
-If you prefer to inspect or customise the deployment files before running
-them, download the `guest-sponsor-info-infra.zip` from
-[GitHub Releases](https://github.com/workoho/spfx-guest-sponsor-info/releases),
-extract it to a local directory, and run `deploy-azure.ps1` directly:
-
-```powershell
-# Extract the ZIP (example):
-Expand-Archive -Path guest-sponsor-info-infra.zip -DestinationPath ./infra
-
-# Run the wizard from the extracted directory:
-Set-Location ./infra
-./deploy-azure.ps1
-```
-
-The wizard behaviour is identical to the `install.ps1` path — the ZIP simply
-provides the files locally so you can review them first.
-
----
-
-### Required roles
-
-The deploying account needs:
+**Required roles:**
 
 | Scope | Required role |
 |---|---|
@@ -487,7 +472,62 @@ If your organisation uses
 activate the Entra roles before running the script. The pre-provision hook
 checks your active directory roles and warns if any are missing.
 
-### Hosting plan options
+### Step 2 - Run the deployment wizard
+
+The `install.ps1` script is the recommended entry point. It downloads the
+latest infra bundle from GitHub Releases, runs the interactive deployment
+wizard (`deploy-azure.ps1`), and cleans up afterwards. No local repository
+clone is required.
+
+Run this command in PowerShell 7+:
+
+```powershell
+& ([scriptblock]::Create((iwr 'https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/main/azure-function/infra/install.ps1').Content))
+```
+
+[Azure Developer CLI (azd)](https://aka.ms/azd) is installed automatically if
+not already present. The wizard walks through selecting a subscription and
+resource group, creates the Entra App Registration, deploys all Azure
+infrastructure, and assigns Microsoft Graph permissions.
+
+---
+
+### Step 2 (Alternative) - Run from a local infra ZIP
+
+Use this path instead of Step 2 when you need to inspect or customise the
+deployment files before running them. Download the
+`guest-sponsor-info-infra.zip` from
+[GitHub Releases](https://github.com/workoho/spfx-guest-sponsor-info/releases),
+extract it to a local directory, and run `deploy-azure.ps1` directly:
+
+<details>
+<summary>Expand local infra ZIP instructions</summary>
+
+```powershell
+# Extract the ZIP (example):
+Expand-Archive -Path guest-sponsor-info-infra.zip -DestinationPath ./infra
+
+# Run the wizard from the extracted directory:
+Set-Location ./infra
+./deploy-azure.ps1
+```
+
+The wizard behaviour is identical to the `install.ps1` path — the ZIP simply
+provides the files locally so you can review them first.
+
+</details>
+
+---
+
+### Step 3 (Optional) - Choose hosting plan parameters
+
+If the defaults are acceptable, skip this step. The deployment wizard uses the
+Consumption plan by default.
+
+<details>
+<summary>Expand hosting plan comparison and optional parameters</summary>
+
+**Hosting plan comparison:**
 
 | | **Consumption** (default) | **Flex Consumption** |
 |---|---|---|
@@ -510,7 +550,9 @@ checks your active directory roles and warns if any are missing.
 Check [aka.ms/flex-region](https://aka.ms/flex-region) for Flex Consumption
 regional availability.
 
-### Deployment outputs
+</details>
+
+### Step 4 - Record the deployment outputs
 
 At the end of the run, `deploy-azure.ps1` prints:
 
@@ -527,12 +569,18 @@ azd env get-values
 
 ---
 
-### Deploying from a Privileged Access Workstation (PAW)
+### Advanced scenario - Deploy from a Privileged Access Workstation (PAW)
 
 On PAW environments where **Privileged Role Administrator** cannot be
 activated (required to assign Graph app roles to Managed Identities), the
 standard single-step `deploy-azure.ps1` path can still create the App
 Registration via Bicep — you only need to defer the Graph role assignments.
+
+Use this advanced path only when Graph app-role assignment must happen from a
+separate privileged workstation.
+
+<details>
+<summary>Expand PAW deployment steps</summary>
 
 > **Note:** The App Registration is always created by Bicep. Only the Graph
 > app role assignment step (which requires Privileged Role Administrator) can
@@ -578,10 +626,14 @@ Identity: `User.Read.All`, `Presence.Read.All` (optional),
 **Required Entra roles on the PAW account:**
 `Privileged Role Administrator` (to assign Graph app roles)
 
-> **Tip:** After initial setup, you can delegate **Owner on the Managed
-> Identity** to a regular (non-PAW) account. This allows future role
-> assignment updates to be performed without re-activating the Privileged
-> Role Administrator role.
+> **Do not use enterprise application ownership as a shortcut here.** Future
+> Microsoft Graph app-role changes still require `Privileged Role Administrator`
+> (or a higher Entra role), because the assignment operation itself remains a
+> high-privilege tenant action. In this guide, keep Graph permission changes in
+> the PAW / privileged-admin workflow and prefer PIM-activated roles over
+> permanent ownership grants on the managed identity's service principal.
+
+</details>
 
 ---
 

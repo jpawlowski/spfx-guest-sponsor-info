@@ -19,12 +19,7 @@ not set up yet for the guest.' -%}
 resource tenant.' -%}
 {%- endif -%}
 
-<section class="fp-hero">
-    <div class="container">
-        <h1>{{ page.title }}</h1>
-        <p class="fp-hero-subtitle">{{ f.subtitle }}</p>
-    </div>
-</section>
+{%- include content-intro.html variant="feature" text=f.subtitle -%}
 
 <div class="fp-features">
     <div class="container doc-layout">

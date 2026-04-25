@@ -4,6 +4,7 @@ lang: en
 title: Features
 permalink: /en/features/
 description: >-
-  Explore all features of the Guest Sponsor Info web part —
-  live sponsor cards, Teams presence, onboarding status, and more.
+  Explore Guest Sponsor Info features for Microsoft Entra B2B guest
+  onboarding — live sponsor cards, sponsor visibility on a SharePoint guest
+  landing page, Teams presence, onboarding status, and more.
 ---

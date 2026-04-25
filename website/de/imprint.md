@@ -2,10 +2,11 @@
 layout: page
 lang: de
 title: Impressum
+meta_title: Impressum zu Guest Sponsor Info
 permalink: /de/imprint/
 description: >-
-  Impressum der Workoho GmbH — Angaben gemäß § 5 TMG für das
-  Guest Sponsor Info Projekt.
+  Impressum der Workoho GmbH zum Guest Sponsor Info Projekt — Angaben gemäß
+  § 5 TMG und Kontaktdaten.
 ---
 
 ## Angaben gemäß § 5 TMG

@@ -635,6 +635,28 @@ ul {
 }
 
 /* ============================================================
+   Shared Content Intro
+   ============================================================ */
+.content-intro {
+  position: relative;
+}
+
+.content-intro-highlights {
+  margin-top: 1rem;
+}
+
+.content-intro-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  margin-top: 1.25rem;
+}
+
+.content-intro-actions .btn {
+  min-height: 48px;
+}
+
+/* ============================================================
    Features Page (dedicated /features/ layout)
    ============================================================ */
 .fp-hero {
@@ -873,6 +895,10 @@ ul {
   min-height: 50vh;
 }
 
+.page-content--with-intro {
+  padding-top: 2rem;
+}
+
 .page-content h1 {
   font-size: 2rem;
   font-weight: 800;
@@ -973,6 +999,10 @@ ul {
    ============================================================ */
 .doc-page {
   padding: 3rem 0 4rem;
+}
+
+.doc-page--with-intro {
+  padding-top: 2rem;
 }
 
 .doc-layout {

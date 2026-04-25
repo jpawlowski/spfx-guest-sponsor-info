@@ -54,11 +54,12 @@ data is stored beyond the current browser session or function invocation.
 | Guest user's Entra object ID (OID) | Entra ID token (via MSAL) | Authenticate requests to the Guest Sponsor API for Microsoft Entra B2B | No — present only in the short-lived Bearer token |
 | Sponsor display name, given name, surname | Guest Sponsor API for Microsoft Entra B2B | Render the sponsor name on the card | No — held in browser memory for the page lifetime |
 | Sponsor job title, department | Guest Sponsor API for Microsoft Entra B2B | Display role context on the card | No |
-| Sponsor profile photo | Microsoft Graph CDN | Show a visual identifier on the card; initials fallback when absent | No — decoded in browser memory |
+| Sponsor profile photo | Guest Sponsor API for Microsoft Entra B2B | Show a visual identifier on the card; initials fallback when absent | No — decoded in browser memory |
 | Sponsor email address | Guest Sponsor API for Microsoft Entra B2B | Render mailto link on the card | No |
 | Sponsor phone numbers (business, mobile) | Guest Sponsor API for Microsoft Entra B2B | Render click-to-call links on the card | No |
 | Sponsor office location, city, country, address | Guest Sponsor API for Microsoft Entra B2B | Render address and map hint on the card | No |
 | Sponsor Teams presence (availability, activity) | Guest Sponsor API for Microsoft Entra B2B | Show presence indicator on the card | No — polled periodically, held in browser memory |
+| Short-lived presence token (`X-Presence-Token`) containing caller OID, allowed sponsor or manager IDs, and expiry | Guest Sponsor API for Microsoft Entra B2B | Authorize follow-up presence and manager photo requests without a server-side session | No — held in browser memory only |
 | Sponsor's manager: display name, job title, department, photo | Guest Sponsor API for Microsoft Entra B2B | Render manager context on the card | No |
 | Guest's own Teams provisioning status | Azure Function (via Microsoft Graph) | Enable/disable Teams chat and call buttons | No |
 
@@ -70,12 +71,13 @@ HTTP request:
 | Data | Source | Purpose | Stored? |
 |-|-|-|-|
 | Guest user's Entra OID (from EasyAuth header `X-MS-CLIENT-PRINCIPAL-ID`) | Azure App Service EasyAuth | Identify the caller; look up their sponsors via Graph | No — discarded after the request |
-| Guest user's tenant ID and token audience (from EasyAuth claims) | Azure App Service EasyAuth | Validate that the caller belongs to the correct tenant | No |
+| Guest user's tenant ID, token audience, and calling application ID (`tid`, `aud`, `appid` or `azp`) | Azure App Service EasyAuth | Validate tenant, intended API audience, and expected SharePoint calling app | No |
 | Sponsor profile fields (same set as above) | Microsoft Graph application call | Construct the JSON response | No — not persisted |
 | Sponsor account status (`accountEnabled`, `isResourceAccount`, `assignedPlans`) | Microsoft Graph | Filter out disabled and resource accounts (Teams Room devices, Common Area Phones, etc.) | No |
 | Sponsor mailbox settings (`mailboxSettings.userPurpose`) | Microsoft Graph | Filter out shared, room, and equipment mailboxes (requires `MailboxSettings.Read`) | No |
 | Guest's joined Teams (`joinedTeams`) | Microsoft Graph | Determine Teams provisioning status | No |
 | Guest's own Teams presence | Microsoft Graph | Used as fallback Teams provisioning signal | No |
+| Short-lived presence token (`X-Presence-Token`) from the client request | HTTP request header | Re-authorize presence and photo follow-up calls without server-side session state | No — verified statelessly, not persisted |
 | Redacted IP address (last octet masked for IPv4 / last 64 bits for IPv6) | HTTP request | Anonymous rate-limiting; partial security logging | Application Insights in **your** subscription — not accessible by Workoho |
 | Redacted caller OID (first 8 and last 4 hex chars only) | Derived from EasyAuth OID | Structured logging / audit traces | Application Insights in **your** subscription |
 | Web part version (`X-Client-Version` request header) | HTTP request header | Detect version mismatches; log update-available warnings | Application Insights in **your** subscription |
@@ -83,6 +85,9 @@ HTTP request:
 **Application Insights** receives structured traces, warnings, and error events
 from the Function App. This data is stored in a Log Analytics workspace inside
 **your own Azure subscription**. Workoho has no access to it.
+
+The browser authenticates only to the Guest Sponsor API. It does not call
+Microsoft Graph directly for sponsor lookups, presence, or photos.
 
 ---
 
@@ -184,8 +189,8 @@ The following commitments apply to the Solution as a marketplace offering:
 
 | Service | Used by | Data sent | Link |
 |-|-|-|-|
-| Microsoft Graph API | Web part, Azure Function | See permission tables above | [Privacy Statement](https://privacy.microsoft.com/privacystatement) |
-| Microsoft Graph CDN | Web part browser | Sponsor/manager profile photo requests | [Privacy Statement](https://privacy.microsoft.com/privacystatement) |
+| Microsoft Graph API | Azure Function | Sponsor lookups, presence, mailbox settings, joinedTeams, and photo fetches via Managed Identity | [Privacy Statement](https://privacy.microsoft.com/privacystatement) |
+| Azure Maps (optional) | Web part browser | Address query and Azure Maps subscription key when inline map preview is enabled | [Privacy Statement](https://privacy.microsoft.com/privacystatement) |
 | GitHub Releases API | Azure Function (timer trigger, every 6 h) | `User-Agent` with function version — no browser calls | [Privacy Statement](https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement) |
 | Azure Application Insights | Azure Function | Structured traces (redacted IDs only) | Stored in **your** subscription |
 

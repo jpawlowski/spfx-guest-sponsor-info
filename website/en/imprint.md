@@ -2,10 +2,11 @@
 layout: page
 lang: en
 title: Legal Notice
+meta_title: Legal Notice for Guest Sponsor Info
 permalink: /en/imprint/
 description: >-
-  Legal notice (Impressum) of Workoho GmbH — company information
-  pursuant to § 5 TMG for the Guest Sponsor Info project.
+  Legal notice (Impressum) of Workoho GmbH for the Guest Sponsor Info project —
+  company information pursuant to § 5 TMG and contact details.
 ---
 
 ## Company Information (§ 5 TMG)

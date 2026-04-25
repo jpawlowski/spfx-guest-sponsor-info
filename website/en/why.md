@@ -4,60 +4,81 @@ lang: en
 title: Why This Web Part Exists
 permalink: /en/why/
 description: >-
-  Understand the guest onboarding gap this web part closes — why a guest can
-  exist in Entra before Teams is ready, and how the web part responds.
+  Understand the guest onboarding and sponsor visibility gap this web part
+  closes on a SharePoint guest landing page — why a guest can exist in Entra
+  before Teams is ready, and how the web part responds.
 lead: >-
   When a guest accepts an invitation, they may exist in Entra but still have
-  no built-in way to see who their sponsors are, who the backup sponsors are,
-  or how to reach them. This web part turns a SharePoint entrance page into a
-  trustworthy first destination for guests — and treats Teams availability
-  honestly instead of presenting contact actions that are not ready yet.
+  no built-in way to see their sponsors, backup sponsors, or contact options.
+  This web part turns a SharePoint guest landing page into a trustworthy first
+  destination for guest onboarding, makes sponsor visibility real, and treats
+  Teams availability honestly instead of exposing contact actions that are not
+  ready yet.
 mermaid: true
 ---
 
-## The Gap Nobody Talks About {#the-gap}
+## The Hidden Gap {#the-gap}
 
-A guest clicks "Accept" on your Microsoft 365 invitation. An Entra account is
-created. Technically, they are now inside your tenant.
+A guest clicks "Accept" on your Microsoft 365 invitation. A Microsoft Entra
+guest user object is created in your tenant.
 
-What is *not* guaranteed: that they can actually reach anyone.
+What is *not* guaranteed: a clear next step or support contact.
 
-The sponsor relationship may already exist in Entra. But for the guest, that
-relationship is still invisible. There is no built-in SharePoint experience
-that shows them who their sponsors are, let alone how to contact them.
+The sponsor relationship may already exist in Entra, but it remains invisible
+to the guest. There is no built-in SharePoint experience that shows them who
+their sponsors are, let alone how to contact them.
 
 Whether Teams works for this guest depends on one central fact: has this guest
 already been added to at least one Teams team in your tenant, or not?
 
-And that creates a communication gap: the organisation may already know who is
+That creates a communication gap: the organisation may already know who is
 responsible for the guest, but the guest cannot see any of it.
 
-## Why an Entrance Page Matters {#entrance-page}
+## Why Landing Pages Matter {#entrance-page}
 
 In many governance-driven invitation flows, the redirect after invitation
-redemption is never turned into a deliberate guest journey. If the workflow
-doesn't point the guest somewhere better, they often end up in MyApps — a
-generic destination that does not explain where they are, who is responsible
-for them, or what to do next.
+redemption never becomes a deliberate guest journey. If the workflow doesn't
+point the guest somewhere better, one common landing point is My Apps
+— a portal built for application discovery and launch, not for explaining who
+is responsible for the guest or what to do next.
 
 Technically, a tenant-scoped Teams deep link is not hard to generate. Graph API
 invitation flows can set a custom redirect URL, and governance tools often can
-too. But a Teams link only helps once the guest can actually enter your tenant
-in Teams. If no team membership exists yet, the guest may accept the invitation
-successfully and still not be able to switch into the resource tenant in Teams
-— sometimes not even see it there.
+too. But a Teams link only helps once Teams guest functionality is actually
+available for that account. If no team membership exists yet, the guest may
+accept the invitation successfully while Teams guest functionality is still
+unavailable.
 
-That is why a SharePoint entrance page is such a pragmatic answer. It is a
-stable, controllable first destination that can work before Teams onboarding is
-finished. The weakness is that SharePoint out of the box can show only static
-guidance and generic links. It cannot surface the guest's actual sponsors.
+That is why a SharePoint guest landing page is pragmatic. It is a stable,
+controllable first destination that can work before Teams onboarding is
+finished. Out of the box, SharePoint can only show static guidance and generic
+links. It cannot surface the guest's actual sponsors.
 
-## Two Invitation Paths, Two Very Different Outcomes {#two-paths}
+## Sponsor vs Inviter {#sponsor-vs-inviter}
+
+In many Microsoft Entra B2B guest onboarding flows, the inviter and the sponsor
+are not the same record.
+
+The inviter is whoever triggered the invitation email or workflow. The sponsor
+is the person or group recorded in Microsoft Entra's Sponsors field for that
+guest relationship. In standard Entra invitation flows, the inviter becomes the
+default sponsor unless someone else is specified; SharePoint sharing
+invitations to brand-new external users are a documented exception. Guests
+usually see the inviter first because that name appears in the mail trail. For
+ongoing support, access questions, and onboarding context, the sponsor
+information is usually the more relevant signal.
+
+That difference matters on a SharePoint guest landing page. If the page only
+repeats the inviter name, the sponsor relationship is still invisible.
+
+[Read the full sponsor vs inviter explanation]({{ '/en/sponsor-vs-inviter/' | relative_url }}).
+
+## Two Paths, Two Outcomes {#two-paths}
 
 ### Directly added to a Teams team
 
-An employee adds an external contact directly to a team. Microsoft sends the
-invitation behind the scenes. Once the guest accepts and that first team
+An employee adds an external contact directly to a team, and Microsoft sends
+the invitation behind the scenes. Once the guest accepts and that first team
 membership is in place, Teams guest functionality becomes available in your
 tenant.
 
@@ -65,9 +86,9 @@ tenant.
 
 ### Via a governance process or the Entra Admin Center
 
-A lifecycle governance platform, a script, or an Entra admin workflow creates the
-guest account formally. The account exists in Entra — but no Teams team has been
-assigned yet.
+A lifecycle governance platform, a script, or an Entra admin workflow creates
+the guest account formally. The account exists in Entra, but no Teams team has
+been assigned yet.
 
 **The guest exists in Entra. Teams guest functionality is not there yet.**
 
@@ -78,16 +99,15 @@ flowchart TD
     A --> C["Via governance process\nor Entra Admin Center"]
     B --> D(["Team membership exists\nTeams guest functions available ✓"])
     C --> E(["Entra account only\nNo Teams guest state yet"])
-    E --> F(["Without this web part:\nbuttons look ready but fail silently ✗"])
+    E --> F(["Without this web part:\ncontact actions may look ready,\nbut not work yet ✗"])
 ```
 
-This state is invisible to the guest — and entirely invisible without something
-that explicitly surfaces it.
+This state is invisible to the guest unless something surfaces it explicitly.
 
 ## What the Guest Sees {#what-the-guest-sees}
 
-Without Guest Sponsor Info on the page, a SharePoint landing page usually
-doesn't answer the questions the guest actually has:
+Without Guest Sponsor Info, a SharePoint landing page usually doesn't answer
+the guest's actual questions:
 
 | Question | Without this web part |
 |---|---|
@@ -96,24 +116,23 @@ doesn't answer the questions the guest actually has:
 | How do I reach them? | Not visible to the guest |
 | Is there manager context that helps me orient myself? | Not visible to the guest |
 | Is Teams already ready for contact? | Not visible to the guest |
-| If a custom contact action exists | It may look ready and still fail silently |
+| If a custom contact action exists | It may look ready even though Teams guest functionality is not ready yet |
 
-> There is no error. There is no explanation. The guest has no way to know
-> whether the button is broken, whether they did something wrong, or whether
-> this feature simply isn't ready for them yet.
+> There is no built-in explanation telling the guest whether the action is
+> unavailable, misconfigured, or simply not ready for their account yet.
 
-With Guest Sponsor Info on the page, that abstract relationship becomes a real,
-visible contact surface for the guest:
+With Guest Sponsor Info, that abstract relationship becomes a real, visible
+contact surface for the guest:
 
 ![Sponsor detail view screenshot]({{ '/assets/images/my-sponsors-card-example.jpg' | relative_url }})
 
-## What This Web Part Does {#what-this-web-part-does}
+## What the Web Part Does {#what-this-web-part-does}
 
-**Guest Sponsor Info** is placed on the SharePoint landing page guests arrive at
-after accepting an invitation. It does three things:
+**Guest Sponsor Info** sits on the SharePoint landing page guests reach after
+accepting an invitation. It does three things:
 
-1. **Shows sponsors** — the internal employees assigned in Microsoft Entra as
-  responsible for the guest's access. That relationship already exists in Entra,
+1. **Shows sponsors** — the internal sponsor contacts assigned in Microsoft
+  Entra for the guest relationship. That relationship already exists in Entra,
   but the guest could not previously see it for themselves. The web part turns
   it into names, faces, titles, and actual contact options on the landing page.
   No per-guest configuration. No manual updates when sponsors change.
@@ -123,16 +142,15 @@ after accepting an invitation. It does three things:
    replacement sponsors and selected manager information that makes the contact
    structure easier to understand.
 
-3. **Detects Teams readiness** — if Teams presence has not been established yet,
-   the web part detects this and responds: chat and call buttons are disabled, and
-   a clear status message explains the situation. The guest sees a face, a name,
-   and an honest status — not a broken button.
+3. **Detects Teams readiness** — if Teams guest access is not ready yet,
+   the web part detects this and responds: chat and call buttons are disabled,
+   and a clear status message explains the situation. The guest sees a face, a
+   name, and an honest status — not an action that looks ready but is not.
 
-A guest whose Teams access is still being provisioned can reach their sponsor by
-email and knows that Teams is on its way. And even after Teams is working, the
-web part still adds value: Teams itself does not tell the guest who their
-sponsors are. The guest would have to know those names already and search for
-them manually.
+A guest whose Teams access is still being provisioned can reach their sponsor
+by email and knows that Teams is on its way. Even after Teams is working, the
+web part still adds value: Teams guest access does not surface Entra sponsor
+metadata on its own.
 
 <div class="doc-cta-box">
   <div>

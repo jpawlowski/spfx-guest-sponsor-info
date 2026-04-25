@@ -2,10 +2,11 @@
 layout: page
 lang: en
 title: Terms of Use
+meta_title: Terms of Use for Guest Sponsor Info
 permalink: /en/terms/
 description: >-
-  Terms of use for the Guest Sponsor Info web part — licensing,
-  warranty, and responsibilities.
+  Terms of use for Guest Sponsor Info for Microsoft Entra B2B — licensing,
+  warranty, redistribution limits, and deployment responsibilities.
 ---
 
 Guest Sponsor Info is licensed under the

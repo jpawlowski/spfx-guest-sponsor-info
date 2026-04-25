@@ -2,17 +2,37 @@
 layout: page
 lang: en
 title: Privacy Policy
+meta_title: Privacy Policy for Guest Sponsor Info
 permalink: /en/privacy/
 description: >-
-  Privacy policy for Guest Sponsor Info for Microsoft Entra B2B and the
-  Guest Sponsor API for Microsoft Entra B2B — how data is handled, what
-  permissions are used, and where data is stored.
+  Privacy policy for the Guest Sponsor Info SharePoint web part and Guest
+  Sponsor API for Microsoft Entra B2B — how data is handled, which Microsoft
+  Graph permissions are used, and where data stays.
+lead: >-
+  Plain-language overview of what stays inside your tenant, which Microsoft
+  Graph permissions are used, and why no runtime data is sent to Workoho.
+intro_badges:
+  - Data stays in your tenant
+  - Graph via Azure Function
+  - Application Insights optional
+intro_actions:
+  - label: See telemetry details
+    href: /en/telemetry/
+    style: btn-secondary
+  - label: Read full policy on GitHub
+    href: https://github.com/workoho/spfx-guest-sponsor-info/blob/main/docs/privacy-policy.md
+    style: btn-primary
+    external: true
 ---
 
 This policy covers both **Guest Sponsor Info for Microsoft Entra B2B** (the SharePoint web
 part) and the **Guest Sponsor API for Microsoft Entra B2B** (the companion Azure Function).
 Together they are designed with a **privacy-first architecture**. All data
 processing happens within your own Microsoft 365 and Azure tenant boundaries.
+
+If you are looking specifically for Azure deployment attribution and opt-out,
+see the [Telemetry page](/en/telemetry/). For the operational rollout steps,
+see the [Setup Guide](/en/setup/).
 
 ## Key Principles
 
@@ -43,3 +63,9 @@ All Microsoft Graph permissions are held exclusively by the
 For the complete privacy policy including data subject rights, GitHub release
 checks, and Customer Usage Attribution details, see the
 [full privacy policy on GitHub](https://github.com/workoho/spfx-guest-sponsor-info/blob/main/docs/privacy-policy.md).
+
+For security posture and trust assumptions, see the
+[security assessment on GitHub](https://github.com/workoho/spfx-guest-sponsor-info/blob/main/docs/security-assessment.md).
+
+For support options around deployment, customization, or operations, see
+[Support](/en/support/).

@@ -2,10 +2,12 @@
 layout: doc
 lang: de
 title: Telemetrie
+meta_title: Telemetrie & Nutzungszuordnung
 permalink: /de/telemetry/
 description: >-
-  Welche Daten die Azure-Bereitstellung von Guest Sponsor Info erfasst,
-  was nicht erfasst wird und wie Sie die Erfassung deaktivieren.
+  Telemetrie und Customer Usage Attribution für die Azure-Bereitstellung von
+  Guest Sponsor Info — welche Azure-Nutzungsdaten weitergegeben werden, was
+  nicht erfasst wird und wie Sie die Erfassung deaktivieren.
 lead: >-
   Eine verständliche Zusammenfassung der Telemetrie in der
   Azure-Bereitstellung. Es werden keine personenbezogenen Daten
@@ -34,6 +36,10 @@ Dieser Mechanismus heißt
 und hilft Workoho zu verstehen, wie die Lösung genutzt wird, um die
 Weiterentwicklung zu rechtfertigen.
 
+Wenn Sie stattdessen nach Microsoft-Graph-Berechtigungen,
+Laufzeit-Datenverarbeitung oder Tenant-Grenzen suchen, lesen Sie den
+[Datenschutz](/de/privacy/).
+
 ## Was NICHT erfasst wird
 
 - **Keine personenbezogenen Daten** — keine Benutzernamen, E-Mail-Adressen
@@ -45,7 +51,7 @@ Weiterentwicklung zu rechtfertigen.
 
 Informationen über personenbezogene Daten, die zur Laufzeit in Ihrem Tenant
 verarbeitet werden, finden Sie in der
-[Datenschutzrichtlinie](https://github.com/workoho/spfx-guest-sponsor-info/blob/main/docs/privacy-policy.md).
+[Datenschutzrichtlinie](/de/privacy/).
 
 ## Was Sie im Azure-Portal sehen
 
@@ -69,6 +75,10 @@ Oder direkt über `deploy-azure.ps1` aus einem entpackten Infra-ZIP:
 ./deploy-azure.ps1 -EnableTelemetry $false
 ```
 
+Wenn Sie die Lösung gerade erst bereitstellen, beschreibt die
+[Setup-Anleitung](/de/setup/), an welcher Stelle dies in den Gesamt-Rollout
+gehört.
+
 ## Kontakt
 
 Für Fragen zu Telemetrie und Datenschutz dieser Lösung wenden Sie sich an
@@ -76,3 +86,5 @@ Für Fragen zu Telemetrie und Datenschutz dieser Lösung wenden Sie sich an
 
 Für die verantwortungsvolle Offenlegung von Sicherheitslücken wenden
 Sie sich an [security@workoho.com](mailto:security@workoho.com).
+
+Für Hilfe bei Bereitstellung oder laufendem Betrieb siehe [Support](/de/support/).

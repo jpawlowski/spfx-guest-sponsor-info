@@ -2,10 +2,29 @@
 layout: page
 lang: de
 title: Support
+meta_title: Support & Services für Guest Sponsor Info
 permalink: /de/support/
 description: >-
-  Unterstützungsoptionen für Guest Sponsor Info — Community-GitHub-Issues
-  nach Best Effort sowie professionelle Einrichtungs- und Betriebsservices.
+  Unterstützungsoptionen für Guest Sponsor Info für Microsoft Entra B2B —
+  GitHub-Issues nach Best Effort sowie professionelle Einrichtungs-,
+  Deployment- und Betriebsservices für Web Part und Azure Function.
+lead: >-
+  Schnelle Orientierung dazu, was der Community-Support abdeckt, wann
+  GitHub-Issues der richtige Weg sind und wann direkte professionelle
+  Unterstützung sinnvoller ist.
+intro_badges:
+  - GitHub-Issues nach Best Effort
+  - Professionelle Rollout-Hilfe
+  - Kein SLA in der freien Distribution
+intro_actions:
+  - label: GitHub-Issue eröffnen
+    href: https://github.com/workoho/spfx-guest-sponsor-info/issues/new
+    style: btn-secondary
+    external: true
+  - label: Jetzt Kontakt aufnehmen
+    href: https://workoho.com/kontakt/
+    style: btn-primary
+    external: true
 ---
 
 ## Kostenfrei nutzbar — kein kostenfreier Support
@@ -28,6 +47,9 @@ Vor dem Eröffnen eines Issues empfehlen wir:
 
 - [Setup-Anleitung](/de/setup/)
   für häufige Konfigurationsschritte zu prüfen
+- [Datenschutz](/de/privacy/)
+  und [Telemetrie](/de/telemetry/) zu prüfen, wenn es um Microsoft-Graph-
+  Berechtigungen, Datenverarbeitung oder Azure-Nutzungszuordnung geht
 - [Bestehende Issues](https://github.com/workoho/spfx-guest-sponsor-info/issues)
   nach bekannten Problemen und Workarounds zu durchsuchen
 
@@ -42,6 +64,11 @@ bestätigen können:
 
 Für zuverlässigen, priorisierten Support und direkte Unterstützung bietet
 Workoho professionelle Dienstleistungen an:
+
+Wenn Sie die Lösung intern noch bewerten, hilft es oft, zuerst
+[Setup-Anleitung](/de/setup/), [Datenschutz](/de/privacy/) und
+[Telemetrie](/de/telemetry/) zu lesen, damit technische,
+Compliance- und Betriebsfragen sauber getrennt sind.
 
 - **Deployment & Einrichtung** — geführte End-to-End-Installation in Ihrem
   Microsoft 365 und Azure Tenant

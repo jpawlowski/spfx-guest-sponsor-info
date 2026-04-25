@@ -222,6 +222,28 @@ the **Guest Sponsor API Base URL** and the **Guest Sponsor API Client ID
 
 Edit a modern page → add the *Guest Sponsor Info* web part.
 
+## Security At A Glance
+
+- Microsoft Graph application permissions stay server-side on the Azure
+  Function's Managed Identity. The web part itself has no Graph permissions.
+- Azure App Service EasyAuth blocks unauthenticated requests before function
+  code runs. In production, the function also validates tenant, audience, and
+  the expected SharePoint client application.
+- Follow-up presence and photo requests are limited to sponsor or manager IDs
+  authorized for the current caller.
+- The client bundle contains no secrets. Treat optional client-side
+  configuration such as the Azure Maps subscription key as visible to page
+  viewers.
+- The main residual risk is the Azure Function's server-side Graph permission
+  scope plus any admin configuration drift around EasyAuth, SharePoint access,
+  CORS, and Azure RBAC.
+
+> Full posture, residual risk, and hardening guidance:
+> **[docs/security-assessment.md](docs/security-assessment.md)**
+>
+> Data handling and privacy scope:
+> **[docs/privacy-policy.md](docs/privacy-policy.md)**
+
 ## Development
 
 ```bash
@@ -252,6 +274,7 @@ az login                       # authenticate for Graph API access
 | [docs/architecture-diagram.md](docs/architecture-diagram.md) | Everyone | Visual Mermaid diagram of the full system architecture |
 | [docs/features.md](docs/features.md) | Everyone | Detailed feature descriptions and the problems they solve |
 | [docs/deployment.md](docs/deployment.md) | Admins / Ops | Full deployment, guest access, Guest Sponsor API, security |
+| [docs/security-assessment.md](docs/security-assessment.md) | Admins / Ops | Security posture, residual risk, and hardening guidance |
 | [docs/development.md](docs/development.md) | Developers | Local setup, build, test, release, code conventions |
 | [docs/architecture.md](docs/architecture.md) | Developers | Design decisions, data paths, known limitations |
 

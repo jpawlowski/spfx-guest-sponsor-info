@@ -4,17 +4,19 @@ lang: en
 title: Setup Guide
 permalink: /en/setup/
 description: >-
-  Step-by-step setup guide for the Guest Sponsor Info web part
-  and Guest Sponsor API — SharePoint and Azure setup.
+  Step-by-step setup guide for a SharePoint guest landing page with Guest
+  Sponsor Info and the Guest Sponsor API — Azure setup, SharePoint guest
+  access, and sponsor visibility.
 lead: >-
-  Initial setup and configuration reference for
-  SharePoint and Azure administrators.
+  Implementation guide for SharePoint and Azure administrators who want
+  cleaner guest onboarding, reliable SharePoint guest access, and visible
+  sponsors on the landing page.
 github_doc: deployment.md
 ---
 
 ## Overview
 
-Setting up Guest Sponsor Info involves three phases:
+Guest Sponsor Info setup has three phases:
 
 | Phase | Where | Minimum role required |
 |---|---|---|
@@ -32,20 +34,37 @@ Setting up Guest Sponsor Info involves three phases:
 > through Phases 1 and 2 before (or alongside) running the wizard, then
 > complete Phase 3 inside it.
 
-This guide assumes that you are preparing a dedicated **SharePoint landing
-page** as the first reliable destination for guest users. If your invitation
+### Before you begin
+
+This guide assumes a dedicated **SharePoint landing page** as the first
+reliable destination for guest users. If your invitation
 process or governance tooling supports a custom redirect URL, point it to that
-page instead of a generic MyApps destination. MyApps does not explain who the
-guest's sponsors are, and a tenant-scoped Teams deep link only helps after the
-guest has already been added to at least one team in your tenant.
+page instead of a generic My Apps destination. My Apps is designed for app
+launch, not for sponsor visibility, and a tenant-scoped Teams deep link only
+helps after the guest has already been added to at least one team in your
+tenant.
+
+It also helps to align your wording early: the inviter and the sponsor are not
+always the same person in guest onboarding workflows. Some tools also label the
+sponsor as the "owner" of the guest relationship. If your landing page,
+emails, or admin instructions mix those roles, guests may still contact the
+wrong person.
+
+[Read the sponsor vs inviter explanation]({{ '/en/sponsor-vs-inviter/' | relative_url }}).
+
+For Microsoft Graph permissions and runtime data handling, see the
+[Privacy Policy](/en/privacy/). For Azure deployment attribution and opt-out,
+see [Telemetry](/en/telemetry/). If you need hands-on help instead of a
+self-service rollout, see [Support](/en/support/).
 
 ## Phase 1 — SharePoint
 
 ### Decide what the guest should open first
 
-Before you install anything, decide which SharePoint page should act as the
-guest entrance page. This should be the page you communicate in onboarding
-emails, governance workflows, or invitation redirects.
+Before you install anything, choose the SharePoint page that should serve as
+the guest landing page. This is the page you should reference in onboarding
+emails, governance workflows, and invitation redirects. It should become the
+first reliable SharePoint destination after invitation redemption.
 
 - Use a dedicated landing page, not a generic collaboration site home page.
 - Put the web part high on the page so sponsor, backup sponsor, and contact
@@ -53,16 +72,18 @@ emails, governance workflows, or invitation redirects.
 - Treat Teams links as a follow-up step from that page, not as the only first
   destination.
 
+### Decide where the landing page should live
+
 If you are creating a new landing page anyway, also consider whether it should
 eventually live at the tenant's **root site** (`/`). Microsoft describes the
-SharePoint home site as a major organizational entry point, and for newer
+SharePoint home site as a major organizational entry point, and in newer
 tenants the root site is often still flexible enough to make that decision
-early. If you use `/`, the address is also much easier for guests to remember
+early. If you use `/`, the address is also easier for guests to remember
 without an extra shortlink service.
 
 That does not mean your employee portal has to live on the same page. In many
 organizations, internal employee content already lives elsewhere, and the
-shared entry page simply links to it. SharePoint audience targeting can also
+shared landing page simply links to it. SharePoint audience targeting can also
 help you show different navigation, news, and web-part content to employees
 and guests on the same landing page.
 
@@ -84,9 +105,12 @@ See also:
 
 > **AppSource listing pending review** — The web part has been submitted to the
 > Microsoft commercial marketplace and is currently awaiting approval. The
-> installation steps below describe the process once the listing is live.
+> installation steps below describe the process once the listing is live. If
+> you need to deploy before approval, use the
+> [deployment guide on GitHub](https://github.com/workoho/spfx-guest-sponsor-info/blob/main/docs/deployment.md)
+> for the non-AppSource path.
 
-The web part will be available in the
+The web part is available in the
 [**Microsoft commercial marketplace (AppSource)**](https://appsource.microsoft.com/).
 Installing from there deploys it tenant-wide via the Tenant App Catalog — no
 file upload or manual deployment required.
@@ -212,16 +236,16 @@ site.
 
 ## Phase 2 — Guest Sponsor API
 
-The Guest Sponsor API is a companion Azure Function that proxies all Microsoft
-Graph calls on behalf of the web part. Guests authenticate against it using
+The Guest Sponsor API is a companion Azure Function that proxies Microsoft
+Graph calls for the web part. Guests authenticate against it using
 [EasyAuth](https://learn.microsoft.com/azure/app-service/overview-authentication-authorization),
 and the function queries Graph using its own Managed Identity — guests never
 need directory-level permissions in your tenant.
 
-The `install.ps1` script is the recommended entry point. It downloads the
-infra package, runs the deployment wizard, creates the Entra App Registration,
-deploys all Azure infrastructure, and assigns the required Microsoft Graph
-permissions — powered by the
+Use `install.ps1` as the default entry point. It downloads the infra package,
+runs the deployment wizard, creates the Entra App Registration, deploys the
+Azure infrastructure, and assigns the required Microsoft Graph permissions —
+powered by the
 [Microsoft Graph Bicep extension](https://learn.microsoft.com/azure/templates/microsoft.graph/applications).
 
 ### Run the installer
@@ -262,7 +286,7 @@ walks through selecting a subscription and resource group, runs a
 pre-provision check, executes the Bicep deployment, and prints the web part
 configuration values at the end.
 
-### Questions the deployment wizard asks
+### Deployment wizard prompts
 
 <details markdown="1">
 <summary>Optional: show the prompt-by-prompt reference</summary>
@@ -296,7 +320,7 @@ Some follow-up questions only appear in specific cases:
 
 </details>
 
-### What the installer does
+### Installer workflow
 
 <details markdown="1">
 <summary>Optional: show the installer workflow</summary>
@@ -352,7 +376,7 @@ for Flex Consumption availability.
 
 ### Deployment outputs
 
-At the end of the run, the installer prints:
+At the end, the installer prints:
 
 | Value | Used for |
 |---|---|
@@ -365,8 +389,8 @@ You can also retrieve them later with `azd env get-values`.
 
 ### Add the web part to the landing page
 
-With Phases 1 and 2 complete, open the SharePoint landing page in edit mode
-and add the **Guest Sponsor Info** web part to the page.
+After Phases 1 and 2, open the SharePoint landing page in edit mode and add
+the **Guest Sponsor Info** web part to the page.
 
 Place it near the top of the page, where guests see it before long text blocks
 or downstream links. The landing page works best when it first answers the two
@@ -376,9 +400,9 @@ sponsors are, and how they can reach them right now.
 ### Connect the web part to the API
 
 If the **Setup Wizard** is still pending, it opens automatically in edit mode.
-If you have already completed it, open the **property pane** manually (gear
-icon in edit mode). Then select **Guest Sponsor API** in the wizard or enter
-the values directly in the **Guest Sponsor API** property group:
+Otherwise, open the **property pane** manually (gear icon in edit mode). Then
+select **Guest Sponsor API** in the wizard or enter the values directly in the
+**Guest Sponsor API** property group:
 
 - **Guest Sponsor API Base URL** — the Base URL printed at the end of
   the `install.ps1` run (or from `azd env get-values`),

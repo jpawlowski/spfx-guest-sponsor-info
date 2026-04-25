@@ -2,10 +2,12 @@
 layout: page
 lang: de
 title: Nutzungsbedingungen
+meta_title: Nutzungsbedingungen für Guest Sponsor Info
 permalink: /de/terms/
 description: >-
-  Nutzungsbedingungen für das Guest Sponsor Info Web Part —
-  Lizenzierung, Gewährleistung und Verantwortlichkeiten.
+  Nutzungsbedingungen für Guest Sponsor Info für Microsoft Entra B2B —
+  Lizenzierung, Gewährleistung, Weitergabebeschränkungen und
+  Bereitstellungsverantwortung.
 ---
 
 Guest Sponsor Info ist unter der

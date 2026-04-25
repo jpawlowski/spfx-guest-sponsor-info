@@ -4,19 +4,27 @@ lang: en
 title: Landing Page Ideas
 permalink: /en/landing-page-ideas/
 description: >-
-  Optional inspiration for what else to place on a guest landing page —
-  especially Quick Links areas and tenant-pinned Microsoft 365 deep links.
+  Optional ideas for a SharePoint guest landing page in Microsoft Entra B2B —
+  especially Quick Links areas, tenant-pinned Microsoft 365 deep links, and
+  supporting links around sponsor visibility.
 lead: >-
-  A small optional add-on for admins who want the landing page itself to be
-  more helpful. These ideas sit around the Guest Sponsor Info web part;
-  they are not required for the product to work.
+  A small optional add-on for admins who want their SharePoint guest landing
+  page to do more for Microsoft Entra B2B guest onboarding. These ideas sit
+  around the Guest Sponsor Info web part; they are not required for the
+  product to work.
 ---
 
 ## Why This Page Exists
 
 This page is intentionally small. The goal is not to prescribe a complete
 landing-page blueprint, but to show a few proven ideas for what else a shared
-guest entry page can contain besides the sponsor web part.
+guest landing page can contain besides the sponsor web part.
+
+The key distinction is this: **Guest Sponsor Info handles sponsor visibility**.
+The surrounding landing-page elements handle orientation, SharePoint guest
+access, Microsoft 365 entry points, and self-service actions. Together, they
+turn a generic arrival page into something that actually helps B2B guests move
+forward.
 
 If you use the SharePoint **Quick Links** web part, you can already build most
 of this without custom code. With audience targeting enabled, the same landing
@@ -27,7 +35,8 @@ and `<tenant-domain>`. Replace them with your own values.
 
 ## A Good Default Pattern
 
-For many tenants, two Quick Links web parts are already enough:
+For many Microsoft Entra B2B tenants, two Quick Links web parts are already
+enough for a practical SharePoint guest landing page:
 
 - One area for **Microsoft 365** entry points in the correct tenant.
 - One area for **My Guest Account** self-service actions.
@@ -38,7 +47,27 @@ This works especially well when the landing page itself uses audience targeting.
 Employees can see internal employee resources, while guests see only the links
 that actually help them in the resource tenant.
 
-The screenshot below shows one possible composition: a shared entry page with
+Separate from those outbound links, the landing page itself can also
+be the hub site for the guest area. That gives you a shared navigation layer,
+hub branding options, and a clearer identity for the whole area even before
+you associate any other sites.
+
+That can also help with naming. For example, the underlying site can keep a
+friendly site title such as `Welcome @ Contoso`, while the hub identity and hub
+navigation present the broader area as something like `Entrance Area`.
+
+If you later do associate more sites, that hub becomes even more useful. You
+can add links to associated or non-associated sites in the hub navigation and
+use audience targeting so employees and guests do not have to see the same hub
+links.
+
+That gives you a clean split of responsibilities on the page:
+
+- the sponsor web part answers **who can help me**
+- the Quick Links areas answer **where should I go next**
+- the account links answer **what can I fix myself**
+
+The screenshot below shows one possible composition: a shared guest landing page with
 tenant-pinned Quick Links near the top and the sponsor area further down the
 page.
 
@@ -68,6 +97,10 @@ This area gives guests stable entry points into the resource tenant. Where a
 Microsoft URL supports `tenantId`, include it. For SharePoint, the tenant
 hostname itself already fixes the tenant context.
 
+For Microsoft Entra B2B guest onboarding, that matters more than it sounds.
+Guests often know they were invited, but not which tenant-specific destination
+is supposed to become their reliable starting point.
+
 ### Microsoft Teams
 
 Use a tenant-pinned Teams entry link when you want Teams to open in the correct
@@ -83,9 +116,9 @@ specific deep link before you know that team membership already exists.
 
 ### Microsoft SharePoint
 
-Link to a tenant-owned overview page, hub site, or site directory that helps
-guests find shared workspaces and storage locations even without navigating
-through Teams first.
+Link to a tenant-owned overview page, another hub site, or a site directory
+that helps guests find shared workspaces and storage locations even without
+navigating through Teams first.
 
 ```text
 https://<tenant-name>.sharepoint.com/teams/overview
@@ -95,19 +128,6 @@ In some tenants this is a hub site. In others it is a manually curated overview
 page. Either is fine. The important part is that the URL is already tenant-
 fixed because it uses your SharePoint hostname. It can also help guests find
 Team-connected storage areas or plain team sites that are not "teamified".
-
-Making the landing page itself a **hub site** can be useful even before you
-have any other sites to associate. You already gain a shared navigation layer,
-hub branding options, and a clearer identity for the whole area.
-
-That can also help with naming. For example, the underlying site can keep a
-friendly site title such as `Welcome @ Contoso`, while the hub identity and hub
-navigation present the broader area as something like `Entrance Area`.
-
-If you later do associate more sites, the hub becomes even more useful. You can
-add links to associated or non-associated sites in the hub navigation and use
-audience targeting so employees and guests do not have to see the same hub
-links.
 
 ### Viva Engage
 
@@ -141,6 +161,12 @@ This area focuses on self-service. It helps guests manage their account inside
 the correct resource tenant without first figuring out tenant switching on
 their own.
 
+On a well-designed SharePoint guest landing page, these links complement the
+sponsor area instead of competing with it. The sponsor relationship tells the
+guest who is responsible for their access. Some tools call that same role the
+owner; here we use Microsoft's term, sponsor. The self-service links help them
+solve the issues that do not need a human reply.
+
 ### Guest Account
 
 Link directly to the guest's account view in the correct tenant.
@@ -154,44 +180,51 @@ information, or account-related prompts in the resource tenant.
 
 ### Security Info
 
-This link is especially helpful when the resource tenant requires MFA
-registration for guests, when MFA trust is not in place, or when the invitation
-was redeemed with an identity that did not already carry the needed
-authentication methods.
+This can be a helpful link when the guest needs to review or register
+authentication methods in the resource tenant.
 
 ```text
 https://mysignins.microsoft.com/security-info?tenantId=<tenant-id>
 ```
 
-If the guest has to register authentication methods in the resource tenant,
-this is one of the most valuable links on the whole page.
+Treat this as a practical deep-link pattern and re-test it periodically.
 
 ### Terms of Use
 
-Terms of Use acceptances are easy to lose in portal navigation. A direct link
-makes them re-openable and reviewable.
+If your tenant uses Terms of Use, a direct link can make prior acceptances
+easier to revisit.
 
 ```text
 https://myaccount.microsoft.com/termsofuse/myacceptances?tenantId=<tenant-id>
 ```
 
-This is helpful when Conditional Access has presented one or more Terms of Use
-over time and the guest needs to revisit what they accepted.
+Treat this as a practical deep-link pattern and re-test it periodically.
 
 ### Delete Guest Access
 
-Many guests do not know that they can leave an organization themselves. If you
-want to support privacy and clean offboarding, make that option discoverable.
+Microsoft documents leaving an organization through the My Account portal's
+Organizations area. If you want your landing page to expose that exit path
+more directly, use a tenant-qualified leave deep link instead of only linking
+to the generic account homepage.
 
 ```text
 https://myaccount.microsoft.com/organizations/leave/<tenant-id>?tenant=<tenant-id>
 ```
 
+This aims at the same leave flow more directly. Treat it as a practical
+deep-link pattern and re-test it periodically. If it ever stops working in
+your tenant, fall back to the tenant-pinned My Account entry and navigate to
+**Organizations** -> **Leave** manually.
+
 You may want to label this link more explicitly on the page, for example as
 **Delete Guest Access**, **Remove my guest access**, or **Leave this
 organization**.
 
-## Deep-Link Rules Of Thumb
+## Link Rules Of Thumb
+
+Some of the examples on this page are true deep links. Others are simply
+tenant-pinned URLs that are useful as stable starting points. The same review
+logic still applies to both.
 
 - Use `tenantId` wherever the target service supports it.
 - For SharePoint, use a tenant-owned URL instead of a generic Microsoft 365
@@ -215,6 +248,17 @@ surrounding content.
   internal-only collaboration destinations.
 - Keep the Guest Sponsor Info web part where it adds value, but use Quick Links
   around it to make the whole page feel intentional.
+
+<div class="doc-cta-box">
+  <div>
+    <p class="doc-cta-title">Use the landing page as a whole system</p>
+    <p class="doc-cta-sub">Sponsor visibility, guest self-service, and tenant-pinned entry links work best together.</p>
+  </div>
+  <div class="doc-cta-actions">
+    <a href="{{ '/en/sponsor-vs-inviter/' | relative_url }}" class="btn btn-outline">Sponsor vs Inviter</a>
+    <a href="{{ '/en/setup/' | relative_url }}" class="btn btn-teal">Setup Guide</a>
+  </div>
+</div>
 
 ## Related Microsoft Guidance
 

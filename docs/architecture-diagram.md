@@ -52,12 +52,11 @@ flowchart LR
     SpAdmin -- "① uploads .sppkg"              --> SCAC
     SpAdmin -- "② grants access (Everyone)"    --> Visitors
 
-    AzAdmin -- "③ creates App Registration"    --> AppReg
+    AzAdmin -- "③ deploys Azure stack"         --> AppReg
     AppReg  -. "auto-creates"                .-> SP
-    AzAdmin -- "④ deploys function"           --> Func
+    AzAdmin -- "③ deploys Azure stack"         --> Func
     Func    -. "EasyAuth bound to"            .-> SP
-    AzAdmin -- "⑤ grants permissions"         --> MI
-    AzAdmin -. "⑤ configures"               .-> SP
+    AzAdmin -- "④ grants permissions"         --> MI
     Func    -. "uses"                        .-> MI
     MI      -- "Graph app permissions"        --> Graph
     AzAdmin -. "connects"                    .-> AI
@@ -70,24 +69,22 @@ flowchart LR
     linkStyle 0     stroke:#94a3b8,stroke-width:1.5px
     %% 1     guest Visitor access (step ②)
     linkStyle 1     stroke:#94a3b8,stroke-width:1.5px
-    %% 2     App Registration creation (step ③)
+    %% 2     Azure stack deploy (step ③)
     linkStyle 2     stroke:#d97706,stroke-width:2px
     %% 3     AppReg auto-creates SP
     linkStyle 3     stroke:#d97706,stroke-width:1px
-    %% 4     Function deployment (step ④)
+    %% 4     Azure stack deploy (step ③)
     linkStyle 4     stroke:#059669,stroke-width:2px
     %% 5     EasyAuth bound to SP
     linkStyle 5     stroke:#d97706,stroke-width:1.5px
-    %% 6     permission grant to MI (step ⑤)
+    %% 6     permission grant to MI (step ④)
     linkStyle 6     stroke:#059669,stroke-width:2px
-    %% 7     SP configuration (step ⑤)
-    linkStyle 7     stroke:#d97706,stroke-width:2px
-    %% 8     Func uses MI
-    linkStyle 8     stroke:#a7f3d0,stroke-width:1.5px
-    %% 9     MI→Graph permission
-    linkStyle 9     stroke:#7c3aed,stroke-width:2px
-    %% 10    AI connection
-    linkStyle 10    stroke:#94a3b8,stroke-width:1px
+    %% 7     Func uses MI
+    linkStyle 7     stroke:#a7f3d0,stroke-width:1.5px
+    %% 8     MI→Graph permission
+    linkStyle 8     stroke:#7c3aed,stroke-width:2px
+    %% 9     AI connection
+    linkStyle 9     stroke:#94a3b8,stroke-width:1px
 ```
 
 ### Required permissions
@@ -95,8 +92,8 @@ flowchart LR
 | Step | Who | What happens | Required role / permission |
 |---|---|---|---|
 | 1 | SharePoint Admin | Enables Site Collection App Catalog on the landing page site and uploads `.sppkg` | **SharePoint Administrator** (+ **Site Collection Admin** on the landing page site) |
-| 2 | SharePoint Admin | Verifies (or sets up) guest Visitor access on the landing page site. Recommended: enable `ShowEveryoneClaim` if not already set, then add the *Everyone* group to the Visitors group. Skip if guests already have reliable Visitor access. | **SharePoint Administrator** |
-| 3 | Azure Admin | Deploys the Bicep template via `azd provision` — creates Azure resources, Storage role assignments, EasyAuth App Registration (via Microsoft Graph Bicep extension), and configures the Function App | **Owner** on the target resource group + **Cloud Application Administrator** |
+| 2 | SharePoint Admin | Verifies guest Visitor access on the landing page site. If you rely on the *Everyone* group pattern for B2B guests, explicitly enable `ShowEveryoneClaim` first; otherwise keep the site's existing reliable guest-access model. | **SharePoint Administrator** |
+| 3 | Azure Admin | Deploys the Bicep template via `azd provision` — creates Azure resources, Storage role assignments, EasyAuth App Registration (via Microsoft Graph Bicep extension), and configures the Function App | **Contributor** + **Owner** (or **User Access Administrator**) on the target resource group + **Cloud Application Administrator** |
 | 4 | Azure Admin | Runs `setup-graph-permissions.ps1` — assigns Graph app roles to the Managed Identity (`User.Read.All`, `Presence.Read.All`, …) | **Privileged Role Administrator** |
 
 ¹ `Contributor` alone is not sufficient — the template creates

@@ -2,12 +2,19 @@
 layout: default
 ---
 {%- assign strings = site.data[page.lang].strings -%}
+{%- assign intro_text = page.lead | default: page.description -%}
 
-<article class="doc-page">
+{%- if intro_text != blank -%}
+{%- include content-intro.html variant="doc" text=intro_text badges=page.intro_badges actions=page.intro_actions -%}
+{%- endif -%}
+
+<article class="doc-page{% if intro_text != blank %} doc-page--with-intro{% endif %}">
     <div class="container doc-layout">
         <div class="doc-content">
+            {% if intro_text == blank %}
             <h1>{{ page.title }}</h1>
             {% if page.lead %}<p class="doc-lead">{{ page.lead }}</p>{% endif %}
+            {% endif %}
             {{ content }}
             {% if page.github_doc %}
             <p class="doc-source" id="full-documentation-on-github">

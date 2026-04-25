@@ -135,16 +135,26 @@ is not self-scoped — GDPR concern). The function sidesteps all of this.
   EasyAuth principal claims (not raw Authorization headers):
   1. `tid` (tenant ID) — must match our tenant (`TENANT_ID` env var)
   2. `aud` (audience) — must match our API client ID (`ALLOWED_AUDIENCE` env var)
+  3. `appid` or `azp` (calling application) — must match the SharePoint Online Web Client
+     Extensibility application
   This is defense-in-depth on top of EasyAuth issuer/audience validation.
+- **Scoped follow-up authorization:** `getPresence` and `getPhoto` only serve sponsor or manager IDs
+  authorized for the current caller. Preferred path is a short-lived HMAC-signed `X-Presence-Token`;
+  fallback is a live sponsor lookup and fail-safe drop or deny behavior.
 - **CORS** restricted to the tenant's SharePoint origin.
 - **No secrets stored;** Managed Identity for Graph and storage access (RBAC, no keys).
+- **Client bundle posture:** The downloaded web part bundle contains no secrets. Treat optional
+  client-side configuration such as the Azure Maps subscription key as visible to page viewers.
 - **Caller OID redacted** in function logs; client validation failures include structured reason
   codes and diagnostics without exposing full GUIDs.
 - **Rate limit:** Two tiers — anonymous callers (no OID, e.g. dev without EasyAuth) are always
-  rate-limited at 10 req / 60 s per IP. In production EasyAuth blocks anonymous callers at the
+  rate-limited at 5 req / 60 s per IP. In production EasyAuth blocks anonymous callers at the
   infra level before function code runs. Authenticated callers are not rate-limited by default;
   set `RATE_LIMIT_ENABLED=true` (with optional `RATE_LIMIT_MAX_REQUESTS` / `RATE_LIMIT_WINDOW_MS`)
   to activate per-user limiting as an incident-response measure.
+
+For trust assumptions, residual risk, and hardening guidance, see
+[security-assessment.md](security-assessment.md).
 
 ### Silent Token Acquisition and Pre-Authorization
 
@@ -212,7 +222,11 @@ Timeout app settings: `SPONSOR_LOOKUP_TIMEOUT_MS`, `BATCH_TIMEOUT_MS`,
 3. **Post-provision** — grants Graph permissions to MI, prints API URL + Client ID.
 
 > RBAC propagation can take 1–2 min after deploy. Wait and retry if errors appear
-> immediately. Deployer needs **Owner** role on the resource group.
+> immediately. Azure deployment needs **Contributor** plus **Owner** (or **User
+> Access Administrator**) on the resource group. Entra permissions are split:
+> **Cloud Application Administrator** for the App Registration and
+> **Privileged Role Administrator** for Graph app-role assignment. See
+> [deployment.md](deployment.md) for the operator-facing workflow.
 
 Manual fallback: `infra/setup-graph-permissions.ps1` (for role assignment only; App Registration is always created by Bicep).
 
@@ -236,6 +250,10 @@ guest users/day) at zero cost and supports the simplest deployment paths.
 Choose **Flex Consumption** when cold-start latency is unacceptable for your users and you
 are deploying via AZD or Azure CLI. Set `alwaysReadyInstances=1` (the default for Flex) to
 keep one instance warm.
+
+For day-2 code updates, the two plans diverge operationally: Consumption can
+switch or restart `WEBSITE_RUN_FROM_PACKAGE`, while Flex updates the package in
+its blob-backed deployment container. See [operations.md](operations.md).
 
 ### Debugging Client Authorization Failures
 

@@ -2,10 +2,28 @@
 layout: page
 lang: en
 title: Support
+meta_title: Support & Services for Guest Sponsor Info
 permalink: /en/support/
 description: >-
-  Support options for Guest Sponsor Info for Microsoft Entra B2B — community GitHub Issues on a
-  best-effort basis and professional setup and operations services.
+  Support options for Guest Sponsor Info for Microsoft Entra B2B — GitHub
+  issues on a best-effort basis plus professional setup, deployment, and
+  operations services for the SharePoint web part and Azure Function.
+lead: >-
+  Quick orientation on what community support covers, when GitHub issues are
+  the right path, and when hands-on professional help makes more sense.
+intro_badges:
+  - GitHub issues on a best-effort basis
+  - Professional rollout help
+  - No SLA in the free distribution
+intro_actions:
+  - label: Open a GitHub issue
+    href: https://github.com/workoho/spfx-guest-sponsor-info/issues/new
+    style: btn-secondary
+    external: true
+  - label: Contact Workoho
+    href: https://workoho.com/kontakt/
+    style: btn-primary
+    external: true
 ---
 
 ## Free to Use — Not Free Support
@@ -28,6 +46,9 @@ Before opening an issue, please:
 
 - Review the [Setup Guide](/en/setup/)
   for common configuration steps
+- Review the [Privacy Policy](/en/privacy/)
+  and [Telemetry page](/en/telemetry/) if your question is about Microsoft
+  Graph permissions, data handling, or Azure usage attribution
 - Search
   [existing issues](https://github.com/workoho/spfx-guest-sponsor-info/issues)
   for known problems and workarounds
@@ -42,6 +63,11 @@ If you have confirmed a bug or reproducible unexpected behaviour:
 
 For reliable, prioritized support and hands-on assistance, Workoho offers
 professional services:
+
+If you are still evaluating the solution internally, it often helps to review
+the [Setup Guide](/en/setup/), [Privacy Policy](/en/privacy/), and
+[Telemetry page](/en/telemetry/) first so technical, compliance, and
+operations questions are separated cleanly.
 
 - **Deployment & Setup** — guided end-to-end installation in your Microsoft
   365 and Azure tenant
