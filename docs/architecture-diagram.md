@@ -9,13 +9,14 @@ happens each time a guest opens the landing page.
 
 ---
 
-## Setup — Two Admin Roles (Recommended Path)
+## Setup — Admin Roles and Automation (Recommended Path)
 
-Two separate admin personas are involved in setting up the solution.
-The **SharePoint Admin** only needs the standard SharePoint Administrator role.
-The **Azure Admin** covers three distinct responsibilities — Azure resource
-deployment, Entra ID app configuration, and Graph permission grants — each
-requiring different elevated permissions (see table below the diagram).
+The setup path always combines SharePoint administration with Azure and Entra
+responsibilities. The **SharePoint Admin** only needs the standard SharePoint
+Administrator role. The Azure-side rollout is started by a **Deployment
+Operator**; the Graph-permission step is an **Entra Admin** responsibility.
+In the default one-step path, the same person can wear both hats at once. In
+split-duty or PAW deployments, Step 4 remains a separate Entra-admin action.
 
 ```mermaid
 flowchart LR
@@ -27,9 +28,12 @@ flowchart LR
     classDef infra    fill:#a7f3d0,stroke:#059669,color:#064e3b
     classDef logs     fill:#f8fafc,stroke:#94a3b8,color:#64748b
     classDef msgraph  fill:#ede9fe,stroke:#7c3aed,color:#4c1d95,font-weight:bold
+    classDef tool     fill:#e0f2fe,stroke:#0284c7,color:#0c4a6e,font-weight:bold
 
     SpAdmin(["🧑‍💼 SharePoint Admin"]):::admin
-    AzAdmin(["🧑‍💼 Azure Admin"]):::admin
+    DeployOp(["🧑‍💼 Deployment Operator"]):::admin
+    EntraAdmin(["🧑‍💼 Entra Admin"]):::admin
+    Deploy["🧰 Deployment automation<br/>install.ps1 / deploy-azure.ps1 / azd"]:::tool
 
     subgraph spo["☁️ SharePoint Online"]
         SCAC["📦 Site Collection App Catalog (landing page site)"]:::delivery
@@ -52,14 +56,15 @@ flowchart LR
     SpAdmin -- "① uploads .sppkg"              --> SCAC
     SpAdmin -- "② grants access (Everyone)"    --> Visitors
 
-    AzAdmin -- "③ deploys Azure stack"         --> AppReg
+    DeployOp -- "③ runs deployment flow"       --> Deploy
+    Deploy  -- "creates EasyAuth app"          --> AppReg
     AppReg  -. "auto-creates"                .-> SP
-    AzAdmin -- "③ deploys Azure stack"         --> Func
+    Deploy  -- "provisions Function App"       --> Func
     Func    -. "EasyAuth bound to"            .-> SP
-    AzAdmin -- "④ grants permissions"         --> MI
+    EntraAdmin -- "④ completes Graph-permission step" --> MI
     Func    -. "uses"                        .-> MI
     MI      -- "Graph app permissions"        --> Graph
-    AzAdmin -. "connects"                    .-> AI
+    Deploy  -. "provisions"                  .-> AI
 
     style spo   fill:#eff6ff,stroke:#3b82f6
     style entra fill:#fffbeb,stroke:#d97706
@@ -69,22 +74,24 @@ flowchart LR
     linkStyle 0     stroke:#94a3b8,stroke-width:1.5px
     %% 1     guest Visitor access (step ②)
     linkStyle 1     stroke:#94a3b8,stroke-width:1.5px
-    %% 2     Azure stack deploy (step ③)
-    linkStyle 2     stroke:#d97706,stroke-width:2px
-    %% 3     AppReg auto-creates SP
-    linkStyle 3     stroke:#d97706,stroke-width:1px
-    %% 4     Azure stack deploy (step ③)
-    linkStyle 4     stroke:#059669,stroke-width:2px
-    %% 5     EasyAuth bound to SP
-    linkStyle 5     stroke:#d97706,stroke-width:1.5px
-    %% 6     permission grant to MI (step ④)
-    linkStyle 6     stroke:#059669,stroke-width:2px
-    %% 7     Func uses MI
-    linkStyle 7     stroke:#a7f3d0,stroke-width:1.5px
-    %% 8     MI→Graph permission
-    linkStyle 8     stroke:#7c3aed,stroke-width:2px
-    %% 9     AI connection
-    linkStyle 9     stroke:#94a3b8,stroke-width:1px
+    %% 2     deployment flow started (step ③)
+    linkStyle 2     stroke:#0284c7,stroke-width:2px
+    %% 3     App Registration created by automation
+    linkStyle 3     stroke:#d97706,stroke-width:2px
+    %% 4     AppReg auto-creates SP
+    linkStyle 4     stroke:#d97706,stroke-width:1px
+    %% 5     Function App provisioned by automation
+    linkStyle 5     stroke:#059669,stroke-width:2px
+    %% 6     EasyAuth bound to SP
+    linkStyle 6     stroke:#d97706,stroke-width:1.5px
+    %% 7     permission grant step (④)
+    linkStyle 7     stroke:#059669,stroke-width:2px
+    %% 8     Func uses MI
+    linkStyle 8     stroke:#a7f3d0,stroke-width:1.5px
+    %% 9     MI→Graph permission
+    linkStyle 9     stroke:#7c3aed,stroke-width:2px
+    %% 10    App Insights provisioned
+    linkStyle 10    stroke:#94a3b8,stroke-width:1px
 ```
 
 ### Required permissions
@@ -93,8 +100,12 @@ flowchart LR
 |---|---|---|---|
 | 1 | SharePoint Admin | Enables Site Collection App Catalog on the landing page site and uploads `.sppkg` | **SharePoint Administrator** (+ **Site Collection Admin** on the landing page site) |
 | 2 | SharePoint Admin | Verifies guest Visitor access on the landing page site. If you rely on the *Everyone* group pattern for B2B guests, explicitly enable `ShowEveryoneClaim` first; otherwise keep the site's existing reliable guest-access model. | **SharePoint Administrator** |
-| 3 | Azure Admin | Deploys the Bicep template via `azd provision` — creates Azure resources, Storage role assignments, EasyAuth App Registration (via Microsoft Graph Bicep extension), and configures the Function App | **Contributor** + **Owner** (or **User Access Administrator**) on the target resource group + **Cloud Application Administrator** |
-| 4 | Azure Admin | Runs `setup-graph-permissions.ps1` — assigns Graph app roles to the Managed Identity (`User.Read.All`, `Presence.Read.All`, …) | **Privileged Role Administrator** |
+| 3 | Deployment Operator | Runs `install.ps1` / `deploy-azure.ps1`. The deployment automation then provisions Azure resources, Storage role assignments, the EasyAuth App Registration (via Microsoft Graph Bicep extension), and the Function App. | Azure **Contributor** + **Owner** (or **User Access Administrator**) on the target resource group + Entra **Cloud Application Administrator** |
+| 4 | Entra Admin | Completes the Graph permission assignment step. In the default one-step path this happens inside the deployment flow; in PAW / split-duty setups it is run separately via `setup-graph-permissions.ps1`. | **Privileged Role Administrator** |
+
+In smaller deployments, the same person can perform Steps 3 and 4 by
+activating both the Azure and Entra roles temporarily. In PAW or split-duty
+setups, treat Step 4 as a separate Entra-admin action.
 
 ¹ `Contributor` alone is not sufficient — the template creates
 `Microsoft.Authorization/roleAssignments` on the Storage Account.
@@ -103,7 +114,8 @@ extension to create and configure the App Registration.
 
 ² Granting application permissions (app roles) to a Managed Identity requires
 `AppRoleAssignment.ReadWrite.All`, which requires Privileged Role Administrator
-or higher.
+or higher. This is an Entra directory action, not just an Azure resource
+deployment permission.
 
 ---
 

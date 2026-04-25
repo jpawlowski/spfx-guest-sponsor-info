@@ -6,12 +6,26 @@ SharePoint and Azure administrators.
 For a quick-start overview, see the [README](../README.md).
 For architecture decisions and internals, see [architecture.md](architecture.md).
 For a visual system overview (including a setup checklist diagram), see
-[architecture-diagram.md](architecture-diagram.md#setup--two-admin-roles-recommended-path).
+[architecture-diagram.md](architecture-diagram.md#setup--admin-roles-and-automation-recommended-path).
 
 For day-2 operations and administration tasks (updates, map configuration,
 and runtime maintenance), see [operations.md](operations.md).
 For security and telemetry details, see
 [security-assessment.md](security-assessment.md) and [telemetry.md](telemetry.md).
+
+## Deployment Phases
+
+This guide keeps the detailed instructions grouped by system, but the overall
+operator flow still has three phases:
+
+| Phase | What you finish | Typical role |
+|---|---|---|
+| 1 - SharePoint | Install the web part package, make the bundle reachable for guests, and confirm landing-page access | SharePoint Administrator |
+| 2 - Guest Sponsor API | Deploy the Azure Function, App Registration, and Graph permissions | Azure `Contributor` + `Owner` (or `User Access Administrator`) + required Entra roles |
+| 3 - Web part configuration | Paste the API URL and Client ID into the landing-page web part and verify the live connection | Site Owner |
+
+If you only need one specific area, jump to the matching section below. If you
+are doing a first-time rollout end to end, complete the phases in that order.
 
 ## Table of Contents
 
@@ -26,6 +40,7 @@ For security and telemetry details, see
   - [Step 2 (Alternative) - Run from a local infra ZIP](#step-2-alternative---run-from-a-local-infra-zip)
   - [Step 3 (Optional) - Choose hosting plan parameters](#step-3-optional---choose-hosting-plan-parameters)
   - [Step 4 - Record the deployment outputs](#step-4---record-the-deployment-outputs)
+  - [Step 5 - Configure the web part](#step-5---configure-the-web-part)
   - [Advanced scenario - Deploy from a Privileged Access Workstation (PAW)](#advanced-scenario---deploy-from-a-privileged-access-workstation-paw)
 - [Administration and Operations](#administration-and-operations)
 
@@ -442,7 +457,7 @@ in the Microsoft documentation.
 
 ## Guest Sponsor API
 
-> The [Setup diagram](architecture-diagram.md#setup--two-admin-roles-recommended-path)
+> The [Setup diagram](architecture-diagram.md#setup--admin-roles-and-automation-recommended-path)
 > gives a visual overview of all admin roles and deployment steps involved.
 
 This section is ordered by execution sequence. Items marked **Alternative** or
@@ -566,6 +581,23 @@ You can also retrieve them later:
 ```powershell
 azd env get-values
 ```
+
+### Step 5 - Configure the web part
+
+With Phase 1 and Phase 2 complete, finish the connection on the landing page
+itself:
+
+1. Open the landing page in edit mode and add **Guest Sponsor Info** if the app
+  was installed on the site but the web part is not yet on the page.
+2. Open the web part property pane. If the built-in Setup Wizard opens
+  automatically, use that instead of entering the same values manually.
+3. Paste the values from Step 4 into **Guest Sponsor API Base URL** and
+  **Guest Sponsor API Client ID**.
+4. Save or publish the page.
+5. Verify the connection. If the page is opened by a real guest, the web part
+  should load sponsor data from the API. If you are still configuring the page
+  as an admin, use the web part's diagnostics and setup UI to confirm that
+  token acquisition and API calls reach the expected tenant resources.
 
 ---
 
