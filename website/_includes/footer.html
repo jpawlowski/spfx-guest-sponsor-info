@@ -43,6 +43,9 @@
       <div class="footer-col">
         <h4>{{ strings.footer.legal }}</h4>
         <ul>
+          <li><a href="{{ '/' | append: page.lang | append: '/security/' | relative_url }}">{%- include
+              icon-chevron-right.html -%}{{ strings.footer.security
+              }}</a></li>
           <li><a href="{{ '/' | append: page.lang | append: '/privacy/' | relative_url }}">{%- include
               icon-chevron-right.html -%}{{ strings.footer.privacy
               }}</a></li>

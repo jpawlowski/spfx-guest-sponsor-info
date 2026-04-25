@@ -3,7 +3,8 @@
 ## Supported Versions
 
 Only the **latest published release** receives security fixes.
-Older versions are not patched. Please upgrade before filing a report.
+Older versions are not patched. If you found a vulnerability in an older
+version, please still report it and include the tested version or commit.
 
 | Version | Supported |
 | ------- | --------- |
@@ -54,14 +55,20 @@ We will make reasonable efforts to:
 - Assess the severity and scope of the issue
 - Publish a fix or mitigation as time permits, prioritising higher-severity issues
 
-Severity is assessed using [CVSS v3.1][cvss]. Critical and high-severity issues
+Severity is assessed using [CVSS v4.0][cvss]. Critical and high-severity issues
 will be given priority over lower-severity ones, but no specific timelines are
 promised.
 
 You will be notified when a fix is available and may be credited in the
 release notes unless you prefer to remain anonymous.
 
-[cvss]: https://www.first.org/cvss/calculator/3.1
+Organizations that need guided rollout, prioritized operational help, or
+commercial support should use the contact path described on the public
+[Support page](https://guest-sponsor-info.workoho.cloud/support/).
+That route is for setup and service discussions, not for confidential
+vulnerability disclosure.
+
+[cvss]: https://www.first.org/cvss/calculator/4.0
 
 ## Scope
 
@@ -82,8 +89,11 @@ The following are **out of scope**:
   itself — report those to [Microsoft MSRC][msrc]
 - Missing HTTP security headers served by SharePoint Online or the Azure
   platform — these are outside this project's control
-- Rate-limiting in Azure Functions — enforced at the platform level via Azure
-  API Management or Function triggers, not in application code
+- Broad network-layer DDoS protection, WAF policy, or upstream throttling in
+  Azure or SharePoint — these are outside this project's control. In
+  production, unauthenticated requests are rejected by EasyAuth before they
+  reach function code, and the Function also implements lightweight in-process
+  throttling for anonymous and incident-response scenarios
 - Social engineering attacks against tenant administrators
 - `npm audit` findings in transitive SPFx build-rig dependencies that cannot
   be upgraded without breaking the build (see `README.md` for context)
@@ -97,6 +107,32 @@ see [docs/security-assessment.md](docs/security-assessment.md).
 
 The high-level data-flow and authentication chain are documented in
 [docs/architecture.md](docs/architecture.md#data-paths).
+
+## Current Assurance Materials
+
+For enterprise review and internal approval workflows, the following materials
+are maintained publicly in this repository today:
+
+- [docs/security-assessment.md](docs/security-assessment.md) for the current
+  threat model, controls, residual risks, and hardening guidance
+- [docs/privacy-policy.md](docs/privacy-policy.md) for data handling,
+  permission scope, and tenant-boundary statements
+- [docs/architecture.md](docs/architecture.md) for request flow, trust
+  boundaries, and deployment assumptions
+
+Together, these materials document the current architecture, security
+controls, deployment assumptions, and disclosure process in a reviewable form.
+
+## Current Support Model
+
+The open-source distribution is maintained on a best-effort basis through the
+public repository and the disclosure channels above.
+
+Current deployment, customization, and operations support options are
+described on the public
+[Support page](https://guest-sponsor-info.workoho.cloud/support/).
+That does not change the requirement to report security vulnerabilities
+through the private advisory or security e-mail path.
 
 ## Privacy
 
