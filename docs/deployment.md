@@ -655,6 +655,93 @@ This script assigns Microsoft Graph application permissions to the Managed
 Identity: `User.Read.All`, `Presence.Read.All` (optional),
 `MailboxSettings.Read` (optional), `TeamMember.Read.All` (optional).
 
+If the PAW cannot run `setup-graph-permissions.ps1` (for example because local
+script execution is blocked), you can perform the same assignment manually with
+only the `Microsoft.Graph.Authentication` module. This fallback does not need
+any `Az.*` modules as long as you already have the `managedIdentityObjectId`
+from Step A:
+
+> **PAW policy note:** This fallback still depends on a working
+> `Microsoft.Graph.Authentication` module on the PAW. The published module is
+> not a single self-contained script; it loads PowerShell files plus multiple
+> DLL dependencies (including native `msalruntime*.dll` files). AppLocker can
+> explicitly control scripts and DLLs, and App Control for Business (formerly
+> WDAC) can also force PowerShell into restricted language modes for untrusted
+> modules. In other words: even without any `.exe` files, a hardened PAW can
+> still block module installation, import, or runtime loading. If that happens,
+> the practical fallback is to ask the PAW / Tier-0 administrators to provide
+> an approved, working `Microsoft.Graph.Authentication` module on that device.
+> How they package or pre-stage it is outside the scope of this guide.
+
+```powershell
+if (-not (Get-Module -ListAvailable Microsoft.Graph.Authentication)) {
+  Install-Module Microsoft.Graph.Authentication -Scope CurrentUser
+}
+Import-Module Microsoft.Graph.Authentication
+
+$tenantId = '<your-tenant-id>'
+$managedIdentityObjectId = '<object-id-from-step-a>'
+$permissions = @(
+  'User.Read.All'
+  'Presence.Read.All'      # optional
+  'MailboxSettings.Read'   # optional
+  'TeamMember.Read.All'    # optional
+)
+
+Connect-MgGraph -TenantId $tenantId -Scopes 'Application.Read.All', 'AppRoleAssignment.ReadWrite.All'
+
+$graphSp = (Invoke-MgGraphRequest -Method GET `
+  -Uri "https://graph.microsoft.com/v1.0/servicePrincipals?`$filter=appId eq '00000003-0000-0000-c000-000000000000'&`$select=id,appRoles" `
+  -OutputType PSObject).value[0]
+
+$existingAssignments = Invoke-MgGraphRequest -Method GET `
+  -Uri "https://graph.microsoft.com/v1.0/servicePrincipals/$managedIdentityObjectId/appRoleAssignments?`$select=appRoleId" `
+  -OutputType PSObject
+
+$existingRoleIds = @{}
+foreach ($assignment in $existingAssignments.value) {
+  $existingRoleIds[$assignment.appRoleId] = $true
+}
+
+foreach ($permission in $permissions) {
+  $appRole = $graphSp.appRoles | Where-Object {
+    $_.value -eq $permission -and $_.allowedMemberTypes -contains 'Application'
+  }
+
+  if (-not $appRole) {
+    Write-Warning "$permission is not available in this tenant. Skipping."
+    continue
+  }
+
+  if ($existingRoleIds.ContainsKey($appRole.id)) {
+    Write-Host "$permission already assigned."
+    continue
+  }
+
+  Invoke-MgGraphRequest -Method POST `
+    -Uri "https://graph.microsoft.com/v1.0/servicePrincipals/$managedIdentityObjectId/appRoleAssignments" `
+    -Body @{
+      principalId = $managedIdentityObjectId
+      resourceId  = $graphSp.id
+      appRoleId   = $appRole.id
+    }
+}
+```
+
+Use the Azure portal only for lookup and verification here:
+
+1. **Azure Portal -> Function App -> Identity** to copy the Managed Identity
+   Object ID.
+2. **Microsoft Entra admin center -> Enterprise applications -> Microsoft
+   Graph** if you need to inspect the Graph service principal itself.
+3. **Microsoft Entra admin center -> Enterprise applications -> [managed
+   identity service principal] -> Permissions** to review the resulting grants.
+
+This guide does not document a portal-only grant path for managed identities.
+Microsoft's documented assignment path for this scenario is Microsoft Graph
+PowerShell or Microsoft Graph API, and the portal is best treated as the place
+to find object IDs and confirm the result afterwards.
+
 **Required Entra roles on the PAW account:**
 `Privileged Role Administrator` (to assign Graph app roles)
 
