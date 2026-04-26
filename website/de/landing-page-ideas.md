@@ -9,17 +9,17 @@ description: >-
   Microsoft-365-Deeplinks und unterstützende Links rund um
   Sponsor-Sichtbarkeit.
 lead: >-
-  Ein kleines optionales Extra für Administratoren, die ihre
+  Ein praktischer Begleiter für Administratoren, die ihre
   SharePoint-Gast-Landingpage für Microsoft-Entra-B2B-Gäste-Onboarding
   hilfreicher machen wollen. Diese Ideen ergänzen das Guest Sponsor Info Web
-  Part; sie sind keine Voraussetzung für das Produkt.
+  Part; hilfreich sind sie, Voraussetzung für das Produkt aber nicht.
 ---
 
-## Warum Diese Seite Existiert
+## So Nutzen Sie Diese Ideen
 
-Diese Seite ist bewusst klein gehalten. Sie soll keinen vollständigen Blueprint
-für eine Landingpage vorgeben, sondern einige bewährte Ideen dafür zeigen, was
-eine gemeinsame Landingpage für Gäste zusätzlich zum Sponsor-Web-Part noch
+Diese Seite ist bewusst praktisch gehalten. Sie soll keinen vollständigen
+Blueprint für eine Landingpage vorgeben, sondern bewährte Ideen dafür sammeln,
+was eine gemeinsame Landingpage für Gäste zusätzlich zum Sponsor-Web-Part noch
 enthalten kann.
 
 Wichtig ist die Rollenverteilung: **Guest Sponsor Info löst die Sponsor-
@@ -32,6 +32,9 @@ Wenn Sie das SharePoint-**Quick-Links**-Web-Part verwenden, lässt sich vieles
 davon schon ohne eigene Entwicklung umsetzen. Mit aktiviertem Audience
 Targeting kann dieselbe Landingpage unterschiedliche Links für Mitarbeitende
 und Gäste anzeigen.
+
+Nicht jedes SharePoint-Web-Part unterstützt Audience Targeting gleichermaßen.
+Quick Links ist hier meist das verlässlichste Arbeitspferd.
 
 Die Beispiele unten verwenden Platzhalter wie `<tenant-id>`, `<tenant-name>`
 und `<tenant-domain>`. Ersetzen Sie diese durch Ihre eigenen Werte.
@@ -97,6 +100,46 @@ Da Browser keinen einheitlichen "Lesezeichen hinzufügen"-Link anbieten, der
 überall sauber funktioniert, ist das meist besser als einfacher Hinweis oder
 Callout gelöst und nicht als spezieller Skript-Button.
 
+## Weitere Inhaltsbausteine, Die Sich Lohnen
+
+Neben den Quick-Links-Bereichen helfen ein paar kleine Inhaltsblöcke dabei,
+aus einer funktionalen Seite eine wirklich orientierende Seite zu machen.
+
+- Eine kurze Begrüßung mit Kontext: zwei oder drei Sätze reichen oft schon,
+  damit der Gast sofort versteht, in welcher Organisation und in welchem
+  Kollaborationsrahmen er gelandet ist.
+- Ein klarer erster Schritt statt einer Komplettübersicht: nennen Sie die eine
+  Teamseite, den einen Kanal oder die eine Projektfläche, die beim ersten
+  Besuch wirklich zählt.
+- Kuratierte Ressourcen statt Sitemap: zeigen Sie die wenigen Links, die in der
+  ersten Woche relevant sind, und nicht jede App, die es theoretisch gibt.
+- Eine kleine News- oder Hinweisfläche: wenn auf der Seite später auch
+  Wartungen, Policy-Änderungen oder projektbezogene Updates auftauchen, lohnt
+  sich das Wiederkommen und Bookmarken deutlich mehr.
+- Eine echte Kontaktmöglichkeit: Name und Kanal helfen mehr als eine anonyme
+  Funktionsmailbox. Genau hier ergänzt das Sponsor-Web-Part den Rest der Seite.
+
+Wenn Sie einen Begrüßungstext nur für Gäste zeigen möchten, kann Quick Links
+auch dafür als pragmatischer Workaround dienen: Link zurück auf dieselbe Seite,
+unauffälliges Layout, Audience Targeting auf dem Web-Part.
+
+## Sprache, Branding Und Seitenidentität
+
+Orientierung entsteht nicht nur durch Links, sondern schon in den ersten
+Sekunden über Sprache und Erscheinungsbild.
+
+- Wenn Ihre Landingpage international genutzt wird, ist Englisch als
+  Standardsprache der Site Collection meist die sicherste Basis. Dieser Wert
+  lässt sich nach dem Erstellen nicht mehr ändern.
+- Veröffentlichen Sie zusätzliche Sprachversionen für wichtige Zielgruppen.
+  Gerade bei Gästen zahlt sich das schneller aus, als man zunächst vermutet.
+- Stellen Sie sicher, dass Organisationsname, Logo, globale Navigation und
+  SharePoint-Theme sauber konfiguriert sind. Branding beantwortet sofort die
+  Frage, in wessen Umgebung der Gast gerade gelandet ist.
+- Wenn Sie die Landingpage als Root Site oder als Hub Site nutzen, wird diese
+  Identität noch stärker. Das hilft nicht nur bei der Orientierung, sondern
+  auch beim späteren Wiederfinden.
+
 ## Bereich 1 — Microsoft 365
 
 Dieser Bereich gibt Gästen stabile Einstiegspunkte in den Ressourcen-Tenant.
@@ -120,7 +163,9 @@ https://teams.cloud.microsoft/?tenantId=<tenant-id>
 Das ist hilfreich, weil es nicht voraussetzt, dass der Gast den Tenant-Wechsel
 in Teams bereits manuell beherrscht. Außerdem vermeiden Sie damit Team-
 spezifische Deeplinks, solange Sie nicht sicher wissen, dass die Team-
-Mitgliedschaft bereits existiert.
+Mitgliedschaft bereits existiert. Microsoft dokumentiert ausdrücklich, dass
+Gastfunktionen in Teams erst verfügbar werden, wenn der Gast Mitglied in
+mindestens einem Team ist.
 
 ### Microsoft SharePoint
 
@@ -137,6 +182,10 @@ kuratierte Übersichtsseite. Beides ist in Ordnung. Entscheidend ist, dass die
 URL durch den SharePoint-Hostnamen bereits tenant-fixiert ist. Außerdem hilft
 sie dabei, Teams-nahe Speicherorte oder normale Team Sites zu finden, die gar
 nicht "teamified" sind.
+
+Das ist auch einer der Gründe, warum eine SharePoint-Landingpage als erster
+Zielort so stark ist: sie funktioniert zuverlässig, bevor für einen Gast jede
+Teams-Funktion im Ressourcen-Tenant wirklich bereitsteht.
 
 ### Viva Engage
 
@@ -164,6 +213,10 @@ https://myapplications.microsoft.com/?tenantId=<tenant-id>
 Ein gutes Muster ist, diesen Link in einem kleinen separaten Quick-Links-Web-
 Part ohne sichtbare Abschnittsüberschrift darzustellen. Dann wirkt er eher wie
 ein zusätzlicher Utility-Link als wie der Hauptpfad.
+
+Wenn Sie My Applications aktiv pflegen, kann dort zusätzlich ein gut sichtbarer
+Link zurück zur Entrance Area sinnvoll sein. My Applications ist ein nützlicher
+Fallback, aber selten die beste Startseite.
 
 ## Bereich 2 — Mein Gastkonto
 
@@ -233,6 +286,14 @@ Auf der Seite selbst können Sie diesen Link auch etwas expliziter benennen,
 zum Beispiel als **Gastzugang löschen**, **Meinen Gastzugang entfernen** oder
 **Diese Organisation verlassen**.
 
+Wenn Ihre Organisation zusätzlich interne Externenkonten für dieselben Personen
+führt, oft mit Mustern wie `.ext`, `vendor`, `partner` oder ähnlichem, lohnt
+sich eine klare Kopplung im Lebenszyklus: Das Gastkonto ist das führende
+Objekt, und wenn es deaktiviert oder gelöscht wird, wird auch das verknüpfte
+interne Externenkonto bereinigt. Dann ist dieser Link nicht nur ein
+Transparenz-Feature, sondern auch ein sinnvoller Einstiegspunkt in einen
+geordneten Bereinigungsprozess.
+
 ## Faustregeln Für Links Und Deeplinks
 
 Einige Beispiele auf dieser Seite sind echte Deeplinks. Andere sind einfach
@@ -259,6 +320,10 @@ Umfeldinhalte sehen.
   Sicherheitsinfo-Self-Service und bei Bedarf Gast-Richtlinien.
 - Zeigen Sie Mitarbeitenden interne Navigation, internen IT-Support, HR-
   Ressourcen und interne Kollaborationsziele.
+- Denken Sie bei Bedarf noch feiner: Partner mit eigenem internen Externenkonto
+  wie `.ext`, `vendor` oder ähnlichen Mustern haben oft andere Bedürfnisse als
+  klassische Gäste, weil sie mehrere Konten parallel nutzen und häufig weiter
+  auf den Geräten ihres eigenen Unternehmens arbeiten.
 - Lassen Sie das Guest Sponsor Info Web Part dort stehen, wo es Mehrwert
   schafft, und nutzen Sie Quick Links darum herum, damit die gesamte Seite wie
   ein bewusst gestalteter Einstieg wirkt.

@@ -1,502 +1,386 @@
-# Your Guests Accepted the Invitation. Now What?
+# WordPress-Titel: Ihre externen Gäste in Microsoft 365 haben die Einladung angenommen. Und jetzt?
 
-**In this article**
+**SEO-Titel (z. B. Yoast / Rank Math)**
 
-- [The Moment After the Invitation](#the-moment-after-the-invitation)
-- [Why Guests Keep Getting Lost](#why-guests-keep-getting-lost)
-- [Why Deep Links with an Explicit Tenant ID Are the Reliable Fix](#why-deep-links-with-an-explicit-tenant-id-are-the-reliable-fix)
-  - [Why Common Alternatives Fall Short](#why-common-alternatives-fall-short)
-  - [The Landing Page as the Simpler Answer](#the-landing-page-as-the-simpler-answer)
-- [What a Guest Landing Page Should Contain](#what-a-guest-landing-page-should-contain)
-  - [Location, URL, and Audience Strategy](#location-url-and-audience-strategy)
-  - [Branding Does Part of the Work](#branding-does-part-of-the-work)
-  - [A Practical Page Structure](#a-practical-page-structure)
-  - [One More Thing: A URL Worth Sharing](#one-more-thing-a-url-worth-sharing)
-- [One Feature Worth Adding: Sponsor Visibility](#one-feature-worth-adding-sponsor-visibility)
-  - [The Guest Sponsor Info Web Part](#the-guest-sponsor-info-web-part)
-  - [The Sponsor Field: Useful but Static](#the-sponsor-field-useful-but-static)
-  - [Lifecycle Management: Tooling Options](#lifecycle-management-tooling-options)
-  - [What It Shows on the Page](#what-it-shows-on-the-page)
-  - [Going Further: Guest Type Classification](#going-further-guest-type-classification)
-- [This Is Also a Governance Question](#this-is-also-a-governance-question)
-- [Working on This Kind of Challenge](#working-on-this-kind-of-challenge)
+Landingpage für externe Gäste in Microsoft 365
+
+**Permalink / Slug**
+
+landingpage-fuer-externe-gaeste-microsoft-365
+
+**Meta-Description (z. B. Yoast / Rank Math)**
+
+Warum externe Gäste in Microsoft 365 nach der Einladung oft Orientierung
+brauchen und wie eine gute Landingpage Supportaufwand senkt und Governance
+verbessert.
+
+**Optionaler WordPress-Auszug / Teaser**
+
+Externe Gäste in Microsoft 365 brauchen nach der Einladung oft mehr
+Orientierung, als viele Unternehmen ahnen.
 
 ---
 
-An employee adds an external contact to a Teams team. Or triggers a formal invitation
-through a provisioning process, or simply via the Azure portal — however your organization
-handles it. The guest receives an email, clicks "Accept", authenticates, and within seconds
-they are technically inside your Microsoft 365 environment.
-
-What happens in the next thirty seconds usually gets no design attention at all.
-
----
-
-## The Moment After the Invitation
-
-The B2B guest redemption flow itself is smooth. Microsoft has invested heavily in making
-the invitation and authentication experience work reliably across organizations, identity
-providers, and devices. The problem is the landing point.
-
-After accepting a guest invitation, most users end up on the Microsoft MyApps portal, a
-generic account switcher, or — depending on how their browser session is configured —
-their own organization's home screen. There is no context. No "you are now in Acme Corp's
-Microsoft 365 environment." No indication of where to go next.
-
-The MyApps portal deserves a special mention here, because it makes things worse rather
-than better: in most organizations it is simply not maintained. Guests land there and see a
-list of applications — many of which they have no actual access to, or that are entirely
-irrelevant to their collaboration scope. It creates the impression of a toolbox without
-telling you which tool to pick up, or whether any of them even work for you. Managing what
-guests see in MyApps — not just who can access what, but what is visible to whom — is its
-own topic and is worth addressing separately. For now, the point is: MyApps is not a
-substitute for a proper landing page. It is, however, worth adding one prominent link there
-that points guests to the Entrance Area — so that even guests who land in MyApps have a
-clear exit ramp to somewhere more useful.
-
-For experienced Microsoft 365 users, this is a mild nuisance. For everyone else — vendors,
-external consultants, partners who primarily work in different tools — it is a genuine moment
-of confusion that often leads to abandoned sessions, repeat authentication attempts, or
-continued reliance on email when the whole point of the invitation was to enable richer
-collaboration.
-
----
-
-## Why Guests Keep Getting Lost
-
-The confusion is not random. It has a structural cause.
-
-Microsoft 365 is a multi-tenant platform. When a guest user clicks a link — any link —
-the browser and the Microsoft 365 client have to decide which tenant context to use. If the
-guest has their own Microsoft 365 account, there is already an active session for their home
-tenancy. Generic links often resolve there first.
-
-So a guest clicks a link to a Teams channel and ends up in their own organization's Teams.
-The channel they were supposed to join is not there. It is not missing — it exists in
-*your* tenant, not theirs. But nothing in the experience told them to switch.
-
-The result: a support ticket, or silence — or a chain of messages across organizations as the
-confused guest reaches out to whoever seems reachable: the project manager who sent the
-invitation, a colleague, a helpdesk that does not have the right context. And the person
-asked often does not know the answer either. The cost of these small failures is real: time
-spent by multiple people at more than one organization, for a problem that should never have
-created friction in the first place.
-
----
-
-## Why Deep Links with an Explicit Tenant ID Are the Reliable Fix
-
-This is where a technical detail becomes genuinely important to understand —
-without needing to dive into the mechanics.
-
-Microsoft 365 supports deep links — URLs that point to specific resources — across Teams,
-SharePoint, Viva Engage, and other workloads. When these links include the target tenant's
-ID as a URL parameter, they carry enough context for the client to load the correct
-organizational environment. The guest still authenticates as themselves, but the system knows
-exactly which tenant to pull from.
-
-A Teams deep link that includes your tenant ID will prompt the guest to switch to the correct
-account if they are not already using the right one. A generic Teams link will not. That small
-difference has a large practical impact.
-
-The difference is literally one URL parameter. A generic link to a Teams channel:
-
-```text
-https://teams.cloud.microsoft/l/channel/{channelId}/{channelName}?groupId={teamId}
-```
-
-The same link, tenant-scoped:
-
-```text
-https://teams.cloud.microsoft/l/channel/{channelId}/{channelName}?groupId={teamId}&tenantId={tenantId}
-```
-
-Your tenant ID is a GUID you can find in the Microsoft Entra admin center. Teams generates
-full channel deep links automatically — right-click any channel and choose "Get link to
-channel" — and those links already include the `groupId`. Adding `&tenantId=` to that URL
-is the only manual step required.
-
-### Why Common Alternatives Fall Short
-
-The alternatives are well-intentioned but unreliable:
-
-- **Carefully worded email instructions** depend on the guest reading and following them
-  precisely — a low-confidence bet, especially days or weeks after the original invitation.
-- **A Teams deep link in the invitation email** is a natural instinct — the guest accepts
-  and lands straight in Microsoft Teams. Except it only works once Teams has established a
-  presence for the guest in your tenant, which only happens after they have been added to at
-  least one team. Accepting a B2B invitation alone is not enough — Teams and SharePoint are
-  separate services, and an accepted invitation does not automatically give a guest a Teams
-  identity in your environment. Microsoft's own documentation is explicit on this point: until
-  that Teams presence exists, your tenant will not appear in the guest's tenant switcher, and
-  any deep link into Teams will not resolve correctly. The guest ends up not in their own
-  tenant, not in yours, but in an undefined state with no indication of what went wrong.
-  A SharePoint landing page avoids this entirely — it works on day one,
-  before any team membership exists. And because SharePoint is a separate service from Teams,
-  it can even be used to prepare the guest for the situation: a dedicated SharePoint web part
-  ([covered below](#one-feature-worth-adding-sponsor-visibility)) can detect that Teams access is not yet ready and display
-  that information clearly on the page, while simultaneously greying out the call and chat
-  buttons on the sponsor's contact card. The guest is not left stranded — they see a face,
-  a name, and an honest status: *Teams access is being set up. Reach out by email for now.*
-- **Custom Azure AD B2C flows or redirect apps** can technically address this, but they add
-  significant engineering overhead and ongoing maintenance cost.
-- **Conditional Access policies** help with access control but do not solve the orientation
-  problem — they do not tell a guest where to go, only whether they can go there.
-  That said, requiring MFA for guests is a clear security best practice and worth doing
-  regardless of how you solve the orientation problem. The good news: for most guests who
-  already have an Entra account in their home organization, you do not need to force them
-  to register new MFA credentials in your tenant. The recommended default is to trust MFA
-  from the guest's home tenant — Microsoft detects the account type at invitation redemption
-  and applies the trust accordingly. With the right Conditional Access configuration, guests
-  who already use MFA at work will barely notice the requirement in yours. Getting that
-  balance right — secure but frictionless — is a topic in its own right, and one we are
-  happy to talk through.
-
-### The Landing Page as the Simpler Answer
-
-A well-structured landing page with properly formed, tenant-scoped deep links is the simpler,
-more durable answer. It is low-cost to build, easy to maintain, and it works regardless of
-whether the guest is a seasoned Microsoft 365 user or someone opening Teams for the first time.
-
-One practical prerequisite: for a custom landing page URL to actually reach the guest, it
-needs to be embedded in the invitation itself. Microsoft Entra supports this — the invitation
-flow accepts a redirect URL that the guest is forwarded to after accepting. But this only
-works when the invitation process is managed. When employees invite guests implicitly — by
-adding them directly to a Teams team or a SharePoint site, for example — Microsoft generates
-a standard invitation email with no custom redirect. That is one more reason to move away
-from unmanaged, ad hoc guest provisioning: it removes the one moment in the flow where you
-could point a new guest somewhere intentional.
-
----
-
-## What a Guest Landing Page Should Contain
-
-We call this page the *Entrance Area* — a deliberate name that reflects its purpose: not a
-dashboard, not a portal, not an intranet. Just a clear, calm place where the guest arrives
-and immediately knows where they are.
-
-### Location, URL, and Audience Strategy
-
-The URL matters more than it might seem. A path like `/sites/entrance` is clean and
-consistent. But the most practical option is to configure the Entrance Area as the root site
-of your SharePoint tenant. A root site is both easy to remember and, for a technically
-curious guest, easy to anticipate — someone who knows your domain can reasonably guess that
-`https://yourtenant.sharepoint.com` leads somewhere meaningful. That kind of predictability
-has real value when a guest returns weeks later and has lost the original link.
-
-The page can also be built as audience-aware: SharePoint's targeting capabilities let you
-show different content to internal employees, to guest users, and to external staff who have
-a company account in your tenant. One practical note worth knowing: audience targeting only
-works with certain web parts — not all of them support it. The Quick Links web part is the
-most versatile choice here, as it handles both navigation and audience-filtered content well.
-For internal employees on managed devices, a browser policy or device configuration can
-already redirect them to the intranet directly — which means the root site does not need to
-double as an intranet gateway. That leaves it free to do one thing well: serve as an
-unambiguous entrance for everyone who is not yet sure where they belong.
-
-The goal is not a polished marketing experience. The goal is orientation — getting the guest
-from "where am I?" to "I know exactly what to do" in under two minutes.
-
-One decision that is easy to overlook at setup time but impossible to reverse later: the
-default language of the site collection. SharePoint's site language is set at creation and
-cannot be changed afterwards. If your organization works internationally — or invites guests
-from multiple countries — create the Entrance Area site in English. It is the safest common
-denominator, and it avoids a situation where all navigation elements and system labels are
-locked in a language that does not serve parts of your audience.
-
-That said, English as the site language does not mean English as the only language on the
-page. SharePoint's multilingual pages feature lets you publish translated versions of the
-same page for different language audiences. It is worth using. Think carefully about where
-your guests actually come from: project partners in other countries, suppliers, customers.
-A customer who lands on a page in their own language and receives information in their native
-tongue has a genuinely different experience than one who has to parse a foreign language
-under pressure. This is not just a quality-of-life detail — for many cultures it carries
-real weight. French-speaking guests, in particular, tend to notice and appreciate being
-addressed in French in a way that goes beyond mere preference. Taking the time to provide a
-French translation of the Entrance Area is a small gesture with an outsized effect. The same
-applies to other languages depending on your guest population. The translation effort for a
-focused, well-scoped Entrance Area page is modest — and it only needs to be done once.
-
-### Branding Does Part of the Work
-
-One element that contributes to that orientation without any extra effort is branding itself.
-SharePoint's global navigation and the Microsoft 365 app bar already display your
-organization's name and logo — and for a guest, seeing those immediately answers the most
-basic question: *whose environment am I in?* But this only works if you have actually
-configured them. A SharePoint tenant with no custom logo, no navigation, and default colors
-tells a guest nothing about where they have landed. If you have set up a Microsoft 365
-organization profile and a custom SharePoint theme — one that reflects your company's colors
-and visual identity — then the Entrance Area does not just orient guests through its content.
-It does it through its appearance the moment the page loads. This matters more here than on
-any internal intranet page, because this is where you present yourself not only to your own
-employees, but to the outside world.
-
-### A Practical Page Structure
-
-Here is a practical structure that works well in both simple and more complex collaboration
-scenarios:
-
-#### 1. A short welcome and context statement
-
-Confirm they are in the right place, name the organization that invited them, and briefly
-describe the nature of the collaboration. Two or three sentences is enough. The guest should
-immediately feel like they have arrived somewhere intentional — not somewhere accidental. If
-you want this welcome text to be audience-targeted — shown only to guests, for instance —
-the Quick Links web part is a practical workaround: configure a link that points back to the
-same page, set the display style to look like plain content rather than a navigation element,
-and apply audience targeting to the web part itself. It is a small trick, but it gets the
-job done without extra infrastructure.
-
-#### 2. Where to go first
-
-Not a comprehensive index of every resource — just the most important first step. A Teams
-team, a shared channel, a project site. Prioritize the one or two things they are most likely
-to need in their first session.
-
-#### 3. Tenant-scoped deep links to key tools
-
-- **Microsoft Teams**: A direct link to the relevant team or channel, with your tenant ID
-  included. This ensures the Teams client loads in your tenant context, not the guest's.
-  Use the channel link Teams generates (right-click → "Get link to channel") and append
-  `&tenantId={yourTenantId}`. To link to a team overview rather than a specific channel,
-  use `https://teams.cloud.microsoft/?tenantId={yourTenantId}` as a simple tenant-scoped
-  entry point.
-
-- **Viva Engage**: If your organization uses Viva Engage for company-wide or cross-functional
-  community, a properly scoped community link looks like:
-  `https://engage.cloud.microsoft/main/groups/{communityId}/all`
-  The community ID is visible in the URL when you open the community in a browser.
-  Viva Engage resolves tenant context from the active Microsoft 365 session — which is
-  exactly why pointing guests to a tenant-scoped Teams or SharePoint link *first* matters:
-  it establishes the correct session before they navigate further.
-
-#### 4. Direct links to relevant resources
-
-SharePoint sites, document libraries, project wikis, or Microsoft Loop workspaces. The
-specific ones they will need in the first week. Not a complete sitemap — a curated shortlist.
-If your MyApps portal is actively maintained, link to it here as well — alongside the
-Microsoft 365 apps you want to highlight explicitly. A curated shortlist of tools is far more
-useful than a portal full of tiles the guest cannot actually open. For the same reason that
-applies to Teams links, the MyApps link should include a tenant ID parameter so the portal
-opens in the correct organizational context:
-`https://myapps.microsoft.com/?tenantid={yourTenantId}`
-
-#### 5. A news or announcements section
-
-For most organizations, email is the only channel that reliably reaches guest users. The
-Entrance Area can change that. A simple news section — a SharePoint News web part scoped to
-guest-relevant content — gives you a place to post updates that matter to external
-collaborators: policy changes, new tools, scheduled maintenance, announcements that affect
-the collaboration. Guests who know they can find current information there have a reason to
-return. Which points to a broader design principle: the Entrance Area should contain enough
-genuinely useful content that a guest *wants* to bookmark it — not just land there once and
-move on. A page worth saving is a page that keeps doing its job long after the original
-invitation email has been archived.
-
-**6. Self-service and transparency links**
-
-Several links that almost no guest knows exist — but that matter:
-
-- **Review your guest account**: The Microsoft MyAccount portal is the central self-service
-  hub for a guest's account in your tenant. The tenant-scoped entry point is:
-  `https://myaccount.microsoft.com/?tenantId={yourTenantId}`
-  From there, guests can review their profile, see which organizations they belong to, and
-  manage their presence in your tenant. Without this link, navigating there independently
-  is genuinely difficult. Surfacing it on the Entrance Area respects informational
-  self-determination and is a meaningful gesture toward GDPR compliance.
-
-- **Leave this organization**: Guests have the right to remove their own guest account at
-  any time. MyAccount supports this, but the option is buried several clicks deep. A direct
-  link takes them straight to the confirmation page for your specific tenant:
-  `https://myaccount.microsoft.com/organizations/leave/{yourTenantId}?tenant={yourTenantId}`
-  Replace both occurrences of `{yourTenantId}` with your tenant's GUID. Publishing this
-  link openly is a genuine transparency signal — it tells guests that their presence in your
-  environment is their choice, and that leaving is straightforward.
-
-- **View accepted terms and conditions**: If your organization uses Conditional Access
-  policies that require guests to accept terms of use before accessing resources, most guests
-  have no idea they can review what they agreed to. The MyAccount portal surfaces this
-  under a dedicated terms acceptance page. A direct link:
-  `https://myaccount.microsoft.com/termsofuse/myacceptances?tenantId={yourTenantId}`
-  Providing this link gives guests the transparency they are entitled to — and rarely receive.
-
-- **Manage security information**: For guests whose multi-factor authentication is registered
-  directly in your tenant — rather than being trusted from their home organization — the
-  My Sign-Ins portal is where they manage their MFA methods, including the Authenticator
-  app registration that gets created when MFA is set up in your tenant:
-  `https://mysignins.microsoft.com/security-info?tenantId={yourTenantId}`
-  Most guests will never need this link. But for those who do, knowing it exists prevents a
-  support call. And it is also a reminder of the one scenario the Entrance Area cannot help
-  with at all: if a guest's MFA methods registered in your tenant stop working — a lost
-  phone, a reset Authenticator app — and they have no fallback method configured, they are
-  locked out before they can reach any page you have built. A reset process then requires
-  the guest to contact their internal point of contact (ideally their sponsor), who must
-  contact your helpdesk on their behalf, who in turn must be able to verify that the caller
-  is actually that guest's sponsor — because only then can someone credibly vouch that they
-  know the guest and confirm their identity. The chain is long, the verification is difficult,
-  and the contact details that would have made it easier are sitting behind the login screen
-  nobody can reach. This is one of the stronger arguments for keeping MFA in the home tenant
-  wherever possible: the problem simply does not exist if there is nothing to reset in yours.
-
-**7. Contact and support information**
-
-Who to call or message if something is not working. A name and a channel, not just a generic
-helpdesk alias. This one is consistently overlooked and consistently appreciated.
-
----
-
-### One More Thing: A URL Worth Sharing
-
-Even a well-designed Entrance Area is only useful if guests can find it again. Alongside a
-memorable SharePoint URL, consider publishing a short link through a corporate link
-shortening service — something like `go.contoso.com/entrance` or a similar pattern. A short,
-stable URL you can drop into a Teams message, print on a welcome slide, or mention verbally
-in an onboarding call is far easier to communicate than a full SharePoint path. It also gives
-you a single, consistent address to update in one place if the underlying site ever moves.
-
----
-
-## One Feature Worth Adding: Sponsor Visibility
-
-When working with organizations on exactly the challenges described in this article, we kept
-running into the same cluster of gaps in the out-of-box SharePoint experience for guests.
-One of the most persistent: by the time a guest actually needs help, they often have no
-practical way to reach the right person.
-
-The invitation email does name whoever sent it — but that email is usually weeks or months
-old by the time something goes wrong. It may have been sent by an automated provisioning
-system rather than the actual person responsible for the collaboration. It gives an email
-address, not a Teams chat link or a phone number or any indication of whether that person is
-still the right contact. And in many cases, they are not: the original inviter may have moved
-to a different team, left the organization, or simply handed the project to someone else.
-None of that is reflected in the invitation email, because the invitation email is a
-snapshot — it captures who clicked "Invite" on a specific day, not who is currently
-responsible for the guest's access.
-
-### The Guest Sponsor Info Web Part
-
-So we built something. The **Guest Sponsor Info** web part is a free, open-source SharePoint
-web part developed by Workoho and published for the Microsoft 365 community. It was designed
-specifically for the Entrance Area scenario: a single web part that closes several gaps at
-once, without requiring per-guest configuration or manual maintenance.
-
-In Microsoft Entra, every guest user has one or more assigned *sponsors* — internal employees
-who requested or approved the guest's access. This information sits in the directory, but
-guests never see it. And when a guest runs into trouble, or simply wants to know who to reach
-out to — or who to go to when the primary contact is unavailable — this is exactly what they
-need, and what nothing in the default SharePoint experience provides.
-
-Microsoft supports up to five sponsors per guest account, so a second sponsor can formally
-serve as a substitute rather than just an informal backup. In the absence of a dedicated
-substitute, the manager is often the natural fallback — and the web part can surface the
-manager's contact alongside the primary sponsor when that is useful. That said, more names do
-not automatically mean better coverage. Once an account has four or five sponsors attached,
-the practical effect is often that no one feels primarily responsible. Diffuse accountability
-tends to behave like no accountability at all: when a lifecycle review comes up and someone
-needs to respond, it becomes genuinely unclear whose job that is. We recommend keeping it to
-two — one primary contact, one designated substitute. That is enough for real coverage
-without enough ambiguity for everyone to assume someone else is handling it.
-
-### The Sponsor Field: Useful but Static
-
-There is a catch, though. Microsoft populates the sponsor field automatically at the moment
-of invitation — whoever sent the invite becomes the sponsor. That is a sensible default, but
-it is also where the story ends. Once set, the sponsor field has no built-in workflow around
-it: there is no automated process to flag when a sponsor leaves the organization or changes
-roles, no prompt to initiate a handover to someone else, and no lifecycle process that asks
-anyone to review whether the guest's access is still appropriate. The information is there,
-but it is essentially static — a snapshot of who clicked "Invite" at a given moment in time,
-not an actively maintained responsibility.
-
-### Lifecycle Management: Tooling Options
-
-Microsoft does offer tooling for guest lifecycle management through **Microsoft Entra ID
-Governance** — in particular, Access Reviews and Entitlement Management. These features can
-address some of these gaps, but they come with P2 licensing requirements and a level of
-complexity that makes them genuinely difficult to implement for most mid-sized organizations.
-The cost alone is a barrier for many: Entra ID Governance is priced per user per month, and
-for organizations with many guests, the numbers add up quickly — often to a point where the
-case for implementation becomes hard to make.
-
-**EasyLife 365** approaches the same problem from a different direction: practical, affordable
-lifecycle management designed for organizations that want governance without building an
-enterprise-grade IAM program around it. EasyLife 365 lets you actively manage the sponsor
-relationship — including substitution and handover — and can trigger review and renewal
-processes automatically. For many organizations, the cost savings from cleaning up stale guest
-accounts and removing unnecessary access pay for the tool almost immediately. It is, for a
-lot of customers, genuinely a no-brainer.
-
-All of this matters for the Entrance Area because the value of the sponsor field — and of the
-**Guest Sponsor Info** web part that surfaces it — depends directly on whether that
-information is being maintained. A sponsor who is still shown as the contact six months after
-they left the organization is not a safety net for the guest; it is a dead end. The web part
-does its job best when the directory behind it is being actively managed.
-
-### What It Shows on the Page
-
-The web part reads the visiting guest's Entra profile, identifies their sponsor, and displays
-that person's name, title, and contact details automatically — with no configuration required
-per guest and no manual updates as sponsors change. It also handles the Teams readiness
-scenario described above: if the guest does not yet have an active Teams presence in your
-tenant, the web part detects this and adjusts the sponsor's contact card accordingly —
-greying out the call and chat buttons and displaying a clear status message, so the guest
-knows what to expect rather than wondering why nothing works.
-
-It is a small addition to a landing page. But it reliably eliminates the "who do I even ask?"
-moment that is common in the first days of cross-tenant work. The guest sees a face and a
-name. The sponsor knows they have a responsibility. The connection becomes visible.
-
-### Going Further: Guest Type Classification
-
-Beyond the sponsor, EasyLife 365 also lets you classify guests into different types — vendor,
-auditor, partner, contractor, and whatever else fits your model — and drive group memberships
-automatically from that classification. With a small addition to the Entrance Area, you can
-surface the guest's own type visibly on the page. For a guest, seeing "you are registered as
-a Partner" is a small but meaningful signal that their access is intentional and structured,
-not accidental. For the organization, it reinforces that the directory is governed — and that
-guest categories translate into real access boundaries.
-
-Explore the web part and its documentation here:
-[Guest Sponsor Info on GitHub](https://github.com/workoho/spfx-guest-sponsor-info)
-
----
-
-## This Is Also a Governance Question
-
-A structured landing page for guests is not just about user experience. It is about directing
-guests toward the right tools, channels, and workflows from the start — rather than leaving
-them to find their way independently.
-
-When guests orient themselves without guidance, they often end up in the wrong places:
-personal OneDrive shares used as ad hoc collaboration spaces, informal Teams chats that bypass
-structured channels, or external platforms that fall entirely outside your governance policies.
-A landing page that actively guides them into the correct environment reduces this risk
-meaningfully.
-
-It also signals something about how your organization approaches external collaboration:
-that it is structured, intentional, and governed — not an afterthought.
-
----
-
-## Working on This Kind of Challenge
-
-This is exactly the type of problem we at **Workoho** help organizations solve. As an
-**EasyLife 365 Platinum Partner**, we work with IT teams who want to move beyond reactive
-external sharing policies toward structured, auditable guest collaboration — where every
-invited user knows where they are, what they can access, and who to talk to.
-
-Think of us less as consultants who hand over a report, and less as implementers who simply
-execute a spec. We work more like mountain guides: we help IT teams assess the terrain, plan
-a realistic route, and then walk it together with them — technically, process-wise, and
-strategically. We pick up tools when the situation calls for it, but our primary goal is to
-guide and enable, so that your team comes out of the climb with the capability and confidence
-to manage the path going forward. And if your organization works with an external IT service
-provider for day-to-day operations, that is not a complication — we are equally happy to
-work alongside them.
-
-If guests are regularly asking "I got an invitation — what do I do now?", that is a signal
-worth taking seriously before it becomes a governance issue.
-
-Workoho is happy to have a practical conversation about what this could look like in your
-environment. No predefined blueprint, no pressure — just a straightforward discussion about
-your setup and what would genuinely help.
+**Artikelbereich in WordPress ab hier**
+
+Gemeint sind hier nicht die Gäste im Bürofoyer und auch nicht die auf der
+Tupperparty, sondern Partner, Lieferanten, Berater und Kunden, die in Ihrem
+Microsoft-365-Tenant mit Ihnen zusammenarbeiten.
+
+**In diesem Artikel**
+
+- [Die ersten dreißig Sekunden entscheiden mehr, als man denkt](#die-ersten-dreißig-sekunden-entscheiden-mehr-als-man-denkt)
+- [Warum externe Gäste sich so zuverlässig verirren](#warum-externe-gäste-sich-so-zuverlässig-verirren)
+- [Die pragmatische Antwort: eine Landingpage für Gäste](#die-pragmatische-antwort-eine-landingpage-für-gäste)
+  - [Warum einfache Alternativen selten reichen](#warum-einfache-alternativen-selten-reichen)
+  - [Sicherheit ohne Zusatzreibung](#sicherheit-ohne-zusatzreibung)
+- [Was auf so eine Seite gehört](#was-auf-so-eine-seite-gehört)
+  - [Orientierung statt Vollständigkeit](#orientierung-statt-vollständigkeit)
+  - [Wiederfinden, Erscheinungsbild und Sprache](#wiederfinden-erscheinungsbild-und-sprache)
+- [Ein Detail mit großer Wirkung: den Sponsor sichtbar machen](#ein-detail-mit-großer-wirkung-den-sponsor-sichtbar-machen)
+- [Das Guest Sponsor Info Web Part](#das-guest-sponsor-info-web-part)
+- [Sponsoren sind nützlich, aber nicht selbstpflegend](#sponsoren-sind-nützlich-aber-nicht-selbstpflegend)
+  - [Und genau da wird es mit `.ext`-Konten oft knifflig](#und-genau-da-wird-es-mit-ext-konten-oft-knifflig)
+- [Das Thema ist größer als reine Benutzerfreundlichkeit](#das-thema-ist-größer-als-reine-benutzerfreundlichkeit)
+- [Wenn Ihnen das bekannt vorkommt](#wenn-ihnen-das-bekannt-vorkommt)
+
+Ein Mitarbeiter lädt einen externen Kontakt in ein Team ein. Oder der Gast
+wird über einen geregelten Prozess eingeladen. Oder jemand klickt sich schnell
+durchs Entra Admin Center oder das Azure-Portal und denkt: Passt schon.
+
+Der Gast erhält die Mail, klickt auf "Annehmen", authentifiziert sich und ist
+wenige Sekunden später technisch in Ihrer Microsoft-365-Welt angekommen.
+
+Technisch.
+
+Praktisch beginnt an genau dieser Stelle oft der Nebel.
+
+## Die ersten dreißig Sekunden entscheiden mehr, als man denkt
+
+Die eigentliche B2B-Einladung funktioniert heute erstaunlich gut. Microsoft hat
+in den letzten Jahren viel in diesen Teil des Prozesses investiert. Das Problem
+beginnt danach: beim Landepunkt.
+
+Viele Gäste landen nach der Annahme irgendwo zwischen MyApps, Kontoauswahl und
+der Startseite ihres eigenen Tenants. Dort steht nirgends: "Willkommen bei
+Contoso, hier geht es für Sie weiter." Stattdessen sehen sie eine Sammlung von
+Apps, Kacheln oder Kontexten, die vor allem eines vermitteln: Viel Erfolg.
+
+Und genau diese Perspektive ist vielen Einladenden und späteren Sponsoren
+fremd. Wer im großen Unternehmen arbeitet und fast nie selbst irgendwo Gast
+ist, erlebt diesen Moment der Orientierungslosigkeit nicht aus eigener
+Anschauung. Auf der anderen Seite des Gartenzauns wirkt vieles deutlich weniger
+selbstverständlich, und genau deshalb werden lohnende Verbesserungen an dieser
+Stelle oft unterschätzt.
+
+Gerade MyApps ist dafür ein gutes Beispiel. In vielen Unternehmen ist das
+Portal nicht wirklich kuratiert. Gäste sehen Dinge, die sie nicht brauchen,
+teilweise auch Dinge, die sie gar nicht öffnen können. Das ist kein Einstieg,
+das ist ein Werkzeugkasten ohne Beschriftung. Ein prominenter Link von dort zur
+eigentlichen Landingpage für Gäste ist sinnvoll. MyApps selbst ist diese Landingpage
+aber nicht.
+
+Für routinierte Microsoft-365-Nutzer ist das lästig. Für Lieferanten, Partner,
+Berater oder Kunden, die nicht täglich zwischen Tenants hüpfen wie andere
+Menschen zwischen Browser-Tabs, ist es echter Orientierungsverlust. Und der
+führt schnell zurück zu dem Medium, das eigentlich entlastet werden sollte:
+E-Mail.
+
+## Warum externe Gäste sich so zuverlässig verirren
+
+Das Problem ist nicht mangelnde Disziplin auf Gastseite. Es ist strukturell.
+
+Microsoft 365 ist eine Multi-Tenant-Plattform. Wenn ein Gast einen Link öffnet,
+muss der Client entscheiden, in welchem Tenant er landen soll. Gibt es bereits
+eine aktive Sitzung im Heim-Tenant, gewinnt häufig genau dieser Kontext.
+
+Dann klickt der Gast auf einen Teams-Link und landet im besten Fall im falschen
+Teams. Im schlechteren Fall landet er gar nicht in einem nutzbaren
+Teams-Kontext. Microsoft dokumentiert selbst, dass Gastfunktionen in Teams erst
+verfügbar werden, wenn der Gast Mitglied in mindestens einem Team ist. Bis
+dahin fehlt oft genau der Schritt, durch den Ihr Tenant in Teams für diesen
+Gast überhaupt greifbar wird. Der Kanal ist also nicht weg. Für den Gast sieht
+es trotzdem nur nach einem Link aus, der ins Leere läuft.
+
+Die Folge ist bekannt: Supportanfrage, Rückfrage an den Projektleiter, Ping an
+irgendwen, der die Einladung einmal verschickt hat, oder im Zweifel schlicht
+Rückzug auf E-Mail. Aus einem kleinen Orientierungsfehler wird unnötige Arbeit
+auf mehreren Seiten.
+
+## Die pragmatische Antwort: eine Landingpage für Gäste
+
+Die gute Nachricht: Man muss dieses Problem nicht mit schwerer Technik
+erschlagen.
+
+Eine sauber aufgebaute SharePoint-Landingpage für Gäste löst erstaunlich viel.
+Sie gibt einen verlässlichen Startpunkt, bündelt die wichtigsten nächsten
+Schritte und bringt Gäste mit tenant-fixierten Links in den richtigen Kontext.
+Die konkrete URL-Mechanik ist wichtig, steht an dieser Stelle aber nicht im
+Vordergrund.
+
+Der praktische Nutzen lässt sich auf drei Punkte herunterbrechen:
+
+- Eine Landingpage ist schnell gebaut und leicht zu pflegen.
+- Sie funktioniert ab Tag eins, auch wenn Teams für den Gast in Ihrem Tenant
+  noch nicht vollständig nutzbar ist.
+- Sie senkt Supportaufwand, weil sie Orientierung ersetzt, bevor Verwirrung
+  entsteht.
+
+### Warum einfache Alternativen selten reichen
+
+Die Alternativen klingen oft verlockend, sind aber selten die bessere Wahl.
+Sorgfältig formulierte E-Mails helfen nur, wenn sie gelesen, verstanden und
+wochenlang wiedergefunden werden. Conditional Access verbessert Sicherheit,
+aber nicht Orientierung. Und eigene Weiterleitungs-Apps oder aufwendige
+Sonderlösungen lösen das Problem technisch zwar theoretisch, erzeugen aber oft
+mehr Betriebsaufwand, als der eigentliche Schmerz rechtfertigt.
+
+Wenn Einladungen zentral gesteuert werden, sollte die Weiterleitung auf diese Seite
+direkt Teil des Prozesses sein. Wenn Gäste dagegen ad hoc über Teams oder
+SharePoint eingeladen werden, verschenkt man genau den Moment, in dem ein klarer
+Weg am meisten helfen würde. Aus Sicht der unmittelbaren Nutzbarkeit läuft das
+dann oft sogar so, wie Microsoft es vorgesehen hat: Die Team-Mitgliedschaft ist
+vorhanden, der Gast kann in Teams direkt loslegen. Der Preis dafür ist jedoch
+häufig schwächere Governance, weil solche Zugänge zunächst dezentral und eher
+nebenbei entstehen.
+
+Werkzeuge wie **EasyLife 365 Collaboration** können auch solche bereits
+entstandenen Gastkonten später noch einfangen und in geordnete Prozesse
+überführen. Für den Sponsor bedeutet das dann aber oft doppelten Aufwand: erst
+die spontane Anlage, später noch einmal die saubere Pflege. Genau deshalb sind
+Self-Service-Angebote dort besonders stark, wo der Sponsor im bestehenden
+Arbeitskontext bleiben kann, statt zusätzlich in ein zentrales Antrags- oder
+Ticketsystem wechseln zu müssen.
+
+### Sicherheit ohne Zusatzreibung
+
+Auch sicherheitstechnisch ist das Bild klarer, als es zunächst wirkt:
+Mehrstufige Authentifizierung für Gäste ist sinnvoll. In vielen Fällen muss man
+Gäste dafür aber nicht in den eigenen Tenant zwingen, neue Methoden zu
+registrieren. Das Vertrauen in MFA aus dem Heim-Tenant ist oft der pragmatischere
+Weg: sicher, aber deutlich reibungsärmer.
+
+## Was auf so eine Seite gehört
+
+Wir nennen diese Seite gern *Entrance Area*. Nicht Dashboard. Nicht Portal.
+Nicht "externes Intranet light". Einfach der Ort, an dem ein Gast sofort
+versteht: Ich bin hier richtig, und so geht es weiter.
+
+### Orientierung statt Vollständigkeit
+
+Eine gute Seite braucht dabei keine Materialschlacht. Sie braucht Klarheit:
+
+- eine kurze Begrüßung mit Kontext: Wer hat eingeladen, in welchem Umfeld
+  findet die Zusammenarbeit statt?
+- einen klaren ersten Schritt statt einer Vollständigkeitsorgie aus zwanzig
+  Links
+- kuratierte Zugänge zu den wenigen Tools und Ressourcen, die in der ersten
+  Woche wirklich wichtig sind
+- Links zur Selbstverwaltung und Transparenz für Dinge wie Gastkonto,
+  Nutzungsbedingungen, Sicherheitsinformationen oder das Verlassen der
+  Organisation
+- aktuelle Hinweise oder News, damit die Seite auch nach dem ersten Besuch
+  noch einen Zweck hat
+- eine echte Kontaktmöglichkeit, also Name und Kanal statt nur einer anonymen
+  Funktionsmailbox
+
+### Wiederfinden, Erscheinungsbild und Sprache
+
+Ein paar Gestaltungsentscheidungen sind überraschend wirksam:
+
+- Wenn möglich, sollte die Seite leicht wiederzufinden sein, idealerweise über
+  eine einprägsame URL oder sogar über die SharePoint-Root-Site des Tenants,
+  also zum Beispiel `https://contoso.sharepoint.com`.
+- Ein stimmiges Erscheinungsbild hilft mehr, als man denkt. Logo, Navigation,
+  Farben und sichtbarer Organisationsname beantworten sofort die Frage: In wessen Umgebung bin ich
+  hier eigentlich?
+- Für international arbeitende Unternehmen ist Englisch als Standardsprache der
+  Site Collection meist die sicherste Basis. Zusätzliche Sprachversionen auf
+  Seitenebene sind trotzdem sehr sinnvoll.
+- Zielgruppensteuerung lohnt sich, damit nicht alle dieselbe Umgebung
+  präsentiert bekommen. Oft ist sogar eine feinere Unterscheidung sinnvoll,
+  zum Beispiel zwischen internen Mitarbeitenden, klassischen Gastnutzern und
+  Partnern mit eigenem `.ext`-Konto, die häufig parallel mit mehreren Konten
+  arbeiten und dabei oft auf den Geräten ihres eigenen Unternehmens bleiben.
+
+Kurz gesagt: Die Seite soll nicht beeindrucken. Sie soll orientieren. Wenn ein
+Gast in unter zwei Minuten weiß, wo er ist, was er tun soll und wen er fragen
+kann, hat die Seite ihren Job gemacht.
+
+## Ein Detail mit großer Wirkung: den Sponsor sichtbar machen
+
+Spätestens wenn etwas nicht funktioniert, stellt sich für Gäste eine sehr
+einfache Frage: Wen frage ich jetzt eigentlich?
+
+Die Einladungsmail kommt dabei meist nicht völlig aus heiterem Himmel. In der
+Regel gab es vorher schon Kontakt, eine Abstimmung oder zumindest den Hinweis,
+dass gleich eine Gästeinladung kommt. Der Gast kennt den Einladenden also oft
+zumindest dem Namen nach.
+
+Trotzdem hilft die Mail später nur begrenzt weiter. Sie zeigt vor allem, wer an
+einem bestimmten Tag auf "Einladen" geklickt hat. Das ist nicht zwangsläufig
+die Person, die heute verantwortlich ist. Vielleicht lief die Einladung über
+einen Prozess, vielleicht wurde das intern weiterdelegiert, vielleicht hat das
+Projekt den Besitzer gewechselt, vielleicht ist die Person gar nicht mehr im
+Unternehmen. Die Mail ist eine Momentaufnahme, keine verlässliche
+Zuständigkeit.
+
+Dabei gibt es diese Zuständigkeit im Verzeichnis oft längst: in Microsoft Entra
+über die Sponsoren eines Gastkontos. Standardmäßig bleibt diese Information
+für den Gast aber unsichtbar.
+
+## Das Guest Sponsor Info Web Part
+
+Genau dort setzt unser **Guest Sponsor Info** Web Part an. Es ist ein
+kostenloses Open-Source-Web-Part für SharePoint für genau dieses Szenario:
+Gäste sollen auf ihrer Landingpage sehen, wer ihre Sponsoren sind und wie
+diese Personen erreichbar sind.
+
+Das Web Part liest das Entra-Profil des besuchenden Gasts aus, ermittelt die
+aktuellen Sponsoren und zeigt Namen, Rollen und Kontaktdaten automatisch an.
+Keine Pflege pro Gast, keine manuell gepflegten Kontaktlisten, kein Copy-and-
+paste in irgendwelche Seitentexte. Wenn mehrere Sponsoren hinterlegt sind,
+sieht der Gast alle relevanten Ansprechpersonen und kann flexibel entscheiden,
+wen er anspricht.
+
+Wenn das Web Part zusätzlich so konfiguriert ist, dass auch die Manager der
+Sponsoren sichtbar werden, sieht der Gast zumindest deren Namen und bekommt ein
+besseres Gefühl dafür, in welchem größeren Umfeld in der Organisation er sich
+bewegt. Direkte Kontaktdaten dieser Manager werden dabei aus Privacy-Gründen
+nicht angezeigt.
+
+Wie belastbar diese Zuordnung im Alltag ist, entscheidet allerdings nicht das
+Web Part, sondern der Governance-Prozess dahinter.
+
+Besonders hilfreich wird es dort, wo viele Gäste sonst in einer Grauzone
+landen: wenn Teams in Ihrem Tenant für sie noch nicht nutzbar ist. Das Web Part
+kann diesen Status sichtbar machen und Chat- oder Anruffunktionen passend
+behandeln, statt Gäste fröhlich auf Schaltflächen klicken zu lassen, die im
+Moment ins Leere führen würden.
+
+Und weil das Web Part am meisten bringt, wenn die Seite drum herum ebenfalls
+gut gebaut ist, haben wir auf unserer Landingpage-Ideen-Seite die passenden
+Bausteine, Muster für Deeplinks und Links zur Selbstverwaltung gesammelt. Dort gehört die
+konkrete Umsetzung hin. Hier geht es um das Warum.
+
+Die Landingpage-Ideen finden Sie hier:
+[Landingpage-Ideen](https://guest-sponsor-info.workoho.cloud/landing-page-ideas/)
+
+Mehr zum Web Part finden Sie hier:
+[Guest Sponsor Info Produktseite](https://guest-sponsor-info.workoho.cloud/)
+
+## Sponsoren sind nützlich, aber nicht selbstpflegend
+
+Der Sponsor-Eintrag in Entra ist wertvoll, aber er pflegt sich nicht selbst.
+Bei vielen Einladungswegen wird zunächst schlicht der Einladende zum ersten
+Sponsor. Das ist ein brauchbarer Startwert, aber noch kein sauberer Prozess
+für Pflege, Übergabe und Vertretung.
+
+Wirklich belastbar wird das Modell meist erst, wenn schon bei der Einladung
+mindestens zwei Sponsoren vorgesehen sind: eine Hauptansprechperson und eine
+benannte Vertretung. Es gibt keinen eingebauten Prozess, der sauber nachhält,
+wenn ein Sponsor die Abteilung wechselt, das Unternehmen verlässt oder die
+Verantwortung an jemand anders übergibt. Und auch fünf Sponsoren an einem
+Gastkonto klingen auf dem Papier besser, als sie sich in der Praxis anfühlen.
+Zu viele Zuständige führen oft dazu, dass sich niemand wirklich zuständig
+fühlt.
+
+Microsoft stellt mit **Microsoft Entra ID Governance** durchaus Werkzeuge für
+Access Reviews und Entitlement Management bereit. Inhaltlich ist das stark,
+organisatorisch und lizenzseitig aber für viele mittelständische Unternehmen
+eine ziemlich hohe Einstiegshürde.
+
+**EasyLife 365 Collaboration** ist dabei deutlich mehr als reines
+Gastmanagement. Die Lösung verbindet Gäste, Ressourcen und Governance in einem
+gemeinsamen Modell und verwaltet auch die verschiedenen Typen von
+Microsoft-365-Gruppen, also etwa Teams, SharePoint-Teamsites und ähnliche
+Kollaborationsräume, nicht getrennt voneinander.
+
+Sponsorenbeziehungen lassen sich damit schon bei der Einladung sauber anlegen
+und danach zusammen mit Vertretungen, Reviews und Lifecycle-Regeln pflegen.
+Das macht aus Sponsor-Sichtbarkeit auf der Landingpage einen belastbaren
+Prozess statt nur eine hübsche Anzeige.
+
+Workoho ist Platinum Partner für dieses Produkt und bringt dafür praktische
+Erfahrung aus Umsetzung und Weiterentwicklung mit. Kurz gesagt: EasyLife
+organisiert die Governance im Unternehmen, das Guest Sponsor Info Web Part
+macht sie für Gäste sichtbar.
+
+Mehr zu EasyLife 365 Collaboration:
+[EasyLife 365 Collaboration](https://easylife365.cloud/products/collaboration/)
+
+Produktdemo mit Workoho:
+[Demo-Link bei Workoho ergänzen](WORKOHO_DEMO_LINK_EINFUEGEN)
+
+### Und genau da wird es mit `.ext`-Konten oft knifflig
+
+Ein typischer Punkt, an dem diese Governance in der Praxis knifflig wird, sind
+die berühmten `.ext`-Konten. Dann stellt sich schnell die nächste Frage:
+Reicht ein gut geführtes Gastkonto aus, oder braucht ein Partner in diesem Fall
+doch ein zusätzliches internes Externenkonto mit eigener Lizenz und
+erweiterten Rechten?
+
+Solche Konten heißen je nach Unternehmen `.ext`, `vendor`, `partner` oder
+anders. Sie sind nicht automatisch falsch. Problematisch wird es erst, wenn
+sie aus Gewohnheit zum Standard werden oder organisatorisch zwischen alle
+Stühle fallen. Für echte Mitarbeitende gibt es irgendwann einen klaren Anlass
+über HR. Für Partnerkonten fehlt dieser Mechanismus oft. Dann werden
+Verlängerungen in größeren Abständen irgendwo gesammelt bestätigt, obwohl kaum
+noch jemand nah genug am Projekt ist, um sauber auszusortieren. Und wenn die
+Person bei der Partnerfirma längst ausgeschieden ist, bekommt die Kundenseite
+davon nicht zuverlässig etwas mit.
+
+Ein guter Gäste-Governance-Prozess schafft dafür die nötige
+Entscheidungsgrundlage und rückt die Verantwortung wieder näher an die
+tatsächliche Zusammenarbeit. Er macht sichtbarer, welche Zusammenarbeit
+wirklich nur Gastzugriff braucht, welche Ressourcen daran hängen und wo
+ausnahmsweise mehr nötig ist. Und wenn tatsächlich ein `.ext`-Konto gebraucht
+wird, sollte auch dieses Konto an klare Regeln, Reviews und einen echten
+Lebenszyklus gebunden sein, statt dauerhaft nebenher mitzulaufen.
+
+Auf dieser Grundlage lassen sich nicht nur Gäste selbst, sondern auch die
+zugehörigen Ressourcen und Freigaben systematisch steuern. Der eigentliche
+Hebel zeigt sich oft erst danach: Wer darauf weitere Prozesse aufbaut oder
+bestehende Abläufe daran ausrichtet, kann unnötige Lizenzen und Konten abbauen
+und zugleich die Sicherheit erhöhen. Selten sparen dieselben Schritte Geld und
+senken Risiken. Hier passiert oft genau das. Und genau deshalb ist die
+Landingpage am Ende nicht bloß ein netter Einstieg für Gäste, sondern die
+sichtbare Oberfläche eines deutlich größeren Themas.
+
+## Das Thema ist größer als reine Benutzerfreundlichkeit
+
+Eine gute Landingpage für Gäste ist nicht nur eine Frage des Komforts. Sie ist
+auch ein Governance-Thema.
+
+Wenn Gäste ohne Führung loslaufen, landen sie oft in den falschen Räumen:
+persönliche OneDrives als spontane Projektablage, informelle Teams-Chats statt
+strukturierter Kanäle oder externe Werkzeuge jenseits jeder Richtlinie. Eine
+klare Landingpage lenkt die ersten Schritte in die richtigen Bahnen.
+
+Und sie sendet ein Signal nach außen: Externe Zusammenarbeit ist in diesem
+Unternehmen geplant, geführt und ernst genommen. Nicht improvisiert.
+
+## Wenn Ihnen das bekannt vorkommt
+
+Genau bei solchen Fragen unterstützen wir bei **Workoho**. Als **Platinum
+Partner für EasyLife 365 Collaboration** arbeiten wir mit IT-Teams, die
+externe Zusammenarbeit nicht nur erlauben, sondern sauber gestalten wollen:
+nachvollziehbar, praxistauglich und ohne unnötigen Overhead.
+
+Wir arbeiten dabei ungern nach dem Muster "PowerPoint abliefern und wieder
+verschwinden". Eher wie Bergführer: Lage einschätzen, Route planen, gemeinsam
+gehen, unterwegs nachjustieren und am Ende dafür sorgen, dass Ihr Team den Weg
+auch künftig selbst sicher beherrscht. Wenn bei Ihnen zusätzlich ein externer
+IT-Dienstleister beteiligt ist, ist das kein Problem, sondern meistens einfach
+Teil der Realität.
+
+Wenn Gäste in Ihrem Umfeld regelmäßig sinngemäß fragen: "Ich habe die Einladung
+angenommen. Und jetzt?", dann ist das kein Randthema. Dann ist es Zeit für ein
+pragmatisches Gespräch.
+
+## Über den Autor
+
+Julian Pawlowski ist Innovation & Technology Coach bei Workoho und berät Unternehmen
+zu moderner IT-Strategie, Microsoft 365, Cloud-Architekturen und Security.
+Als erfahrener Enterprise Architect verbindet er technologische Tiefe mit einem klaren Blick
+für Geschäftsanforderungen, Nutzerakzeptanz und nachhaltige Veränderung.
