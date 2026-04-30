@@ -12,8 +12,9 @@
     "azure-function/dist": true,
     "azure-function/node_modules": true
   },
-  // ── TypeScript ─────────────────────────────────────────────────────────────
-  "typescript.tsdk": "./node_modules/typescript/lib",
+  // ── JavaScript / TypeScript ───────────────────────────────────────────────
+  "js/ts.tsdk.path": "./node_modules/typescript/lib",
+  "js/ts.tsdk.promptToUseWorkspaceVersion": true,
   // ── ESLint ─────────────────────────────────────────────────────────────────
   "eslint.validate": ["typescript", "typescriptreact"],
   "editor.codeActionsOnSave": {
