@@ -163,6 +163,14 @@ if ! try_net mcr.microsoft.com az bicep restore --file azure-function/infra/main
     "Run 'az bicep restore --file azure-function/infra/main.bicep' once the network is available."
 fi
 
+# Seed Claude Code per-developer settings from the committed template on first
+# container build. settings.local.json is gitignored, so once it exists we
+# never touch it — manual customisations are preserved across rebuilds.
+if [[ -f .claude/settings.local.json.template && ! -f .claude/settings.local.json ]]; then
+  cp .claude/settings.local.json.template .claude/settings.local.json
+  echo "${C_GRN}✓${C_RST} Seeded .claude/settings.local.json from template."
+fi
+
 # Install repo-defined APM packages so every contributor gets the same shared
 # skills and agent context immediately after container creation.
 if [[ -f apm.yml ]]; then

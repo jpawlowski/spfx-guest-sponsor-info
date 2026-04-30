@@ -47,6 +47,9 @@ azure-function/local.settings.json
 # Tool caches (ESLint, Prettier) — local performance aids, not build artefacts
 .cache/
 
+# Claude Code per-developer settings (project settings.json is committed)
+.claude/settings.local.json
+
 # Generated release notes (produced by scripts/release-notes.sh or the release workflow)
 RELEASE_NOTES.md
 guest-sponsor-info-function.zip

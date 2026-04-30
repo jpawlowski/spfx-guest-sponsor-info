@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "_comment": "DevContainer-friendly defaults seeded by .devcontainer/post-create.sh. Edit settings.local.json directly — it is gitignored. Re-running post-create.sh will not overwrite your customizations.",
+  "permissions": {
+    "defaultMode": "bypassPermissions"
+  }
+}
