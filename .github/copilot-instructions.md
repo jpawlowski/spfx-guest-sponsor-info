@@ -12,6 +12,24 @@ validation for the situation. Running the full lint suite after every small edit
 wastes time — use targeted checks during development and the full suite only
 before committing.
 
+## Definition of done for code changes
+
+A change is not complete when the bug is fixed and tests pass.
+Before finishing, do one local readability pass on the touched code.
+
+During that pass:
+
+- Prefer names that reflect stable domain meaning or UI policy, not incidental
+  implementation details.
+- Rename misleading identifiers introduced or exposed by the change when the
+  rename is local and low risk.
+- Extract small pure helpers when multi-branch conditionals encode breakpoints,
+  layout policy, or state-derived rendering rules.
+- Avoid leaving nested ternaries or dense inline object construction in the
+  touched code when a named helper would make the intent clearer.
+- Improve the touched slice and its immediate neighborhood, but do not widen
+  the change into unrelated refactors.
+
 ### Targeted lint (after each edit — fast, 2–5 s)
 
 Run **only** the linter that matches the files you changed:
@@ -28,6 +46,11 @@ Run **only** the linter that matches the files you changed:
 
 If you changed files spanning multiple types, run the relevant subset — not the
 full suite.
+
+Before finishing or asking the user to commit, run the matching targeted
+linter(s) for every changed file type in the current diff and fix all reported
+errors and warnings. Do not rely on pre-commit hooks to discover the first
+remaining issue.
 
 ### Full validation (before committing)
 
@@ -47,8 +70,10 @@ For interactive development use `npm start` (hosted workbench with hot-reload; r
 set in `.env` or as a host OS env var, see `.devcontainer/devcontainer.json`).
 For a CI-style clean build from scratch use `./scripts/build.sh` (runs `npm ci` first).
 
-If any lint errors or test failures appear after your changes, fix them before finishing.
-Do not suppress linter rules or skip tests to make the pipeline green.
+If any lint errors, lint warnings, or test failures appear after your changes,
+fix them before finishing.
+Do not suppress linter rules, ignore warnings, or skip tests to make the
+pipeline green.
 
 ## Key scripts
 

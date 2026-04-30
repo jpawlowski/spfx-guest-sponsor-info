@@ -110,6 +110,14 @@ fix(graph): handle missing user profile gracefully
 docs: update README configuration section
 ```
 
+### Final self-check before commit
+
+Before invoking `git commit`, quickly verify:
+
+- Header length ≤ 100 characters
+- Every body/footer line ≤ 100 characters
+- Body text is wrapped manually, or omitted if it adds little value
+
 ## When to Use npm Scripts vs Direct Commands
 
 ### ✅ Use `npm` Scripts (Managed + Linted)
@@ -169,6 +177,11 @@ Run **only** the linter matching the files you touched:
 If the change spans multiple file types, run only the matching subset.
 Do **not** run `npm run lint` (full suite) after every individual edit.
 
+Before finishing or asking the user to commit, run the matching targeted
+linter(s) for every changed file type in the current diff and fix all reported
+errors and warnings. Do not rely on pre-commit hooks to discover the first
+remaining issue.
+
 ### Before committing (full validation)
 
 1. **Fix** → `npm run fix` (auto-correct formatting)
@@ -179,7 +192,42 @@ Do **not** run `npm run lint` (full suite) after every individual edit.
 The pre-commit hook (`lint-staged`) already runs targeted fix + lint on staged
 files, so step 1–2 is a safety net more than a strict requirement.
 
-**Never push with lint errors or test failures.**
+**Never push with lint errors, lint warnings, or test failures.**
+
+## Portable Agent Policy
+
+Use this file as the shared baseline for any coding agent working in this
+repository, especially tools that do not automatically understand
+`.github/instructions/`.
+
+If an agent supports file-scoped instructions, also apply the matching files
+under `.github/instructions/`. If it does not, read the relevant instruction
+files manually before editing those paths.
+
+### Definition of done for code changes
+
+A change is not complete when the bug is fixed and tests pass.
+Before finishing, do one local readability pass on the touched code.
+
+- Prefer names that reflect stable domain meaning or UI policy, not incidental
+  implementation details.
+- Rename misleading identifiers introduced or exposed by the change when the
+  rename is local and low risk.
+- Extract small pure helpers when multi-branch conditionals encode breakpoints,
+  layout policy, or state-derived rendering rules.
+- Avoid leaving nested ternaries or dense inline object construction in the
+  touched code when a named helper would make the intent clearer.
+- Improve the touched slice and its immediate neighborhood, but do not widen
+  the change into unrelated refactors.
+
+### Instruction files to consult manually when needed
+
+- `src/**/*.{ts,tsx}` → `.github/instructions/code-quality.instructions.md`
+- `azure-function/src/**/*.ts` → `.github/instructions/azure-function-code-quality.instructions.md`
+- `**/*.sh` → `.github/instructions/shell-code-quality.instructions.md`
+- `azure-function/infra/**` → `.github/instructions/infra-code-quality.instructions.md`
+- `src/**` → `.github/instructions/fluent-ui.instructions.md`
+- Commit message generation → `.github/instructions/commit-message.instructions.md`
 
 ## Shell Script Conventions
 

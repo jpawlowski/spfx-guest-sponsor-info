@@ -40,6 +40,14 @@ that violate these rules, so generate correct messages from the start.
 
 The 100-character limit applies to **each individual line**, not the total body
 length. Break prose naturally at word boundaries so no line exceeds 100 chars.
+If the body adds little value, omit it instead of forcing long prose into a
+single line.
+
+Before returning or using a commit message, do a quick self-check:
+
+- Header length ≤ 100 characters
+- Every body/footer line ≤ 100 characters
+- No single long sentence left unwrapped in the body
 
 Good:
 
