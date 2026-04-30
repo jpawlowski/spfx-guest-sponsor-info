@@ -274,7 +274,10 @@ const useRichCardStyles = makeStyles({
     },
   },
   richCardFlat: {
-    width: 'auto',
+    width: '100%',
+    maxWidth: '520px',
+    margin: '0 auto',
+    boxSizing: 'border-box' as const,
     boxShadow: 'none',
     animationName: 'none',
     animationDuration: '0s',
@@ -440,6 +443,14 @@ const useRichCardStyles = makeStyles({
   },
 });
 
+const useMobileDrawerStyles = makeStyles({
+  drawerHeaderTitle: {
+    width: '100%',
+    maxWidth: '100%',
+    alignSelf: 'stretch',
+  },
+});
+
 /**
  * Griffel styles for Persona text slots in the rich card header and manager row.
  * Replaces the SCSS classes that previously styled the manual avatar+div structure.
@@ -587,29 +598,85 @@ const CopyButton: React.FC<{ value: string; ariaLabel: string }> = ({ value, ari
   );
 };
 
+type WindowWidthClass = 'compact' | 'medium' | 'expanded' | 'large' | 'extra-large';
+type WindowHeightClass = 'compact' | 'medium' | 'expanded';
+
+interface IViewport {
+  isTouch: boolean;
+  widthClass: WindowWidthClass;
+  heightClass: WindowHeightClass;
+}
+
+function classifyWindowWidth(width: number): WindowWidthClass {
+  if (width < 600) return 'compact';
+  if (width < 840) return 'medium';
+  if (width < 1200) return 'expanded';
+  if (width < 1600) return 'large';
+  return 'extra-large';
+}
+
+function classifyWindowHeight(height: number): WindowHeightClass {
+  if (height < 480) return 'compact';
+  if (height < 900) return 'medium';
+  return 'expanded';
+}
+
 /**
- * Returns true when the primary pointer is coarse (touch device — phone, tablet,
- * Surface in tablet mode, etc.). Determines whether the rich contact card opens
- * in an OverlayDrawer (touch) or a Popover anchored to the card tile (pointer).
+ * Returns the CSS value for `--fui-Drawer--size` on the side drawer, chosen
+ * from the current window width and height classes.
  *
- * Using `pointer: coarse` is more reliable than a viewport-width check:
- * - Tablets (iPad, Surface) have wide viewports but need the drawer UX.
- * - A 480px breakpoint would wrongly pick Popover on a landscape phone.
- *
- * Starts as false so it is safe in SSR and test environments (jsdom has no matchMedia).
- * Updates reactively when the pointer type changes (e.g. detaching a keyboard).
+ * Height class takes priority: a compact-height window (phone landscape) gets
+ * the narrowest drawer regardless of its width class. For taller viewports,
+ * wider width classes receive progressively more space.
  */
-function useIsMobile(): boolean {
-  const [isMobile, setIsMobile] = React.useState(false);
+function sideDrawerWidth(widthClass: WindowWidthClass, heightClass: WindowHeightClass): string {
+  if (heightClass === 'compact')   return 'clamp(320px, 46vw, 420px)'; // phone landscape
+  if (widthClass === 'medium')     return 'clamp(360px, 44vw, 460px)'; // small tablet
+  if (widthClass === 'expanded')   return 'clamp(400px, 36vw, 480px)'; // large tablet
+  return 'clamp(420px, 32vw, 520px)';                                   // desktop-scale touch
+}
+
+/**
+ * Derives responsive touch classes from the current window size.
+ *
+ * This mirrors the platform guidance more closely than pure orientation checks:
+ * - Apple uses compact/regular size classes rather than device-name breakpoints.
+ * - Material/Android recommends width classes at 600/840/1200 dp and a compact-height
+ *   override for short landscape windows.
+ *
+ * The resulting classes let us keep phone portrait as a bottom sheet while using a
+ * trailing side sheet for phone landscape and tablet-sized windows.
+ */
+function useTouchViewport(): IViewport {
+  const [viewport, setViewport] = React.useState<IViewport>({
+    isTouch: false,
+    widthClass: 'compact',
+    heightClass: 'medium',
+  });
+
   React.useEffect(() => {
     if (!window.matchMedia) return;
-    const mq = window.matchMedia('(pointer: coarse)');
-    setIsMobile(mq.matches);
-    const handler = (e: MediaQueryListEvent): void => setIsMobile(e.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
+
+    const coarseMq = window.matchMedia('(pointer: coarse)');
+    const updateViewport = (): void => {
+      setViewport({
+        isTouch: coarseMq.matches,
+        widthClass: classifyWindowWidth(window.innerWidth),
+        heightClass: classifyWindowHeight(window.innerHeight),
+      });
+    };
+
+    updateViewport();
+    coarseMq.addEventListener('change', updateViewport);
+    window.addEventListener('resize', updateViewport);
+
+    return () => {
+      coarseMq.removeEventListener('change', updateViewport);
+      window.removeEventListener('resize', updateViewport);
+    };
   }, []);
-  return isMobile;
+
+  return viewport;
 }
 
 interface ISponsorCardProps {
@@ -762,11 +829,12 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
     if (activity) return formatPresenceActivity(activity);
     return availability ? (getPresenceLabels()[availability] ?? '') : undefined;
   }, [sponsor.presence, sponsor.presenceActivity, isOof]);
-  const isMobile = useIsMobile();
+  const { isTouch, widthClass, heightClass } = useTouchViewport();
   const actionButtonClasses = useActionButtonStyles();
   const personaClasses = usePersonaStyles();
   const cardClasses = useCardTileStyles();
   const richClasses = useRichCardStyles();
+  const mobileDrawerClasses = useMobileDrawerStyles();
   const officeLocation = sponsor.officeLocation?.trim();
   const streetAddress = sponsor.streetAddress?.trim();
   const postalCode = sponsor.postalCode?.trim();
@@ -907,15 +975,24 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
   const managerThreeLines =
     showManagerJobTitle && showManagerDepartment && !!sponsor.managerDepartment;
   const managerAvatarSize: 56 | 64 = managerThreeLines ? 64 : 56;
+  const usesBottomSheet = isTouch && widthClass === 'compact' && heightClass !== 'compact';
+  const mobileDrawerPosition: 'bottom' | 'end' = usesBottomSheet ? 'bottom' : 'end';
+  const mobileDrawerSize: 'small' | 'full' = usesBottomSheet ? 'full' : 'small';
+  const mobileDrawerStyle = React.useMemo<React.CSSProperties | undefined>(
+    () => (!isTouch || usesBottomSheet
+      ? undefined
+      : { '--fui-Drawer--size': sideDrawerWidth(widthClass, heightClass) } as React.CSSProperties),
+    [isTouch, usesBottomSheet, widthClass, heightClass]
+  );
 
   const richBody = (
     <div
-      className={mergeClasses(richClasses.richCard, isMobile && richClasses.richCardFlat)}
-      onMouseEnter={!isMobile ? onActivate : undefined}
-      onMouseLeave={!isMobile ? onScheduleDeactivate : undefined}
+      className={mergeClasses(richClasses.richCard, isTouch && richClasses.richCardFlat)}
+      onMouseEnter={!isTouch ? onActivate : undefined}
+      onMouseLeave={!isTouch ? onScheduleDeactivate : undefined}
     >
       {/* ── Header panel: elevated rounded card (avatar + buttons) ─── */}
-      <div className={mergeClasses(richClasses.richCardHeaderPanel, isMobile && richClasses.richCardHeaderPanelFlat)}>
+      <div className={mergeClasses(richClasses.richCardHeaderPanel, isTouch && richClasses.richCardHeaderPanelFlat)}>
       <div className={richClasses.richHeader}>
         <Persona
           size="huge"
@@ -1012,9 +1089,9 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
       <div
         className={mergeClasses(
           richClasses.richCardBody,
-          isMobile && richClasses.richCardBodyFlat,
-          (isMobile || detailsExpanded) && richClasses.richCardBodyExpanded,
-          isMobile && richClasses.richCardBodyExpandedFlat,
+          isTouch && richClasses.richCardBodyFlat,
+          (isTouch || detailsExpanded) && richClasses.richCardBodyExpanded,
+          isTouch && richClasses.richCardBodyExpandedFlat,
         )}
       >
 
@@ -1172,16 +1249,19 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
       </div>
 
       {/* ── Rich contact card (OverlayDrawer on mobile, Popover on desktop) ─── */}
-      {!readOnly && isMobile && (
+      {!readOnly && isTouch && (
         <OverlayDrawer
           open={isActive}
-          position="bottom"
+          position={mobileDrawerPosition}
+          size={mobileDrawerSize}
+          style={mobileDrawerStyle}
           onOpenChange={(_, data) => { if (!data.open) onForceDeactivate(); }}
         >
           <RendererProvider renderer={griffelRenderer}>
           <FluentProvider theme={v9Theme}>
             <DrawerHeader>
               <DrawerHeaderTitle
+                className={mobileDrawerClasses.drawerHeaderTitle}
                 action={
                   <Button
                     appearance="subtle"
@@ -1201,7 +1281,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
           </RendererProvider>
         </OverlayDrawer>
       )}
-      {!readOnly && !isMobile && isActive && (
+      {!readOnly && !isTouch && isActive && (
         <Popover
           open
           positioning={{

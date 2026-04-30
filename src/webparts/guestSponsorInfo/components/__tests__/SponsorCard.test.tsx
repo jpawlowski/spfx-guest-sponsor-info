@@ -75,8 +75,8 @@ jest.mock('@fluentui/react-components', () => ({
   ),
   // OverlayDrawer: renders children inside a dialog when open.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  OverlayDrawer: ({ children, open }: { children: React.ReactNode; open?: boolean }) => (
-    open ? <div role="dialog">{children}</div> : null
+  OverlayDrawer: ({ children, open, position, size, onOpenChange: _onOpenChange, ...rest }: any) => (
+    open ? <div role="dialog" data-position={position} data-size={size} {...rest}>{children}</div> : null
   ),
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   DrawerHeader: ({ children }: { children: React.ReactNode }) => <>{children}</>,
@@ -85,7 +85,7 @@ jest.mock('@fluentui/react-components', () => ({
     <><span>{children}</span>{action}</>
   ),
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  DrawerBody: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  DrawerBody: ({ children, ...rest }: any) => <div data-drawer-body="" {...rest}>{children}</div>,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   Link: ({ href, children, className, ...rest }: any) => (
     <a href={href} className={className} {...rest}>{children}</a>
@@ -145,6 +145,9 @@ const BASE_SPONSOR: ISponsor = {
 
 let container: HTMLDivElement;
 const originalFetch = globalThis.fetch;
+const originalMatchMedia = window.matchMedia;
+const originalInnerWidth = window.innerWidth;
+const originalInnerHeight = window.innerHeight;
 
 beforeEach(() => {
   container = document.createElement('div');
@@ -161,12 +164,50 @@ afterEach(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     delete (globalThis as any).fetch;
   }
+
+  if (originalMatchMedia) {
+    window.matchMedia = originalMatchMedia;
+  } else {
+    // Keep test globals clean when matchMedia was not defined initially.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    delete (window as any).matchMedia;
+  }
+
+  Object.defineProperty(window, 'innerWidth', { configurable: true, value: originalInnerWidth });
+  Object.defineProperty(window, 'innerHeight', { configurable: true, value: originalInnerHeight });
 });
 
 async function flushAsync(): Promise<void> {
   await act(async () => {
     await Promise.resolve();
   });
+}
+
+function mockMatchMedia(matchesByQuery: Record<string, boolean>): void {
+  window.matchMedia = jest.fn().mockImplementation((query: string) => ({
+    matches: matchesByQuery[query] ?? false,
+    media: query,
+    onchange: null,
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    addListener: jest.fn(),
+    removeListener: jest.fn(),
+    dispatchEvent: jest.fn(),
+  })) as unknown as typeof window.matchMedia;
+}
+
+function mockViewport(width: number, height: number): void {
+  Object.defineProperty(window, 'innerWidth', { configurable: true, value: width });
+  Object.defineProperty(window, 'innerHeight', { configurable: true, value: height });
+}
+
+function openOnTouchViewport(width: number, height: number): Promise<void> {
+  mockViewport(width, height);
+  mockMatchMedia({
+    '(pointer: coarse)': true,
+  });
+  render(BASE_SPONSOR, 'test-tenant-id', true);
+  return flushAsync();
 }
 
 function render(
@@ -333,6 +374,51 @@ describe('SponsorCard', () => {
     it('appears when isActive=true and contains the office phone', () => {
       render(BASE_SPONSOR, 'test-tenant-id', true);
       expect(container.querySelector('[role="dialog"]')!.textContent).toContain('+49 30 12345678');
+    });
+
+    it('opens as a full-height bottom drawer on compact-width touch windows', async () => {
+      await openOnTouchViewport(390, 844);
+
+      const dialog = container.querySelector('[role="dialog"]');
+      expect(dialog?.getAttribute('data-position')).toBe('bottom');
+      expect(dialog?.getAttribute('data-size')).toBe('full');
+      expect(dialog?.textContent).toContain('alice@contoso.com');
+    });
+
+    it('uses a constrained side drawer on compact-height touch windows', async () => {
+      await openOnTouchViewport(844, 390);
+
+      const dialog = container.querySelector('[role="dialog"]') as HTMLDivElement | null;
+      expect(dialog?.getAttribute('data-position')).toBe('end');
+      expect(dialog?.getAttribute('data-size')).toBe('small');
+      expect(dialog?.style.getPropertyValue('--fui-Drawer--size')).toBe('clamp(320px, 46vw, 420px)');
+    });
+
+    it('uses a medium side drawer on tablet portrait widths', async () => {
+      await openOnTouchViewport(820, 1180);
+
+      const dialog = container.querySelector('[role="dialog"]') as HTMLDivElement | null;
+      expect(dialog?.getAttribute('data-position')).toBe('end');
+      expect(dialog?.getAttribute('data-size')).toBe('small');
+      expect(dialog?.style.getPropertyValue('--fui-Drawer--size')).toBe('clamp(360px, 44vw, 460px)');
+    });
+
+    it('uses an expanded side drawer on large tablet portrait widths', async () => {
+      await openOnTouchViewport(1024, 1366);
+
+      const dialog = container.querySelector('[role="dialog"]') as HTMLDivElement | null;
+      expect(dialog?.getAttribute('data-position')).toBe('end');
+      expect(dialog?.getAttribute('data-size')).toBe('small');
+      expect(dialog?.style.getPropertyValue('--fui-Drawer--size')).toBe('clamp(400px, 36vw, 480px)');
+    });
+
+    it('uses the widest side drawer on large tablet landscape widths', async () => {
+      await openOnTouchViewport(1366, 1024);
+
+      const dialog = container.querySelector('[role="dialog"]') as HTMLDivElement | null;
+      expect(dialog?.getAttribute('data-position')).toBe('end');
+      expect(dialog?.getAttribute('data-size')).toBe('small');
+      expect(dialog?.style.getPropertyValue('--fui-Drawer--size')).toBe('clamp(420px, 32vw, 520px)');
     });
 
     it('calls onActivate when mouse enters the card', () => {
