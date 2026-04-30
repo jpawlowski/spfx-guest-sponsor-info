@@ -95,7 +95,7 @@
     "lint-staged": "16.4.0",
     "markdownlint-cli2": "0.22.1",
     "prettier": "3.8.3",
-    "typescript": "~5.9.3"
+    "typescript": "5.3.3"
   },
   "overrides": {
     "@rushstack/heft": "1.2.17"

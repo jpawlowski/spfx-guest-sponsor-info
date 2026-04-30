@@ -48,12 +48,11 @@ updates:
       # configuration. Major bumps require manual verification.
       - dependency-name: "css-loader"
         update-types: ["version-update:semver-major"]
-      # typescript in the webpart is constrained by the SPFx build rig, which
-      # ships TypeScript 5.x as a direct dependency (@microsoft/spfx-web-build-rig).
-      # Major version upgrades (e.g. 5.x → 6.x) would break the Heft compilation
-      # pipeline. Only patch/minor updates within the current major are safe.
+      # typescript in the webpart must stay aligned with the exact version used
+      # by the SPFx build rig. Even semver-compatible minor updates can cause the
+      # editor and eslint tooling to disagree with the Heft/SPFx compiler.
+      # Update it only intentionally alongside SPFx build-rig validation.
       - dependency-name: "typescript"
-        update-types: ["version-update:semver-major"]
       # SPFx ships with React 17 internally; a version mismatch causes subtle
       # build errors. Upgrade only alongside a full SPFx upgrade.
       - dependency-name: "react"
