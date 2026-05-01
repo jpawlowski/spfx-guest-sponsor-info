@@ -49,7 +49,7 @@
   },
   "remoteUser": "vscode",
   "postCreateCommand": "/bin/bash .devcontainer/post-create.sh",
-  "forwardPorts": [4000, 4321],
+  "forwardPorts": [4000, 4321, 7071],
   "containerEnv": {
     "npm_config_save_exact": "true",
     // Pass the host GITHUB_TOKEN into the container so `gh` and the MCP server

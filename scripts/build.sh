@@ -31,12 +31,23 @@ step() {
   echo "${C_BLD}[ $1 ] $2${C_RST}"
 }
 
-step "1/4" "Installing web part dependencies…"
+step "1/5" "Installing web part dependencies…"
 gha_group_start "Install web part dependencies"
 npm ci
 gha_group_end
 
-step "2/4" "Building solution (compile · bundle · test · package)…"
+step "2/5" "Removing stale web part build outputs…"
+gha_group_start "Clean previous web part outputs"
+# `npm start` can leave Webpack hot-update files in dist/release and inside
+# sharepoint/solution/debug. `heft clean` removes the normal build outputs, but
+# the packaged debug folder and any previous .sppkg need an explicit reset so a
+# local release build cannot accidentally repackage stale dev artifacts.
+npm run clean
+rm -rf sharepoint/solution/debug
+find sharepoint/solution -maxdepth 1 -type f -name '*.sppkg' -delete
+gha_group_end
+
+step "3/5" "Building solution (compile · bundle · test · package)…"
 gha_group_start "Build web part solution"
 npm run build
 gha_group_end
@@ -48,12 +59,12 @@ if [[ ! -f "$PKG" ]]; then
   exit 1
 fi
 
-step "3/4" "Installing Azure Function dependencies…"
+step "4/5" "Installing Azure Function dependencies…"
 gha_group_start "Install Azure Function dependencies"
 npm ci --prefix azure-function
 gha_group_end
 
-step "4/4" "Building Azure Function…"
+step "5/5" "Building Azure Function…"
 gha_group_start "Build Azure Function"
 npm run build --prefix azure-function
 gha_group_end

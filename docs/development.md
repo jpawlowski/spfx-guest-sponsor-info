@@ -253,6 +253,27 @@ Coverage output is written to `jest-output/coverage/`.
 - **Demo mode:** Property pane toggle shows two fictitious sponsors without
   Graph calls. Development and visual review only — disable before production.
 
+For repeatable browser QA without opening the property pane, use:
+
+```bash
+./scripts/open-qa-workbench.sh
+```
+
+That opens the hosted workbench with non-production URL overrides enabled:
+
+- `gsi-qa-mock=1` forces demo data for internal users.
+- `gsi-qa-viewport=phone|phone-landscape|tablet|desktop-touch` forces the touch drawer path.
+- `gsi-qa-long=1` stretches the first mock sponsor with long text to stress scrolling.
+- `gsi-qa-hint=...` switches directly to warning/banner states such as version mismatch.
+
+Useful examples:
+
+```bash
+./scripts/open-qa-workbench.sh
+./scripts/open-qa-workbench.sh --viewport desktop-touch --live
+./scripts/open-qa-workbench.sh --hint sponsorUnavailable --count 3 --no-long
+```
+
 See [architecture.md](architecture.md#development-testing) for more details.
 
 ## Azure Function Development

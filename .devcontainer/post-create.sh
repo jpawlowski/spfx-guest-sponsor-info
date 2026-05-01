@@ -212,5 +212,6 @@ else
 fi
 
 next_steps "${C_BLD}./scripts/dev-webpart.sh${C_RST}    # start the SPFx dev server" \
+  "${C_BLD}./scripts/open-qa-workbench.sh${C_RST} # open a reproducible touch QA workbench" \
   "${C_BLD}./scripts/dev-function.sh${C_RST}   # start the Azure Function locally" \
   "${C_BLD}./scripts/dev-website.sh${C_RST}    # start the Jekyll website locally"
