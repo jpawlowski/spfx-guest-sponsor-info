@@ -68,7 +68,9 @@ jest.mock('@fluentui/react-components', () => ({
   Tooltip: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   // Popover: render children when open. PopoverSurface renders with the given role.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  Popover: ({ children, open }: { children: React.ReactNode; open?: boolean }) => open ? <>{children}</> : null,
+  Popover: ({ children, open, unstable_disableAutoFocus }: { children: React.ReactNode; open?: boolean; unstable_disableAutoFocus?: boolean }) => (
+    open ? <div data-popover-disable-auto-focus={unstable_disableAutoFocus ? 'true' : 'false'}>{children}</div> : null
+  ),
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   PopoverSurface: ({ children, role, ...rest }: any) => (
     <div role={role ?? 'dialog'} {...rest}>{children}</div>
@@ -148,15 +150,25 @@ const originalFetch = globalThis.fetch;
 const originalMatchMedia = window.matchMedia;
 const originalInnerWidth = window.innerWidth;
 const originalInnerHeight = window.innerHeight;
+const originalTestUrl = window.location.href;
 
 beforeEach(() => {
   container = document.createElement('div');
   document.body.appendChild(container);
 });
 
+function renderIntoContainer(tree: React.ReactElement): void {
+  ReactDOM.render(tree, container);
+}
+
+function unmountContainer(): void {
+  ReactDOM.unmountComponentAtNode(container);
+}
+
 afterEach(() => {
-  act(() => { ReactDOM.unmountComponentAtNode(container); });
+  act(() => { unmountContainer(); });
   container.remove();
+  window.history.replaceState({}, '', originalTestUrl);
   if (originalFetch) {
     globalThis.fetch = originalFetch;
   } else {
@@ -202,11 +214,64 @@ function mockViewport(width: number, height: number): void {
 }
 
 function openOnTouchViewport(width: number, height: number): Promise<void> {
+  window.history.replaceState({}, '', originalTestUrl);
   mockViewport(width, height);
   mockMatchMedia({
     '(pointer: coarse)': true,
   });
   render(BASE_SPONSOR, 'test-tenant-id', true);
+  return flushAsync();
+}
+
+interface ITouchDrawerRenderOptions {
+  sponsor?: ISponsor;
+  onForceDeactivate?: jest.Mock;
+}
+
+function renderTouchDrawer(
+  width: number,
+  height: number,
+  options: ITouchDrawerRenderOptions = {}
+): Promise<void> {
+  const {
+    sponsor = BASE_SPONSOR,
+    onForceDeactivate = jest.fn(),
+  } = options;
+
+  window.history.replaceState({}, '', originalTestUrl);
+  mockViewport(width, height);
+  mockMatchMedia({
+    '(pointer: coarse)': true,
+  });
+  render(
+    sponsor,
+    'test-tenant-id',
+    true,
+    jest.fn(),
+    jest.fn(),
+    true,
+    true,
+    true,
+    false,
+    false,
+    false,
+    false,
+    false,
+    true,
+    true,
+    false,
+    true,
+    true,
+    false,
+    false,
+    true,
+    true,
+    undefined,
+    'bing',
+    false,
+    jest.fn(),
+    onForceDeactivate
+  );
   return flushAsync();
 }
 
@@ -240,7 +305,7 @@ function render(
   onForceDeactivate = jest.fn()
 ): void {
   act(() => {
-    ReactDOM.render(
+    renderIntoContainer(
       <SponsorCard
         sponsor={sponsor}
         hostTenantId={hostTenantId}
@@ -269,8 +334,7 @@ function render(
         showManagerDepartment={showManagerDepartment}
         showSponsorPhoto={showSponsorPhoto}
         showManagerPhoto={showManagerPhoto}
-      />,
-      container
+      />
     );
   });
 }
@@ -287,6 +351,85 @@ function fireEvent(element: Element, eventName: string): void {
   act(() => {
     element.dispatchEvent(new MouseEvent(nativeEvent, { bubbles: true, cancelable: true }));
   });
+}
+
+function fireFocus(element: Element): void {
+  act(() => {
+    element.dispatchEvent(new FocusEvent('focusin', { bubbles: true, cancelable: true }));
+  });
+}
+
+function renderDesktopCard(isActive = false, onActivateNow = jest.fn()): void {
+  mockViewport(1280, 900);
+  mockMatchMedia({
+    '(pointer: coarse)': false,
+  });
+
+  render(
+    BASE_SPONSOR,
+    'test-tenant-id',
+    isActive,
+    jest.fn(),
+    jest.fn(),
+    true,
+    true,
+    true,
+    false,
+    false,
+    false,
+    false,
+    false,
+    true,
+    true,
+    false,
+    true,
+    true,
+    false,
+    false,
+    true,
+    true,
+    undefined,
+    'bing',
+    false,
+    onActivateNow
+  );
+}
+
+type TouchEventName = 'touchstart' | 'touchmove' | 'touchend';
+interface ITouchPoint {
+  clientX: number;
+  clientY: number;
+}
+
+function dispatchTouchEvent(
+  element: Element,
+  eventName: TouchEventName,
+  point: ITouchPoint,
+  timeStamp: number
+): Event {
+  const touchPoint = point as Touch;
+  const event = new Event(eventName, { bubbles: true, cancelable: true });
+
+  Object.defineProperties(event, {
+    timeStamp: {
+      configurable: true,
+      value: timeStamp,
+    },
+    touches: {
+      configurable: true,
+      value: eventName === 'touchend' ? [] : [touchPoint],
+    },
+    changedTouches: {
+      configurable: true,
+      value: [touchPoint],
+    },
+  });
+
+  act(() => {
+    element.dispatchEvent(event);
+  });
+
+  return event;
 }
 
 // ─── Tests ─────────────────────────────────────────────────────────────────────
@@ -381,8 +524,19 @@ describe('SponsorCard', () => {
 
       const dialog = container.querySelector('[role="dialog"]');
       expect(dialog?.getAttribute('data-position')).toBe('bottom');
-      expect(dialog?.getAttribute('data-size')).toBe('full');
+      // 'medium' maps to durationSlow (300ms) — shorter than 'full' (500ms)
+      // so the open/close animation feels native. Height is still 80dvh via
+      // the --fui-Drawer--size CSS variable override.
+      expect(dialog?.getAttribute('data-size')).toBe('medium');
       expect(dialog?.textContent).toContain('alice@contoso.com');
+    });
+
+    it('limits the bottom sheet to 80dvh via the CSS size variable', async () => {
+      await openOnTouchViewport(390, 844);
+
+      const dialog = container.querySelector('[role="dialog"]') as HTMLDivElement | null;
+      expect(dialog?.getAttribute('data-position')).toBe('bottom');
+      expect(dialog?.style.getPropertyValue('--fui-Drawer--size')).toBe('80dvh');
     });
 
     it('uses a constrained side drawer on compact-height touch windows', async () => {
@@ -421,6 +575,78 @@ describe('SponsorCard', () => {
       expect(dialog?.style.getPropertyValue('--fui-Drawer--size')).toBe('clamp(420px, 32vw, 520px)');
     });
 
+    it('keeps the mobile drawer named via aria-label without repeating the sponsor name in the header', async () => {
+      await openOnTouchViewport(390, 844);
+
+      const dialog = container.querySelector('[role="dialog"]') as HTMLDivElement | null;
+      expect(dialog?.getAttribute('aria-label')).toBe('Alice Smith');
+      // Bottom sheet dismisses via drag or backdrop tap — no visible close button.
+      expect(dialog?.querySelector('[data-drawer-close="true"]')).toBeNull();
+
+      const nameMatches = dialog?.textContent?.match(/Alice Smith/g) ?? [];
+      expect(nameMatches).toHaveLength(1);
+    });
+
+    it('makes DrawerBody the scroll container for the touch drawer', async () => {
+      await openOnTouchViewport(390, 844);
+
+      const drawerBody = container.querySelector('[data-drawer-body]') as HTMLDivElement | null;
+      const scrollContent = drawerBody?.firstElementChild as HTMLDivElement | null;
+      expect(drawerBody).not.toBeNull();
+      expect(drawerBody?.style.padding).toBe('0px');
+      expect(drawerBody?.style.display).toBe('block');
+      expect(drawerBody?.style.flexGrow).toBe('1');
+      expect(drawerBody?.style.flexShrink).toBe('1');
+      expect(['0', '0px']).toContain(drawerBody?.style.flexBasis ?? '');
+      expect(drawerBody?.style.width).toBe('100%');
+      expect(drawerBody?.style.height).toBe('100%');
+      expect(drawerBody?.style.maxHeight).toBe('100%');
+      expect(['0', '0px']).toContain(drawerBody?.style.minHeight ?? '');
+      expect(['0', '0px']).toContain(drawerBody?.style.minWidth ?? '');
+      expect(drawerBody?.style.boxSizing).toBe('border-box');
+      expect(drawerBody?.style.overflowY).toBe('auto');
+      expect(drawerBody?.style.overflowX).toBe('hidden');
+      expect(drawerBody?.style.touchAction).toBe('pan-y');
+      expect(drawerBody?.style.overscrollBehavior).toBe('contain');
+
+      expect(scrollContent).not.toBeNull();
+      expect(scrollContent?.style.width).toBe('100%');
+      expect(scrollContent?.style.minHeight).toBe('100%');
+      expect(scrollContent?.style.boxSizing).toBe('border-box');
+    });
+
+    it('keeps the sponsor header outside the mobile scroll container', async () => {
+      await openOnTouchViewport(390, 844);
+
+      const dialog = container.querySelector('[role="dialog"]') as HTMLDivElement | null;
+      const drawerBody = container.querySelector('[data-drawer-body]') as HTMLDivElement | null;
+      const headerPanel = container.querySelector('[data-rich-header-panel="true"]') as HTMLDivElement | null;
+      const drawerHandle = container.querySelector('[data-drawer-handle="true"]') as HTMLDivElement | null;
+      expect(dialog).not.toBeNull();
+      expect(drawerBody).not.toBeNull();
+      expect(headerPanel).not.toBeNull();
+      expect(drawerHandle).not.toBeNull();
+
+      expect(dialog?.textContent).toContain('Alice Smith');
+      expect(drawerBody?.textContent).not.toContain('Alice Smith');
+      expect(drawerBody?.textContent).toContain('alice@contoso.com');
+      expect(drawerBody?.contains(headerPanel!)).toBe(false);
+      expect(headerPanel?.contains(drawerHandle!)).toBe(true);
+    });
+
+    it('can force the touch drawer path from the URL QA viewport override', async () => {
+      window.history.replaceState({}, '', `${originalTestUrl}?gsi-qa-viewport=phone`);
+      mockViewport(1440, 960);
+      mockMatchMedia({
+        '(pointer: coarse)': false,
+      });
+      render(BASE_SPONSOR, 'test-tenant-id', true);
+      await flushAsync();
+
+      const dialog = container.querySelector('[role="dialog"]') as HTMLDivElement | null;
+      expect(dialog?.getAttribute('data-position')).toBe('bottom');
+    });
+
     it('calls onActivate when mouse enters the card', () => {
       const onActivate = jest.fn();
       render(BASE_SPONSOR, 'test-tenant-id', false, onActivate);
@@ -445,6 +671,100 @@ describe('SponsorCard', () => {
       const card = container.querySelector('[role="button"]') as HTMLElement;
       act(() => { card.click(); });
       expect(onActivateNow).toHaveBeenCalled();
+    });
+
+    it('shares viewport listeners across multiple sponsor cards', () => {
+      const resizeListenerSpy = jest.spyOn(window, 'addEventListener');
+      const mediaQueryAddListener = jest.fn();
+      const mediaQueryRemoveListener = jest.fn();
+
+      window.matchMedia = jest.fn().mockReturnValue({
+        matches: false,
+        media: '(pointer: coarse)',
+        onchange: null,
+        addEventListener: mediaQueryAddListener,
+        removeEventListener: mediaQueryRemoveListener,
+        addListener: jest.fn(),
+        removeListener: jest.fn(),
+        dispatchEvent: jest.fn(),
+      }) as unknown as typeof window.matchMedia;
+
+      const sharedProps = {
+        hostTenantId: 'test-tenant-id',
+        compact: false,
+        isActive: false,
+        onActivate: jest.fn(),
+        onActivateNow: jest.fn(),
+        onScheduleDeactivate: jest.fn(),
+        onForceDeactivate: jest.fn(),
+        showBusinessPhones: true,
+        showMobilePhone: true,
+        showWorkLocation: true,
+        showCity: false,
+        showCountry: false,
+        showStreetAddress: false,
+        showPostalCode: false,
+        showState: false,
+        azureMapsSubscriptionKey: undefined,
+        externalMapProvider: 'bing' as const,
+        showManager: true,
+        showPresence: true,
+        useInformalAddress: false,
+        showSponsorJobTitle: true,
+        showManagerJobTitle: true,
+        showSponsorDepartment: false,
+        showManagerDepartment: false,
+        showSponsorPhoto: true,
+        showManagerPhoto: true,
+      };
+
+      act(() => {
+        renderIntoContainer(
+          <>
+            <SponsorCard sponsor={BASE_SPONSOR} {...sharedProps} />
+            <SponsorCard
+              sponsor={{
+                ...BASE_SPONSOR,
+                id: 'aaaaaaaa-0000-0000-0000-000000000002',
+                displayName: 'Bob Smith',
+                mail: 'bob@contoso.com',
+              }}
+              {...sharedProps}
+            />
+          </>
+        );
+      });
+
+      const resizeRegistrations = resizeListenerSpy.mock.calls.filter(([eventName]) => eventName === 'resize');
+      expect(resizeRegistrations).toHaveLength(1);
+      expect(mediaQueryAddListener).toHaveBeenCalledTimes(1);
+
+      resizeListenerSpy.mockRestore();
+    });
+
+    it('disables desktop popover auto-focus when pointer input focuses the card', () => {
+      const onActivateNow = jest.fn();
+      renderDesktopCard(false, onActivateNow);
+      const card = container.querySelector('[role="button"]') as HTMLElement;
+
+      fireEvent(card, 'mousedown');
+      fireFocus(card);
+      renderDesktopCard(true, onActivateNow);
+
+      const popover = container.querySelector('[data-popover-disable-auto-focus]') as HTMLDivElement | null;
+      expect(popover?.getAttribute('data-popover-disable-auto-focus')).toBe('true');
+    });
+
+    it('keeps desktop popover auto-focus when keyboard focus opens the card', () => {
+      const onActivateNow = jest.fn();
+      renderDesktopCard(false, onActivateNow);
+      const card = container.querySelector('[role="button"]') as HTMLElement;
+
+      fireFocus(card);
+      renderDesktopCard(true, onActivateNow);
+
+      const popover = container.querySelector('[data-popover-disable-auto-focus]') as HTMLDivElement | null;
+      expect(popover?.getAttribute('data-popover-disable-auto-focus')).toBe('false');
     });
 
     it('shows the mobile phone when present and business phones are absent', () => {
@@ -504,6 +824,215 @@ describe('SponsorCard', () => {
       render({ ...BASE_SPONSOR, hasTeams: false }, 'test-tenant-id', true);
       const links = container.querySelectorAll('[role="dialog"] a[href^="mailto:"]');
       expect(links.length).toBeGreaterThan(0);
+    });
+
+    describe('touch dismiss gesture', () => {
+      beforeEach(() => {
+        jest.useFakeTimers();
+      });
+
+      afterEach(() => {
+        jest.useRealTimers();
+      });
+
+      it('dismisses the drawer after a downward pull from scrollTop=0', async () => {
+        const onForceDeactivate = jest.fn();
+        await renderTouchDrawer(390, 844, { onForceDeactivate });
+
+        const dialog = container.querySelector('[role="dialog"]') as HTMLDivElement | null;
+        const drawerBody = container.querySelector('[data-drawer-body]') as HTMLDivElement | null;
+        expect(dialog).not.toBeNull();
+        expect(drawerBody).not.toBeNull();
+
+        Object.defineProperty(dialog!, 'offsetHeight', { configurable: true, value: 480 });
+        drawerBody!.scrollTop = 0;
+
+        dispatchTouchEvent(drawerBody!, 'touchstart', { clientX: 24, clientY: 120 }, 0);
+        dispatchTouchEvent(drawerBody!, 'touchmove', { clientX: 30, clientY: 240 }, 200);
+
+        expect(dialog?.style.transform).toBe('translateY(120px)');
+
+        dispatchTouchEvent(drawerBody!, 'touchend', { clientX: 30, clientY: 240 }, 210);
+        expect(onForceDeactivate).not.toHaveBeenCalled();
+
+        act(() => {
+          jest.advanceTimersByTime(220);
+        });
+
+        expect(onForceDeactivate).toHaveBeenCalledTimes(1);
+      });
+
+      it('springs back when the downward pull stays below the dismiss threshold', async () => {
+        const onForceDeactivate = jest.fn();
+        await renderTouchDrawer(390, 844, { onForceDeactivate });
+
+        const dialog = container.querySelector('[role="dialog"]') as HTMLDivElement | null;
+        const drawerBody = container.querySelector('[data-drawer-body]') as HTMLDivElement | null;
+        expect(dialog).not.toBeNull();
+        expect(drawerBody).not.toBeNull();
+
+        drawerBody!.scrollTop = 0;
+
+        dispatchTouchEvent(drawerBody!, 'touchstart', { clientX: 20, clientY: 100 }, 0);
+        dispatchTouchEvent(drawerBody!, 'touchmove', { clientX: 24, clientY: 132 }, 200);
+
+        expect(dialog?.style.transform).toBe('translateY(32px)');
+
+        dispatchTouchEvent(drawerBody!, 'touchend', { clientX: 24, clientY: 132 }, 210);
+        expect(onForceDeactivate).not.toHaveBeenCalled();
+
+        act(() => {
+          jest.advanceTimersByTime(380);
+        });
+
+        expect(dialog?.style.transform).toBe('');
+        expect(onForceDeactivate).not.toHaveBeenCalled();
+      });
+
+      it('does not start dismissing while the drawer content is still scrolled', async () => {
+        const onForceDeactivate = jest.fn();
+        await renderTouchDrawer(390, 844, { onForceDeactivate });
+
+        const dialog = container.querySelector('[role="dialog"]') as HTMLDivElement | null;
+        const drawerBody = container.querySelector('[data-drawer-body]') as HTMLDivElement | null;
+        expect(dialog).not.toBeNull();
+        expect(drawerBody).not.toBeNull();
+
+        drawerBody!.scrollTop = 48;
+
+        dispatchTouchEvent(drawerBody!, 'touchstart', { clientX: 24, clientY: 120 }, 0);
+        dispatchTouchEvent(drawerBody!, 'touchmove', { clientX: 28, clientY: 250 }, 200);
+        dispatchTouchEvent(drawerBody!, 'touchend', { clientX: 28, clientY: 250 }, 210);
+
+        act(() => {
+          jest.runOnlyPendingTimers();
+        });
+
+        expect(dialog?.style.transform).toBe('');
+        expect(onForceDeactivate).not.toHaveBeenCalled();
+      });
+
+      it('starts the same downward drag from the drawer shell outside the scroll body', async () => {
+        const onForceDeactivate = jest.fn();
+        await renderTouchDrawer(390, 844, { onForceDeactivate });
+
+        const dialog = container.querySelector('[role="dialog"]') as HTMLDivElement | null;
+        const drawerBody = container.querySelector('[data-drawer-body]') as HTMLDivElement | null;
+        expect(dialog).not.toBeNull();
+        expect(drawerBody).not.toBeNull();
+
+        Object.defineProperty(dialog!, 'offsetHeight', { configurable: true, value: 480 });
+        drawerBody!.scrollTop = 0;
+
+        dispatchTouchEvent(dialog!, 'touchstart', { clientX: 32, clientY: 24 }, 0);
+        dispatchTouchEvent(dialog!, 'touchmove', { clientX: 36, clientY: 144 }, 200);
+
+        expect(dialog?.style.transform).toBe('translateY(120px)');
+
+        dispatchTouchEvent(dialog!, 'touchend', { clientX: 36, clientY: 144 }, 210);
+
+        act(() => {
+          jest.advanceTimersByTime(220);
+        });
+
+        expect(onForceDeactivate).toHaveBeenCalledTimes(1);
+      });
+
+      it('still dismisses normally after the drawer shell was tapped once before a content swipe', async () => {
+        const onForceDeactivate = jest.fn();
+        await renderTouchDrawer(390, 844, { onForceDeactivate });
+
+        const dialog = container.querySelector('[role="dialog"]') as HTMLDivElement | null;
+        const drawerBody = container.querySelector('[data-drawer-body]') as HTMLDivElement | null;
+        expect(dialog).not.toBeNull();
+        expect(drawerBody).not.toBeNull();
+
+        Object.defineProperty(dialog!, 'offsetHeight', { configurable: true, value: 480 });
+
+        dispatchTouchEvent(dialog!, 'touchstart', { clientX: 32, clientY: 24 }, 0);
+        dispatchTouchEvent(dialog!, 'touchend', { clientX: 32, clientY: 24 }, 10);
+
+        drawerBody!.scrollTop = 0;
+        dispatchTouchEvent(drawerBody!, 'touchstart', { clientX: 28, clientY: 120 }, 20);
+        dispatchTouchEvent(drawerBody!, 'touchmove', { clientX: 32, clientY: 240 }, 220);
+
+        expect(dialog?.style.transform).toBe('translateY(120px)');
+
+        dispatchTouchEvent(drawerBody!, 'touchend', { clientX: 32, clientY: 240 }, 230);
+
+        act(() => {
+          jest.advanceTimersByTime(220);
+        });
+
+        expect(onForceDeactivate).toHaveBeenCalledTimes(1);
+      });
+
+      it('requires a fresh top-edge gesture after scrolling back to the top', async () => {
+        const onForceDeactivate = jest.fn();
+        await renderTouchDrawer(390, 844, { onForceDeactivate });
+
+        const dialog = container.querySelector('[role="dialog"]') as HTMLDivElement | null;
+        const drawerBody = container.querySelector('[data-drawer-body]') as HTMLDivElement | null;
+        expect(dialog).not.toBeNull();
+        expect(drawerBody).not.toBeNull();
+
+        Object.defineProperty(dialog!, 'offsetHeight', { configurable: true, value: 480 });
+
+        drawerBody!.scrollTop = 48;
+        dispatchTouchEvent(drawerBody!, 'touchstart', { clientX: 28, clientY: 120 }, 0);
+
+        // The user reaches the top during the same gesture, but dismissal must
+        // remain locked until they release and start a new swipe.
+        drawerBody!.scrollTop = 0;
+        dispatchTouchEvent(drawerBody!, 'touchmove', { clientX: 32, clientY: 240 }, 200);
+        dispatchTouchEvent(drawerBody!, 'touchend', { clientX: 32, clientY: 240 }, 210);
+
+        act(() => {
+          jest.runOnlyPendingTimers();
+        });
+
+        expect(dialog?.style.transform).toBe('');
+        expect(onForceDeactivate).not.toHaveBeenCalled();
+
+        dispatchTouchEvent(drawerBody!, 'touchstart', { clientX: 28, clientY: 120 }, 220);
+        dispatchTouchEvent(drawerBody!, 'touchmove', { clientX: 32, clientY: 240 }, 420);
+
+        expect(dialog?.style.transform).toBe('translateY(120px)');
+
+        dispatchTouchEvent(drawerBody!, 'touchend', { clientX: 32, clientY: 240 }, 430);
+
+        act(() => {
+          jest.advanceTimersByTime(220);
+        });
+
+        expect(onForceDeactivate).toHaveBeenCalledTimes(1);
+      });
+
+      it('uses the same downward dismiss gesture for side drawers on touch devices', async () => {
+        const onForceDeactivate = jest.fn();
+        await renderTouchDrawer(844, 390, { onForceDeactivate });
+
+        const dialog = container.querySelector('[role="dialog"]') as HTMLDivElement | null;
+        const drawerBody = container.querySelector('[data-drawer-body]') as HTMLDivElement | null;
+        expect(dialog?.getAttribute('data-position')).toBe('end');
+        expect(drawerBody).not.toBeNull();
+
+        Object.defineProperty(dialog!, 'offsetHeight', { configurable: true, value: 420 });
+        drawerBody!.scrollTop = 0;
+
+        dispatchTouchEvent(drawerBody!, 'touchstart', { clientX: 36, clientY: 90 }, 0);
+        dispatchTouchEvent(drawerBody!, 'touchmove', { clientX: 40, clientY: 210 }, 200);
+
+        expect(dialog?.style.transform).toBe('translateY(120px)');
+
+        dispatchTouchEvent(drawerBody!, 'touchend', { clientX: 40, clientY: 210 }, 210);
+
+        act(() => {
+          jest.advanceTimersByTime(220);
+        });
+
+        expect(onForceDeactivate).toHaveBeenCalledTimes(1);
+      });
     });
   });
 
@@ -594,7 +1123,177 @@ describe('SponsorCard', () => {
       const dialog = container.querySelector('[role="dialog"]')!;
       expect(dialog.textContent).toContain('Musterstrasse 10');
       expect(dialog.textContent).toContain('80331');
-      expect(dialog.textContent).toContain('Bayern');
+      expect(dialog.textContent).not.toContain('Bayern');
+    });
+
+    it('formats German display addresses separately from the maps query', () => {
+      render(
+        {
+          ...BASE_SPONSOR,
+          streetAddress: 'Musterstrasse 10',
+          postalCode: '80331',
+          city: 'Munich',
+          state: 'Bayern',
+          country: 'Germany',
+        },
+        'test-tenant-id',
+        true,
+        jest.fn(),
+        jest.fn(),
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        true,
+        true,
+        false,
+        false,
+        true,
+        true,
+        undefined,
+        'google'
+      );
+
+      const dialog = container.querySelector('[role="dialog"]')!;
+      const link = dialog.querySelector('a[href*="google.com/maps/search"]') as HTMLAnchorElement | null;
+      expect(link?.textContent).toBe('Musterstrasse 10, 80331 Munich, Germany');
+      expect(link?.getAttribute('href')).toContain(
+        encodeURIComponent('Musterstrasse 10, 80331 Munich, Bayern, Germany')
+      );
+      expect(link?.getAttribute('href')).not.toContain(
+        encodeURIComponent('Musterstrasse 10, 80331 Munich, Germany')
+      );
+    });
+
+    it('trims whitespace from raw address fields before rendering or building map queries', () => {
+      render(
+        {
+          ...BASE_SPONSOR,
+          streetAddress: '\t Musterstrasse 10  ',
+          postalCode: ' 80331\n',
+          city: '  Munich\t',
+          state: '  Bayern  ',
+          country: '\nGermany ',
+        },
+        'test-tenant-id',
+        true,
+        jest.fn(),
+        jest.fn(),
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        true,
+        true,
+        false,
+        false,
+        true,
+        true,
+        undefined,
+        'google'
+      );
+
+      const dialog = container.querySelector('[role="dialog"]')!;
+      const link = dialog.querySelector('a[href*="google.com/maps/search"]') as HTMLAnchorElement | null;
+      expect(link?.textContent).toBe('Musterstrasse 10, 80331 Munich, Germany');
+      expect(link?.getAttribute('href')).toContain(
+        encodeURIComponent('Musterstrasse 10, 80331 Munich, Bayern, Germany')
+      );
+      expect(link?.getAttribute('href')).not.toContain(encodeURIComponent('\t Musterstrasse 10  '));
+      expect(link?.getAttribute('href')).not.toContain('%0A');
+    });
+
+    it('formats US display addresses with city state postal code order', () => {
+      render(
+        {
+          ...BASE_SPONSOR,
+          streetAddress: '1 Pike Street',
+          postalCode: '98101',
+          city: 'Seattle',
+          state: 'WA',
+          country: 'United States',
+        },
+        'test-tenant-id',
+        true,
+        jest.fn(),
+        jest.fn(),
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        true,
+        true,
+        false,
+        false,
+        true,
+        true,
+        undefined,
+        'none'
+      );
+
+      const dialog = container.querySelector('[role="dialog"]')!;
+      expect(dialog.textContent).toContain('1 Pike Street, Seattle WA 98101, United States');
+    });
+
+    it('uses postal code before city as the default for unknown countries', () => {
+      render(
+        {
+          ...BASE_SPONSOR,
+          streetAddress: 'Example Road 1',
+          postalCode: '12345',
+          city: 'Sampletown',
+          state: 'Example Region',
+          country: 'Wonderland',
+        },
+        'test-tenant-id',
+        true,
+        jest.fn(),
+        jest.fn(),
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        true,
+        true,
+        false,
+        false,
+        true,
+        true,
+        undefined,
+        'none'
+      );
+
+      const dialog = container.querySelector('[role="dialog"]')!;
+      expect(dialog.textContent).toContain('Example Road 1, 12345 Sampletown, Wonderland');
+      expect(dialog.textContent).not.toContain('Example Region');
     });
 
     it('renders Azure Maps preview image when key is configured and geocoding succeeds', async () => {
@@ -642,6 +1341,59 @@ describe('SponsorCard', () => {
       expect(globalThis.fetch).toHaveBeenCalled();
       const preview = container.querySelector('img[src*="atlas.microsoft.com/map/static/png"]');
       expect(preview).not.toBeNull();
+    });
+
+    it('uses the normalized maps query for Azure Maps geocoding instead of the display string', async () => {
+      globalThis.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          results: [{ type: 'Point Address', position: { lat: 48.1371, lon: 11.5754 } }],
+        }),
+      }) as unknown as typeof fetch;
+
+      render(
+        {
+          ...BASE_SPONSOR,
+          streetAddress: 'Musterstrasse 10',
+          postalCode: '80331',
+          city: 'Munich',
+          state: 'Bayern',
+          country: 'Germany',
+        },
+        'test-tenant-id',
+        true,
+        jest.fn(),
+        jest.fn(),
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        true,
+        true,
+        false,
+        false,
+        true,
+        true,
+        'test-azure-maps-key',
+        'bing'
+      );
+
+      await flushAsync();
+
+      const geocodeUrl = (globalThis.fetch as jest.Mock).mock.calls[0][0] as string;
+      expect(geocodeUrl).toContain(
+        `query=${encodeURIComponent('Musterstrasse 10, 80331 Munich, Bayern, Germany')}`
+      );
+      expect(geocodeUrl).not.toContain(
+        `query=${encodeURIComponent('Musterstrasse 10, 80331 Munich, Germany')}`
+      );
     });
 
     it('renders Azure Maps preview even when external map link is disabled', async () => {

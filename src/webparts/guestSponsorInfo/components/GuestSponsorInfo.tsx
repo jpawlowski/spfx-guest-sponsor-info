@@ -16,6 +16,7 @@ import { MOCK_SPONSORS } from '../services/MockSponsorService';
 import SponsorCard from './SponsorCard';
 import WelcomeDialog from './WelcomeDialog';
 import { griffelRenderer } from '../griffelRenderer';
+import { applyVisualQaMockContent, getVisualQaOverrides } from '../utils/visualQa';
 
 const DEFAULT_SESSION_CACHE_TTL_MINUTES = 30;
 const MIN_SESSION_CACHE_TTL_MINUTES = 2;
@@ -321,7 +322,9 @@ interface ISponsorListProps {
   v9Theme?: Theme;
 }
 
-const SponsorList: React.FC<ISponsorListProps> = ({ sponsors, hostTenantId, compact, showBusinessPhones, showMobilePhone, showWorkLocation, showCity, showCountry, showStreetAddress, showPostalCode, showState, azureMapsSubscriptionKey, externalMapProvider, showManager, showPresence, showSponsorJobTitle, showManagerJobTitle, showSponsorDepartment, showManagerDepartment, showSponsorPhoto, showManagerPhoto, useInformalAddress, onActiveCardChange, guestHasTeamsAccess, readOnlyIds, v9Theme }) => {
+const noopActiveCardChange = (): void => undefined;
+
+const SponsorList: React.FC<ISponsorListProps> = React.memo(({ sponsors, hostTenantId, compact, showBusinessPhones, showMobilePhone, showWorkLocation, showCity, showCountry, showStreetAddress, showPostalCode, showState, azureMapsSubscriptionKey, externalMapProvider, showManager, showPresence, showSponsorJobTitle, showManagerJobTitle, showSponsorDepartment, showManagerDepartment, showSponsorPhoto, showManagerPhoto, useInformalAddress, onActiveCardChange, guestHasTeamsAccess, readOnlyIds, v9Theme }) => {
   const [activeId, setActiveId] = React.useState<string | null>(null);
   const showTimeout = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const hideTimeout = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -440,7 +443,7 @@ const SponsorList: React.FC<ISponsorListProps> = ({ sponsors, hostTenantId, comp
       })}
     </ul>
   );
-};
+});
 
 /**
  * Loading skeleton using Fluent UI Skeleton + SkeletonItem components.
@@ -585,8 +588,14 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
   fluentProviderId,
   theme,
 }) => {
-  // Slice the full MOCK_SPONSORS pool to the count configured in the property pane.
-  const mockSponsors = MOCK_SPONSORS.slice(0, mockSponsorCount);
+  const visualQaOverrides = React.useMemo(() => getVisualQaOverrides(), []);
+  const effectiveMockMode = mockMode || visualQaOverrides.forceMockMode;
+  const effectiveMockSponsorCount = visualQaOverrides.mockSponsorCount ?? mockSponsorCount;
+  const effectiveMockSimulatedHint = visualQaOverrides.mockSimulatedHint ?? mockSimulatedHint;
+  const mockSponsors = React.useMemo(
+    () => applyVisualQaMockContent(MOCK_SPONSORS, visualQaOverrides.longMockContent).slice(0, effectiveMockSponsorCount),
+    [effectiveMockSponsorCount, visualQaOverrides.longMockContent]
+  );
 
   // Helper: pick the informal string variant when useInformalAddress is enabled and
   // the current locale provides one (languages with T-V distinction like de, fr, es, it, nl).
@@ -606,7 +615,7 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
   const isEditMode = displayMode === DisplayMode.Edit;
   const classes = useWebPartStyles();
   const sponsorCacheTtlMs = getSessionCacheTtlMs(sessionCacheTtlMinutes);
-  const sponsorCacheKey = !isEditMode && !mockMode && isGuest && functionUrl
+  const sponsorCacheKey = !isEditMode && !effectiveMockMode && isGuest && functionUrl
     ? buildSponsorCacheKey(loginName, functionUrl, sponsorFilter, requireUserMailbox)
     : undefined;
   const initialSponsorCacheRef = React.useRef<ICachedSponsorsPayload | undefined>(
@@ -621,7 +630,7 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
   // is visible on the very first render — before the first useEffect tick.
   // Without this, React paints a brief "no sponsors" flash before the effect
   // can call setLoading(true).
-  const [loading, setLoading] = React.useState(!isEditMode && (mockMode || (isGuest && !initialSponsorCache)));
+  const [loading, setLoading] = React.useState(!isEditMode && (effectiveMockMode || (isGuest && !initialSponsorCache)));
   const [error, setError] = React.useState<string | undefined>(undefined);
   const [errorKind, setErrorKind] = React.useState<'generic' | 'permission' | 'authorization'>('generic');
   const [retryCount, setRetryCount] = React.useState(0);
@@ -824,13 +833,13 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
     if (isEditMode) return;
 
     // Demo mode: use static mock data, no Graph calls needed.
-    if (mockMode) {
+    if (effectiveMockMode) {
       // "No sponsors found" — no sponsors are assigned, so no tiles appear.
-      if (mockSimulatedHint === 'noSponsors') {
+      if (effectiveMockSimulatedHint === 'noSponsors') {
         setSponsors([]);
         setSponsorOrder([]);
         setUnavailableSponsors([]);
-      } else if (mockSimulatedHint === 'sponsorUnavailable') {
+      } else if (effectiveMockSimulatedHint === 'sponsorUnavailable') {
         // All sponsors are unavailable — show their tiles read-only.
         setSponsors([]);
         setSponsorOrder(mockSponsors.map(s => s.id));
@@ -840,7 +849,7 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
         setSponsorOrder(mockSponsors.map(s => s.id));
         setUnavailableSponsors([]);
       }
-      setGuestHasTeamsAccess(mockSimulatedHint === 'teamsAccessPending' ? false : undefined);
+      setGuestHasTeamsAccess(effectiveMockSimulatedHint === 'teamsAccessPending' ? false : undefined);
       setLoading(false);
       return;
     }
@@ -1010,7 +1019,20 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
     });
 
     return () => { cancelled = true; };
-  }, [isGuest, isEditMode, mockMode, mockSponsorCount, functionUrl, aadHttpClient, clientVersion, sponsorFilter, requireUserMailbox, retryCount, sponsorCacheTtlMs]);
+  }, [
+    isGuest,
+    isEditMode,
+    effectiveMockMode,
+    effectiveMockSimulatedHint,
+    mockSponsors,
+    functionUrl,
+    aadHttpClient,
+    clientVersion,
+    sponsorFilter,
+    requireUserMailbox,
+    retryCount,
+    sponsorCacheTtlMs,
+  ]);
 
   // Presence refresh: poll faster while a card is actively open and the tab is visible,
   // but back off when the tab is hidden to reduce Graph traffic.
@@ -1024,7 +1046,7 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
   const PRESENCE_REFRESH_VISIBLE_MS = 2 * 60 * 1000;
   const PRESENCE_REFRESH_HIDDEN_MS = 5 * 60 * 1000;
   React.useEffect(() => {
-    if (isEditMode || mockMode || !isGuest || loading || error) return;
+    if (isEditMode || effectiveMockMode || !isGuest || loading || error) return;
     if (!presenceUrl || !aadHttpClient) return;
 
     const refreshPresence = (): void => {
@@ -1089,7 +1111,7 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
       clearInterval(id);
       document.removeEventListener('visibilitychange', onVisibilityChange);
     };
-  }, [isEditMode, mockMode, isGuest, loading, error, hasActiveCard, presenceUrl, aadHttpClient, presenceToken]);
+  }, [isEditMode, effectiveMockMode, isGuest, loading, error, hasActiveCard, presenceUrl, aadHttpClient, presenceToken]);
 
   // Guard: SPFx AMD locale bundles load asynchronously. On the very first synchronous
   // render (edit mode renders immediately, before AMD resolves), strings may still be
@@ -1106,12 +1128,49 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
   // The second argument selects the correct v9 base theme so that v9 tokens with
   // no direct v8 mapping (e.g. dark-mode semantic colours) default to the right
   // values instead of always falling back to webLightTheme internally.
-  const v9Theme = theme
-    ? createV9Theme(
-        theme as unknown as Parameters<typeof createV9Theme>[0],
-        theme.isInverted ? webDarkTheme : webLightTheme
-      )
-    : webLightTheme;
+  const v9Theme = React.useMemo(
+    () => theme
+      ? createV9Theme(
+          theme as unknown as Parameters<typeof createV9Theme>[0],
+          theme.isInverted ? webDarkTheme : webLightTheme
+        )
+      : webLightTheme,
+    [theme]
+  );
+
+  const visibleMockSponsors = React.useMemo(
+    () => mockSponsors.slice(0, maxSponsorCount),
+    [mockSponsors, maxSponsorCount]
+  );
+  const mockCompact = React.useMemo(
+    () => cardLayout === 'compact' || (cardLayout === 'auto' && visibleMockSponsors.length >= cardLayoutAutoThreshold),
+    [cardLayout, visibleMockSponsors.length, cardLayoutAutoThreshold]
+  );
+  const mockReadOnlyIds = React.useMemo<ReadonlySet<string> | undefined>(
+    () => effectiveMockSimulatedHint === 'sponsorUnavailable'
+      ? new Set(visibleMockSponsors.map(sponsor => sponsor.id))
+      : undefined,
+    [effectiveMockSimulatedHint, visibleMockSponsors]
+  );
+
+  const { visibleActive, visibleUnavailable } = React.useMemo(
+    () => buildVisibleSponsorSets(sponsors, unavailableSponsors, sponsorOrder, maxSponsorCount),
+    [sponsors, unavailableSponsors, sponsorOrder, maxSponsorCount]
+  );
+  const visibleSponsors = React.useMemo(
+    () => [...visibleActive, ...visibleUnavailable],
+    [visibleActive, visibleUnavailable]
+  );
+  const someUnavailable = visibleUnavailable.length > 0;
+  const noActiveSponsor = visibleActive.length === 0;
+  const viewCompact = React.useMemo(
+    () => cardLayout === 'compact' || (cardLayout === 'auto' && visibleSponsors.length >= cardLayoutAutoThreshold),
+    [cardLayout, visibleSponsors.length, cardLayoutAutoThreshold]
+  );
+  const viewReadOnlyIds = React.useMemo<ReadonlySet<string> | undefined>(
+    () => someUnavailable ? new Set(visibleUnavailable.map(sponsor => sponsor.id)) : undefined,
+    [someUnavailable, visibleUnavailable]
+  );
 
   // Edit mode: always show a live preview using mock sponsor cards so page authors
   // can see the real layout and adjust display settings before going live.
@@ -1129,20 +1188,18 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
       );
     }
 
-    const visibleMockSponsors = mockSponsors.slice(0, maxSponsorCount);
-    const mockCompact = cardLayout === 'compact' || (cardLayout === 'auto' && visibleMockSponsors.length >= cardLayoutAutoThreshold);
     // Hide the sponsor list only when simulating "No sponsors found" — in that
     // state no sponsors are assigned at all so no tiles would appear. For
     // "Sponsor not available" the tiles ARE shown (read-only) so the editor can
     // see how the layout looks when all sponsors are unavailable.
-    const showMockCards = mockSimulatedHint !== 'noSponsors';
+    const showMockCards = effectiveMockSimulatedHint !== 'noSponsors';
     // When simulating "no sponsors" and the notice toggle is off, nothing remains
     // beyond the title — hide the entire web part so the editor sees the same
     // empty result the guest would see. The simulation hint is always respected
     // regardless of whether mockMode is active.
     // Using an IIFE avoids TypeScript control-flow narrowing through the || chain.
     const hasEditContent = ((): boolean => {
-      if (mockSimulatedHint !== 'noSponsors') return true;     // shows tiles or a banner
+      if (effectiveMockSimulatedHint !== 'noSponsors') return true;     // shows tiles or a banner
       return showNoSponsorsHint;                               // only the notice banner remains
     })();
     if (!hasEditContent) return null;
@@ -1201,13 +1258,13 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
             showSponsorPhoto={showSponsorPhoto}
             showManagerPhoto={showManagerPhoto}
             useInformalAddress={useInformalAddress}
-            onActiveCardChange={() => undefined}
-            guestHasTeamsAccess={mockSimulatedHint === 'teamsAccessPending' ? false : undefined}
-            readOnlyIds={mockSimulatedHint === 'sponsorUnavailable' ? new Set(visibleMockSponsors.map(s => s.id)) : undefined}
+            onActiveCardChange={noopActiveCardChange}
+            guestHasTeamsAccess={effectiveMockSimulatedHint === 'teamsAccessPending' ? false : undefined}
+            readOnlyIds={mockReadOnlyIds}
             v9Theme={v9Theme}
           />
           )}
-          {mockSimulatedHint === 'teamsAccessPending' && (
+          {effectiveMockSimulatedHint === 'teamsAccessPending' && (
             <MessageBar intent="warning" className={classes.teamsAccessBanner}>
               <MessageBarBody>
                 <b>{strings.TeamsAccessPendingTitle}</b><br />
@@ -1215,7 +1272,7 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
               </MessageBarBody>
             </MessageBar>
           )}
-          {mockSimulatedHint === 'versionMismatch' && (
+          {effectiveMockSimulatedHint === 'versionMismatch' && (
             <MessageBar intent="info" className={classes.teamsAccessBanner}>
               <MessageBarBody>
                 <b>{strings.VersionMismatchTitle}</b><br />
@@ -1223,7 +1280,7 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
               </MessageBarBody>
             </MessageBar>
           )}
-          {mockSimulatedHint === 'sponsorUnavailable' && showSponsorUnavailableHint && (
+          {effectiveMockSimulatedHint === 'sponsorUnavailable' && showSponsorUnavailableHint && (
             <MessageBar intent="warning" className={classes.teamsAccessBanner}>
               <MessageBarBody>
                 <b>{strings.SponsorUnavailableTitle}</b><br />
@@ -1231,7 +1288,7 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
               </MessageBarBody>
             </MessageBar>
           )}
-          {mockSimulatedHint === 'noSponsors' && showNoSponsorsHint && (
+          {effectiveMockSimulatedHint === 'noSponsors' && showNoSponsorsHint && (
             <MessageBar intent="info">
               <MessageBarBody>
                 <b>{strings.NoSponsorsTitle}</b><br />
@@ -1246,7 +1303,7 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
   }
 
   // View mode: render nothing for non-guest visitors (unless demo mode is active).
-  if (!isGuest && !mockMode) {
+  if (!isGuest && !effectiveMockMode) {
     return null;
   }
 
@@ -1254,12 +1311,6 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
   // When some sponsors are unavailable we still show their tiles (read-only, no popup)
   // so the guest can see who their sponsors are. Active accounts "nachrücken" to fill
   // the visible slots: only active accounts count toward the maxSponsorCount cap.
-  const { visibleActive, visibleUnavailable } = buildVisibleSponsorSets(
-    sponsors, unavailableSponsors, sponsorOrder, maxSponsorCount
-  );
-  const someUnavailable = visibleUnavailable.length > 0;
-  const noActiveSponsor = visibleActive.length === 0;
-
   // When nothing meaningful remains to show beyond the title (no tiles, no banners),
   // hide the entire web part so the guest never sees a lone heading.
   const hasVisibleContent =
@@ -1304,9 +1355,9 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
         )}
         {!loading && !error && (visibleActive.length > 0 || someUnavailable) && (
           <SponsorList
-            sponsors={[...visibleActive, ...visibleUnavailable]}
+            sponsors={visibleSponsors}
             hostTenantId={hostTenantId}
-            compact={cardLayout === 'compact' || (cardLayout === 'auto' && (visibleActive.length + visibleUnavailable.length) >= cardLayoutAutoThreshold)}
+            compact={viewCompact}
             showBusinessPhones={showBusinessPhones}
             showMobilePhone={showMobilePhone}
             showWorkLocation={showWorkLocation}
@@ -1328,7 +1379,7 @@ const GuestSponsorInfo: React.FC<IGuestSponsorInfoProps> = ({
             useInformalAddress={useInformalAddress}
             onActiveCardChange={setHasActiveCard}
             guestHasTeamsAccess={guestHasTeamsAccess}
-            readOnlyIds={someUnavailable ? new Set(visibleUnavailable.map(s => s.id)) : undefined}
+            readOnlyIds={viewReadOnlyIds}
             v9Theme={v9Theme}
           />
         )}

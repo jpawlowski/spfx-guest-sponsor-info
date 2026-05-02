@@ -8,8 +8,6 @@ import {
   Button,
   FluentProvider,
   OverlayDrawer,
-  DrawerHeader,
-  DrawerHeaderTitle,
   DrawerBody,
   Persona,
   Popover,
@@ -49,8 +47,8 @@ const CheckmarkIcon = bundleIcon(CheckmarkFilled, CheckmarkRegular);
 import * as strings from 'GuestSponsorInfoWebPartStrings';
 import { ISponsor } from '../services/ISponsor';
 import { buildExternalMapLink } from '../utils/mapProviderUtils';
+import { getVisualQaOverrides, type WindowHeightClass, type WindowWidthClass } from '../utils/visualQa';
 
-/** Fluent UI persona colours used as avatar backgrounds when no photo is available. */
 /**
  * Returns "givenName surname" when either part is non-empty, otherwise falls
  * back to displayName. Mirrors how Microsoft renders names in Teams/Outlook.
@@ -64,6 +62,95 @@ function resolvePersonName(
   const last = surname?.trim() ?? '';
   if (first || last) return [first, last].filter(Boolean).join(' ');
   return displayName?.trim() ?? '';
+}
+
+type AddressDisplayPattern = 'postal-code-before-city' | 'city-state-postal-code';
+
+interface IAddressComponents {
+  streetAddress?: string;
+  postalCode?: string;
+  city?: string;
+  stateOrProvince?: string;
+  country?: string;
+}
+
+// Most postal systems display postal code before locality. Only a relatively
+// small group of countries needs a dedicated city/state/postal override.
+// Common aliases and ISO codes are included so Graph values such as "US" or
+// "United States" resolve to the same exception pattern.
+const CITY_STATE_POSTAL_CODE_COUNTRIES = new Set([
+  'au', 'australia',
+  'ca', 'canada',
+  'gb', 'great britain', 'uk', 'united kingdom',
+  'ie', 'eire', 'ireland',
+  'us', 'usa', 'united states', 'united states of america',
+]);
+
+const CITY_LEVEL_MAP_ENTITY_TYPES = new Set(['Municipality', 'MunicipalitySubdivision', 'Neighbourhood', 'PostalCodeArea']);
+
+function normalizeAddressToken(value: string | undefined): string {
+  return (value ?? '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9 ]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function readAddressValue(value: string | undefined): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
+}
+
+function joinNonEmpty(parts: Array<string | undefined>, separator: string): string {
+  return parts
+    .map(part => part?.trim())
+    .filter((part): part is string => Boolean(part))
+    .join(separator);
+}
+
+function getAddressDisplayPattern(countryOrRegion: string | undefined): AddressDisplayPattern {
+  const normalizedCountry = normalizeAddressToken(countryOrRegion);
+  if (CITY_STATE_POSTAL_CODE_COUNTRIES.has(normalizedCountry)) {
+    return 'city-state-postal-code';
+  }
+  return 'postal-code-before-city';
+}
+
+function formatDisplayAddress(
+  components: IAddressComponents,
+  countryOrRegionForPattern: string | undefined
+): string {
+  const pattern = getAddressDisplayPattern(countryOrRegionForPattern);
+  const postalCodeAndCity = joinNonEmpty([components.postalCode, components.city], ' ');
+
+  switch (pattern) {
+    case 'postal-code-before-city': {
+      const locality = postalCodeAndCity || components.stateOrProvince;
+      return joinNonEmpty([components.streetAddress, locality, components.country], ', ');
+    }
+    case 'city-state-postal-code': {
+      const locality = joinNonEmpty(
+        [components.city, components.stateOrProvince, components.postalCode],
+        ' '
+      ) || components.stateOrProvince;
+      return joinNonEmpty([components.streetAddress, locality, components.country], ', ');
+    }
+    default: {
+      const locality = postalCodeAndCity || components.stateOrProvince;
+      return joinNonEmpty([components.streetAddress, locality, components.country], ', ');
+    }
+  }
+}
+
+function formatMapsQueryAddress(components: IAddressComponents): string {
+  const postalCodeAndCity = joinNonEmpty([components.postalCode, components.city], ' ');
+  return joinNonEmpty(
+    [components.streetAddress, postalCodeAndCity, components.stateOrProvince, components.country],
+    ', '
+  );
 }
 
 
@@ -259,7 +346,9 @@ const useRichCardStyles = makeStyles({
     display: 'flex',
     flexDirection: 'column' as const,
     position: 'relative' as const,
+    backgroundColor: tokens.colorNeutralBackground1,
     borderRadius: tokens.borderRadiusLarge,
+    overflow: 'hidden',
     boxShadow: tokens.shadow16,
     animationName: {
       from: { opacity: 0, transform: 'translateY(-6px) scale(0.98)' },
@@ -273,28 +362,16 @@ const useRichCardStyles = makeStyles({
       animationDuration: '0s',
     },
   },
-  richCardFlat: {
-    width: '100%',
-    maxWidth: '520px',
-    margin: '0 auto',
-    boxSizing: 'border-box' as const,
-    boxShadow: 'none',
-    animationName: 'none',
-    animationDuration: '0s',
-  },
   richCardHeaderPanel: {
+    width: '100%',
+    minWidth: 0,
+    boxSizing: 'border-box' as const,
     position: 'relative' as const,
     zIndex: 2,
     flexShrink: 0,
     backgroundColor: tokens.colorNeutralBackground1,
     borderRadius: tokens.borderRadiusLarge,
     border: `1px solid ${tokens.colorNeutralStroke2}`,
-  },
-  richCardHeaderPanelFlat: {
-    border: 'none',
-    boxShadow: 'none',
-    borderRadius: '0',
-    backgroundColor: 'transparent',
   },
   richCardBody: {
     overflowY: 'auto' as const,
@@ -312,23 +389,26 @@ const useRichCardStyles = makeStyles({
     transitionDuration: `${tokens.durationSlower}, ${tokens.durationNormal}`,
     transitionTimingFunction: `${tokens.curveEasyEase}, ease-in-out`,
   },
-  richCardBodyFlat: {
-    border: 'none',
-    borderRadius: '0',
-    backgroundColor: 'transparent',
-    marginTop: '0',
-    paddingTop: '0',
+  richCardBodyDrawer: {
+    width: '100%',
+    minWidth: 0,
+    boxSizing: 'border-box' as const,
+    display: 'block',
+    paddingBottom: tokens.spacingVerticalXXL,
   },
   richCardBodyExpanded: {
     maxHeight: 'min(300px, 50vh)',
     opacity: 1,
     paddingBottom: tokens.spacingVerticalXXL,
   },
-  richCardBodyExpandedFlat: {
-    maxHeight: 'none',
-  },
   richHeader: {
     padding: `${tokens.spacingVerticalXXL} ${tokens.spacingHorizontalXXL} 0`,
+  },
+  richHeaderFlat: {
+    paddingTop: tokens.spacingVerticalL,
+  },
+  richHeaderFlatWithHandle: {
+    paddingTop: 0,
   },
   richActions: {
     display: 'flex',
@@ -415,6 +495,10 @@ const useRichCardStyles = makeStyles({
     '&:focus-visible': {
       opacity: 1,
     },
+    // Touch devices have no hover state — show copy buttons permanently.
+    '@media (hover: none)': {
+      opacity: 1,
+    },
   },
   copyButtonCopied: {
     opacity: 1,
@@ -444,10 +528,101 @@ const useRichCardStyles = makeStyles({
 });
 
 const useMobileDrawerStyles = makeStyles({
-  drawerHeaderTitle: {
+  /**
+   * OverlayDrawer portals out of the web part tree, so the nested FluentProvider
+   * becomes the direct DOM child of the panel. It must stretch to the panel's
+   * height, otherwise DrawerBody collapses and the sheet appears empty.
+   */
+  drawerProvider: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    flex: '1 1 auto',
     width: '100%',
-    maxWidth: '100%',
-    alignSelf: 'stretch',
+    minHeight: 0,
+    height: '100%',
+  },
+  /**
+   * Full-height flex column that wraps the drag handle, close bar, and
+   * DrawerBody inside the OverlayDrawer panel.
+   */
+  drawerContent: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    flex: '1 1 auto',
+    width: '100%',
+    height: '100%',
+    boxSizing: 'border-box' as const,
+    minHeight: 0,
+    minWidth: 0,
+    overflow: 'hidden',
+    backgroundColor: tokens.colorNeutralBackground1,
+  },
+  drawerHeaderBar: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    padding: `${tokens.spacingVerticalXXS} ${tokens.spacingHorizontalXXS}`,
+    flexShrink: 0,
+  },
+  drawerHeaderBarSideSheet: {
+    paddingTop: tokens.spacingVerticalSNudge,
+  },
+
+  /**
+   * Flex wrapper around DrawerBody that provides position:relative so the
+   * scroll-shadow overlay can be positioned inside it without affecting layout.
+   */
+  drawerBodyWrapper: {
+    position: 'relative' as const,
+    display: 'flex',
+    flexDirection: 'column' as const,
+    flex: '1 1 0',
+    width: '100%',
+    minHeight: 0,
+    minWidth: 0,
+    overflow: 'hidden',
+  },
+  /**
+   * Gradient overlay at the top of the scroll area. Fades from the panel
+   * background to transparent, indicating content scrolled out above.
+   * Follows iOS/Material convention: subtle gradient, no hard shadow.
+   */
+  drawerScrollTopShadow: {
+    position: 'absolute' as const,
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '40px',
+    background: `linear-gradient(to bottom, ${tokens.colorNeutralBackground1} 0%, transparent 100%)`,
+    pointerEvents: 'none' as const,
+    zIndex: 1,
+    opacity: 0,
+    transitionProperty: 'opacity',
+    transitionDuration: tokens.durationNormal,
+    transitionTimingFunction: 'ease',
+  },
+  drawerScrollTopShadowVisible: {
+    opacity: 1,
+  },
+  /** iOS-style pill indicator shown at the top of the bottom sheet. */
+  drawerDragHandle: {
+    // Purely visual indicator: touch input should pass through to the drawer
+    // surface so the whole card behaves identically.
+    width: '100%',
+    height: '28px',
+    flexShrink: 0,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    pointerEvents: 'none' as const,
+    ':before': {
+      content: '""',
+      display: 'block',
+      width: '36px',
+      height: '4px',
+      backgroundColor: tokens.colorNeutralStroke1,
+      borderRadius: tokens.borderRadiusCircular,
+    },
   },
 });
 
@@ -598,13 +773,89 @@ const CopyButton: React.FC<{ value: string; ariaLabel: string }> = ({ value, ari
   );
 };
 
-type WindowWidthClass = 'compact' | 'medium' | 'expanded' | 'large' | 'extra-large';
-type WindowHeightClass = 'compact' | 'medium' | 'expanded';
-
 interface IViewport {
   isTouch: boolean;
   widthClass: WindowWidthClass;
   heightClass: WindowHeightClass;
+}
+
+const DEFAULT_VIEWPORT: IViewport = { isTouch: false, widthClass: 'compact', heightClass: 'medium' };
+
+const COARSE_POINTER_QUERY = '(pointer: coarse)';
+
+let viewportSnapshot: IViewport = DEFAULT_VIEWPORT;
+let viewportMediaQueryList: MediaQueryList | undefined;
+let viewportCleanup: (() => void) | undefined;
+const viewportSubscribers = new Set<React.Dispatch<React.SetStateAction<IViewport>>>();
+
+function sameViewport(left: IViewport, right: IViewport): boolean {
+  return left.isTouch === right.isTouch && left.widthClass === right.widthClass && left.heightClass === right.heightClass;
+}
+
+function getCurrentViewportSnapshot(mediaQueryList?: MediaQueryList): IViewport {
+  if (typeof window === 'undefined' || !window.matchMedia) {
+    return DEFAULT_VIEWPORT;
+  }
+
+  const visualQaViewport = getVisualQaOverrides().viewport;
+  if (visualQaViewport) {
+    return visualQaViewport as IViewport;
+  }
+
+  const coarsePointerMediaQuery = mediaQueryList ?? window.matchMedia(COARSE_POINTER_QUERY);
+  return {
+    isTouch: coarsePointerMediaQuery.matches,
+    widthClass: classifyWindowWidth(window.innerWidth),
+    heightClass: classifyWindowHeight(window.innerHeight),
+  };
+}
+
+function publishViewportSnapshot(): void {
+  const nextViewport = getCurrentViewportSnapshot(viewportMediaQueryList);
+  if (sameViewport(viewportSnapshot, nextViewport)) {
+    return;
+  }
+
+  viewportSnapshot = nextViewport;
+  viewportSubscribers.forEach(setViewport => {
+    setViewport(currentViewport => sameViewport(currentViewport, nextViewport) ? currentViewport : nextViewport);
+  });
+}
+
+function ensureViewportListenerRegistration(): void {
+  if (viewportCleanup || typeof window === 'undefined' || !window.matchMedia) {
+    return;
+  }
+
+  viewportMediaQueryList = window.matchMedia(COARSE_POINTER_QUERY);
+  viewportSnapshot = getCurrentViewportSnapshot(viewportMediaQueryList);
+
+  const handleViewportChange = (): void => {
+    publishViewportSnapshot();
+  };
+
+  viewportMediaQueryList.addEventListener('change', handleViewportChange);
+  window.addEventListener('resize', handleViewportChange);
+
+  viewportCleanup = () => {
+    viewportMediaQueryList?.removeEventListener('change', handleViewportChange);
+    window.removeEventListener('resize', handleViewportChange);
+    viewportMediaQueryList = undefined;
+    viewportCleanup = undefined;
+  };
+}
+
+function subscribeToViewportStore(setViewport: React.Dispatch<React.SetStateAction<IViewport>>): () => void {
+  ensureViewportListenerRegistration();
+  viewportSubscribers.add(setViewport);
+  setViewport(currentViewport => sameViewport(currentViewport, viewportSnapshot) ? currentViewport : viewportSnapshot);
+
+  return () => {
+    viewportSubscribers.delete(setViewport);
+    if (viewportSubscribers.size === 0) {
+      viewportCleanup?.();
+    }
+  };
 }
 
 function classifyWindowWidth(width: number): WindowWidthClass {
@@ -648,35 +899,286 @@ function sideDrawerWidth(widthClass: WindowWidthClass, heightClass: WindowHeight
  * trailing side sheet for phone landscape and tablet-sized windows.
  */
 function useTouchViewport(): IViewport {
-  const [viewport, setViewport] = React.useState<IViewport>({
-    isTouch: false,
-    widthClass: 'compact',
-    heightClass: 'medium',
-  });
+  const [viewport, setViewport] = React.useState<IViewport>(() => getCurrentViewportSnapshot());
 
   React.useEffect(() => {
-    if (!window.matchMedia) return;
+    if (typeof window === 'undefined' || !window.matchMedia) {
+      return;
+    }
 
-    const coarseMq = window.matchMedia('(pointer: coarse)');
-    const updateViewport = (): void => {
-      setViewport({
-        isTouch: coarseMq.matches,
-        widthClass: classifyWindowWidth(window.innerWidth),
-        heightClass: classifyWindowHeight(window.innerHeight),
-      });
-    };
-
-    updateViewport();
-    coarseMq.addEventListener('change', updateViewport);
-    window.addEventListener('resize', updateViewport);
-
-    return () => {
-      coarseMq.removeEventListener('change', updateViewport);
-      window.removeEventListener('resize', updateViewport);
-    };
+    return subscribeToViewportStore(setViewport);
   }, []);
 
   return viewport;
+}
+
+/**
+ * Adds a native-feeling swipe-to-dismiss gesture to a Fluent UI OverlayDrawer.
+ *
+ * The hook attaches non-passive `touchmove` listeners to the DrawerBody element
+ * (the direct parent of `scrollRef.current`) so it can call `preventDefault()`
+ * and prevent conflicting scroll behaviour while a dismiss drag is in progress.
+ *
+ * It finds the drawer panel by walking up the DOM to the element with
+ * `role="dialog"`, then applies a CSS `transform` to that element in real time
+ * so the user sees the panel follow their finger.
+ *
+ * Dismissing only arms when the gesture STARTS while the scroll container is
+ * already at its top edge. If the user scrolls upward from deeper content and
+ * merely reaches the top during the same gesture, the drawer will not start to
+ * close until they release and begin a fresh swipe. This matches the native
+ * "scroll first, then dismiss" interaction the mobile view needs.
+ *
+ * On release:
+ * - displacement ≥ 100 px OR flick velocity ≥ 0.4 px/ms → animate off-screen
+ *   and call `onDismiss`
+ * - otherwise → spring back to the resting position
+ */
+function useSwipeToDismiss(
+  scrollRef: React.RefObject<HTMLDivElement>,
+  onDismiss: () => void,
+  enabled: boolean,
+  direction: 'down' | 'end'
+): void {
+  // Stable ref so onDismiss identity changes never force the effect to re-run.
+  const onDismissRef = React.useRef(onDismiss);
+  onDismissRef.current = onDismiss;
+
+  React.useEffect(() => {
+    if (!enabled) return;
+    const inner = scrollRef.current;
+    if (!inner) return;
+
+    // The DrawerBody (direct parent of the inner wrapper div) is the scroll
+    // container whose scrollTop / scrollLeft we check to decide whether a
+    // downward/rightward touch should be treated as a scroll or a dismiss drag.
+    const scrollContainer = inner.parentElement as HTMLElement | null;
+    if (!scrollContainer) return;
+
+    // Walk up the DOM tree to find the drawer panel (role="dialog").
+    let panel: HTMLElement | null = scrollContainer.parentElement;
+    while (panel && panel.getAttribute('role') !== 'dialog') {
+      panel = panel.parentElement;
+    }
+    if (!panel) return;
+
+    // Find the overlay backdrop — typically the previous sibling of the panel
+    // in the portal container — so we can fade it proportionally during drag.
+    const backdrop = panel.previousElementSibling as HTMLElement | null;
+
+    let startPrimary = 0;
+    let startSecondary = 0;
+    let isDragging = false;
+    let currentTranslate = 0;
+    let lastPrimary = 0;
+    let lastTimestamp = 0;
+    let velocity = 0;
+    let panelSize = 0; // cached in touchstart to avoid layout reads in touchmove
+    let springBackTimer = 0;
+    let dismissTimer = 0;
+
+    // Minimum movement (px) before recognising a dismiss gesture.
+    const DRAG_START_MIN = 8;
+    // Displacement (px) past which lifting the finger always dismisses.
+    const DISMISS_DISTANCE = 100;
+    // Flick velocity (px/ms) that triggers dismiss regardless of displacement.
+    const DISMISS_VELOCITY = 0.4;
+
+    const getPrimary   = (t: Touch): number => direction === 'down' ? t.clientY : t.clientX;
+    const getSecondary = (t: Touch): number => direction === 'down' ? t.clientX : t.clientY;
+
+    const setTransform = (v: number): void => {
+      panel!.style.transform = direction === 'down'
+        ? `translateY(${v}px)`
+        : `translateX(${v}px)`;
+    };
+
+    // Tracks whether the current touch sequence belongs to the drawer surface.
+    let gestureSource: 'content' | 'other' = 'other';
+    let canDismissCurrentGesture = false;
+
+    const onTouchEnd = (): void => {
+      const shouldFinishDrag = isDragging;
+      isDragging = false;
+      gestureSource = 'other';
+      canDismissCurrentGesture = false;
+      if (!shouldFinishDrag) return;
+      if (currentTranslate >= DISMISS_DISTANCE || velocity >= DISMISS_VELOCITY) {
+        // Animate the panel off-screen then invoke the dismiss callback.
+        const size = panelSize > 0 ? panelSize : (direction === 'down' ? panel!.offsetHeight : panel!.offsetWidth);
+        panel!.style.transition = 'transform 200ms cubic-bezier(0.4, 0, 1, 1)';
+        if (backdrop) {
+          backdrop.style.transition = 'opacity 200ms cubic-bezier(0.4, 0, 1, 1)';
+          backdrop.style.opacity = '0';
+        }
+        setTransform(size);
+        dismissTimer = window.setTimeout(() => {
+          panel!.style.transform  = '';
+          panel!.style.transition = '';
+          if (backdrop) {
+            backdrop.style.opacity    = '';
+            backdrop.style.transition = '';
+          }
+          onDismissRef.current();
+        }, 200);
+      } else {
+        // Spring back to the resting position.
+        panel!.style.transition = 'transform 300ms cubic-bezier(0.16, 1, 0.3, 1)';
+        if (backdrop) {
+          backdrop.style.transition = 'opacity 300ms cubic-bezier(0.16, 1, 0.3, 1)';
+          backdrop.style.opacity = '1';
+        }
+        setTransform(0);
+        springBackTimer = window.setTimeout(() => {
+          panel!.style.transform  = '';
+          panel!.style.transition = '';
+          if (backdrop) {
+            backdrop.style.opacity    = '';
+            backdrop.style.transition = '';
+          }
+        }, 300);
+      }
+    };
+
+    const onTouchCancel = (): void => {
+      const shouldCancelDrag = isDragging;
+      isDragging = false;
+      gestureSource = 'other';
+      canDismissCurrentGesture = false;
+      if (!shouldCancelDrag) return;
+      panel!.style.transition = 'transform 200ms ease-out';
+      if (backdrop) {
+        backdrop.style.transition = 'opacity 200ms ease-out';
+        backdrop.style.opacity = '1';
+      }
+      setTransform(0);
+      springBackTimer = window.setTimeout(() => {
+        panel!.style.transform  = '';
+        panel!.style.transition = '';
+        if (backdrop) {
+          backdrop.style.opacity    = '';
+          backdrop.style.transition = '';
+        }
+      }, 200);
+    };
+
+    const beginGesture = (
+      primary: number,
+      secondary: number,
+      timeStamp: number,
+      canDismiss: boolean
+    ): void => {
+      clearTimeout(springBackTimer);
+      clearTimeout(dismissTimer);
+      panel!.style.transition = 'none';
+      if (backdrop) backdrop.style.transition = 'none';
+
+      startPrimary = primary;
+      startSecondary = secondary;
+      lastPrimary = primary;
+      lastTimestamp = timeStamp;
+      velocity = 0;
+      currentTranslate = 0;
+      panelSize = direction === 'down' ? panel!.offsetHeight : panel!.offsetWidth;
+      gestureSource = 'content';
+      canDismissCurrentGesture = canDismiss;
+      isDragging = false;
+    };
+
+    const updateGesture = (
+      primary: number,
+      secondary: number,
+      timeStamp: number,
+      preventScroll: () => void
+    ): void => {
+      if (gestureSource === 'other') return;
+
+      const dp = primary - startPrimary;
+      const ds = Math.abs(secondary - startSecondary);
+
+      if (!isDragging && gestureSource === 'content' && canDismissCurrentGesture) {
+        // Start the dismiss drag only when the scroll boundary is reached and
+        // the movement is predominantly in the dismiss direction.
+        if (dp > DRAG_START_MIN && dp > ds) {
+          isDragging = true;
+        }
+      }
+
+      if (!isDragging) return;
+
+      preventScroll();
+      // Apply light rubber-band resistance for over-pull beyond 120 px.
+      const raw = Math.max(0, dp);
+      currentTranslate = raw < 120 ? raw : 120 + (raw - 120) * 0.3;
+      // Exponentially weighted moving average for smooth velocity tracking.
+      const dt = timeStamp - lastTimestamp;
+      if (dt > 0) {
+        velocity = velocity * 0.3 + ((primary - lastPrimary) / dt) * 0.7;
+      }
+      lastPrimary = primary;
+      lastTimestamp = timeStamp;
+      setTransform(currentTranslate);
+      // Fade the backdrop proportionally: fully opaque at rest, nearly
+      // transparent when the panel reaches the dismiss threshold.
+      if (backdrop && panelSize > 0) {
+        const progress = Math.min(1, currentTranslate / panelSize);
+        backdrop.style.opacity = String(1 - progress * 0.85);
+      }
+    };
+
+    // ── Touch routing on the full panel ──────────────────────────────────
+    //
+    // Any touch that starts inside the drawer surface enters the same pending
+    // swipe state. That makes the top pill purely decorative and keeps the
+    // drag behaviour identical across the entire card.
+
+    const onPanelTouchStart = (e: TouchEvent): void => {
+      const target = e.target as HTMLElement;
+      if (panel!.contains(target)) {
+        const touch = e.touches[0];
+        const atEdge = direction === 'down'
+          ? scrollContainer.scrollTop <= 0
+          : scrollContainer.scrollLeft <= 0;
+        beginGesture(getPrimary(touch), getSecondary(touch), e.timeStamp, atEdge);
+      } else {
+        gestureSource = 'other';
+        canDismissCurrentGesture = false;
+        isDragging = false;
+      }
+    };
+
+    const onPanelTouchMove = (e: TouchEvent): void => {
+      const touch = e.touches[0];
+      updateGesture(
+        getPrimary(touch),
+        getSecondary(touch),
+        e.timeStamp,
+        () => e.preventDefault(),
+      );
+    };
+
+    panel.addEventListener('touchstart',  onPanelTouchStart, { passive: true });
+    panel.addEventListener('touchmove',   onPanelTouchMove,  { passive: false });
+    panel.addEventListener('touchend',    onTouchEnd,        { passive: true });
+    panel.addEventListener('touchcancel', onTouchCancel,     { passive: true });
+
+    return (): void => {
+      clearTimeout(springBackTimer);
+      clearTimeout(dismissTimer);
+      panel!.removeEventListener('touchstart',  onPanelTouchStart);
+      panel!.removeEventListener('touchmove',   onPanelTouchMove);
+      panel!.removeEventListener('touchend',    onTouchEnd);
+      panel!.removeEventListener('touchcancel', onTouchCancel);
+      // Clean up any in-progress transform/opacity when the drawer closes or
+      // the direction changes (e.g. device rotation).
+      panel!.style.transform  = '';
+      panel!.style.transition = '';
+      if (backdrop) {
+        backdrop.style.opacity    = '';
+        backdrop.style.transition = '';
+      }
+    };
+  }, [enabled, direction, scrollRef]);
 }
 
 interface ISponsorCardProps {
@@ -792,6 +1294,14 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
   v9Theme,
 }) => {
   const cardRef = React.useRef<HTMLDivElement>(null);
+  const pointerOpenedCardRef = React.useRef(false);
+  // Inner wrapper div inside DrawerBody — used by useSwipeToDismiss to locate
+  // the scroll container (its parentElement) and the panel (role="dialog").
+  const drawerScrollRef = React.useRef<HTMLDivElement>(null);
+  const [shouldAutoFocusDesktopPopover, setShouldAutoFocusDesktopPopover] = React.useState(false);
+  // True when the drawer content has been scrolled down, driving the top
+  // gradient shadow that signals hidden content above.
+  const [isDrawerScrolled, setIsDrawerScrolled] = React.useState(false);
 
   const resolvedName = resolvePersonName(sponsor.givenName, sponsor.surname, sponsor.displayName);
   const resolvedManagerName = resolvePersonName(sponsor.managerGivenName, sponsor.managerSurname, sponsor.managerDisplayName);
@@ -835,31 +1345,38 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
   const cardClasses = useCardTileStyles();
   const richClasses = useRichCardStyles();
   const mobileDrawerClasses = useMobileDrawerStyles();
-  const officeLocation = sponsor.officeLocation?.trim();
-  const streetAddress = sponsor.streetAddress?.trim();
-  const postalCode = sponsor.postalCode?.trim();
-  const state = sponsor.state?.trim();
+  const city = readAddressValue(sponsor.city);
+  const countryOrRegion = readAddressValue(sponsor.country);
+  const officeLocation = readAddressValue(sponsor.officeLocation);
+  const streetAddress = readAddressValue(sponsor.streetAddress);
+  const postalCode = readAddressValue(sponsor.postalCode);
+  const stateOrProvince = readAddressValue(sponsor.state);
   const showOfficeLocation = Boolean(showWorkLocation && officeLocation);
 
-  // Build a combined address from all configured/available address parts.
-  // officeLocation is intentionally excluded — it is shown as a separate field.
-  const addressParts: string[] = [];
-  if (showStreetAddress && streetAddress) addressParts.push(streetAddress);
-  if (showPostalCode && postalCode) addressParts.push(postalCode);
-  if (showCity && sponsor.city?.trim()) addressParts.push(sponsor.city!.trim());
-  if (showState && state) addressParts.push(state);
-  if (showCountry && sponsor.country?.trim()) addressParts.push(sponsor.country!.trim());
-  const combinedAddress = addressParts.join(', ');
-  const hasCombinedAddress = combinedAddress.length > 0;
-  const addressMapLink = hasCombinedAddress && externalMapProvider !== 'none'
-    ? buildExternalMapLink(externalMapProvider, combinedAddress)
+  // Display formatting and maps queries intentionally use separate outputs.
+  // The visible string follows country-specific postal conventions, while the
+  // map query keeps broad structured components for more reliable geocoding.
+  // officeLocation stays separate and is never folded into either address.
+  const visibleAddressComponents: IAddressComponents = {
+    streetAddress: showStreetAddress ? streetAddress : undefined,
+    postalCode: showPostalCode ? postalCode : undefined,
+    city: showCity ? city : undefined,
+    stateOrProvince: showState ? stateOrProvince : undefined,
+    country: showCountry ? countryOrRegion : undefined,
+  };
+  const displayAddress = formatDisplayAddress(visibleAddressComponents, countryOrRegion);
+  const mapsQueryAddress = formatMapsQueryAddress(visibleAddressComponents);
+  const hasDisplayAddress = displayAddress.length > 0;
+  const hasMapsQueryAddress = mapsQueryAddress.length > 0;
+  const addressMapLink = hasMapsQueryAddress && externalMapProvider !== 'none'
+    ? buildExternalMapLink(externalMapProvider, mapsQueryAddress)
     : undefined;
 
   const [mapPreviewUrl, setMapPreviewUrl] = React.useState<string | undefined>(undefined);
   const [mapLoading, setMapLoading] = React.useState(false);
 
   React.useEffect(() => {
-    if (!isActive || !hasCombinedAddress || !azureMapsSubscriptionKey) {
+    if (!isActive || !hasMapsQueryAddress || !azureMapsSubscriptionKey) {
       setMapPreviewUrl(undefined);
       setMapLoading(false);
       return;
@@ -868,7 +1385,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
     const controller = new AbortController();
     setMapLoading(true);
 
-    const geocodeUrl = `https://atlas.microsoft.com/search/address/json?api-version=1.0&subscription-key=${encodeURIComponent(azureMapsSubscriptionKey)}&query=${encodeURIComponent(combinedAddress)}&limit=1`;
+    const geocodeUrl = `https://atlas.microsoft.com/search/address/json?api-version=1.0&subscription-key=${encodeURIComponent(azureMapsSubscriptionKey)}&query=${encodeURIComponent(mapsQueryAddress)}&limit=1`;
 
     fetch(geocodeUrl, { signal: controller.signal })
       .then(async response => {
@@ -900,14 +1417,11 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
         //   POI, Cross Street — wrong or ambiguous location
         const matchType = result?.type;
         const entityType = result?.entityType ?? '';
-        const CITY_LEVEL_ENTITY_TYPES = new Set([
-          'Municipality', 'MunicipalitySubdivision', 'Neighbourhood', 'PostalCodeArea',
-        ]);
         const isPrecise =
           matchType === 'Point Address' ||
           matchType === 'Address Range' ||
           matchType === 'Street' ||
-          (matchType === 'Geography' && CITY_LEVEL_ENTITY_TYPES.has(entityType));
+          (matchType === 'Geography' && CITY_LEVEL_MAP_ENTITY_TYPES.has(entityType));
         if (!isPrecise) {
           throw new Error(`Azure Maps match too imprecise: ${matchType}/${entityType}`);
         }
@@ -928,7 +1442,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
       });
 
     return () => controller.abort();
-  }, [isActive, hasCombinedAddress, azureMapsSubscriptionKey, combinedAddress]);
+  }, [isActive, hasMapsQueryAddress, azureMapsSubscriptionKey, mapsQueryAddress]);
 
   // Delayed expand: the detail sections slide open ~300 ms after the card
   // appears, matching the Microsoft Teams People Card pattern where the header
@@ -966,8 +1480,9 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
     );
   }, [isActive]);
 
-  // The rich card body is defined here so it can be placed inside either
-  // a Popover (desktop) or an OverlayDrawer (mobile) without duplicating the JSX.
+  // The rich card is split into a fixed header panel and a detail body so the
+  // mobile drawer can keep the sponsor persona permanently visible while only
+  // the contact and org sections scroll underneath it.
 
   // Manager avatar size scales with the number of text rows shown:
   //   2 rows (name + job title + department) → 64 px  (one above extra-large natural)
@@ -977,23 +1492,113 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
   const managerAvatarSize: 56 | 64 = managerThreeLines ? 64 : 56;
   const usesBottomSheet = isTouch && widthClass === 'compact' && heightClass !== 'compact';
   const mobileDrawerPosition: 'bottom' | 'end' = usesBottomSheet ? 'bottom' : 'end';
-  const mobileDrawerSize: 'small' | 'full' = usesBottomSheet ? 'full' : 'small';
+  const mobileDrawerSize: 'small' | 'medium' = usesBottomSheet ? 'medium' : 'small';
   const mobileDrawerStyle = React.useMemo<React.CSSProperties | undefined>(
-    () => (!isTouch || usesBottomSheet
-      ? undefined
-      : { '--fui-Drawer--size': sideDrawerWidth(widthClass, heightClass) } as React.CSSProperties),
+    () => {
+      if (!isTouch) return undefined;
+
+      const shapeStyle: React.CSSProperties = {
+        backgroundColor: tokens.colorNeutralBackground1,
+        overflow: 'hidden',
+      };
+
+      if (usesBottomSheet) {
+        shapeStyle.borderRadius = `${tokens.borderRadiusLarge} ${tokens.borderRadiusLarge} 0 0`;
+        return {
+          ...shapeStyle,
+          width: '100%',
+          maxWidth: '100dvw',
+          minWidth: 0,
+          // Open at ~80 % of the viewport — standard partial-sheet behaviour on
+          // iOS/Android where the page content remains partly visible below.
+          '--fui-Drawer--size': '80dvh',
+        } as React.CSSProperties;
+      }
+
+      return {
+        ...shapeStyle,
+        '--fui-Drawer--size': sideDrawerWidth(widthClass, heightClass),
+        borderRadius: `${tokens.borderRadiusLarge} 0 0 ${tokens.borderRadiusLarge}`,
+      } as React.CSSProperties;
+    },
     [isTouch, usesBottomSheet, widthClass, heightClass]
   );
 
-  const richBody = (
-    <div
-      className={mergeClasses(richClasses.richCard, isTouch && richClasses.richCardFlat)}
-      onMouseEnter={!isTouch ? onActivate : undefined}
-      onMouseLeave={!isTouch ? onScheduleDeactivate : undefined}
-    >
-      {/* ── Header panel: elevated rounded card (avatar + buttons) ─── */}
-      <div className={mergeClasses(richClasses.richCardHeaderPanel, isTouch && richClasses.richCardHeaderPanelFlat)}>
-      <div className={richClasses.richHeader}>
+  useSwipeToDismiss(
+    drawerScrollRef,
+    onForceDeactivate,
+    isTouch && isActive,
+    'down'
+  );
+
+  // Reset scroll position each time the drawer opens so the user always
+  // starts at the top, not at a leftover position from the previous visit.
+  React.useEffect(() => {
+    if (!isActive) return;
+    const scrollContainer = drawerScrollRef.current?.parentElement as HTMLElement | null;
+    if (scrollContainer) scrollContainer.scrollTop = 0;
+  }, [isActive]);
+
+  // Track whether the drawer content is scrolled down so we can show/hide
+  // the top gradient shadow that signals content scrolled out above.
+  React.useEffect(() => {
+    if (!isTouch || !isActive) {
+      setIsDrawerScrolled(false);
+      return;
+    }
+    const scrollContainer = drawerScrollRef.current?.parentElement as HTMLElement | null;
+    if (!scrollContainer) return;
+    const onScroll = (): void => setIsDrawerScrolled(scrollContainer.scrollTop > 0);
+    scrollContainer.addEventListener('scroll', onScroll, { passive: true });
+    return () => scrollContainer.removeEventListener('scroll', onScroll);
+  }, [isTouch, isActive]);
+
+  // Fluent Popover auto-focuses the first focusable element on open. A mouse
+  // click focuses the tile before React receives the click event, so track
+  // pointer presses and only keep auto-focus for genuine keyboard focus.
+  const handleCardMouseDown = (): void => {
+    pointerOpenedCardRef.current = true;
+    setShouldAutoFocusDesktopPopover(false);
+  };
+
+  const handleCardMouseEnter = (): void => {
+    setShouldAutoFocusDesktopPopover(false);
+    onActivate();
+  };
+
+  const handleCardFocus = (): void => {
+    const openedFromKeyboard = !pointerOpenedCardRef.current;
+    pointerOpenedCardRef.current = false;
+    setShouldAutoFocusDesktopPopover(openedFromKeyboard);
+    onActivateNow();
+  };
+
+  const handleCardBlur = (): void => {
+    pointerOpenedCardRef.current = false;
+    onScheduleDeactivate();
+  };
+
+  const handleCardClick = (): void => {
+    pointerOpenedCardRef.current = false;
+    onActivateNow();
+  };
+
+  const richHeaderPanel = (
+    <div className={richClasses.richCardHeaderPanel} data-rich-header-panel="true">
+      {usesBottomSheet && (
+        <div
+          className={mobileDrawerClasses.drawerDragHandle}
+          data-drawer-handle="true"
+          aria-hidden="true"
+        />
+      )}
+      <div
+        className={mergeClasses(
+          richClasses.richHeader,
+          isTouch && richClasses.richHeaderFlat,
+          usesBottomSheet && richClasses.richHeaderFlatWithHandle,
+        )}
+      >
         <Persona
           size="huge"
           name={resolvedName}
@@ -1083,18 +1688,11 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
         </div>
       )}
 
-      </div>{/* end richCardHeaderPanel */}
+    </div>
+  );
 
-      {/* ── Scrollable detail area (expands after delay) ─────── */}
-      <div
-        className={mergeClasses(
-          richClasses.richCardBody,
-          isTouch && richClasses.richCardBodyFlat,
-          (isTouch || detailsExpanded) && richClasses.richCardBodyExpanded,
-          isTouch && richClasses.richCardBodyExpandedFlat,
-        )}
-      >
-
+  const richDetailSections = (
+    <>
       {/* ── Contact section ─────────────────────────────────── */}
       <div className={richClasses.richSectionTitle}>{strings.ContactInfoSection}</div>
       <div className={richClasses.richSection}>
@@ -1134,20 +1732,20 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
             <CopyButton value={officeLocation!} ariaLabel={strings.CopyLocationAriaLabel} />
           </div>
         )}
-        {hasCombinedAddress && (
+        {hasDisplayAddress && (
           <>
             <div className={mergeClasses(richClasses.richInfoRow, richClasses.richInfoRowInteractive)}>
               <LocationRegular className={richClasses.richInfoIcon} aria-hidden="true" />
               <div className={richClasses.richInfoText}>
                 {addressMapLink ? (
                   <Link href={addressMapLink} target="_blank" rel="noreferrer noopener" className={richClasses.richInfoValue}>
-                    {combinedAddress}
+                    {displayAddress}
                   </Link>
                 ) : (
-                  <div className={richClasses.richInfoValue}>{combinedAddress}</div>
+                  <div className={richClasses.richInfoValue}>{displayAddress}</div>
                 )}
               </div>
-              <CopyButton value={combinedAddress} ariaLabel={strings.CopyAddressAriaLabel} />
+              <CopyButton value={displayAddress} ariaLabel={strings.CopyAddressAriaLabel} />
             </div>
             {azureMapsSubscriptionKey && (mapLoading || mapPreviewUrl) && (
               <div className={richClasses.mapPreviewInline}>
@@ -1214,7 +1812,34 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
           </div>
         </>
       )}
-      </div>{/* end richCardBody */}
+    </>
+  );
+
+  const desktopRichBody = (
+    <div
+      className={richClasses.richCard}
+      onMouseEnter={onActivate}
+      onMouseLeave={onScheduleDeactivate}
+    >
+      {richHeaderPanel}
+      <div
+        className={mergeClasses(
+          richClasses.richCardBody,
+          detailsExpanded && richClasses.richCardBodyExpanded,
+        )}
+        data-rich-detail-body="true"
+      >
+        {richDetailSections}
+      </div>
+    </div>
+  );
+
+  const mobileRichDetailBody = (
+    <div
+      className={richClasses.richCardBodyDrawer}
+      data-rich-detail-body="true"
+    >
+      {richDetailSections}
     </div>
   );
 
@@ -1224,11 +1849,12 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
       <div
         ref={cardRef}
         className={mergeClasses(compact ? cardClasses.cardCompact : cardClasses.card, readOnly ? cardClasses.cardReadOnly : '')}
-        onMouseEnter={readOnly ? undefined : onActivate}
+        onMouseDown={readOnly ? undefined : handleCardMouseDown}
+        onMouseEnter={readOnly ? undefined : handleCardMouseEnter}
         onMouseLeave={readOnly ? undefined : onScheduleDeactivate}
-        onFocus={readOnly ? undefined : onActivateNow}
-        onBlur={readOnly ? undefined : onScheduleDeactivate}
-        onClick={readOnly ? undefined : onActivateNow}
+        onFocus={readOnly ? undefined : handleCardFocus}
+        onBlur={readOnly ? undefined : handleCardBlur}
+        onClick={readOnly ? undefined : handleCardClick}
         tabIndex={readOnly ? undefined : 0}
         role={readOnly ? undefined : 'button'}
         aria-label={resolvedName}
@@ -1251,6 +1877,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
       {/* ── Rich contact card (OverlayDrawer on mobile, Popover on desktop) ─── */}
       {!readOnly && isTouch && (
         <OverlayDrawer
+          aria-label={resolvedName}
           open={isActive}
           position={mobileDrawerPosition}
           size={mobileDrawerSize}
@@ -1258,25 +1885,70 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
           onOpenChange={(_, data) => { if (!data.open) onForceDeactivate(); }}
         >
           <RendererProvider renderer={griffelRenderer}>
-          <FluentProvider theme={v9Theme}>
-            <DrawerHeader>
-              <DrawerHeaderTitle
-                className={mobileDrawerClasses.drawerHeaderTitle}
-                action={
+          <FluentProvider theme={v9Theme} className={mobileDrawerClasses.drawerProvider}>
+            {/* Full-height flex column so drag handle + header + body fill the panel */}
+            <div className={mobileDrawerClasses.drawerContent}>
+              {/* Close button — side sheet only; bottom sheet dismisses via drag or backdrop tap */}
+              {!usesBottomSheet && (
+                <div className={mergeClasses(mobileDrawerClasses.drawerHeaderBar, mobileDrawerClasses.drawerHeaderBarSideSheet)}>
                   <Button
                     appearance="subtle"
                     icon={<DismissRegular />}
                     onClick={onForceDeactivate}
                     aria-label={strings.CloseLabel}
+                    data-drawer-close="true"
                   />
-                }
-              >
-                {resolvedName}
-              </DrawerHeaderTitle>
-            </DrawerHeader>
-            <DrawerBody>
-              {richBody}
-            </DrawerBody>
+                </div>
+              )}
+                {richHeaderPanel}
+              {/*
+               * Wrapper provides position:relative so the top gradient shadow
+               * can be absolutely positioned over the scroll area.
+               * DrawerBody inside is the actual scroll container; its scrollTop
+               * is read by useSwipeToDismiss via drawerScrollRef.parentElement.
+               */}
+              <div className={mobileDrawerClasses.drawerBodyWrapper}>
+                {/* Gradient fade indicating content scrolled out above. */}
+                <div
+                  className={mergeClasses(
+                    mobileDrawerClasses.drawerScrollTopShadow,
+                    isDrawerScrolled && mobileDrawerClasses.drawerScrollTopShadowVisible,
+                  )}
+                  aria-hidden="true"
+                />
+                <DrawerBody
+                  style={{
+                    padding: 0,
+                    display: 'block',
+                    flex: '1 1 0',
+                    width: '100%',
+                    height: '100%',
+                    maxHeight: '100%',
+                    minHeight: 0,
+                    minWidth: 0,
+                    boxSizing: 'border-box',
+                    overflowY: 'auto',
+                    overflowX: 'hidden',
+                    WebkitOverflowScrolling: 'touch',
+                    touchAction: 'pan-y',
+                    // Prevent the page behind from scrolling when the user
+                    // reaches the top/bottom boundary of the drawer content.
+                    overscrollBehavior: 'contain',
+                  }}
+                >
+                  <div
+                    ref={drawerScrollRef}
+                    style={{
+                      width: '100%',
+                      minHeight: '100%',
+                      boxSizing: 'border-box',
+                    }}
+                  >
+                    {mobileRichDetailBody}
+                  </div>
+                </DrawerBody>
+              </div>
+            </div>
           </FluentProvider>
           </RendererProvider>
         </OverlayDrawer>
@@ -1284,6 +1956,7 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
       {!readOnly && !isTouch && isActive && (
         <Popover
           open
+          unstable_disableAutoFocus={!shouldAutoFocusDesktopPopover}
           positioning={{
             target: cardRef.current,
             position: popoverSide,
@@ -1304,8 +1977,8 @@ const SponsorCard: React.FC<ISponsorCardProps> = ({
             onMouseLeave={onScheduleDeactivate}
           >
             <RendererProvider renderer={griffelRenderer}>
-            <FluentProvider theme={v9Theme}>
-              {richBody}
+            <FluentProvider theme={v9Theme} style={{ backgroundColor: 'transparent' }}>
+              {desktopRichBody}
             </FluentProvider>
             </RendererProvider>
           </PopoverSurface>

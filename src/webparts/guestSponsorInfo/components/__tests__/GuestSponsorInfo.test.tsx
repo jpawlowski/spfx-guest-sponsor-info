@@ -75,6 +75,7 @@ class MockBroadcastChannel {
 }
 
 const originalBroadcastChannel = globalThis.BroadcastChannel;
+const originalTestUrl = window.location.href;
 
 beforeAll(() => {
   globalThis.BroadcastChannel = MockBroadcastChannel as unknown as typeof BroadcastChannel;
@@ -119,6 +120,7 @@ beforeEach(() => {
 afterEach(() => {
   act(() => { ReactDOM.unmountComponentAtNode(container); });
   container.remove();
+  window.history.replaceState({}, '', originalTestUrl);
 });
 
 function renderWebPart(overrides: Partial<IGuestSponsorInfoProps> = {}): void {
@@ -228,6 +230,22 @@ describe('GuestSponsorInfo', () => {
     it('never calls getSponsorsViaProxy for a non-guest visitor', () => {
       mockIsGuestUser.mockReturnValue(false);
       act(() => { renderWebPart({ loginName: 'member@fabrikam.onmicrosoft.com', isExternalGuestUser: false }); });
+      expect(mockGetSponsors).not.toHaveBeenCalled();
+    });
+
+    it('can force mock mode from the URL for repeatable browser QA', async () => {
+      mockIsGuestUser.mockReturnValue(false);
+      window.history.replaceState({}, '', `${originalTestUrl}?gsi-qa-mock=1&gsi-qa-count=1`);
+
+      act(() => {
+        renderWebPart({
+          loginName: 'member@fabrikam.onmicrosoft.com',
+          isExternalGuestUser: false,
+        });
+      });
+      await flushAsync();
+
+      expect(container.textContent).toContain('Anna Müller');
       expect(mockGetSponsors).not.toHaveBeenCalled();
     });
   });
@@ -411,6 +429,22 @@ describe('GuestSponsorInfo', () => {
       await flushAsync();
       expect(container.textContent).toContain('Temporary service issue');
       expect(container.textContent).toContain('internal authorization step');
+    });
+
+    it('can enable the long-content QA dataset from the URL without opening the property pane', async () => {
+      window.history.replaceState({}, '', `${originalTestUrl}?gsi-qa-long=1&gsi-qa-hint=versionMismatch`);
+
+      act(() => {
+        renderWebPart({
+          loginName: 'member@fabrikam.onmicrosoft.com',
+          isExternalGuestUser: false,
+        });
+      });
+      await flushAsync();
+
+      expect(container.textContent).toContain('Anna Müller');
+      expect(container.textContent).toContain('James Anderson');
+      expect(mockGetSponsors).not.toHaveBeenCalled();
     });
   });
 });
