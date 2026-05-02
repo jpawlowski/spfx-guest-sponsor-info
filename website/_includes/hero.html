@@ -1,39 +1,137 @@
 {%- assign strings = site.data[page.lang].strings -%}
 {%- if page.lang == 'de' -%}
 {%- assign hero_screenshot_alt = 'Screenshot des Guest Sponsor Info Web Parts mit geöffneter Sponsor-Detailansicht.' -%}
+{%- assign hero_screenshot_alt_mobile = 'Screenshot des Guest Sponsor Info Web Parts in der mobilen Ansicht.' -%}
 {%- assign hero_screenshot_caption = 'Echte Sponsor-Detailansicht aus dem Web Part.' -%}
+{%- assign hero_dot_desktop_label = 'Desktop-Screenshot anzeigen' -%}
+{%- assign hero_dot_mobile_label = 'Mobilen Screenshot anzeigen' -%}
+{%- assign hero_slider_nav_label = 'Screenshot-Slideshow Navigation' -%}
+{%- assign hero_open_lightbox_label = 'Screenshot vergrößern' -%}
+{%- assign hero_lightbox_close_label = 'Schließen' -%}
 {%- else -%}
 {%- assign hero_screenshot_alt = 'Screenshot of the Guest Sponsor Info web part with an opened sponsor detail view.' -%}
+{%- assign hero_screenshot_alt_mobile = 'Screenshot of the Guest Sponsor Info web part in the mobile view.' -%}
 {%- assign hero_screenshot_caption = 'Actual sponsor detail view from the web part.' -%}
+{%- assign hero_dot_desktop_label = 'Show desktop screenshot' -%}
+{%- assign hero_dot_mobile_label = 'Show mobile screenshot' -%}
+{%- assign hero_slider_nav_label = 'Screenshot slideshow navigation' -%}
+{%- assign hero_open_lightbox_label = 'Enlarge screenshot' -%}
+{%- assign hero_lightbox_close_label = 'Close' -%}
 {%- endif -%}
 
 <section class="hero">
-    <div class="container hero-inner">
-        <div class="hero-text">
-            <h1 class="hero-title">{{ strings.hero.title }}</h1>
-            <p class="hero-subtitle">{{ strings.hero.subtitle }}</p>
-            <div class="hero-actions">
-                <a href="{{ '/' | append: page.lang | append: '/features/' | relative_url }}" class="btn btn-primary">
-                    {{ strings.hero.cta_primary }}
-                </a>
-                <a href="{{ '/' | append: page.lang | append: '/why/' | relative_url }}" class="btn btn-secondary">
-                    {{ strings.hero.cta_secondary }}
-                </a>
-            </div>
-            <div class="hero-badges">
-                <span class="badge">{{ strings.hero.badge_languages }}</span>
-                <span class="badge">{{ strings.hero.badge_privacy }}</span>
-                <span class="badge">{{ strings.hero.badge_opensource }}</span>
-            </div>
-        </div>
-        <div class="hero-visual">
-            <figure class="hero-shot">
-                <a href="{{ '/assets/images/my-sponsors-card-example.jpg' | relative_url }}" class="hero-shot-link">
-                    <img src="{{ '/assets/images/my-sponsors-card-example.jpg' | relative_url }}"
-                        alt="{{ hero_screenshot_alt }}" class="hero-screenshot" width="1136" height="1279">
-                </a>
-                <figcaption class="hero-shot-caption">{{ hero_screenshot_caption }}</figcaption>
-            </figure>
-        </div>
+  <div class="container hero-inner">
+    <div class="hero-text">
+      <h1 class="hero-title">{{ strings.hero.title }}</h1>
+      <p class="hero-subtitle">{{ strings.hero.subtitle }}</p>
+      <div class="hero-actions">
+        <a href="{{ '/' | append: page.lang | append: '/features/' | relative_url }}" class="btn btn-primary">
+          {{ strings.hero.cta_primary }}
+        </a>
+        <a href="{{ '/' | append: page.lang | append: '/why/' | relative_url }}" class="btn btn-secondary">
+          {{ strings.hero.cta_secondary }}
+        </a>
+      </div>
+      <div class="hero-badges">
+        <span class="badge">{{ strings.hero.badge_languages }}</span>
+        <span class="badge">{{ strings.hero.badge_privacy }}</span>
+        <span class="badge">{{ strings.hero.badge_opensource }}</span>
+      </div>
     </div>
+    <div class="hero-visual">
+      <figure class="hero-shot">
+        <button type="button" class="hero-shot-link" aria-label="{{ hero_open_lightbox_label }}">
+          <div id="hero-slider" class="hero-screenshot-slider">
+            <img src="{{ '/assets/images/my-sponsors-card-example.jpg' | relative_url }}"
+              alt="{{ hero_screenshot_alt }}" class="hero-screenshot" width="1136" height="1279">
+            <div class="hero-phone-frame">
+              <img src="{{ '/assets/images/my-sponsors-card-example-mobile.jpg' | relative_url }}"
+                alt="{{ hero_screenshot_alt_mobile }}" width="1320" height="2159">
+            </div>
+          </div>
+        </button>
+        <nav class="hero-slider-dots" aria-label="{{ hero_slider_nav_label }}">
+          <button class="hero-slider-dot is-active" type="button"
+            aria-label="{{ hero_dot_desktop_label }}" aria-pressed="true"></button>
+          <button class="hero-slider-dot" type="button"
+            aria-label="{{ hero_dot_mobile_label }}" aria-pressed="false"></button>
+        </nav>
+        <figcaption class="hero-shot-caption">{{ hero_screenshot_caption }}</figcaption>
+      </figure>
+    </div>
+  </div>
 </section>
+
+<dialog id="hero-lightbox" class="img-lightbox">
+  <button type="button" class="img-lightbox__close" aria-label="{{ hero_lightbox_close_label }}">&#x2715;</button>
+  <img id="hero-lightbox-img" src="" alt="" class="img-lightbox__img">
+</dialog>
+
+<script>
+(function () {
+  var slider = document.getElementById('hero-slider');
+  if (!slider) return;
+
+  var dots        = document.querySelectorAll('.hero-slider-dot');
+  var lightbox    = document.getElementById('hero-lightbox');
+  var lightboxImg = document.getElementById('hero-lightbox-img');
+  var desktopImg  = slider.querySelector('.hero-screenshot');
+  var mobileImg   = slider.querySelector('.hero-phone-frame img');
+
+  var CYCLE        = 10000; // must match CSS animation-duration
+  var MOBILE_START = 0.45;  // fraction at which mobile dot becomes active
+  var MOBILE_END   = 0.95;  // fraction at which desktop dot becomes active again
+
+  var startTime   = performance.now();
+  var manualSlide = -1; // -1 = auto-playing
+  var currentDot  = 0;  // last-known active dot index
+  var rafId;
+
+  function setActiveDot(index) {
+    currentDot = index;
+    dots.forEach(function (d, i) {
+      d.classList.toggle('is-active', i === index);
+      d.setAttribute('aria-pressed', i === index ? 'true' : 'false');
+    });
+  }
+
+  function tick(now) {
+    if (manualSlide !== -1) return;
+    var fraction = ((now - startTime) % CYCLE) / CYCLE;
+    setActiveDot((fraction >= MOBILE_START && fraction < MOBILE_END) ? 1 : 0);
+    rafId = requestAnimationFrame(tick);
+  }
+
+  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    rafId = requestAnimationFrame(tick);
+  }
+
+  dots.forEach(function (dot, index) {
+    dot.addEventListener('click', function () {
+      manualSlide = index;
+      if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+      slider.classList.add('is-manual');
+      slider.classList.toggle('show-mobile', index === 1);
+      setActiveDot(index);
+    });
+  });
+
+  // Lightbox: open with the currently visible screenshot
+  var trigger = slider.closest('.hero-shot-link');
+  if (lightbox && lightboxImg && trigger && typeof lightbox.showModal === 'function') {
+    trigger.addEventListener('click', function () {
+      var isMobile = currentDot === 1;
+      lightboxImg.src = isMobile ? mobileImg.src : desktopImg.src;
+      lightboxImg.alt = isMobile ? mobileImg.alt : desktopImg.alt;
+      lightbox.showModal();
+    });
+    lightbox.querySelector('.img-lightbox__close').addEventListener('click', function () {
+      lightbox.close();
+    });
+    // Close on backdrop click (target is the <dialog> element itself, not its children)
+    lightbox.addEventListener('click', function (e) {
+      if (e.target === lightbox) { lightbox.close(); }
+    });
+  }
+}());
+</script>

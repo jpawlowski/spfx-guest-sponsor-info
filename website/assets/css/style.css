@@ -325,10 +325,13 @@ ul {
 
 .hero-shot-link {
   display: block;
+  width: 100%;
   padding: 0.75rem;
+  border: none;
   border-radius: calc(var(--radius) + 4px);
   background: linear-gradient(160deg, rgba(18, 178, 205, 0.18), rgba(255, 255, 255, 0.96));
   box-shadow: var(--shadow-lg);
+  cursor: zoom-in;
 }
 
 .hero-screenshot {
@@ -340,9 +343,251 @@ ul {
 
 .hero-shot-caption {
   margin-top: 0.85rem;
-  font-size: 0.82rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
   color: var(--color-text-muted);
   line-height: 1.5;
+  text-align: center;
+}
+
+/* Hero screenshot crossfade slider */
+.hero-screenshot-slider {
+  position: relative;
+  /* Locked to the desktop screenshot's aspect ratio so the phone frame
+     animation never causes a layout shift. */
+  aspect-ratio: 1136 / 1279;
+  overflow: hidden;
+  border-radius: var(--radius);
+}
+
+/* Desktop image fills the locked frame and dims during the mobile phase. */
+.hero-screenshot-slider .hero-screenshot {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  border-radius: 0;
+  box-shadow: none;
+  animation: hero-slide-desktop 10s ease-in-out infinite;
+}
+
+/* Phone frame wrapper — owns positioning, bezel shadow, and animation.
+   Using a separate element avoids any CSS specificity conflict with the
+   .hero-screenshot-slider .hero-screenshot rule above. */
+.hero-phone-frame {
+  position: absolute;
+  top: 4%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 52%;
+  height: 92%;
+  border-radius: 28px;
+  overflow: hidden;
+  /* Dark ring = device bezel; bright ring = glass edge; drop shadow = depth */
+  box-shadow:
+    0 0 0 8px #1c1c1e,
+    0 0 0 10px rgba(255, 255, 255, 0.12),
+    0 24px 48px rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  animation: hero-slide-mobile 10s ease-in-out infinite;
+}
+
+/* Mobile screenshot fills the phone frame completely. */
+.hero-phone-frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+}
+
+@keyframes hero-slide-desktop {
+  0%, 40%  { opacity: 1; }
+  50%, 90% { opacity: 0.12; }
+  100%     { opacity: 1; }
+}
+
+@keyframes hero-slide-mobile {
+  0%, 40%  { opacity: 0; }
+  50%, 90% { opacity: 1; }
+  100%     { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-screenshot-slider .hero-screenshot {
+    animation: none;
+  }
+
+  .hero-phone-frame {
+    animation: none;
+    opacity: 0;
+  }
+
+  .hero-screenshot-slider.is-manual .hero-screenshot,
+  .hero-screenshot-slider.is-manual .hero-phone-frame {
+    transition: none;
+  }
+}
+
+/* Dot indicators below the hero slider */
+.hero-slider-dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.55rem;
+}
+
+.hero-slider-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  background: rgba(10, 61, 79, 0.2);
+  transition: background var(--transition), transform var(--transition);
+}
+
+.hero-slider-dot.is-active {
+  background: var(--color-teal);
+  transform: scale(1.3);
+}
+
+.hero-slider-dot:focus-visible {
+  outline: 3px solid rgba(18, 178, 205, 0.45);
+  outline-offset: 3px;
+}
+
+/* Manual mode: CSS animations off, JS controls visibility via classes */
+.hero-screenshot-slider.is-manual .hero-screenshot {
+  animation: none;
+  opacity: 1;
+  transition: opacity 0.4s ease-in-out;
+}
+
+.hero-screenshot-slider.is-manual .hero-phone-frame {
+  animation: none;
+  opacity: 0;
+  transition: opacity 0.4s ease-in-out;
+}
+
+.hero-screenshot-slider.is-manual.show-mobile .hero-screenshot {
+  opacity: 0.12;
+}
+
+.hero-screenshot-slider.is-manual.show-mobile .hero-phone-frame {
+  opacity: 1;
+}
+
+/* Shared image lightbox (dialog) — used by hero and zoomable page images */
+img[data-zoomable] {
+  cursor: zoom-in;
+}
+
+.img-lightbox {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+  max-width: min(92vw, 880px);
+  max-height: 92dvh;
+  padding: 0;
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+}
+
+.img-lightbox::backdrop {
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.img-lightbox__img {
+  display: block;
+  max-width: 100%;
+  max-height: 92dvh;
+  height: auto;
+  width: auto;
+}
+
+.img-lightbox__close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 1;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 0.9rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--transition);
+}
+
+.img-lightbox__close:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.img-lightbox__close:focus-visible {
+  outline: 3px solid rgba(18, 178, 205, 0.6);
+  outline-offset: 2px;
+}
+
+/* Screenshot pair (desktop + mobile side by side, used in doc pages) */
+.screenshot-pair {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+  margin: 2rem 0;
+}
+
+.screenshot-pair__item {
+  margin: 0;
+}
+
+.screenshot-pair__item--desktop {
+  flex: 3;
+}
+
+.screenshot-pair__item--mobile {
+  flex: 2;
+}
+
+.screenshot-pair__img {
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+}
+
+.screenshot-pair__caption {
+  margin-top: 0.5rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .screenshot-pair {
+    flex-direction: column;
+  }
 }
 
 /* ============================================================
@@ -736,14 +981,19 @@ ul {
 .fp-shot {
   width: 100%;
   height: auto;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
 }
 
 .fp-media-caption {
   margin-top: 0.8rem;
-  font-size: 0.82rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
   color: var(--color-text-muted);
   line-height: 1.5;
+  text-align: center;
 }
 
 .fp-text {

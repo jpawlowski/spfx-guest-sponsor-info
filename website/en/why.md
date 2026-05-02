@@ -124,7 +124,20 @@ the guest's actual questions:
 With Guest Sponsor Info, that abstract relationship becomes a real, visible
 contact surface for the guest:
 
-![Sponsor detail view screenshot]({{ '/assets/images/my-sponsors-card-example.jpg' | relative_url }})
+<div class="screenshot-pair">
+  <figure class="screenshot-pair__item screenshot-pair__item--desktop">
+    <img src="{{ '/assets/images/my-sponsors-card-example.jpg' | relative_url }}"
+         alt="Screenshot of the sponsor detail view on desktop."
+         class="screenshot-pair__img" data-zoomable>
+    <figcaption class="screenshot-pair__caption">Desktop</figcaption>
+  </figure>
+  <figure class="screenshot-pair__item screenshot-pair__item--mobile">
+    <img src="{{ '/assets/images/my-sponsors-card-example-mobile.jpg' | relative_url }}"
+         alt="Screenshot of the sponsor card in mobile view."
+         class="screenshot-pair__img" data-zoomable>
+    <figcaption class="screenshot-pair__caption">Mobile</figcaption>
+  </figure>
+</div>
 
 ## What the Web Part Does {#what-this-web-part-does}
 

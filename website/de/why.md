@@ -136,7 +136,20 @@ die Fragen nicht, die der Gast hat:
 Mit Guest Sponsor Info wird aus dieser abstrakten Beziehung eine echte,
 sichtbare Kontaktfläche für den Gast:
 
-![Screenshot der Sponsor-Detailansicht]({{ '/assets/images/my-sponsors-card-example.jpg' | relative_url }})
+<div class="screenshot-pair">
+  <figure class="screenshot-pair__item screenshot-pair__item--desktop">
+    <img src="{{ '/assets/images/my-sponsors-card-example.jpg' | relative_url }}"
+         alt="Screenshot der Sponsor-Detailansicht auf dem Desktop."
+         class="screenshot-pair__img" data-zoomable>
+    <figcaption class="screenshot-pair__caption">Desktop</figcaption>
+  </figure>
+  <figure class="screenshot-pair__item screenshot-pair__item--mobile">
+    <img src="{{ '/assets/images/my-sponsors-card-example-mobile.jpg' | relative_url }}"
+         alt="Screenshot der Sponsorenkarte in der mobilen Ansicht."
+         class="screenshot-pair__img" data-zoomable>
+    <figcaption class="screenshot-pair__caption">Mobil</figcaption>
+  </figure>
+</div>
 
 ## Was das Web Part macht {#was-das-web-part-macht}
 

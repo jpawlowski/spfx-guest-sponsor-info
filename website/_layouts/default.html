@@ -357,6 +357,36 @@
       });
     })();
   </script>
+
+  <dialog id="site-lightbox" class="img-lightbox">
+    <button type="button" class="img-lightbox__close"
+      aria-label="{%- if page.lang == 'de' -%}Schließen{%- else -%}Close{%- endif -%}">&#x2715;</button>
+    <img id="site-lightbox-img" src="" alt="" class="img-lightbox__img">
+  </dialog>
+
+  <script>
+    (function () {
+      var lightbox    = document.getElementById('site-lightbox');
+      var lightboxImg = document.getElementById('site-lightbox-img');
+      if (!lightbox || !lightboxImg || typeof lightbox.showModal !== 'function') return;
+
+      document.addEventListener('click', function (e) {
+        var img = e.target.closest('img[data-zoomable]');
+        if (!img) return;
+        lightboxImg.src = img.src;
+        lightboxImg.alt = img.alt;
+        lightbox.showModal();
+      });
+
+      lightbox.querySelector('.img-lightbox__close').addEventListener('click', function () {
+        lightbox.close();
+      });
+
+      lightbox.addEventListener('click', function (e) {
+        if (e.target === lightbox) { lightbox.close(); }
+      });
+    }());
+  </script>
 </body>
 
 </html>

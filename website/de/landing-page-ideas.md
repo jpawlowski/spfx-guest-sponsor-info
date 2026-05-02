@@ -79,7 +79,8 @@ Der folgende Screenshot zeigt eine mögliche Komposition: eine gemeinsame
 Gast-Landingpage mit tenant-fixierten Quick Links weit oben und dem Sponsor-
 Bereich weiter unten auf der Seite.
 
-<img src="{{ '/assets/images/entrance-landingpage-example.jpg' | relative_url }}" alt="Beispiel-Screenshot einer Landingpage.">
+<img src="{{ '/assets/images/entrance-landingpage-example.jpg' | relative_url }}"
+  alt="Beispiel-Screenshot einer Landingpage." class="fp-shot" data-zoomable>
 
 ## Die Seite Leicht Wiederauffindbar Machen
 

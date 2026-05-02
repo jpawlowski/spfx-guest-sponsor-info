@@ -74,7 +74,8 @@ The screenshot below shows one possible composition: a shared guest landing page
 tenant-pinned Quick Links near the top and the sponsor area further down the
 page.
 
-<img src="{{ '/assets/images/entrance-landingpage-example.jpg' | relative_url }}" alt="Landing page example screenshot.">
+<img src="{{ '/assets/images/entrance-landingpage-example.jpg' | relative_url }}"
+  alt="Landing page example screenshot." class="fp-shot" data-zoomable>
 
 ## Make The Page Easy To Return To
 
