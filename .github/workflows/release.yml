@@ -173,14 +173,6 @@ jobs:
           subject-path: azure-function/guest-sponsor-info-function.zip
           sbom-path: guest-sponsor-info-function-sbom.spdx.json
 
-      # Publish a second attestation for SPDX 3.0 to support consumers that
-      # already require SPDX 3 while keeping 2.2 for broad compatibility.
-      - name: Attest Function SBOM (SPDX 3.0)
-        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
-        with:
-          subject-path: azure-function/guest-sponsor-info-function.zip
-          sbom-path: guest-sponsor-info-function-sbom.spdx3.json
-
       # Create or update the GitHub Release and attach build artifacts.
       - name: Create GitHub Release
         uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v2

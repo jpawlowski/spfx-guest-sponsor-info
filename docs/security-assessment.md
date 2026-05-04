@@ -166,13 +166,13 @@ store (backed by the Sigstore Rekor transparency log). The attestation ties
 each artifact hash to the Actions run and the tagged source commit, and can be
 verified offline using the GitHub CLI.
 
-**SBOM attestations (SPDX 2.2 + 3.0)** — `microsoft/sbom-tool` generates two
-SBOMs for the Azure Function package (all bundled npm dependencies): SPDX 2.2
-for maximum ecosystem compatibility and SPDX 3.0 for newer tooling and policy
-engines. `actions/attest` ties both SBOM files to the same function ZIP via
-separate Sigstore attestations, so consumers can validate dependencies using
-the format their scanners support today while keeping a forward-compatible
-path to SPDX 3.0.
+**SBOM attestation + dual-format publication** — `microsoft/sbom-tool` generates
+two SBOMs for the Azure Function package (all bundled npm dependencies): SPDX
+2.2 for broad ecosystem compatibility and SPDX 3.0 for newer tooling and policy
+engines. `actions/attest` ties the SPDX 2.2 SBOM to the function ZIP via a
+Sigstore attestation. The SPDX 3.0 SBOM is published as a release asset for
+forward compatibility without blocking releases on the current attestation size
+limit.
 
 Together these controls ensure that only artifacts produced by the CI workflow
 from an auditable commit can be deployed through the standard installer path.
