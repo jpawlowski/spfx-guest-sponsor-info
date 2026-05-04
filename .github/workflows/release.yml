@@ -143,9 +143,9 @@ jobs:
       # Create Sigstore-backed provenance attestations for all release artifacts.
       # This cryptographically proves that each artifact was produced by this
       # GitHub Actions workflow from the tagged commit — not assembled manually.
+      # Attestations are stored in GitHub's store, not as release assets.
       # Verify with: gh attestation verify <file> --repo workoho/spfx-guest-sponsor-info
       - name: Attest release artifacts
-        id: attest_release_artifacts
         uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4.1.0
         with:
           subject-path: |
@@ -157,26 +157,17 @@ jobs:
       # tree is cryptographically tied to the artifact it describes.
       # actions/attest auto-detects SPDX/CycloneDX format from sbom-path.
       - name: Attest Function SBOM (SPDX 2.2)
-        id: attest_function_sbom
         uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
         with:
           subject-path: azure-function/guest-sponsor-info-function.zip
           sbom-path: guest-sponsor-info-function-sbom.spdx.json
 
-      # Persist attestation bundles as release assets so downstream users can
-      # inspect or archive the exact DSSE bundles without API calls.
-      - name: Collect attestation bundle files
-        run: |
-          cp "${{ steps.attest_release_artifacts.outputs.bundle-path }}" \
-            release-provenance.attestation-bundle.json
-          cp "${{ steps.attest_function_sbom.outputs.bundle-path }}" \
-            function-sbom.attestation-bundle.json
-
-      # Generate a SHA256 checksums file for all release artifacts, including
-      # attestation bundles. Published so deployers and auditors can verify
-      # downloads independently. Also consumed by the Bicep deployZipScript
-      # to verify the function package during Flex Consumption provisioning.
-      # Must run after attestation bundles are collected.
+      # Generate a SHA256 checksums file for all release artifacts.
+      # Published so deployers and auditors can verify downloads independently.
+      # Also consumed by the Bicep deployZipScript to verify the function
+      # package during Flex Consumption provisioning.
+      # Attestation bundles are stored in GitHub's attestation store and
+      # verifiable via: gh attestation verify <file> --repo workoho/spfx-guest-sponsor-info
       - name: Generate checksums
         run: |
           sha256sum \
@@ -185,8 +176,6 @@ jobs:
             guest-sponsor-info-function-sbom.spdx.json \
             guest-sponsor-info-function-sbom.spdx3.json \
             guest-sponsor-info-infra.zip \
-            release-provenance.attestation-bundle.json \
-            function-sbom.attestation-bundle.json \
             azure-function/infra/install.ps1 \
             azure-function/infra/install.sh \
             azure-function/infra/setup-graph-permissions.ps1 \
@@ -206,8 +195,6 @@ jobs:
             guest-sponsor-info-function-sbom.spdx3.json
             guest-sponsor-info-infra.zip
             checksums.txt
-            release-provenance.attestation-bundle.json
-            function-sbom.attestation-bundle.json
             azure-function/infra/install.ps1
             azure-function/infra/install.sh
             azure-function/infra/setup-graph-permissions.ps1
