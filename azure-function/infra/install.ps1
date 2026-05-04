@@ -34,9 +34,6 @@
 .PARAMETER FunctionAppName
     Forwarded to deploy-azure.ps1.
 
-.PARAMETER HostingPlan
-    Forwarded to deploy-azure.ps1.
-
 .PARAMETER DeployAzureMaps
     Forwarded to deploy-azure.ps1.
 
@@ -87,23 +84,21 @@ param(
   [string]$AzureTenantId,
   [string]$TenantName,
   [string]$FunctionAppName,
-  [ValidateSet('Consumption', 'FlexConsumption')]
-  [string]$HostingPlan = 'Consumption',
   [bool]$DeployAzureMaps = $true,
   [string]$AppVersion = 'latest',
   [bool]$EnableMonitoring = $true,
   [bool]$EnableFailureAnomaliesAlert = $false,
-  [int]$AlwaysReadyInstances = 1,
+  [int]$AlwaysReadyInstances = 0,
   [int]$MaximumFlexInstances = 10,
   [ValidateSet(512, 2048)]
-  [int]$InstanceMemoryMB = 2048,
+  [int]$InstanceMemoryMB = 512,
   [bool]$SkipGraphRoleAssignments = $false,
   [switch]$PreflightOnly
 )
 
 $ErrorActionPreference = 'Stop'
 
-# ── Resolve download URL ──────────────────────────────────────────────────────
+# ── Resolve download URLs ─────────────────────────────────────────────────────
 # "latest" resolves via the GitHub "latest" redirect; a specific tag uses
 # the direct download path.
 $_baseUrl = 'https://github.com/workoho/spfx-guest-sponsor-info/releases'
@@ -113,12 +108,18 @@ $_zipUrl = if ($Version -eq 'latest') {
 else {
   "$_baseUrl/download/$Version/guest-sponsor-info-infra.zip"
 }
+$_checksumsUrl = if ($Version -eq 'latest') {
+  "$_baseUrl/latest/download/checksums.txt"
+}
+else {
+  "$_baseUrl/download/$Version/checksums.txt"
+}
 
 # ── Temporary paths ───────────────────────────────────────────────────────────
 $_tempBase = [System.IO.Path]::GetTempPath()
 $_tempSuffix = [System.Guid]::NewGuid().ToString('n')
-# Distinct paths for the ZIP and extracted directory so cleanup is explicit.
 $_zipFile = Join-Path $_tempBase "gsi-infra-$_tempSuffix.zip"
+$_checksumsFile = Join-Path $_tempBase "gsi-infra-$_tempSuffix-checksums.txt"
 $_extractDir = Join-Path $_tempBase "gsi-infra-$_tempSuffix"
 
 Write-Host ''
@@ -132,7 +133,38 @@ try {
   # Download the infra ZIP to a temp file.
   Invoke-WebRequest -Uri $_zipUrl -OutFile $_zipFile -UseBasicParsing
 
-  # Extract the ZIP.
+  # ── SHA256 integrity check ──────────────────────────────────────────────────
+  # Download checksums.txt from the same release and verify the infra ZIP hash.
+  # This catches truncated downloads or CDN-level tampering.
+  Write-Host '  Verifying SHA256 checksum...' -ForegroundColor DarkGray
+  Invoke-WebRequest -Uri $_checksumsUrl -OutFile $_checksumsFile -UseBasicParsing
+
+  # Parse "hash  filename" lines; find the entry for guest-sponsor-info-infra.zip.
+  $_expectedHash = $null
+  foreach ($_line in (Get-Content $_checksumsFile)) {
+    $_parts = $_line -split '\s+', 2
+    if ($_parts.Length -eq 2 -and $_parts[1].Trim() -eq 'guest-sponsor-info-infra.zip') {
+      $_expectedHash = $_parts[0].Trim().ToUpperInvariant()
+      break
+    }
+  }
+  if (-not $_expectedHash) {
+    throw "guest-sponsor-info-infra.zip not found in checksums.txt. Cannot verify download."
+  }
+
+  $_actualHash = (Get-FileHash -Path $_zipFile -Algorithm SHA256).Hash.ToUpperInvariant()
+  if ($_actualHash -ne $_expectedHash) {
+    throw (
+      "SHA256 mismatch for guest-sponsor-info-infra.zip.`n" +
+      "  Expected: $_expectedHash`n" +
+      "  Actual:   $_actualHash`n" +
+      "Download may be corrupt or tampered with. Aborting."
+    )
+  }
+  Write-Host '  checksum verified.' -ForegroundColor DarkGreen
+  Write-Host ''
+
+  # Extract the ZIP (hash verified above).
   Expand-Archive -Path $_zipFile -DestinationPath $_extractDir -Force
 
   # Locate deploy-azure.ps1 inside the extracted tree.
@@ -158,5 +190,6 @@ try {
 finally {
   # Always remove temp files, even when the wizard throws or the user aborts.
   Remove-Item -Path $_zipFile -Force -ErrorAction SilentlyContinue
+  Remove-Item -Path $_checksumsFile -Force -ErrorAction SilentlyContinue
   Remove-Item -Path $_extractDir -Recurse -Force -ErrorAction SilentlyContinue
 }

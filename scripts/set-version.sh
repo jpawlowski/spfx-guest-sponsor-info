@@ -325,6 +325,30 @@ if [[ -f "azure-function/package.json" ]]; then
   echo "${C_GRN}✓${C_RST} azure-function/package.json → ${C_CYN}${SEMVER}${C_RST}"
 fi
 
+# Stamp the download URL in install.sh so the script fetches the exact release
+# version instead of the mutable 'main' branch.
+# The sentinel comment marks exactly which line to update.
+_RELEASES_BASE="https://github.com/workoho/spfx-guest-sponsor-info/releases"
+_RAW_BASE="https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info"
+if [[ -f "azure-function/infra/install.sh" ]]; then
+  # Replace the fallback URL in the GSI_INSTALL_PS1_URL assignment.
+  # Pattern: the raw.githubusercontent.com URL for install.ps1 with any ref.
+  sed -i -E \
+    "s|${_RAW_BASE}/[^/]+/azure-function/infra/install.ps1|${_RELEASES_BASE}/download/${VTAG}/install.ps1|g" \
+    "azure-function/infra/install.sh"
+  echo "${C_GRN}✓${C_RST} azure-function/infra/install.sh → ${C_CYN}${VTAG}${C_RST}"
+fi
+
+# Stamp the self-reference URL in install.ps1.
+if [[ -f "azure-function/infra/install.ps1" ]]; then
+  # Replace the raw.githubusercontent.com self-reference in .EXAMPLE blocks
+  # and any other embedded raw URL pointing to install.ps1.
+  sed -i -E \
+    "s|${_RAW_BASE}/[^/]+/azure-function/infra/install.ps1|${_RELEASES_BASE}/download/${VTAG}/install.ps1|g" \
+    "azure-function/infra/install.ps1"
+  echo "${C_GRN}✓${C_RST} azure-function/infra/install.ps1 → ${C_CYN}${VTAG}${C_RST}"
+fi
+
 SPFX_VER="$SPFX_VER" node -e "
 const fs  = require('fs');
 const ver = process.env.SPFX_VER;
