@@ -44,9 +44,6 @@
     Globally unique Function App name (2-58 characters). Bicep auto-generates
     one (e.g. "gsi-a1b2c3d4") when left blank.
 
-.PARAMETER HostingPlan
-    Consumption (default) or FlexConsumption.
-
 .PARAMETER DeployAzureMaps
     Deploy an Azure Maps account for address map rendering. Defaults to true.
 
@@ -73,10 +70,10 @@
     Hard scale-out cap for Flex Consumption. Defaults to 10.
 
 .PARAMETER AlwaysReadyInstances
-  Number of always-ready (pre-warmed) instances for Flex Consumption. Defaults to 1.
+  Number of always-ready (pre-warmed) instances for Flex Consumption. Defaults to 0.
 
 .PARAMETER InstanceMemoryMB
-  Memory size per Flex Consumption instance in MB. Defaults to 2048.
+  Memory size per Flex Consumption instance in MB. Defaults to 512.
 
 .PARAMETER SkipGraphRoleAssignments
     Defer Microsoft Graph app role assignments to setup-graph-permissions.ps1.
@@ -112,8 +109,6 @@ param(
   [string]$AzureTenantId,
   [string]$TenantName,
   [string]$FunctionAppName,
-  [ValidateSet('Consumption', 'FlexConsumption')]
-  [string]$HostingPlan = 'Consumption',
   [bool]$DeployAzureMaps = $true,
   [string]$AppVersion = 'latest',
   [AllowEmptyString()]
@@ -122,10 +117,10 @@ param(
   [string]$Criticality = '',
   [bool]$EnableMonitoring = $true,
   [bool]$EnableFailureAnomaliesAlert = $false,
-  [int]$AlwaysReadyInstances = 1,
+  [int]$AlwaysReadyInstances = 0,
   [int]$MaximumFlexInstances = 10,
   [ValidateSet(512, 2048)]
-  [int]$InstanceMemoryMB = 2048,
+  [int]$InstanceMemoryMB = 512,
   [bool]$SkipGraphRoleAssignments = $false,
   [Parameter(DontShow)]
   [string]$InstallerVersion = '',
@@ -1057,7 +1052,6 @@ function Save-DeploySessionCache {
     [Parameter(Mandatory)][string]$AzureLocation,
     [Parameter(Mandatory)][string]$TenantName,
     [Parameter(Mandatory)][AllowEmptyString()][string]$FunctionAppName,
-    [Parameter(Mandatory)][string]$HostingPlan,
     [Parameter(Mandatory)][bool]$DeployAzureMaps,
     [Parameter(Mandatory)][string]$AppVersion,
     [Parameter(Mandatory)][AllowEmptyString()][string]$Environment,
@@ -1079,7 +1073,6 @@ function Save-DeploySessionCache {
     AzureLocation               = $AzureLocation
     TenantName                  = $TenantName
     FunctionAppName             = $FunctionAppName
-    HostingPlan                 = $HostingPlan
     DeployAzureMaps             = $DeployAzureMaps
     AppVersion                  = $AppVersion
     Environment                 = $Environment
@@ -1527,7 +1520,6 @@ function Invoke-AzdProvision {
     [Parameter(Mandatory)][AllowEmptyString()][string]$Environment,
     [Parameter(Mandatory)][AllowEmptyString()][string]$Criticality,
     [string]$AppName,
-    [Parameter(Mandatory)][string]$Plan,
     [Parameter(Mandatory)][bool]$Maps,
     [Parameter(Mandatory)][string]$Version,
     [Parameter(Mandatory)][bool]$Monitoring,
@@ -1576,8 +1568,7 @@ function Invoke-AzdProvision {
     Invoke-Azd -Arguments @('env', 'set', 'AZURE_MAXIMUM_FLEX_INSTANCES', $FlexInstances.ToString())
     Invoke-Azd -Arguments @('env', 'set', 'AZURE_INSTANCE_MEMORY_MB', $InstanceMemoryMB.ToString())
     # Store deployment params in azd env so the pre-provision hook can read
-    # them for provider preflight (hosting plan → ContainerInstance, maps → Maps).
-    Invoke-Azd -Arguments @('env', 'set', 'AZURE_HOSTING_PLAN', $Plan)
+    # them for provider preflight (maps → Maps resource provider).
     Invoke-Azd -Arguments @('env', 'set', 'AZURE_DEPLOY_AZURE_MAPS', $Maps.ToString().ToLower())
     # Store the graph role assignment preference so the post-provision hook
     # can give the correct next-steps guidance.
@@ -1858,34 +1849,6 @@ try {
       $_promptsShown = $true
     }
 
-    # ── Hosting Plan ──────────────────────────────────────────────────────────
-    if (Should-PromptDeployParameter -Name 'HostingPlan') {
-      $_hostingPlanDefault = Get-PromptDefaultValue -CurrentValue $HostingPlan -FallbackValue 'Consumption'
-      Write-Host ''
-      Write-Host '  Hosting Plan' -ForegroundColor Cyan
-      Write-Host $_sep -ForegroundColor DarkGray
-      Write-Host '  Choose the Azure Functions hosting plan.'
-      Write-Host '    Consumption       — pay-per-use, cold starts possible, no VNet'
-      Write-Host '    FlexConsumption   — scale-to-zero with faster starts, VNet-ready'
-      Write-Host '  Most deployments start with Consumption.'
-      Write-Link -Url 'https://learn.microsoft.com/azure/azure-functions/functions-scale' `
-        -Text "Azure Docs $_arr Azure Functions hosting options"
-      Write-Host ''
-      do {
-        $_hostingPlan = (Read-Host "  Hosting plan [$_hostingPlanDefault]").Trim()
-        if ($_hostingPlan -eq '') { $_hostingPlan = $_hostingPlanDefault }
-        if ($_hostingPlan -notin @('Consumption', 'FlexConsumption')) {
-          Write-Host "  $_wrn Enter Consumption or FlexConsumption." -ForegroundColor Yellow
-          $_hostingPlan = ''
-        }
-        else {
-          $HostingPlan = $_hostingPlan
-        }
-      } while (-not $HostingPlan)
-      Write-Host ''
-      $_promptsShown = $true
-    }
-
     # ── Azure Maps ────────────────────────────────────────────────────────────
     if (Should-PromptDeployParameter -Name 'DeployAzureMaps') {
       $_deployAzureMapsDefault = if ($DeployAzureMaps) { 'true' } else { 'false' }
@@ -1973,7 +1936,7 @@ try {
     }
 
     # ── Always-Ready Instances ────────────────────────────────────────────────
-    if ($HostingPlan -eq 'FlexConsumption' -and (Should-PromptDeployParameter -Name 'AlwaysReadyInstances')) {
+    if (Should-PromptDeployParameter -Name 'AlwaysReadyInstances') {
       $_alwaysReadyDefault = $AlwaysReadyInstances.ToString()
       Write-Host ''
       Write-Host '  Always-Ready Instances' -ForegroundColor Cyan
@@ -1997,7 +1960,7 @@ try {
     }
 
     # ── Maximum Flex Instances ────────────────────────────────────────────────
-    if ($HostingPlan -eq 'FlexConsumption' -and (Should-PromptDeployParameter -Name 'MaximumFlexInstances')) {
+    if (Should-PromptDeployParameter -Name 'MaximumFlexInstances') {
       $_maximumFlexInstancesDefault = $MaximumFlexInstances.ToString()
       Write-Host ''
       Write-Host '  Maximum Flex Instances' -ForegroundColor Cyan
@@ -2021,13 +1984,13 @@ try {
     }
 
     # ── Flex Instance Memory ──────────────────────────────────────────────────
-    if ($HostingPlan -eq 'FlexConsumption' -and (Should-PromptDeployParameter -Name 'InstanceMemoryMB')) {
+    if (Should-PromptDeployParameter -Name 'InstanceMemoryMB') {
       $_instanceMemoryDefault = $InstanceMemoryMB.ToString()
       Write-Host ''
       Write-Host '  Flex Instance Memory' -ForegroundColor Cyan
       Write-Host $_sep -ForegroundColor DarkGray
       Write-Host '  Memory size per Flex Consumption instance.'
-      Write-Host '  Supported in this template: 512 or 2048 MB. Recommended default: 2048 MB.'
+      Write-Host '  Supported in this template: 512 or 2048 MB. Recommended default: 512 MB.'
       Write-Host ''
       do {
         $_raw = (Read-Host "  Instance memory in MB [$_instanceMemoryDefault]").Trim()
@@ -2107,7 +2070,6 @@ try {
       -AzureLocation $AzureLocation `
       -TenantName $TenantName `
       -FunctionAppName $FunctionAppName `
-      -HostingPlan $HostingPlan `
       -DeployAzureMaps:$DeployAzureMaps `
       -AppVersion $AppVersion `
       -Environment $Environment `
@@ -2168,12 +2130,9 @@ try {
       Write-Host "  Criticality tag     : $(if ($Criticality) { $Criticality } else { '(not set)' })"
       Write-Host "  SharePoint tenant   : $TenantName"
       Write-Host "  Function App        : $(if ($FunctionAppName) { $FunctionAppName } else { '(auto-generated by Bicep)' })"
-      Write-Host "  Hosting plan        : $HostingPlan"
-      if ($HostingPlan -eq 'FlexConsumption') {
-        Write-Host "  Always-ready        : $AlwaysReadyInstances"
-        Write-Host "  Max flex instances  : $MaximumFlexInstances"
-        Write-Host "  Instance memory MB  : $InstanceMemoryMB"
-      }
+      Write-Host "  Always-ready        : $AlwaysReadyInstances"
+      Write-Host "  Max flex instances  : $MaximumFlexInstances"
+      Write-Host "  Instance memory MB  : $InstanceMemoryMB"
       Write-Host "  Azure Maps          : $DeployAzureMaps"
       Write-Host "  Monitoring          : $EnableMonitoring"
       Write-Host "  App version         : $AppVersion"
@@ -2219,7 +2178,6 @@ try {
     -Environment $Environment `
     -Criticality $Criticality `
     -AppName $FunctionAppName `
-    -Plan $HostingPlan `
     -Maps:$DeployAzureMaps `
     -Version $AppVersion `
     -Monitoring:$EnableMonitoring `

@@ -4,7 +4,7 @@
 // Deploys the Azure Functions hosting stack:
 //   - Storage Account (identity-based access, no keys)
 //   - Blob container + deployment script for Flex Consumption package upload
-//   - App Service Plan (Consumption Y1 or Flex Consumption FC1)
+//   - App Service Plan (FC1 / Flex Consumption, Linux)
 //   - Function App (including EasyAuth and all storage role assignments)
 //
 // Outputs the Managed Identity principalId and the Function App URL so the
@@ -18,11 +18,7 @@ param location string
 @maxLength(58)
 param functionAppName string
 
-@description('Hosting plan: "Consumption" (Y1/Dynamic, free tier) or "FlexConsumption" (FC1/Linux, reduced cold starts).')
-@allowed(['Consumption', 'FlexConsumption'])
-param hostingPlan string
-
-@description('Number of always-ready instances (Flex Consumption only). 0 = on-demand; 1 = no cold starts.')
+@description('Number of always-ready instances. 0 = on-demand (cold starts possible); 1 = one instance kept warm.')
 @minValue(0)
 param alwaysReadyInstances int
 
@@ -31,13 +27,9 @@ param alwaysReadyInstances int
 @maxValue(1000)
 param maximumFlexInstances int
 
-@description('Memory per instance in MB (Flex Consumption only). 512 or 2048.')
+@description('Memory per instance in MB. 512 or 2048.')
 @allowed([512, 2048])
 param instanceMemoryMB int
-
-@description('Daily memory-time budget in GB-seconds (Consumption only). 0 = unlimited.')
-@minValue(0)
-param dailyMemoryTimeQuotaGBs int
 
 @description('Resolved function package ZIP URL (already normalised by the caller).')
 param resolvedPackageUrl string
@@ -62,7 +54,6 @@ param tags object
 
 // ── Derived values ────────────────────────────────────────────────────────────
 
-var isFlexConsumption = hostingPlan == 'FlexConsumption'
 var appServicePlanName = '${functionAppName}-plan'
 var deploymentContainerName = 'app-package'
 // Storage account names: lowercase, no hyphens, max 24 chars.
@@ -87,29 +78,29 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
   }
 }
 
-// ── Flex Consumption: blob container for deployment package ───────────────────
+// ── Blob container for deployment package ────────────────────────────────────
 // Flex Consumption cannot pull a ZIP from a remote URL; the package must live in
 // a blob container. The container is created here; the deployment script below
 // uploads the actual ZIP during ARM provisioning.
-resource blobService 'Microsoft.Storage/storageAccounts/blobServices@2023-01-01' = if (isFlexConsumption) {
+resource blobService 'Microsoft.Storage/storageAccounts/blobServices@2023-01-01' = {
   parent: storageAccount
   name: 'default'
 }
 
-resource deploymentContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-01-01' = if (isFlexConsumption) {
+resource deploymentContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-01-01' = {
   parent: blobService
   name: deploymentContainerName
   properties: { publicAccess: 'None' }
 }
 
-// ── Flex Consumption: deployment script (ZIP upload) ─────────────────────────
+// ── Deployment script (ZIP upload) ───────────────────────────────────────────
 // An Azure CLI container script runs once per unique packageUrl during ARM
 // provisioning: downloads the function ZIP and uploads it to the blob container.
 // forceUpdateTag = hash of the URL so the script re-runs only when the URL changes.
 //
 // Deployment scripts require a User-Assigned Managed Identity — System-Assigned
 // is not supported by the deploymentScripts resource type.
-resource deployScriptIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = if (isFlexConsumption) {
+resource deployScriptIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
   name: '${functionAppName}-deploy-id'
   location: location
   tags: tags
@@ -117,7 +108,7 @@ resource deployScriptIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@
 
 // Grant the deployment script identity Storage Blob Data Contributor on the
 // storage account so it can upload the ZIP. Full owner access is not required.
-resource deployScriptBlobRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (isFlexConsumption) {
+resource deployScriptBlobRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   scope: storageAccount
   // Deterministic GUID: account + identity name + Storage Blob Data Contributor role ID.
   name: guid(storageAccount.id, '${functionAppName}-deploy-id', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')
@@ -126,19 +117,14 @@ resource deployScriptBlobRole 'Microsoft.Authorization/roleAssignments@2022-04-0
       'Microsoft.Authorization/roleDefinitions',
       'ba92f5b4-2d11-453d-a403-e96b0029c9fe' // Storage Blob Data Contributor
     )
-    // BCP318: safe — deployScriptIdentity is always deployed when isFlexConsumption.
-    #disable-next-line BCP318
     principalId: deployScriptIdentity.properties.principalId
     principalType: 'ServicePrincipal'
   }
 }
 
-// Extracted to avoid BCP318 inside the resource body.
-// Safe: shares the same isFlexConsumption condition as deployZipScript.
-#disable-next-line BCP318
 var deployScriptIdentityResourceId = deployScriptIdentity.id
 
-resource deployZipScript 'Microsoft.Resources/deploymentScripts@2023-08-01' = if (isFlexConsumption) {
+resource deployZipScript 'Microsoft.Resources/deploymentScripts@2023-08-01' = {
   name: '${functionAppName}-deploy-zip'
   location: location
   kind: 'AzureCLI'
@@ -160,9 +146,26 @@ resource deployZipScript 'Microsoft.Resources/deploymentScripts@2023-08-01' = if
       { name: 'PACKAGE_URL', value: resolvedPackageUrl }
     ]
     // Retry loop handles RBAC propagation delay (~30-60 s after role assignment).
+    // SHA256 integrity check: for GitHub-hosted packages a checksums.txt is
+    // published alongside the ZIP. The check is skipped for custom packageUrl
+    // overrides (non-github.com URLs) where no checksums file is expected.
     scriptContent: '''
       set -euo pipefail
       curl -sSfL -o /tmp/function.zip "$PACKAGE_URL"
+
+      # Verify SHA256 integrity for GitHub-hosted releases.
+      if echo "$PACKAGE_URL" | grep -q 'github.com'; then
+        CHECKSUM_URL="${PACKAGE_URL%/*}/checksums.txt"
+        curl -sSfL -o /tmp/checksums.txt "$CHECKSUM_URL"
+        EXPECTED=$(awk '/guest-sponsor-info-function\.zip/{print $1}' /tmp/checksums.txt)
+        ACTUAL=$(sha256sum /tmp/function.zip | awk '{print $1}')
+        if [ "$EXPECTED" != "$ACTUAL" ]; then
+          echo "SHA256 mismatch! Expected: $EXPECTED  Got: $ACTUAL"
+          exit 1
+        fi
+        echo "SHA256 verified: $ACTUAL"
+      fi
+
       for attempt in 1 2 3; do
         az storage blob upload \
           --account-name "$STORAGE_ACCOUNT" \
@@ -180,20 +183,9 @@ resource deployZipScript 'Microsoft.Resources/deploymentScripts@2023-08-01' = if
 }
 
 // ── App Service Plan ──────────────────────────────────────────────────────────
-// Exactly one of the two plan resources is deployed depending on hostingPlan.
-
-// Consumption (Y1 / Dynamic) — includes the Azure free grant.
-resource appServicePlanConsumption 'Microsoft.Web/serverfarms@2023-01-01' = if (!isFlexConsumption) {
-  name: appServicePlanName
-  location: location
-  tags: tags
-  sku: { name: 'Y1', tier: 'Dynamic' }
-  properties: {}
-}
-
-// Flex Consumption (FC1 / Linux) — requires API version 2023-12-01 or later.
+// FC1 / Flex Consumption (Linux) — requires API version 2023-12-01 or later.
 // Not available in all Azure regions: https://aka.ms/flex-region
-resource appServicePlanFlex 'Microsoft.Web/serverfarms@2023-12-01' = if (isFlexConsumption) {
+resource appServicePlan 'Microsoft.Web/serverfarms@2023-12-01' = {
   name: appServicePlanName
   location: location
   tags: tags
@@ -208,7 +200,6 @@ var monitoringAppSettings = !empty(appInsightsConnectionString)
   ? [{ name: 'APPLICATIONINSIGHTS_CONNECTION_STRING', value: appInsightsConnectionString }]
   : []
 
-// Shared across both hosting plans.
 var sharedAppSettings = [
   // Identity-based storage connection — no account key stored anywhere.
   { name: 'AzureWebJobsStorage__accountName', value: storageAccount.name }
@@ -225,15 +216,7 @@ var sharedAppSettings = [
 
 var effectiveSharedAppSettings = concat(sharedAppSettings, monitoringAppSettings)
 
-// Consumption-only settings: Flex Consumption uses functionAppConfig instead.
-var consumptionOnlyAppSettings = [
-  { name: 'FUNCTIONS_EXTENSION_VERSION', value: '~4' }
-  { name: 'FUNCTIONS_WORKER_RUNTIME', value: 'node' }
-  { name: 'WEBSITE_NODE_DEFAULT_VERSION', value: '~22' }
-  { name: 'WEBSITE_RUN_FROM_PACKAGE', value: resolvedPackageUrl }
-]
-
-// EasyAuth configuration — identical for both hosting plans.
+// EasyAuth configuration.
 var easyAuthProperties = {
   globalValidation: {
     requireAuthentication: true
@@ -256,37 +239,8 @@ var easyAuthProperties = {
   }
 }
 
-// ── Function App — Consumption ────────────────────────────────────────────────
-resource functionApp 'Microsoft.Web/sites@2023-01-01' = if (!isFlexConsumption) {
-  name: functionAppName
-  location: location
-  tags: tags
-  kind: 'functionapp'
-  identity: { type: 'SystemAssigned' }
-  properties: {
-    serverFarmId: appServicePlanConsumption.id
-    httpsOnly: true
-    // Suspend the app when the daily GB-second budget is exhausted (cost guard).
-    // Set dailyMemoryTimeQuotaGBs=0 to disable (not recommended).
-    dailyMemoryTimeQuota: dailyMemoryTimeQuotaGBs
-    siteConfig: {
-      appSettings: concat(effectiveSharedAppSettings, consumptionOnlyAppSettings)
-      cors: {
-        allowedOrigins: ['https://${tenantName}.sharepoint.com']
-        supportCredentials: false
-      }
-    }
-  }
-}
-
-resource authSettings 'Microsoft.Web/sites/config@2023-01-01' = if (!isFlexConsumption) {
-  name: 'authsettingsV2'
-  parent: functionApp
-  properties: easyAuthProperties
-}
-
-// ── Function App — Flex Consumption ──────────────────────────────────────────
-resource functionAppFlex 'Microsoft.Web/sites@2023-12-01' = if (isFlexConsumption) {
+// ── Function App ─────────────────────────────────────────────────────────────
+resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
   name: functionAppName
   location: location
   tags: tags
@@ -294,7 +248,7 @@ resource functionAppFlex 'Microsoft.Web/sites@2023-12-01' = if (isFlexConsumptio
   identity: { type: 'SystemAssigned' }
   dependsOn: [deploymentContainer]
   properties: {
-    serverFarmId: appServicePlanFlex.id
+    serverFarmId: appServicePlan.id
     httpsOnly: true
     functionAppConfig: {
       runtime: { name: 'node', version: '22' }
@@ -321,9 +275,9 @@ resource functionAppFlex 'Microsoft.Web/sites@2023-12-01' = if (isFlexConsumptio
   }
 }
 
-resource authSettingsFlex 'Microsoft.Web/sites/config@2023-12-01' = if (isFlexConsumption) {
+resource authSettings 'Microsoft.Web/sites/config@2023-12-01' = {
   name: 'authsettingsV2'
-  parent: functionAppFlex
+  parent: functionApp
   properties: easyAuthProperties
 }
 
@@ -334,23 +288,13 @@ resource authSettingsFlex 'Microsoft.Web/sites/config@2023-12-01' = if (isFlexCo
 // be persisted. Queue access is intentionally omitted because no queue- or
 // blob-triggered workloads are deployed in this app.
 //
-// Each role is declared twice (Consumption / Flex) with mutually exclusive
-// conditions because Bicep cannot reference a conditionally deployed resource
-// outside its own condition branch without triggering BCP318.
-//
 // roleDefinition IDs:
 //   b7e6dc6d-f1e8-4753-8033-0f276bb0955b  Storage Blob Data Owner
 //   0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3  Storage Table Data Contributor
 
-// BCP318 suppression: safe — variables are only accessed inside matching condition branches.
-#disable-next-line BCP318
-var consumptionPrincipalId = functionApp.identity.principalId
-#disable-next-line BCP318
-var flexPrincipalId = functionAppFlex.identity.principalId
-
 var functionAppResourceId = resourceId('Microsoft.Web/sites', functionAppName)
 
-resource storageBlobRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!isFlexConsumption) {
+resource storageBlobRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   scope: storageAccount
   name: guid(storageAccount.id, functionAppResourceId, 'b7e6dc6d-f1e8-4753-8033-0f276bb0955b')
   properties: {
@@ -358,13 +302,12 @@ resource storageBlobRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = 
       'Microsoft.Authorization/roleDefinitions',
       'b7e6dc6d-f1e8-4753-8033-0f276bb0955b'
     )
-    #disable-next-line BCP318
-    principalId: consumptionPrincipalId
+    principalId: functionApp.identity.principalId
     principalType: 'ServicePrincipal'
   }
 }
 
-resource storageTableRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!isFlexConsumption) {
+resource storageTableRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   scope: storageAccount
   name: guid(storageAccount.id, functionAppResourceId, '0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3')
   properties: {
@@ -372,36 +315,7 @@ resource storageTableRole 'Microsoft.Authorization/roleAssignments@2022-04-01' =
       'Microsoft.Authorization/roleDefinitions',
       '0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3'
     )
-    #disable-next-line BCP318
-    principalId: consumptionPrincipalId
-    principalType: 'ServicePrincipal'
-  }
-}
-
-resource storageBlobRoleFlex 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (isFlexConsumption) {
-  scope: storageAccount
-  name: guid(storageAccount.id, functionAppResourceId, 'b7e6dc6d-f1e8-4753-8033-0f276bb0955b')
-  properties: {
-    roleDefinitionId: subscriptionResourceId(
-      'Microsoft.Authorization/roleDefinitions',
-      'b7e6dc6d-f1e8-4753-8033-0f276bb0955b'
-    )
-    #disable-next-line BCP318
-    principalId: flexPrincipalId
-    principalType: 'ServicePrincipal'
-  }
-}
-
-resource storageTableRoleFlex 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (isFlexConsumption) {
-  scope: storageAccount
-  name: guid(storageAccount.id, functionAppResourceId, '0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3')
-  properties: {
-    roleDefinitionId: subscriptionResourceId(
-      'Microsoft.Authorization/roleDefinitions',
-      '0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3'
-    )
-    #disable-next-line BCP318
-    principalId: flexPrincipalId
+    principalId: functionApp.identity.principalId
     principalType: 'ServicePrincipal'
   }
 }
@@ -409,7 +323,7 @@ resource storageTableRoleFlex 'Microsoft.Authorization/roleAssignments@2022-04-0
 // ── Outputs ───────────────────────────────────────────────────────────────────
 
 @description('Object ID of the system-assigned Managed Identity — needed for Graph role assignments and setup-graph-permissions.ps1.')
-output managedIdentityObjectId string = isFlexConsumption ? flexPrincipalId : consumptionPrincipalId
+output managedIdentityObjectId string = functionApp.identity.principalId
 
 @description('The Function App name.')
 output functionAppName string = functionAppName
@@ -422,6 +336,3 @@ output sponsorApiEndpointUrl string = 'https://${functionAppName}.azurewebsites.
 
 @description('Name of the Storage Account used by the Functions runtime.')
 output deploymentStorageAccountName string = storageAccount.name
-
-@description('The selected hosting plan.')
-output hostingPlan string = hostingPlan

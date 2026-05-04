@@ -27,28 +27,20 @@ param tenantName string
 param functionAppName string = 'gsi-${uniqueString(resourceGroup().id)}'
 
 @metadata({ category: 'Hosting' })
-@description('Hosting plan for the Function App. "Consumption" = Y1/Dynamic (free tier included, cold starts after ~20 min idle, ZIP served directly from GitHub package URL). "FlexConsumption" = FC1/Linux-only (no free tier, cold starts greatly reduced — alwaysReadyInstances=1 eliminates them; ZIP is uploaded to blob storage by the provisioning script automatically during Bicep/azd deployment). Not all Azure regions support Flex Consumption — check https://aka.ms/flex-region before choosing.')
-@allowed([
-  'Consumption'
-  'FlexConsumption'
-])
-param hostingPlan string = 'Consumption'
+@description('Number of always-ready (pre-warmed) instances. 0 = purely on-demand, cold starts possible (default). 1 = one instance kept warm — eliminates cold starts (~€2-5/month).')
+param alwaysReadyInstances string = '0'
 
 @metadata({ category: 'Hosting' })
-@description('Number of always-ready (pre-warmed) instances for the Function App (Flex Consumption plan only). 0 = purely on-demand (cold starts possible). 1 = one instance kept warm — eliminates cold starts (~€2-5/month). Ignored when hostingPlan = "Consumption".')
-param alwaysReadyInstances string = '1'
-
-@metadata({ category: 'Hosting' })
-@description('Hard upper bound on the number of instances the Flex Consumption plan may scale out to (Flex Consumption plan only). Acts as a cost ceiling — scale-out stops at this limit regardless of demand. Valid range: 1-1000. Default: 10. Ignored when hostingPlan = "Consumption".')
+@description('Hard upper bound on the number of instances the Flex Consumption plan may scale out to. Acts as a cost ceiling — scale-out stops at this limit regardless of demand. Valid range: 1-1000. Default: 10.')
 param maximumFlexInstances string = '10'
 
 @metadata({ category: 'Hosting' })
-@description('Memory allocated to each Flex Consumption instance in MB (Flex Consumption plan only). Valid values: 512 or 2048. Higher memory allows more concurrent requests per instance but costs more per GB-second. Default: 2048. Ignored when hostingPlan = "Consumption".')
+@description('Memory allocated to each Flex Consumption instance in MB. Valid values: 512 or 2048. Higher memory allows more concurrent requests per instance but costs more per GB-second. Default: 512.')
 @allowed(['512', '2048'])
-param instanceMemoryMB string = '2048'
+param instanceMemoryMB string = '512'
 
 @metadata({ category: 'Deployment' })
-@description('Function package version to deploy. "latest" (default) = always pull the newest GitHub Release at provisioning time. SemVer without "v" prefix, e.g. "1.4.2" = pin to that specific release. On Consumption: sets the WEBSITE_RUN_FROM_PACKAGE URL. On Flex Consumption: the provisioning script re-runs and re-uploads the ZIP whenever this value changes — set it on each redeployment to trigger a code update.')
+@description('Function package version to deploy. "latest" (default) = always pull the newest GitHub Release at provisioning time. SemVer without "v" prefix, e.g. "1.4.2" = pin to that specific release. The provisioning script re-runs and re-uploads the ZIP whenever this value changes — set it on each redeployment to trigger a code update.')
 param appVersion string = 'latest'
 
 @metadata({ category: 'Deployment' })
@@ -179,11 +171,6 @@ param newReleaseAlertEvaluationFrequencyInMinutes int = 60
 @description('KQL lookback window for the new-release alert in minutes (default 720 = 12 h covers two 6-hour timer intervals).')
 @minValue(60)
 param newReleaseAlertWindowInMinutes int = 720
-
-@metadata({ category: 'Hosting' })
-@description('Consumption plan (Y1) daily memory-time budget in GB-seconds. When hit, the Function App is suspended until midnight UTC — the primary cost guard. 0 = unlimited (not recommended). Default 10 000 GB-s ≈ 13 000 typical invocations/day, stays within the monthly free tier (400 000 GB-s/month). Ignored when hostingPlan = "FlexConsumption" (Flex has no daily GB-second budget concept).')
-@minValue(0)
-param dailyMemoryTimeQuotaGBs int = 10000
 
 @metadata({ category: 'Monitoring' })
 @description('Action group resource IDs for operational email alerts. Leave empty to create alert rules without notifications.')
@@ -338,18 +325,16 @@ module monitoring './modules/monitoring.bicep' = if (enableMonitoringEnabled) {
 }
 
 // ── Function App module ───────────────────────────────────────────────────────
-// Storage Account, App Service Plan, Function App (both variants), EasyAuth,
-// Flex Consumption deployment script, and storage role assignments are all
+// Storage Account, App Service Plan (FC1/Flex Consumption), Function App,
+// EasyAuth, deployment script, and storage role assignments are all
 // managed in a dedicated module.
 module functionApp './modules/functionapp.bicep' = {
   params: {
     location: location
     functionAppName: functionAppName
-    hostingPlan: hostingPlan
     alwaysReadyInstances: alwaysReadyInstancesValue
     maximumFlexInstances: maximumFlexInstancesValue
     instanceMemoryMB: instanceMemoryMBValue
-    dailyMemoryTimeQuotaGBs: dailyMemoryTimeQuotaGBs
     resolvedPackageUrl: resolvedPackageUrl
     appVersion: appVersion
     tenantId: tenantId
@@ -391,9 +376,6 @@ output managedIdentityObjectId string = functionApp.outputs.managedIdentityObjec
 @description('Name of the Application Insights component (empty when enableMonitoring=false).')
 #disable-next-line BCP318
 output appInsightsName string = enableMonitoringEnabled ? monitoring.outputs.appInsightsName : ''
-
-@description('The selected hosting plan — included in outputs for operational visibility.')
-output hostingPlan string = functionApp.outputs.hostingPlan
 
 @description('Azure Maps account name (empty when deployAzureMaps=false).')
 output azureMapsAccountName string = deployAzureMapsEnabled ? azureMapsAccount.name : ''

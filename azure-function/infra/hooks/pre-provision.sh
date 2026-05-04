@@ -99,14 +99,12 @@ echo ''
 # Read from azd env — set by deploy-azure.ps1 via 'azd env set' before running provision.
 # Fall back to main.parameters.json defaults when running azd directly without the wizard.
 _ENV_VALUES="$(azd env get-values 2>/dev/null || true)"
-HOSTING_PLAN="$(echo "${_ENV_VALUES}" | grep '^AZURE_HOSTING_PLAN=' | cut -d'=' -f2 | tr -d '"' || true)"
-# Default to Consumption when the variable is absent (direct azd invocation).
-HOSTING_PLAN="${HOSTING_PLAN:-Consumption}"
 DEPLOY_AZURE_MAPS="$(echo "${_ENV_VALUES}" | grep '^AZURE_DEPLOY_AZURE_MAPS=' | cut -d'=' -f2 | tr -d '"' || true)"
 DEPLOY_AZURE_MAPS="${DEPLOY_AZURE_MAPS:-true}"
 REQUIRED_PROVIDERS=(
   'Microsoft.AlertsManagement'
   'Microsoft.Authorization'
+  'Microsoft.ContainerInstance'
   'Microsoft.Insights'
   'Microsoft.ManagedIdentity'
   'Microsoft.OperationalInsights'
@@ -114,12 +112,6 @@ REQUIRED_PROVIDERS=(
   'Microsoft.Storage'
   'Microsoft.Web'
 )
-
-if [[ "${HOSTING_PLAN}" == 'FlexConsumption' ]]; then
-  REQUIRED_PROVIDERS+=(
-    'Microsoft.ContainerInstance'
-  )
-fi
 
 if [[ "${DEPLOY_AZURE_MAPS,,}" == 'true' ]]; then
   REQUIRED_PROVIDERS+=(
@@ -187,10 +179,6 @@ if ! azd env get-values | grep -q "^AZURE_SHAREPOINT_TENANT_NAME="; then
   fi
 fi
 
-if ! azd env get-values | grep -q '^AZURE_HOSTING_PLAN='; then
-  azd env set AZURE_HOSTING_PLAN 'Consumption'
-fi
-
 if ! azd env get-values | grep -q '^AZURE_DEPLOY_AZURE_MAPS='; then
   azd env set AZURE_DEPLOY_AZURE_MAPS 'true'
 fi
@@ -216,7 +204,7 @@ if ! azd env get-values | grep -q '^AZURE_ENABLE_FAILURE_ANOMALIES_ALERT='; then
 fi
 
 if ! azd env get-values | grep -q '^AZURE_ALWAYS_READY_INSTANCES='; then
-  azd env set AZURE_ALWAYS_READY_INSTANCES '1'
+  azd env set AZURE_ALWAYS_READY_INSTANCES '0'
 fi
 
 if ! azd env get-values | grep -q '^AZURE_MAXIMUM_FLEX_INSTANCES='; then
@@ -224,7 +212,7 @@ if ! azd env get-values | grep -q '^AZURE_MAXIMUM_FLEX_INSTANCES='; then
 fi
 
 if ! azd env get-values | grep -q '^AZURE_INSTANCE_MEMORY_MB='; then
-  azd env set AZURE_INSTANCE_MEMORY_MB '2048'
+  azd env set AZURE_INSTANCE_MEMORY_MB '512'
 fi
 
 # ── 3. Entra role check ──────────────────────────────────────────────────────

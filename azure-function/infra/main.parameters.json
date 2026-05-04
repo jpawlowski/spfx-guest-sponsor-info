@@ -47,9 +47,6 @@
     "defaultInfoActionGroupShortName": {
       "value": "GSIInfo"
     },
-    "hostingPlan": {
-      "value": "${AZURE_HOSTING_PLAN}"
-    },
     "appVersion": {
       "value": "${AZURE_APP_VERSION}"
     }

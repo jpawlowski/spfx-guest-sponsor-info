@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env pwsh
+#!/usr/bin/env pwsh
 # SPDX-FileCopyrightText: 2026 Workoho GmbH <https://workoho.com>
 # SPDX-FileCopyrightText: 2026 Julian Pawlowski <https://github.com/jpawlowski>
 # SPDX-License-Identifier: LicenseRef-PolyForm-Shield-1.0.0
@@ -108,13 +108,12 @@ Write-Host ''
 # ── 0. Validate required Azure resource providers ───────────────────────────
 # Read from azd env — set by deploy-azure.ps1 via 'azd env set' before running provision.
 # Fall back to main.parameters.json defaults when running azd directly without the wizard.
-$_planMatch = ($envValues | Select-String '^AZURE_HOSTING_PLAN="?([^"]+)"?').Matches
-$hostingPlan = if ($_planMatch -and $_planMatch.Count -gt 0) { $_planMatch[0].Groups[1].Value } else { 'Consumption' }
 $_mapsMatch = ($envValues | Select-String '^AZURE_DEPLOY_AZURE_MAPS="?([^"]+)"?').Matches
 $deployAzureMaps = -not ($_mapsMatch -and $_mapsMatch.Count -gt 0 -and $_mapsMatch[0].Groups[1].Value -eq 'false')
 $requiredProviders = @(
   'Microsoft.AlertsManagement',
   'Microsoft.Authorization',
+  'Microsoft.ContainerInstance',
   'Microsoft.Insights',
   'Microsoft.ManagedIdentity',
   'Microsoft.OperationalInsights',
@@ -122,10 +121,6 @@ $requiredProviders = @(
   'Microsoft.Storage',
   'Microsoft.Web'
 )
-
-if ($hostingPlan -eq 'FlexConsumption') {
-  $requiredProviders += 'Microsoft.ContainerInstance'
-}
 
 if ($deployAzureMaps) {
   $requiredProviders += 'Microsoft.Maps'
@@ -212,10 +207,6 @@ if ($envValues -notmatch 'AZURE_SHAREPOINT_TENANT_NAME=') {
   }
 }
 
-if ($envValues -notmatch 'AZURE_HOSTING_PLAN=') {
-  azd env set AZURE_HOSTING_PLAN 'Consumption'
-}
-
 if ($envValues -notmatch 'AZURE_DEPLOY_AZURE_MAPS=') {
   azd env set AZURE_DEPLOY_AZURE_MAPS 'true'
 }
@@ -241,7 +232,7 @@ if ($envValues -notmatch 'AZURE_ENABLE_FAILURE_ANOMALIES_ALERT=') {
 }
 
 if ($envValues -notmatch 'AZURE_ALWAYS_READY_INSTANCES=') {
-  azd env set AZURE_ALWAYS_READY_INSTANCES '1'
+  azd env set AZURE_ALWAYS_READY_INSTANCES '0'
 }
 
 if ($envValues -notmatch 'AZURE_MAXIMUM_FLEX_INSTANCES=') {
@@ -249,7 +240,7 @@ if ($envValues -notmatch 'AZURE_MAXIMUM_FLEX_INSTANCES=') {
 }
 
 if ($envValues -notmatch 'AZURE_INSTANCE_MEMORY_MB=') {
-  azd env set AZURE_INSTANCE_MEMORY_MB '2048'
+  azd env set AZURE_INSTANCE_MEMORY_MB '512'
 }
 
 # ── 3. Entra role check ──────────────────────────────────────────────────────
