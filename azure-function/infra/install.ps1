@@ -114,6 +114,59 @@ function Get-HttpStatusCodeFromException {
   }
 }
 
+function Get-ReleaseAssetSha256 {
+  param(
+    [string]$Version,
+    [string]$AssetName
+  )
+
+  $_apiUrl = if ($Version -eq 'latest') {
+    'https://api.github.com/repos/workoho/spfx-guest-sponsor-info/releases/latest'
+  }
+  else {
+    "https://api.github.com/repos/workoho/spfx-guest-sponsor-info/releases/tags/$Version"
+  }
+
+  try {
+    $_release = Invoke-RestMethod \
+    -Uri $_apiUrl \
+    -Headers @{
+      'Accept'               = 'application/vnd.github+json'
+      'X-GitHub-Api-Version' = '2022-11-28'
+      'User-Agent'           = 'gsi-installer'
+    } \
+    -UseBasicParsing
+  }
+  catch {
+    $_statusCode = Get-HttpStatusCodeFromException -Exception $_.Exception
+    if ($_statusCode -eq 404) {
+      if ($Version -eq 'latest') {
+        throw "GitHub API lookup for the latest release returned 404. Cannot resolve checksum fallback."
+      }
+
+      throw "GitHub API lookup for release '$Version' returned 404. Cannot resolve checksum fallback."
+    }
+
+    throw "GitHub API lookup for release asset checksum failed: $($_.Exception.Message)"
+  }
+
+  $_asset = @($_release.assets) | Where-Object { $_.name -eq $AssetName } | Select-Object -First 1
+  if ($null -eq $_asset) {
+    throw "Asset '$AssetName' not found in GitHub release metadata. Cannot resolve checksum fallback."
+  }
+
+  $_digest = [string]$_asset.digest
+  if ([string]::IsNullOrWhiteSpace($_digest)) {
+    throw "Asset '$AssetName' has no digest in GitHub release metadata. Cannot resolve checksum fallback."
+  }
+
+  if ($_digest -notmatch '^sha256:') {
+    throw "Asset '$AssetName' digest is not SHA256 ('$_digest'). Cannot verify download."
+  }
+
+  return $_digest.Substring(7).ToUpperInvariant()
+}
+
 # ── Resolve download URLs ─────────────────────────────────────────────────────
 # "latest" resolves via the GitHub "latest" redirect; a specific tag uses
 # the direct download path.
@@ -172,44 +225,48 @@ try {
   }
 
   # ── SHA256 integrity check ──────────────────────────────────────────────────
-  # Download checksums.txt from the same release and verify the infra ZIP hash.
+  # Primary source: checksums.txt from the same release.
+  # Fallback source: GitHub release asset digest (sha256) from the API.
   # This catches truncated downloads or CDN-level tampering.
   Write-Host '  Verifying SHA256 checksum...' -ForegroundColor DarkGray
+  $_checksumsDownloaded = $false
   try {
     Invoke-WebRequest -Uri $_checksumsUrl -OutFile $_checksumsFile -UseBasicParsing
+    $_checksumsDownloaded = $true
   }
   catch {
     $_statusCode = Get-HttpStatusCodeFromException -Exception $_.Exception
     if ($_statusCode -eq 404) {
-      if ($Version -eq 'latest') {
-        throw (
-          "checksums.txt for the latest release was not found (404).`n" +
-          "The release may not be fully published yet, so integrity verification cannot run.`n" +
-          "Retry in a few minutes, or run again with -Version vX.Y.Z."
-        )
-      }
-
-      throw (
-        "checksums.txt for release '$Version' was not found (404).`n" +
-        "Cannot verify SHA256 without checksums.txt, so installation is aborted.`n" +
+      Write-Warning (
+        "checksums.txt was not found (404). Falling back to GitHub release asset digest for integrity verification.`n" +
         "URL: $_checksumsUrl"
       )
     }
-
-    throw
-  }
-
-  # Parse "hash  filename" lines; find the entry for guest-sponsor-info-infra.zip.
-  $_expectedHash = $null
-  foreach ($_line in (Get-Content $_checksumsFile)) {
-    $_parts = $_line -split '\s+', 2
-    if ($_parts.Length -eq 2 -and $_parts[1].Trim() -eq 'guest-sponsor-info-infra.zip') {
-      $_expectedHash = $_parts[0].Trim().ToUpperInvariant()
-      break
+    else {
+      throw
     }
   }
+
+  $_expectedHash = $null
+
+  if ($_checksumsDownloaded) {
+    # Parse "hash  filename" lines; find the entry for guest-sponsor-info-infra.zip.
+    foreach ($_line in (Get-Content $_checksumsFile)) {
+      $_parts = $_line -split '\s+', 2
+      if ($_parts.Length -eq 2 -and $_parts[1].Trim() -eq 'guest-sponsor-info-infra.zip') {
+        $_expectedHash = $_parts[0].Trim().ToUpperInvariant()
+        break
+      }
+    }
+  }
+
   if (-not $_expectedHash) {
-    throw "guest-sponsor-info-infra.zip not found in checksums.txt. Cannot verify download."
+    if ($_checksumsDownloaded) {
+      Write-Warning 'guest-sponsor-info-infra.zip entry was not found in checksums.txt. Falling back to GitHub release asset digest.'
+    }
+
+    $_expectedHash = Get-ReleaseAssetSha256 -Version $Version -AssetName 'guest-sponsor-info-infra.zip'
+    Write-Host '  Using checksum source: GitHub release asset digest' -ForegroundColor DarkGray
   }
 
   $_actualHash = (Get-FileHash -Path $_zipFile -Algorithm SHA256).Hash.ToUpperInvariant()
