@@ -43,6 +43,9 @@ gha_group_start "Clean previous web part outputs"
 # the packaged debug folder and any previous .sppkg need an explicit reset so a
 # local release build cannot accidentally repackage stale dev artifacts.
 npm run clean
+# The directory may not exist on a fresh CI checkout (no tracked files there).
+# Create it so the find and rm commands below are always safe to run.
+mkdir -p sharepoint/solution
 rm -rf sharepoint/solution/debug
 find sharepoint/solution -maxdepth 1 -type f -name '*.sppkg' -delete
 gha_group_end
