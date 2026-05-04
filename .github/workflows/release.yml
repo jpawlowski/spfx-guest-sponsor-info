@@ -96,18 +96,6 @@ jobs:
             setup-graph-permissions.ps1 \
             assets
 
-      # Generate a SHA256 checksums file for all release artifacts.
-      # Published as a release asset so deployers and auditors can verify
-      # downloads independently. Also consumed by the Bicep deployZipScript
-      # to verify the function package during Flex Consumption provisioning.
-      - name: Generate checksums
-        run: |
-          sha256sum \
-            sharepoint/solution/guest-sponsor-info.sppkg \
-            azure-function/guest-sponsor-info-function.zip \
-            guest-sponsor-info-infra.zip \
-          | awk '{ n=split($2,a,"/"); print $1 "  " a[n] }' > checksums.txt
-
       # Generate SPDX SBOMs for the Azure Function package using the
       # Microsoft SBOM Tool (same component-detection library used in Microsoft
       # supply-chain tooling). The SBOM lists all npm dependencies bundled in
@@ -151,6 +139,23 @@ jobs:
             guest-sponsor-info-function-sbom.spdx.json
           cp "$RUNNER_TEMP/sbom-output/_manifest/spdx_3.0/manifest.spdx.json" \
             guest-sponsor-info-function-sbom.spdx3.json
+
+      # Generate a SHA256 checksums file for all release artifacts.
+      # Published as a release asset so deployers and auditors can verify
+      # downloads independently. Also consumed by the Bicep deployZipScript
+      # to verify the function package during Flex Consumption provisioning.
+      - name: Generate checksums
+        run: |
+          sha256sum \
+            sharepoint/solution/guest-sponsor-info.sppkg \
+            azure-function/guest-sponsor-info-function.zip \
+            guest-sponsor-info-function-sbom.spdx.json \
+            guest-sponsor-info-function-sbom.spdx3.json \
+            guest-sponsor-info-infra.zip \
+            azure-function/infra/install.ps1 \
+            azure-function/infra/install.sh \
+            azure-function/infra/setup-graph-permissions.ps1 \
+          | awk '{ n=split($2,a,"/"); print $1 "  " a[n] }' > checksums.txt
 
       # Create Sigstore-backed provenance attestations for all release artifacts.
       # This cryptographically proves that each artifact was produced by this
