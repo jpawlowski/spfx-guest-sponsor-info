@@ -98,6 +98,22 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+function Get-HttpStatusCodeFromException {
+  param([System.Exception]$Exception)
+
+  $response = $Exception.Response
+  if ($null -eq $response) {
+    return $null
+  }
+
+  try {
+    return [int]$response.StatusCode
+  }
+  catch {
+    return $null
+  }
+}
+
 # ── Resolve download URLs ─────────────────────────────────────────────────────
 # "latest" resolves via the GitHub "latest" redirect; a specific tag uses
 # the direct download path.
@@ -131,13 +147,57 @@ Write-Host ''
 
 try {
   # Download the infra ZIP to a temp file.
-  Invoke-WebRequest -Uri $_zipUrl -OutFile $_zipFile -UseBasicParsing
+  try {
+    Invoke-WebRequest -Uri $_zipUrl -OutFile $_zipFile -UseBasicParsing
+  }
+  catch {
+    $_statusCode = Get-HttpStatusCodeFromException -Exception $_.Exception
+    if ($_statusCode -eq 404) {
+      if ($Version -eq 'latest') {
+        throw (
+          "Infra package for the latest release was not found (404).`n" +
+          "The release may not be fully published yet.`n" +
+          "Retry in a few minutes, or run again with -Version vX.Y.Z."
+        )
+      }
+
+      throw (
+        "Infra package for release '$Version' was not found (404).`n" +
+        "Verify the release tag and check that release assets are published.`n" +
+        "URL: $_zipUrl"
+      )
+    }
+
+    throw
+  }
 
   # ── SHA256 integrity check ──────────────────────────────────────────────────
   # Download checksums.txt from the same release and verify the infra ZIP hash.
   # This catches truncated downloads or CDN-level tampering.
   Write-Host '  Verifying SHA256 checksum...' -ForegroundColor DarkGray
-  Invoke-WebRequest -Uri $_checksumsUrl -OutFile $_checksumsFile -UseBasicParsing
+  try {
+    Invoke-WebRequest -Uri $_checksumsUrl -OutFile $_checksumsFile -UseBasicParsing
+  }
+  catch {
+    $_statusCode = Get-HttpStatusCodeFromException -Exception $_.Exception
+    if ($_statusCode -eq 404) {
+      if ($Version -eq 'latest') {
+        throw (
+          "checksums.txt for the latest release was not found (404).`n" +
+          "The release may not be fully published yet, so integrity verification cannot run.`n" +
+          "Retry in a few minutes, or run again with -Version vX.Y.Z."
+        )
+      }
+
+      throw (
+        "checksums.txt for release '$Version' was not found (404).`n" +
+        "Cannot verify SHA256 without checksums.txt, so installation is aborted.`n" +
+        "URL: $_checksumsUrl"
+      )
+    }
+
+    throw
+  }
 
   # Parse "hash  filename" lines; find the entry for guest-sponsor-info-infra.zip.
   $_expectedHash = $null

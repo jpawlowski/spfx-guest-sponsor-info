@@ -62,7 +62,7 @@ download_to() {
   local target="$2"
 
   if ! curl -fsSL -o "${target}" "${url}"; then
-    die "Download failed: ${url}"
+    die "Download failed: ${url}. The release asset may not be published yet."
   fi
 }
 
@@ -212,10 +212,22 @@ install_powershell_if_needed() {
 
 run_powershell_installer() {
   local install_ps1="${TMP_DIR}/install.ps1"
+  local installer_tag=''
+
+  if [[ "${INSTALL_PS1_URL}" =~ /v([0-9]+\.[0-9]+\.[0-9]+[^/]*)/azure-function/infra/install\.ps1$ ]]; then
+    installer_tag="v${BASH_REMATCH[1]}"
+  fi
+
   download_to "${INSTALL_PS1_URL}" "${install_ps1}"
 
   info 'Starting Guest Sponsor Info PowerShell installer...'
-  pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File "${install_ps1}" "$@"
+  if ! pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File "${install_ps1}" "$@"; then
+    if [[ -n "${installer_tag}" ]]; then
+      die "PowerShell installer failed. Release assets may still be publishing. Retry in a few minutes or run with -Version ${installer_tag}."
+    fi
+
+    die 'PowerShell installer failed. Release assets may still be publishing. Retry in a few minutes.'
+  fi
 }
 
 main() {
