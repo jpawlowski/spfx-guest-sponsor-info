@@ -9,10 +9,12 @@ on:
 # contents: write  — create the release and upload assets.
 # attestations: write — publish artifact attestations to GitHub's attestation store.
 # id-token: write    — obtain an OIDC token for Sigstore signing.
+# artifact-metadata: write — allow artifact metadata storage records when supported.
 permissions:
   contents: write
   attestations: write
   id-token: write
+  artifact-metadata: write
 
 # Each tag is unique, so cancellation is not needed.
 # The group guard still prevents two releases from running in parallel.
@@ -106,7 +108,7 @@ jobs:
             guest-sponsor-info-infra.zip \
           | awk '{ n=split($2,a,"/"); print $1 "  " a[n] }' > checksums.txt
 
-      # Generate an SPDX 2.2 SBOM for the Azure Function package using the
+      # Generate SPDX SBOMs for the Azure Function package using the
       # Microsoft SBOM Tool (same component-detection library used in Microsoft
       # supply-chain tooling). The SBOM lists all npm dependencies bundled in
       # the deployed ZIP and is consumed by Defender for DevOps and compatible
@@ -115,12 +117,13 @@ jobs:
       # Check for new releases manually: https://github.com/microsoft/sbom-tool/releases
       # When bumping SBOM_TOOL_VERSION, update SBOM_TOOL_SHA256 to match:
       #   curl -fsSL <download-url> | sha256sum
-      - name: Generate SBOM for Azure Function
+      - name: Generate SBOMs for Azure Function (SPDX 2.2 and 3.0)
         env:
           SBOM_TOOL_VERSION: "v4.1.5"
           # SHA256 of sbom-tool-linux-x64 for SBOM_TOOL_VERSION — verify after each bump.
           SBOM_TOOL_SHA256: "bf5d4f99bc98c119d549d08fc02ae92598a7a42772f17317c01031a92632e05b"
         run: |
+          mkdir -p "$RUNNER_TEMP/sbom-output"
           curl -fsSLo "$RUNNER_TEMP/sbom-tool" \
             "https://github.com/microsoft/sbom-tool/releases/download/${SBOM_TOOL_VERSION}/sbom-tool-linux-x64"
           echo "${SBOM_TOOL_SHA256}  $RUNNER_TEMP/sbom-tool" | sha256sum --check --strict
@@ -133,8 +136,21 @@ jobs:
             -ps Workoho \
             -nsb https://github.com/workoho/spfx-guest-sponsor-info \
             -manifestDirPath "$RUNNER_TEMP/sbom-output"
+
+          "$RUNNER_TEMP/sbom-tool" generate \
+            -b azure-function/dist \
+            -bc azure-function \
+            -pn guest-sponsor-info-function \
+            -pv "${{ steps.ver.outputs.semver }}" \
+            -ps Workoho \
+            -nsb https://github.com/workoho/spfx-guest-sponsor-info \
+            -mi SPDX:3.0 \
+            -manifestDirPath "$RUNNER_TEMP/sbom-output"
+
           cp "$RUNNER_TEMP/sbom-output/_manifest/spdx_2.2/manifest.spdx.json" \
             guest-sponsor-info-function-sbom.spdx.json
+          cp "$RUNNER_TEMP/sbom-output/_manifest/spdx_3.0/manifest.spdx.json" \
+            guest-sponsor-info-function-sbom.spdx3.json
 
       # Create Sigstore-backed provenance attestations for all release artifacts.
       # This cryptographically proves that each artifact was produced by this
@@ -151,11 +167,19 @@ jobs:
       # Attest the SPDX SBOM against the function ZIP so the full dependency
       # tree is cryptographically tied to the artifact it describes.
       # actions/attest auto-detects SPDX/CycloneDX format from sbom-path.
-      - name: Attest Function SBOM
+      - name: Attest Function SBOM (SPDX 2.2)
         uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
         with:
           subject-path: azure-function/guest-sponsor-info-function.zip
           sbom-path: guest-sponsor-info-function-sbom.spdx.json
+
+      # Publish a second attestation for SPDX 3.0 to support consumers that
+      # already require SPDX 3 while keeping 2.2 for broad compatibility.
+      - name: Attest Function SBOM (SPDX 3.0)
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
+        with:
+          subject-path: azure-function/guest-sponsor-info-function.zip
+          sbom-path: guest-sponsor-info-function-sbom.spdx3.json
 
       # Create or update the GitHub Release and attach build artifacts.
       - name: Create GitHub Release
@@ -168,6 +192,7 @@ jobs:
             sharepoint/solution/guest-sponsor-info.sppkg
             azure-function/guest-sponsor-info-function.zip
             guest-sponsor-info-function-sbom.spdx.json
+            guest-sponsor-info-function-sbom.spdx3.json
             guest-sponsor-info-infra.zip
             checksums.txt
             azure-function/infra/install.ps1
