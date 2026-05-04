@@ -523,38 +523,102 @@ function Get-CommandVersionText {
 
   try {
     $output = & $Command @Arguments 2>$null
-    if ($LASTEXITCODE -ne 0) { return 'available (version check failed)' }
+    if ($LASTEXITCODE -ne 0) { return $null }
     $line = @($output | Where-Object { $_ } | Select-Object -First 1)[0]
     if ($line) { return $line.Trim() }
   }
   catch {
-    return 'available (version check failed)'
+    return $null
+  }
+
+  return $null
+}
+
+function Get-AzureCliVersionText {
+  $_version = Get-CommandVersionText -Command $script:AzPath -Arguments @(
+    'version', '--query', '"azure-cli"', '-o', 'tsv'
+  )
+  if ($_version) {
+    return $_version
+  }
+
+  $_fallbackVersion = Get-CommandVersionText -Command $script:AzPath -Arguments @('--version')
+  if ($_fallbackVersion -match '^azure-cli\s+(.+)$') {
+    return $Matches[1].Trim()
+  }
+  if ($_fallbackVersion) {
+    return $_fallbackVersion
   }
 
   return 'available'
 }
 
+function Get-AzdVersionText {
+  $_versionLine = Get-CommandVersionText -Command $script:AzdPath -Arguments @('version', '--no-prompt')
+  if (-not $_versionLine) {
+    $_versionLine = Get-CommandVersionText -Command $script:AzdPath -Arguments @('version')
+  }
+
+  if (-not $_versionLine) {
+    return 'available'
+  }
+
+  $_cleanVersionLine = $_versionLine.Trim()
+  if ($_cleanVersionLine -match '(?i)\bazd version\s+([0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?)') {
+    $_version = $Matches[1]
+    $_channel = $null
+    if ($_cleanVersionLine -match '\((stable|beta|preview|alpha|nightly|canary|rc[^)]*)\)') {
+      $_channel = $Matches[1]
+    }
+
+    if ($_channel) {
+      return "$($_version) ($($_channel.ToLowerInvariant()))"
+    }
+
+    return $_version
+  }
+
+  $_cleanVersionLine = $_cleanVersionLine -replace '^\s*azd version\s+', ''
+  $_cleanVersionLine = $_cleanVersionLine -replace '\s+\(commit [0-9a-f]{7,40}\)', ''
+  $_cleanVersionLine = $_cleanVersionLine -replace '\s{2,}', ' '
+
+  if ($_cleanVersionLine) {
+    return $_cleanVersionLine.Trim()
+  }
+
+  return 'available'
+}
+
+function Write-PreflightStatus {
+  param(
+    [Parameter(Mandatory)][string]$Label,
+    [Parameter(Mandatory)][string]$Value
+  )
+
+  Write-Host ('  {0} {1,-20}: {2}' -f $_chk, $Label, $Value) -ForegroundColor Green
+}
+
 function Show-ToolVersion {
   $pwshVersion = $PSVersionTable.PSVersion.ToString()
-  $azVersion = Get-CommandVersionText -Command $script:AzPath -Arguments @('--version')
-  $azdVersion = Get-CommandVersionText -Command $script:AzdPath -Arguments @('version')
+  $azVersion = Get-AzureCliVersionText
+  $azdVersion = Get-AzdVersionText
 
   Write-Host ''
   Write-Host '  Tool preflight' -ForegroundColor Cyan
   Write-Host $_sep -ForegroundColor DarkGray
-  Write-Host "  $_chk PowerShell            : $pwshVersion" -ForegroundColor Green
-  Write-Host "  $_chk Azure CLI (az)       : $azVersion" -ForegroundColor Green
-  Write-Host "  $_chk Azure Developer CLI  : $azdVersion" -ForegroundColor Green
+  Write-PreflightStatus -Label 'PowerShell' -Value $pwshVersion
+  Write-PreflightStatus -Label 'Azure CLI (az)' -Value $azVersion
+  Write-PreflightStatus -Label 'Azure Developer CLI' -Value $azdVersion
   if ($script:AzureAuthIsolationMode -eq 'isolated') {
-    Write-Host "  $_chk Azure auth session   : isolated to this PowerShell console" -ForegroundColor Green
+    Write-PreflightStatus -Label 'Azure auth session' -Value 'isolated to this PowerShell console'
     Write-Host '       Existing logins in ~/.azure and ~/.azd are ignored for this console.' -ForegroundColor DarkGray
     Write-Host '       Close the console to drop this isolated login context.' -ForegroundColor DarkGray
   }
   elseif ($script:AzureAuthIsolationMode -eq 'caller-supplied') {
-    Write-Host "  $_chk Azure auth session   : using caller-provided config dirs" -ForegroundColor Green
+    Write-PreflightStatus -Label 'Azure auth session' -Value 'using caller-provided config dirs'
   }
   if ($script:AzdUsesAzureCliAuth) {
-    Write-Host "  $_chk azd auth mode        : reuses the active Azure CLI login" -ForegroundColor Green
+    Write-PreflightStatus -Label 'azd auth mode' -Value 'reuses the active Azure CLI login'
     Write-Host '       azd does not keep an independent tenant login for this script run.' -ForegroundColor DarkGray
   }
   Write-Host '       azd uses its own scoped Bicep CLI during azd provision.' -ForegroundColor DarkGray

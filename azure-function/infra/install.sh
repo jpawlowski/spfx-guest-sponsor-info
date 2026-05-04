@@ -36,6 +36,17 @@ have() {
   command -v "$1" >/dev/null 2>&1
 }
 
+run_with_terminal_stdin() {
+  # When the bootstrapper itself is read from stdin (for example via curl | bash),
+  # interactive child processes must read from the terminal instead of the script pipe.
+  if [[ -r /dev/tty ]]; then
+    "$@" </dev/tty
+    return
+  fi
+
+  "$@"
+}
+
 prompt_yes_no() {
   local prompt="$1"
   local answer=''
@@ -121,7 +132,7 @@ install_homebrew_if_needed() {
   if [[ "${GSI_INSTALL_ASSUME_YES:-}" == "1" ]]; then
     NONINTERACTIVE=1 /bin/bash "${installer}"
   else
-    /bin/bash "${installer}"
+    run_with_terminal_stdin /bin/bash "${installer}"
   fi
 
   refresh_common_paths
@@ -221,7 +232,7 @@ run_powershell_installer() {
   download_to "${INSTALL_PS1_URL}" "${install_ps1}"
 
   info 'Starting Guest Sponsor Info PowerShell installer...'
-  if ! pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File "${install_ps1}" "$@"; then
+  if ! run_with_terminal_stdin pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File "${install_ps1}" "$@"; then
     if [[ -n "${installer_tag}" ]]; then
       die "PowerShell installer failed. Release assets may still be publishing. Retry in a few minutes or run with -Version ${installer_tag}."
     fi
