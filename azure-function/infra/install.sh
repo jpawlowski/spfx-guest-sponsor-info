@@ -13,7 +13,7 @@
 
 set -euo pipefail
 
-INSTALL_PS1_URL="${GSI_INSTALL_PS1_URL:-https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/main/azure-function/infra/install.ps1}"
+INSTALL_PS1_URL="${GSI_INSTALL_PS1_URL:-https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/v1.2.1/azure-function/infra/install.ps1}"
 TMP_DIR=''
 
 cleanup() {

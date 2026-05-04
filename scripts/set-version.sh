@@ -325,16 +325,14 @@ if [[ -f "azure-function/package.json" ]]; then
   echo "${C_GRN}✓${C_RST} azure-function/package.json → ${C_CYN}${SEMVER}${C_RST}"
 fi
 
-# Stamp the download URL in install.sh so the script fetches the exact release
-# version instead of the mutable 'main' branch.
-# The sentinel comment marks exactly which line to update.
-_RELEASES_BASE="https://github.com/workoho/spfx-guest-sponsor-info/releases"
+# Stamp the download URL in install.sh so the script fetches the exact tagged
+# script version instead of the mutable 'main' branch.
 _RAW_BASE="https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info"
 if [[ -f "azure-function/infra/install.sh" ]]; then
   # Replace the fallback URL in the GSI_INSTALL_PS1_URL assignment.
   # Pattern: the raw.githubusercontent.com URL for install.ps1 with any ref.
   sed -i -E \
-    "s|${_RAW_BASE}/[^/]+/azure-function/infra/install.ps1|${_RELEASES_BASE}/download/${VTAG}/install.ps1|g" \
+    "s|${_RAW_BASE}/[^/]+/azure-function/infra/install.ps1|${_RAW_BASE}/${VTAG}/azure-function/infra/install.ps1|g" \
     "azure-function/infra/install.sh"
   echo "${C_GRN}✓${C_RST} azure-function/infra/install.sh → ${C_CYN}${VTAG}${C_RST}"
 fi
@@ -344,7 +342,7 @@ if [[ -f "azure-function/infra/install.ps1" ]]; then
   # Replace the raw.githubusercontent.com self-reference in .EXAMPLE blocks
   # and any other embedded raw URL pointing to install.ps1.
   sed -i -E \
-    "s|${_RAW_BASE}/[^/]+/azure-function/infra/install.ps1|${_RELEASES_BASE}/download/${VTAG}/install.ps1|g" \
+    "s|${_RAW_BASE}/[^/]+/azure-function/infra/install.ps1|${_RAW_BASE}/${VTAG}/azure-function/infra/install.ps1|g" \
     "azure-function/infra/install.ps1"
   echo "${C_GRN}✓${C_RST} azure-function/infra/install.ps1 → ${C_CYN}${VTAG}${C_RST}"
 fi
@@ -368,6 +366,12 @@ if [[ "${DO_COMMIT}" == "true" ]]; then
   git add package.json package-lock.json config/package-solution.json
   if [[ -f "azure-function/package.json" ]]; then
     git add azure-function/package.json azure-function/package-lock.json 2>/dev/null || true
+  fi
+  if [[ -f "azure-function/infra/install.sh" ]]; then
+    git add azure-function/infra/install.sh
+  fi
+  if [[ -f "azure-function/infra/install.ps1" ]]; then
+    git add azure-function/infra/install.ps1
   fi
 
   RETAG=false
