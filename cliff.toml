@@ -23,28 +23,52 @@ body = """
 """
 footer = """
 ---
-
+{% if releases.0.version -%}
 ### Artifacts
 
 | File | Purpose |
 |---|---|
-| `guest-sponsor-info.sppkg` | SharePoint web part — upload to App Catalog |
-| `guest-sponsor-info-function.zip` | Azure Function package |
-| `guest-sponsor-info-infra.zip` | Full deployment bundle — Bicep, hooks, and scripts |
-| `install.ps1` | One-liner entry point: downloads the infra bundle and runs the wizard |
-| `setup-graph-permissions.ps1` | Assigns Graph permissions (PAW / deferred-rights scenario) |
+| [`guest-sponsor-info.sppkg`](https://github.com/workoho/spfx-guest-sponsor-info/releases/download/{{ releases.0.version }}/guest-sponsor-info.sppkg) | SharePoint web part — upload to App Catalog |
+| [`guest-sponsor-info-function.zip`](https://github.com/workoho/spfx-guest-sponsor-info/releases/download/{{ releases.0.version }}/guest-sponsor-info-function.zip) | Azure Function package |
+| [`guest-sponsor-info-function-sbom.spdx.json`](https://github.com/workoho/spfx-guest-sponsor-info/releases/download/{{ releases.0.version }}/guest-sponsor-info-function-sbom.spdx.json) | SBOM — SPDX 2.2 (attested) |
+| [`guest-sponsor-info-function-sbom.spdx3.json`](https://github.com/workoho/spfx-guest-sponsor-info/releases/download/{{ releases.0.version }}/guest-sponsor-info-function-sbom.spdx3.json) | SBOM — SPDX 3.0 |
+| [`guest-sponsor-info-infra.zip`](https://github.com/workoho/spfx-guest-sponsor-info/releases/download/{{ releases.0.version }}/guest-sponsor-info-infra.zip) | Full deployment bundle — Bicep, hooks, and scripts |
+| [`checksums.txt`](https://github.com/workoho/spfx-guest-sponsor-info/releases/download/{{ releases.0.version }}/checksums.txt) | SHA256 checksums for all release assets |
+| [`install.ps1`](https://github.com/workoho/spfx-guest-sponsor-info/releases/download/{{ releases.0.version }}/install.ps1) | One-liner entry point: downloads the infra bundle and runs the wizard |
+| [`install.sh`](https://github.com/workoho/spfx-guest-sponsor-info/releases/download/{{ releases.0.version }}/install.sh) | Shell bootstrapper (macOS / Linux) — installs PowerShell and runs install.ps1 |
+| [`setup-graph-permissions.ps1`](https://github.com/workoho/spfx-guest-sponsor-info/releases/download/{{ releases.0.version }}/setup-graph-permissions.ps1) | Assigns Graph permissions (PAW / deferred-rights scenario) |
 
+### Attestations
+
+Build provenance and SBOM attestations are published to the
+[GitHub Attestations store](https://github.com/workoho/spfx-guest-sponsor-info/attestations).
+
+Verify any artifact with:
+
+```shell
+gh attestation verify <file> --repo workoho/spfx-guest-sponsor-info
+```
+{% else -%}
+### Artifacts
+
+See the [release page](https://github.com/workoho/spfx-guest-sponsor-info/releases) for download links.
+
+### Attestations
+
+Build provenance and SBOM attestations are published to the
+[GitHub Attestations store](https://github.com/workoho/spfx-guest-sponsor-info/attestations).
+{% endif %}
 ### Quick setup (PowerShell 7+, no clone required)
 
 ```powershell
-{% if version -%}
-& ([scriptblock]::Create((iwr 'https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/{{ version }}/azure-function/infra/install.ps1').Content))
+{% if releases.0.version -%}
+& ([scriptblock]::Create((iwr 'https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/{{ releases.0.version }}/azure-function/infra/install.ps1').Content))
 {% else -%}
 & ([scriptblock]::Create((iwr 'https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/main/azure-function/infra/install.ps1').Content))
 {% endif %}
 ```
 
-> Full deployment guide: [docs/deployment.md](https://github.com/workoho/spfx-guest-sponsor-info/blob/main/docs/deployment.md)
+> Full deployment guide: [docs/deployment.md](https://github.com/workoho/spfx-guest-sponsor-info/blob/{% if releases.0.version %}{{ releases.0.version }}{% else %}main{% endif %}/docs/deployment.md)
 """
 trim = true
 
