@@ -128,14 +128,14 @@ function Get-ReleaseAssetSha256 {
   }
 
   try {
-    $_release = Invoke-RestMethod \
-    -Uri $_apiUrl \
-    -Headers @{
+    $_release = Invoke-RestMethod `
+      -Uri $_apiUrl `
+      -Headers @{
       'Accept'               = 'application/vnd.github+json'
       'X-GitHub-Api-Version' = '2022-11-28'
       'User-Agent'           = 'gsi-installer'
-    } \
-    -UseBasicParsing
+    } `
+      -UseBasicParsing
   }
   catch {
     $_statusCode = Get-HttpStatusCodeFromException -Exception $_.Exception
