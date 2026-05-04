@@ -146,6 +146,45 @@ accidental hammering, anonymous probing, and targeted abuse response, but it is
 not a replacement for broader network-layer protections such as WAF, Front
 Door, or upstream rate controls.
 
+## Artifact Integrity
+
+All release artifacts are published through the GitHub Actions release workflow
+(`release.yml`). Three complementary controls protect release artifacts through
+the complete delivery chain from source to Azure:
+
+**SHA256 checksums** — a `checksums.txt` file is published with every release.
+During Flex Consumption provisioning the Bicep `deployZipScript` automatically
+verifies the SHA256 of the downloaded ZIP before uploading it to Blob storage
+and aborts if the hashes differ, catching truncated downloads or CDN-level
+tampering. Deployers can also verify artifacts manually; see
+[deployment.md](deployment.md) for the commands.
+
+**Sigstore build-provenance attestations** — the CI workflow uses
+`actions/attest-build-provenance` to publish a cryptographic attestation for
+all three release ZIPs (`.sppkg`, function, infra) to GitHub's attestation
+store (backed by the Sigstore Rekor transparency log). The attestation ties
+each artifact hash to the Actions run and the tagged source commit, and can be
+verified offline using the GitHub CLI.
+
+**SBOM attestation** — `microsoft/sbom-tool` generates an SPDX 2.2 SBOM for
+the Azure Function package (all bundled npm dependencies), using the same
+component-detection library used in Microsoft's own supply chain tooling.
+`actions/attest` ties the SBOM to the function ZIP via a separate Sigstore
+attestation, enabling Defender for DevOps and compatible security scanners to
+verify the provenance of every bundled dependency.
+
+Together these controls ensure that only artifacts produced by the CI workflow
+from an auditable commit can be deployed through the standard installer path.
+A release assembled manually (without going through CI) would not carry valid
+Sigstore attestations.
+
+**Installer integrity** — `install.ps1` downloads both the infra ZIP and
+`checksums.txt` from the same GitHub release and verifies the SHA256 hash
+before extracting. A hash mismatch aborts the installation with an error.
+The download URLs in `install.ps1` and `install.sh` are stamped with the
+concrete release tag during the version-stamping step, so they point to a
+specific, immutable GitHub Release asset rather than the mutable `main` branch.
+
 ## Recommended Hardening Actions
 
 - Deploy through the provided Bicep and installer flow rather than replacing
