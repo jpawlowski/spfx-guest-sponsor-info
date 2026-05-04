@@ -230,30 +230,25 @@ Timeout app settings: `SPONSOR_LOOKUP_TIMEOUT_MS`, `BATCH_TIMEOUT_MS`,
 
 Manual fallback: `infra/setup-graph-permissions.ps1` (for role assignment only; App Registration is always created by Bicep).
 
-### Hosting Plan Options
+### Hosting Plan
 
-The `hostingPlan` parameter controls the Azure Functions pricing tier:
+The Azure Function runs on the **Flex Consumption** plan (SKU: FC1 / Linux). This is the only
+supported hosting plan. The legacy Consumption plan (Y1) was dropped because it does not
+support ZIP-from-Blob deployment via `deployZipScript`, lacks per-instance memory
+configuration, and is being superseded by Flex Consumption across new Azure regions.
 
-| | **Consumption** (default) | **Flex Consumption** (opt-in) |
-|---|---|---|
-| SKU | Y1 / Dynamic | FC1 / FlexConsumption |
-| Free tier | 1M exec + 400K GB-s/month | None |
-| Cold starts | ~2–5 s after ~20 min idle | Greatly reduced; eliminated with `alwaysReadyInstances=1` |
-| OS | Windows | Linux only |
-| ZIP deployment | `WEBSITE_RUN_FROM_PACKAGE` (GitHub URL) | Blob container (AZD / az CLI) |
-| Cost guard | `dailyMemoryTimeQuota` (GB-s budget) | `maximumFlexInstances` (hard instance cap, required) |
-| Estimated cost | Free (within grant) | ~€2–5/month with 1 warm instance |
+- **ZIP deployment**: during provisioning, the `deployZipScript` ARM deployment script
+  downloads the release ZIP from GitHub (resolving `latest` at that moment) and stores it as
+  `function.zip` in the `app-package` Blob container. The Function App then runs from this
+  frozen copy. A restart alone does not pull a newer release — re-run the deployment wizard or
+  upload a new ZIP manually.
+- **Cost**: with `alwaysReadyInstances=0` (default) costs stay within the free execution grant.
+  Set `alwaysReadyInstances=1` to keep one instance always warm and eliminate cold starts
+  (~€2–5/month).
+- **Region**: Flex Consumption is not available in every region. Check
+  [aka.ms/flex-region](https://aka.ms/flex-region) before choosing a deployment location.
 
-**Default is Consumption** — it covers the typical use case (internal SPFx tool, hundreds of
-guest users/day) at zero cost and supports the simplest deployment paths.
-
-Choose **Flex Consumption** when cold-start latency is unacceptable for your users and you
-are deploying via AZD or Azure CLI. Set `alwaysReadyInstances=1` (the default for Flex) to
-keep one instance warm.
-
-For day-2 code updates, the two plans diverge operationally: Consumption can
-switch or restart `WEBSITE_RUN_FROM_PACKAGE`, while Flex updates the package in
-its blob-backed deployment container. See [operations.md](operations.md).
+For day-2 code updates see [operations.md](operations.md).
 
 ### Debugging Client Authorization Failures
 

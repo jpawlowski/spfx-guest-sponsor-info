@@ -18,9 +18,7 @@ For telemetry and attribution details, see [telemetry.md](telemetry.md).
   - [Step 2 (Optional) - Configure the Azure Maps key](#step-2-optional---configure-the-azure-maps-key)
   - [Step 3 (Optional) - Allow required endpoints in CSP](#step-3-optional---allow-required-endpoints-in-csp)
 - [Updating the Function](#updating-the-function)
-  - [Step 1 - Identify the hosting plan and package mode](#step-1---identify-the-hosting-plan-and-package-mode)
-  - [Step 2A - Update a Consumption deployment](#step-2a---update-a-consumption-deployment)
-  - [Step 2B - Update a Flex Consumption deployment](#step-2b---update-a-flex-consumption-deployment)
+  - [Step 1 - Update the function package](#step-1---update-the-function-package)
   - [Alternative - Manual package upload](#alternative---manual-package-upload)
   - [Advanced - Re-run the full deployment when infrastructure changes](#advanced---re-run-the-full-deployment-when-infrastructure-changes)
 
@@ -44,6 +42,43 @@ If you are not sure which path was used originally, check
 [deployment.md](deployment.md#step-1---install-the-web-part).
 
 ### Step 2 - Update the package source
+
+### Integrity check before package upload (GitHub Releases path)
+
+For update paths that upload `.sppkg` files manually (Tenant App Catalog or
+Site Collection App Catalog), verify the package before upload:
+
+> **Minimum:** verify SHA256 against `checksums.txt`.
+>
+> **Recommended:** verify SHA256 **and** run GitHub attestation verification.
+
+1. Download `guest-sponsor-info.sppkg` and `checksums.txt` from the same
+   release page (browser download is fine).
+2. Verify SHA256 locally.
+
+Linux/macOS:
+
+```bash
+sha256sum -c checksums.txt --ignore-missing
+```
+
+PowerShell:
+
+```powershell
+$expected = ((Select-String -Path ./checksums.txt -Pattern 'guest-sponsor-info.sppkg').Line -split ' +')[0].ToLower()
+$actual = (Get-FileHash ./guest-sponsor-info.sppkg -Algorithm SHA256).Hash.ToLower()
+if ($actual -ne $expected) { throw 'SHA256 mismatch for guest-sponsor-info.sppkg' }
+```
+
+Optional (requires `gh`):
+
+```bash
+gh attestation verify guest-sponsor-info.sppkg \
+  --repo workoho/spfx-guest-sponsor-info
+```
+
+For AppSource updates, use **Upgrade Store App** and the marketplace delivery
+path instead of manual package uploads.
 
 #### Option A - Site Collection App Catalog deployment
 
@@ -134,67 +169,29 @@ solution.
 
 ## Updating the Function
 
-### Step 1 - Identify the hosting plan and package mode
+The Azure Function uses the **Flex Consumption** plan. During deployment the `deployZipScript`
+ARM resource downloads the release ZIP from GitHub (resolving `latest` at that moment) and
+stores it as `function.zip` in the `app-package` Blob container. The Function App runs from
+this frozen copy — **a restart alone does not pull a newer release**.
 
-The function update path depends on the hosting plan chosen during initial
-deployment:
+### Step 1 - Update the function package
 
-- **Consumption** - `WEBSITE_RUN_FROM_PACKAGE` points to a GitHub release ZIP
-  URL. The default deployment tracks `latest`.
-- **Flex Consumption** - the deployment uploads `function.zip` to the
-  `app-package` container and the app runs from that storage-backed package URL.
+Re-run the deployment wizard. The wizard downloads the current GitHub release ZIP and
+re-uploads it to Blob storage, replacing the frozen copy.
 
-If you are not sure which mode is active, inspect the
-`WEBSITE_RUN_FROM_PACKAGE` app setting.
+This standard deployment path also verifies the function ZIP checksum via the
+`deployZipScript` step before upload.
 
-### Step 2A - Update a Consumption deployment
-
-The default Consumption deployment uses `WEBSITE_RUN_FROM_PACKAGE` pointing to
-the `latest` GitHub Release ZIP. In that default mode, a restart pulls the
-current ZIP:
-
-```bash
-az functionapp restart \
-  --resource-group <your-resource-group> \
-  --name <your-function-app-name>
-```
-
-Or from the Azure Portal: Function App -> Overview -> Restart.
-
-If the deployment was pinned to a specific `appVersion`, a full re-deployment is
-not strictly required for a code-only update. You can also point
-`WEBSITE_RUN_FROM_PACKAGE` to a different release ZIP and let Azure restart the
-app:
-
-```bash
-az functionapp config appsettings set \
-  --resource-group <your-resource-group> \
-  --name <your-function-app-name> \
-  --settings WEBSITE_RUN_FROM_PACKAGE=https://github.com/workoho/spfx-guest-sponsor-info/releases/download/<release-tag>/guest-sponsor-info-function.zip
-```
-
-Or in the Azure Portal:
-
-1. Open **Function App -> Settings -> Environment variables**.
-2. Edit `WEBSITE_RUN_FROM_PACKAGE`.
-3. Replace the URL with the new GitHub Release ZIP URL.
-4. Click **Apply**, then **Confirm**. Saving the app setting restarts the app.
-
-Re-running the deployment is still the safer default when you want the Bicep /
-`azd` state to stay aligned with the deployed version, or when the release also
-includes infrastructure changes.
-
-### Step 2B - Update a Flex Consumption deployment
-
-Re-run the deployment wizard with a pinned `appVersion`:
+To pin to a specific version:
 
 ```powershell
 & ([scriptblock]::Create((iwr 'https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/main/azure-function/infra/install.ps1').Content)) -AppVersion 1.x.y
 ```
 
-Or, when running `deploy-azure.ps1` directly:
+Or, when running `deploy-azure.ps1` directly (with or without `-AppVersion`):
 
 ```powershell
+./deploy-azure.ps1
 ./deploy-azure.ps1 -AppVersion 1.x.y
 ```
 
@@ -202,6 +199,37 @@ Or, when running `deploy-azure.ps1` directly:
 
 Use this only when you need to replace the storage-backed package directly
 instead of rerunning the deployment wizard.
+
+Before a manual upload, verify the function artifact integrity:
+
+> **Minimum:** verify SHA256 against `checksums.txt`.
+>
+> **Recommended:** verify SHA256 **and** run GitHub attestation verification.
+
+1. Download `guest-sponsor-info-function.zip` and `checksums.txt` from the
+   same release page.
+2. Verify SHA256 locally.
+
+Linux/macOS:
+
+```bash
+sha256sum -c checksums.txt --ignore-missing
+```
+
+PowerShell:
+
+```powershell
+$expected = ((Select-String -Path ./checksums.txt -Pattern 'guest-sponsor-info-function.zip').Line -split ' +')[0].ToLower()
+$actual = (Get-FileHash ./guest-sponsor-info-function.zip -Algorithm SHA256).Hash.ToLower()
+if ($actual -ne $expected) { throw 'SHA256 mismatch for guest-sponsor-info-function.zip' }
+```
+
+Optional (requires `gh`):
+
+```bash
+gh attestation verify guest-sponsor-info-function.zip \
+  --repo workoho/spfx-guest-sponsor-info
+```
 
 <details>
 <summary>Manual upload via Azure Portal or CLI</summary>

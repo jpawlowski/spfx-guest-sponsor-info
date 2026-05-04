@@ -38,7 +38,7 @@ are doing a first-time rollout end to end, complete the phases in that order.
   - [Step 1 - Confirm prerequisites and required roles](#step-1---confirm-prerequisites-and-required-roles)
   - [Step 2 - Run the deployment wizard](#step-2---run-the-deployment-wizard)
   - [Step 2 (Alternative) - Run from a local infra ZIP](#step-2-alternative---run-from-a-local-infra-zip)
-  - [Step 3 (Optional) - Choose hosting plan parameters](#step-3-optional---choose-hosting-plan-parameters)
+  - [Step 3 (Optional) - Configure Flex Consumption parameters](#step-3-optional---configure-flex-consumption-parameters)
   - [Step 4 - Record the deployment outputs](#step-4---record-the-deployment-outputs)
   - [Step 5 - Configure the web part](#step-5---configure-the-web-part)
   - [Advanced scenario - Deploy from a Privileged Access Workstation (PAW)](#advanced-scenario---deploy-from-a-privileged-access-workstation-paw)
@@ -49,6 +49,47 @@ are doing a first-time rollout end to end, complete the phases in that order.
 ## SharePoint Deployment
 
 ### Step 1 - Install the web part
+
+### Integrity check before package upload (GitHub Releases path)
+
+For **Tenant App Catalog** and **Site Collection App Catalog** deployments,
+verify the downloaded `.sppkg` before upload.
+
+If you use **AppSource**, this step is not required because the package is
+delivered through the Microsoft marketplace channel.
+
+> **Minimum:** verify SHA256 against `checksums.txt`.
+>
+> **Recommended:** verify SHA256 **and** run GitHub attestation verification.
+
+1. Download `guest-sponsor-info.sppkg` and `checksums.txt` from the same
+   release page in your browser.
+2. Verify SHA256 locally.
+
+Linux/macOS:
+
+```bash
+sha256sum -c checksums.txt --ignore-missing
+```
+
+PowerShell:
+
+```powershell
+$expected = ((Select-String -Path ./checksums.txt -Pattern 'guest-sponsor-info.sppkg').Line -split ' +')[0].ToLower()
+$actual = (Get-FileHash ./guest-sponsor-info.sppkg -Algorithm SHA256).Hash.ToLower()
+if ($actual -ne $expected) { throw 'SHA256 mismatch for guest-sponsor-info.sppkg' }
+```
+
+Optional (stronger provenance check, requires `gh`):
+
+```bash
+gh attestation verify guest-sponsor-info.sppkg \
+  --repo workoho/spfx-guest-sponsor-info
+```
+
+Checksum verification gives the same transfer/tamper detection whether files
+were downloaded by browser or CLI. Attestation adds build provenance
+verification on top.
 
 #### Option A - Install from Microsoft AppSource
 
@@ -588,36 +629,22 @@ provides the files locally so you can review them first.
 
 ---
 
-### Step 3 (Optional) - Choose hosting plan parameters
+### Step 3 (Optional) - Configure Flex Consumption parameters
 
-If the defaults are acceptable, skip this step. The deployment wizard uses the
-Consumption plan by default.
+The Azure Function uses the **Flex Consumption** plan. If the defaults are acceptable, skip
+this step.
 
 <details>
-<summary>Expand hosting plan comparison and optional parameters</summary>
-
-**Hosting plan comparison:**
-
-| | **Consumption** (default) | **Flex Consumption** |
-|---|---|---|
-| Free tier | 1M exec + 400K GB-s/month | None |
-| Cold starts | ~2-5 s after ~20 min idle | Eliminated with `alwaysReadyInstances=1` |
-| OS | Windows | Linux only |
-| Cost guard | `dailyMemoryTimeQuota` | `maximumFlexInstances` |
-| Estimated cost | Free (within grant) | ~€2-5/month with 1 warm instance |
-
-#### Optional hosting plan parameters
+<summary>Expand optional Flex Consumption parameters</summary>
 
 | Parameter | Description |
 |---|---|
-| `hostingPlan` | `Consumption` (default) or `FlexConsumption`. |
-| `alwaysReadyInstances` | Pre-warmed instances (Flex only). `1` eliminates cold starts. Default: `1`. |
-| `maximumFlexInstances` | **Required for Flex.** Hard upper bound on scale-out (cost ceiling). 1-1000. |
-| `instanceMemoryMB` | `512` or `2048` (Flex only). Default: `2048`. |
-| `dailyMemoryTimeQuotaGBs` | Daily GB-s budget (Consumption only). Default: `10000`. |
+| `alwaysReadyInstances` | Pre-warmed instances. `1` eliminates cold starts (~€2-5/month). Default: `0`. |
+| `maximumFlexInstances` | Hard upper bound on scale-out (cost ceiling). 1-1000. Default: `10`. |
+| `instanceMemoryMB` | `512` or `2048`. Default: `512`. |
 
-Check [aka.ms/flex-region](https://aka.ms/flex-region) for Flex Consumption
-regional availability.
+Flex Consumption is not available in every Azure region. Check
+[aka.ms/flex-region](https://aka.ms/flex-region) before choosing a deployment location.
 
 </details>
 
