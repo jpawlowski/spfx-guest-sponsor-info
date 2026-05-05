@@ -240,6 +240,8 @@ define([], function () {
     WelcomeDialogDeployToAzureLabel: "Installer API'en i Azure",
     WelcomeDialogDeployNote:
       "Denne mulighed kræver, at Guest Sponsor API er installeret i dit Azure-abonnement. Du kan gøre det her \u2014 det tager kun få minutter.",
+    WelcomeDialogCloudShellHint:
+      "For the easiest setup, copy this PowerShell command into Azure Cloud Shell. That way you do not need to install anything on your local machine.",
     WelcomeDialogPreflightTitle: "Before deployment, the installer checks:",
     WelcomeDialogPreflightTools: "PowerShell, Azure CLI, Azure Developer CLI, and Bicep support.",
     WelcomeDialogPreflightSignIn: "Azure sign-in and the target subscription.",

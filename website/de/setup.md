@@ -21,7 +21,7 @@ Das Setup von Guest Sponsor Info hat drei Phasen:
 | Phase | Wo | Mindestrolle |
 |---|---|---|
 | 1 — SharePoint | SharePoint Admin Center + Landingpage-Site | SharePoint-Administrator |
-| 2 — Guest Sponsor API | PowerShell (`install.ps1` via `iwr`) oder Shell (`install.sh` via `curl`) | Azure-Mitwirkender + Besitzer + Entra-Rollen via PIM |
+| 2 — Guest Sponsor API | [Azure Cloud Shell](https://shell.azure.com/) (empfohlen) oder lokale PowerShell/Shell | Azure-Mitwirkender + Besitzer + Entra-Rollen via PIM |
 | 3 — Web Part | SharePoint-Landingpage (Bearbeitungsmodus) | Websitebesitzer |
 
 > [!NOTE]
@@ -279,6 +279,36 @@ erforderlichen Microsoft Graph-Berechtigungen zu — gestützt auf die
 
 ### Installer ausführen
 
+> [!TIP]
+> **[Azure Cloud Shell](https://shell.azure.com/) ist für die meisten Administratoren der einfachste Weg.**
+>
+> Öffnen Sie [Azure Cloud Shell](https://shell.azure.com/), wählen Sie
+> **PowerShell**, und führen Sie den Installer direkt dort aus. Auf Ihrer
+> lokalen Maschine müssen Sie dafür nichts vorbereiten: keine lokale
+> PowerShell-Installation, kein Azure CLI, kein `azd`, kein `curl` und kein
+> Homebrew.
+>
+> Der Bereitstellungs-Assistent erkennt
+> [Azure Cloud Shell](https://shell.azure.com/) automatisch, verwendet die
+> aktive Azure-Anmeldung weiter und kann `azd` bei Bedarf im
+> Cloud-Shell-Home-Verzeichnis selbst installieren.
+>
+> Einen kurzen Überblick über die aktuelle Ersteinrichtung zeigt
+> [Get started with Azure Cloud Shell](https://learn.microsoft.com/en-us/azure/cloud-shell/get-started/ephemeral).
+
+**Empfohlener Standardpfad: [Azure Cloud Shell](https://shell.azure.com/) (PowerShell)**
+
+1. Öffnen Sie [Azure Cloud Shell](https://shell.azure.com/).
+2. Wählen Sie **PowerShell**.
+3. Führen Sie diesen Befehl aus:
+
+```powershell
+& ([scriptblock]::Create((iwr 'https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/main/azure-function/infra/install.ps1').Content))
+```
+
+Damit läuft der gesamte Azure-Teil im Browserfenster. Ihre lokale Maschine
+bleibt unangetastet.
+
 <details markdown="1">
 <summary>Optional: Skripte vor der Ausführung prüfen</summary>
 
@@ -304,14 +334,15 @@ sobald das Infra-Paket lokal verfügbar ist.
 
 </details>
 
-Führen Sie diesen Befehl in PowerShell 7+ aus:
+Wenn Sie stattdessen lokal in PowerShell 7+ arbeiten möchten, führen Sie
+diesen Befehl aus:
 
 ```powershell
 & ([scriptblock]::Create((iwr 'https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/main/azure-function/infra/install.ps1').Content))
 ```
 
-Unter macOS oder Linux können Sie stattdessen aus einer normalen Shell
-starten. Dieser Bootstrapper installiert PowerShell bei Bedarf und führt dann
+Unter macOS oder Linux können Sie alternativ aus einer normalen Shell starten.
+Dieser Bootstrapper installiert PowerShell bei Bedarf und führt dann
 denselben Installer aus:
 
 ```bash

@@ -265,6 +265,8 @@ declare interface IGuestSponsorInfoWebPartStrings {
   WelcomeDialogSetupGuideNote: string;
   WelcomeDialogDeployToAzureLabel: string;
   WelcomeDialogDeployNote: string;
+  /** Hint below the PowerShell one-liner that recommends Azure Cloud Shell as the easiest path. */
+  WelcomeDialogCloudShellHint: string;
   /** Compact heading for the setup preflight checklist in the wizard. */
   WelcomeDialogPreflightTitle: string;
   /** Checklist item describing automatic tool checks/installation. */

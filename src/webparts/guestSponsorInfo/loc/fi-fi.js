@@ -240,6 +240,8 @@ define([], function () {
     WelcomeDialogDeployToAzureLabel: "Ota API käyttöön Azuressa",
     WelcomeDialogDeployNote:
       "Tämä vaihtoehto edellyttää, että Guest Sponsor -ohjelmointirajapinta on otettu käyttöön Azure-tilaussasi. Voit tehdä sen tässä \u2014 se vie vain muutaman minuutin.",
+    WelcomeDialogCloudShellHint:
+      "For the easiest setup, copy this PowerShell command into Azure Cloud Shell. That way you do not need to install anything on your local machine.",
     WelcomeDialogPreflightTitle: "Before deployment, the installer checks:",
     WelcomeDialogPreflightTools: "PowerShell, Azure CLI, Azure Developer CLI, and Bicep support.",
     WelcomeDialogPreflightSignIn: "Azure sign-in and the target subscription.",

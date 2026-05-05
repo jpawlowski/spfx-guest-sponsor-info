@@ -242,6 +242,8 @@ define([], function () {
     WelcomeDialogDeployToAzureLabel: "Déployer l'API dans Azure",
     WelcomeDialogDeployNote:
       "Cette option nécessite que l'API Guest Sponsor soit déployée dans votre abonnement Azure. Vous pouvez le faire ici même \u2014 cela ne prend que quelques minutes.",
+    WelcomeDialogCloudShellHint:
+      "For the easiest setup, copy this PowerShell command into Azure Cloud Shell. That way you do not need to install anything on your local machine.",
     WelcomeDialogPreflightTitle: "Before deployment, the installer checks:",
     WelcomeDialogPreflightTools: "PowerShell, Azure CLI, Azure Developer CLI, and Bicep support.",
     WelcomeDialogPreflightSignIn: "Azure sign-in and the target subscription.",

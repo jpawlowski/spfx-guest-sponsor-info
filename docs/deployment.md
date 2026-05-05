@@ -541,13 +541,17 @@ request it explicitly. The script then runs the interactive deployment wizard
 (`deploy-azure.ps1`) and cleans up afterwards. No local repository clone is
 required.
 
+For the browser-based path, open [Azure Cloud Shell](https://shell.azure.com/).
+If you want a quick preview of the current first-run screens, see
+[Get started with Azure Cloud Shell](https://learn.microsoft.com/en-us/azure/cloud-shell/get-started/ephemeral).
+
 Run this command in PowerShell 7+:
 
 ```powershell
 & ([scriptblock]::Create((iwr 'https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/main/azure-function/infra/install.ps1').Content))
 ```
 
-In Azure Cloud Shell, prefer this PowerShell entry point instead of
+In [Azure Cloud Shell](https://shell.azure.com/), prefer this PowerShell entry point instead of
 `install.sh`. The wizard reuses the active Cloud Shell Azure login and keeps
 the shared `~/.azure` and `~/.azd` directories in place for the run. For the
 Azure side of the deployment, this is the recommended installation path. If
@@ -741,10 +745,11 @@ separate privileged workstation.
 > Administrator step can be deferred. Cloud Application Administrator is
 > always required for the Entra bootstrap to succeed.
 
-Azure Cloud Shell is often the simplest Step A environment on a PAW. It runs
+[Azure Cloud Shell](https://shell.azure.com/) is often the simplest Step A environment on a PAW. It runs
 in the browser, uses Cloud Shell's own PowerShell / Azure CLI toolchain, and
 does not depend on what is installed locally on the PAW. If your PAW policy
-allows access to Azure Cloud Shell, prefer that path for the deployment step.
+allows access to [Azure Cloud Shell](https://shell.azure.com/), prefer that
+path for the deployment step.
 
 **Prerequisites (Azure Cloud Shell or standard machine):**
 

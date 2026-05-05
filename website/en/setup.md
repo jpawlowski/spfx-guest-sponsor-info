@@ -21,7 +21,7 @@ Guest Sponsor Info setup has three phases:
 | Phase | Where | Minimum role required |
 |---|---|---|
 | 1 — SharePoint | SharePoint Admin Center + landing page site | SharePoint Administrator |
-| 2 — Guest Sponsor API | PowerShell (`install.ps1` via `iwr`) or shell (`install.sh` via `curl`) | Azure Contributor + Owner + Entra roles via PIM |
+| 2 — Guest Sponsor API | [Azure Cloud Shell](https://shell.azure.com/) (recommended) or local PowerShell/shell | Azure Contributor + Owner + Entra roles via PIM |
 | 3 — Web part | SharePoint landing page (edit mode) | Site Owner |
 
 > [!NOTE]
@@ -266,6 +266,34 @@ powered by the
 
 ### Run the installer
 
+> [!TIP]
+> **[Azure Cloud Shell](https://shell.azure.com/) is the easiest path for most administrators.**
+>
+> Open [Azure Cloud Shell](https://shell.azure.com/), switch to
+> **PowerShell**, and run the installer there directly. That means you do not
+> need to prepare anything on your local machine: no local PowerShell
+> installation, no Azure CLI, no `azd`, no `curl`, and no Homebrew.
+>
+> The deployment wizard detects [Azure Cloud Shell](https://shell.azure.com/)
+> automatically, reuses the active Azure sign-in, and can install `azd` into
+> the Cloud Shell home directory when needed.
+>
+> If you want a quick preview of the current first-run experience, see
+> [Get started with Azure Cloud Shell](https://learn.microsoft.com/en-us/azure/cloud-shell/get-started/ephemeral).
+
+**Recommended default path: [Azure Cloud Shell](https://shell.azure.com/) (PowerShell)**
+
+1. Open [Azure Cloud Shell](https://shell.azure.com/).
+2. Choose **PowerShell**.
+3. Run this command:
+
+```powershell
+& ([scriptblock]::Create((iwr 'https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/main/azure-function/infra/install.ps1').Content))
+```
+
+This keeps the full Azure deployment flow inside the browser session. Your
+local machine stays untouched.
+
 <details markdown="1">
 <summary>Optional: review the scripts before you run them</summary>
 
@@ -290,14 +318,14 @@ is available locally.
 
 </details>
 
-Run this command in PowerShell 7+:
+If you prefer to run locally in PowerShell 7+, use this command:
 
 ```powershell
 & ([scriptblock]::Create((iwr 'https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/main/azure-function/infra/install.ps1').Content))
 ```
 
-On macOS or Linux, you can start from a plain shell instead. This installs
-PowerShell when needed, then runs the same installer:
+On macOS or Linux, you can alternatively start from a plain shell. This
+installs PowerShell when needed, then runs the same installer:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/main/azure-function/infra/install.sh | bash

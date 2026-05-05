@@ -677,6 +677,9 @@ const Step2Setup: React.FC<IStep2SetupProps> = ({
             {strings.WelcomeDialogOptionApiDocsLabel}
           </Link>
           <Text size={200} block className={classes.muted}>{strings.WelcomeDialogDeployNote}</Text>
+          {commandMode === 'powershell' && (
+            <Text size={200} block className={classes.muted}>{strings.WelcomeDialogCloudShellHint}</Text>
+          )}
           <Text size={200} weight="semibold" block>{strings.WelcomeDialogPreflightTitle}</Text>
           <ul className={classes.preflightList}>
             <li>{strings.WelcomeDialogPreflightTools}</li>

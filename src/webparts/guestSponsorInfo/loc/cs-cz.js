@@ -242,6 +242,8 @@ define([], function () {
     WelcomeDialogDeployToAzureLabel: "Nasadit API do Azure",
     WelcomeDialogDeployNote:
       "Tato možnost vyžaduje nasazení Guest Sponsor API ve vašem předplatném Azure. Můžete to provést přímo zde — zabere to jen pár minut.",
+    WelcomeDialogCloudShellHint:
+      "For the easiest setup, copy this PowerShell command into Azure Cloud Shell. That way you do not need to install anything on your local machine.",
     WelcomeDialogPreflightTitle: "Before deployment, the installer checks:",
     WelcomeDialogPreflightTools: "PowerShell, Azure CLI, Azure Developer CLI, and Bicep support.",
     WelcomeDialogPreflightSignIn: "Azure sign-in and the target subscription.",
