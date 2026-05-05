@@ -1,0 +1,4 @@
+{
+  "_comment": "Devcontainer-friendly defaults seeded into ~/.copilot/settings.json on first container build. Edit ~/.copilot/settings.json directly; re-running post-create.sh will not overwrite your customizations.",
+  "includeCoAuthoredBy": false
+}

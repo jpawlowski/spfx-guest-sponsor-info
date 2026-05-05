@@ -171,6 +171,17 @@ if [[ -f .claude/settings.local.json.template && ! -f .claude/settings.local.jso
   echo "${C_GRN}✓${C_RST} Seeded .claude/settings.local.json from template."
 fi
 
+# Seed Copilot CLI user settings on first container build.
+# includeCoAuthoredBy is only supported in the user-level ~/.copilot/settings.json,
+# so the dev container seeds that file instead of using repository settings.
+COPILOT_SETTINGS_DIR="${HOME}/.copilot"
+COPILOT_SETTINGS_FILE="${COPILOT_SETTINGS_DIR}/settings.json"
+if [[ -f .devcontainer/copilot-settings.json.template && ! -f "${COPILOT_SETTINGS_FILE}" ]]; then
+  mkdir -p "${COPILOT_SETTINGS_DIR}"
+  cp .devcontainer/copilot-settings.json.template "${COPILOT_SETTINGS_FILE}"
+  echo "${C_GRN}✓${C_RST} Seeded ~/.copilot/settings.json with dev container defaults."
+fi
+
 # Install repo-defined APM packages so every contributor gets the same shared
 # skills and agent context immediately after container creation.
 if [[ -f apm.yml ]]; then
