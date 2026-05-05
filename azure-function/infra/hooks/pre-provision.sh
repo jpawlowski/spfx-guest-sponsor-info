@@ -108,6 +108,12 @@ get_web_part_client_id_from_entra() {
   return 1
 }
 
+is_easy_auth_unique_name_conflict() {
+  local message="$1"
+
+  grep -Eiq 'uniqueName[^[:cntrl:]]*already exists' <<<"${message}"
+}
+
 ensure_azure_cli_bicep_ready() {
   if az bicep version >/dev/null 2>&1; then
     return 0
@@ -209,18 +215,27 @@ prepare_direct_azd_entra_inputs() {
         az group create --name "${resource_group_name}" --location "${location}" --output none >/dev/null
       fi
 
-      deployment_output="$(az deployment group create \
+      stderr_file="$(mktemp "${TMPDIR:-/tmp}/gsi-entra-auth-pre.XXXXXX")"
+      deployment_output=''
+      deployment_stderr=''
+      deployment_exit_code=0
+      if deployment_output="$(az deployment group create \
         --name 'gsi-entra-auth-pre' \
         --resource-group "${resource_group_name}" \
         --template-file "${INFRA_DIR}/entra-auth.bicep" \
         --parameters "functionAppName=${function_app_name}" \
         --query 'properties.outputs.webPartClientId.value' \
-        -o tsv 2>&1)"
-      deployment_exit_code=$?
+        -o tsv 2>"${stderr_file}")"; then
+        deployment_exit_code=0
+      else
+        deployment_exit_code=$?
+      fi
+      deployment_stderr="$(cat "${stderr_file}")"
+      rm -f "${stderr_file}"
 
       if [[ ${deployment_exit_code} -eq 0 ]]; then
         app_client_id="${deployment_output}"
-      elif grep -q 'same value for property uniqueName already exists' <<<"${deployment_output}"; then
+      elif is_easy_auth_unique_name_conflict "${deployment_stderr}"; then
         app_client_id="$(get_web_part_client_id_from_entra "${function_app_name}" || true)"
       else
         app_client_id=''

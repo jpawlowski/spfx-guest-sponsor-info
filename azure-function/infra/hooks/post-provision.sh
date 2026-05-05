@@ -40,6 +40,29 @@ print_summary_line() {
   printf '  %-28s: %s\n' "${label}" "${value}"
 }
 
+get_web_part_client_id_from_entra() {
+  local function_app_name="$1"
+  local identifier_uri=''
+  local app_reg_unique_name=''
+  local resolved_client_id=''
+
+  identifier_uri="api://guest-sponsor-info-${function_app_name}"
+  resolved_client_id="$(az ad app show --id "${identifier_uri}" --query 'appId' -o tsv 2>/dev/null || true)"
+  if [[ -n "${resolved_client_id}" && "${resolved_client_id}" != 'null' ]]; then
+    printf '%s\n' "${resolved_client_id}"
+    return 0
+  fi
+
+  app_reg_unique_name="guest-sponsor-info-proxy-${function_app_name}"
+  resolved_client_id="$(az ad app list --filter "uniqueName eq '${app_reg_unique_name}'" --query '[0].appId' -o tsv 2>/dev/null || true)"
+  if [[ -n "${resolved_client_id}" && "${resolved_client_id}" != 'null' ]]; then
+    printf '%s\n' "${resolved_client_id}"
+    return 0
+  fi
+
+  return 1
+}
+
 # shellcheck disable=SC1090  # process substitution: no static path to specify
 source <(azd env get-values)
 
@@ -86,8 +109,7 @@ fi
 # App Registration directly by its deterministic identifier URI and sync the
 # azd environment so both this hook and deploy-azure.ps1 print the real client ID.
 if [[ -n "${FUNCTION_APP_NAME:-}" ]]; then
-  identifier_uri="api://guest-sponsor-info-${FUNCTION_APP_NAME}"
-  if resolved_client_id="$(az ad app show --id "${identifier_uri}" --query 'appId' -o tsv 2>/dev/null)"; then
+  if resolved_client_id="$(get_web_part_client_id_from_entra "${FUNCTION_APP_NAME}" || true)"; then
     if [[ -n "${resolved_client_id}" && "${resolved_client_id}" != "null" ]]; then
       WEB_PART_CLIENT_ID="${resolved_client_id}"
       export WEB_PART_CLIENT_ID

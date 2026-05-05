@@ -110,6 +110,13 @@ function Get-WebPartClientIdFromEntra {
   return $null
 }
 
+function Test-EasyAuthUniqueNameConflict {
+  param([AllowEmptyString()][string]$Message)
+
+  return -not [string]::IsNullOrWhiteSpace($Message) -and
+  $Message -match '(?i)uniqueName[^\r\n]*already exists'
+}
+
 function Test-AzureCliBicepAvailable {
   az bicep version 2>$null | Out-Null
   return $LASTEXITCODE -eq 0
@@ -214,18 +221,31 @@ function Initialize-DirectAzdEntraContext {
         az group create --name $resourceGroupName --location $location --output none | Out-Null
       }
 
-      $deploymentOutput = @(az deployment group create `
-        --name 'gsi-entra-auth-pre' `
-        --resource-group $resourceGroupName `
-        --template-file (Join-Path -Path $infraRoot -ChildPath 'entra-auth.bicep') `
-        --parameters "functionAppName=$functionAppName" `
-        --query 'properties.outputs.webPartClientId.value' `
-        -o tsv 2>&1)
+      $stderrFile = Join-Path ([System.IO.Path]::GetTempPath()) "gsi-entra-auth-pre-$([guid]::NewGuid().ToString('n')).log"
+      $deploymentExitCode = 0
+      $deploymentOutput = $null
+      $deploymentErrorText = ''
+      try {
+        $deploymentOutput = @(az deployment group create `
+            --name 'gsi-entra-auth-pre' `
+            --resource-group $resourceGroupName `
+            --template-file (Join-Path -Path $infraRoot -ChildPath 'entra-auth.bicep') `
+            --parameters "functionAppName=$functionAppName" `
+            --query 'properties.outputs.webPartClientId.value' `
+            -o tsv 2>$stderrFile)
+        $deploymentExitCode = $LASTEXITCODE
+        if (Test-Path -Path $stderrFile) {
+          $deploymentErrorText = (Get-Content -Path $stderrFile -Raw -ErrorAction SilentlyContinue).Trim()
+        }
+      }
+      finally {
+        Remove-Item -Path $stderrFile -Force -ErrorAction SilentlyContinue
+      }
 
-      if ($LASTEXITCODE -eq 0) {
+      if ($deploymentExitCode -eq 0) {
         $webPartClientId = ($deploymentOutput | Out-String).Trim()
       }
-      elseif ((($deploymentOutput | Out-String).Trim()) -match 'same value for property uniqueName already exists') {
+      elseif (Test-EasyAuthUniqueNameConflict -Message $deploymentErrorText) {
         $webPartClientId = Get-WebPartClientIdFromEntra -FunctionAppName $functionAppName
       }
       else {

@@ -44,6 +44,34 @@ function Write-SummaryLine {
   Write-Host ('  {0,-28}: {1}' -f $Label, $_displayValue)
 }
 
+function Get-WebPartClientIdFromEntra {
+  param([Parameter(Mandatory)][string]$FunctionAppName)
+
+  try {
+    $_identifierUri = "api://guest-sponsor-info-$FunctionAppName"
+    $_resolvedClientId = (az ad app show --id $_identifierUri --query 'appId' -o tsv 2>$null).Trim()
+    if ($_resolvedClientId -and $_resolvedClientId -ne 'null') {
+      return $_resolvedClientId
+    }
+  }
+  catch {
+    Write-Verbose "Could not resolve EasyAuth App Registration client ID by identifier URI from Entra: $_"
+  }
+
+  try {
+    $_appRegUniqueName = "guest-sponsor-info-proxy-$FunctionAppName"
+    $_resolvedClientId = (az ad app list --filter "uniqueName eq '$_appRegUniqueName'" --query '[0].appId' -o tsv 2>$null).Trim()
+    if ($_resolvedClientId -and $_resolvedClientId -ne 'null') {
+      return $_resolvedClientId
+    }
+  }
+  catch {
+    Write-Verbose "Could not resolve EasyAuth App Registration client ID by uniqueName from Entra: $_"
+  }
+
+  return $null
+}
+
 # Load azd environment. azd writes Bicep output names verbatim (camelCase) to
 # the .env file and preloads them into the hook process with the same casing.
 foreach ($line in (azd env get-values)) {
@@ -108,19 +136,13 @@ if (-not $env:MANAGED_IDENTITY_OBJECT_ID -and $env:FUNCTION_APP_NAME -and $env:A
 # App Registration directly by its deterministic identifier URI and sync the
 # azd environment so both this hook and deploy-azure.ps1 print the real client ID.
 if ($env:FUNCTION_APP_NAME) {
-  try {
-    $_identifierUri = "api://guest-sponsor-info-$($env:FUNCTION_APP_NAME)"
-    $_resolvedClientId = (az ad app show --id $_identifierUri --query 'appId' -o tsv 2>$null).Trim()
-    if ($_resolvedClientId -and $_resolvedClientId -ne 'null') {
-      $env:WEB_PART_CLIENT_ID = $_resolvedClientId
-      $env:webPartClientId = $_resolvedClientId
-      $env:AZURE_WEB_PART_CLIENT_ID = $_resolvedClientId
-      Sync-AzdEnvValue -Name 'AZURE_WEB_PART_CLIENT_ID' -Value $_resolvedClientId
-      Sync-AzdEnvValue -Name 'webPartClientId' -Value $_resolvedClientId
-    }
-  }
-  catch {
-    Write-Verbose "Could not resolve EasyAuth App Registration client ID from Entra: $_"
+  $_resolvedClientId = Get-WebPartClientIdFromEntra -FunctionAppName $env:FUNCTION_APP_NAME
+  if ($_resolvedClientId) {
+    $env:WEB_PART_CLIENT_ID = $_resolvedClientId
+    $env:webPartClientId = $_resolvedClientId
+    $env:AZURE_WEB_PART_CLIENT_ID = $_resolvedClientId
+    Sync-AzdEnvValue -Name 'AZURE_WEB_PART_CLIENT_ID' -Value $_resolvedClientId
+    Sync-AzdEnvValue -Name 'webPartClientId' -Value $_resolvedClientId
   }
 }
 

@@ -944,6 +944,13 @@ function Get-EasyAuthAppRegistrationIdentifierUri {
   return "api://guest-sponsor-info-$FunctionAppName"
 }
 
+function Test-EasyAuthUniqueNameConflict {
+  param([AllowEmptyString()][string]$Message)
+
+  return -not [string]::IsNullOrWhiteSpace($Message) -and
+  $Message -match '(?i)uniqueName[^\r\n]*already exists'
+}
+
 function Get-DeletedEasyAuthApplication {
   param([Parameter(Mandatory)][string]$FunctionAppName)
 
@@ -1186,12 +1193,11 @@ function Invoke-EntraAuthBootstrapProvision {
   }
   catch {
     $_existingClientId = $null
-    if ($_.Exception.Message -match 'same value for property uniqueName already exists') {
+    if (Test-EasyAuthUniqueNameConflict -Message $_.Exception.Message) {
       $_existingClientId = Get-WebPartClientId -FunctionAppName $FunctionAppName
       if ($_existingClientId) {
         return [pscustomobject]@{
-          webPartClientId           = [pscustomobject]@{ value = $_existingClientId }
-          appRegistrationUniqueName = [pscustomobject]@{ value = (Get-EasyAuthAppRegistrationUniqueName -FunctionAppName $FunctionAppName) }
+          webPartClientId = [pscustomobject]@{ value = $_existingClientId }
         }
       }
 
@@ -2860,6 +2866,7 @@ try {
   $_azdWebPartClientId = $null
   $_azdMiOid = $null
   $_azdFunctionAppName = if ($FunctionAppName) { $FunctionAppName } else { $null }
+  $_outputResourceGroup = if ($ResourceGroupName) { $ResourceGroupName } elseif ($env:AZURE_RESOURCE_GROUP) { $env:AZURE_RESOURCE_GROUP } else { $null }
   if (-not $_whatIf) {
     try {
       $_azdEnvVals = azd env get-values 2>$null
@@ -2880,8 +2887,8 @@ try {
     }
 
     $_functionAppMetadata = $null
-    if ($env:AZURE_RESOURCE_GROUP) {
-      $_functionAppMetadata = Get-DeployedFunctionAppInfo -ResourceGroup $env:AZURE_RESOURCE_GROUP -FunctionAppName $_azdFunctionAppName
+    if ($_outputResourceGroup) {
+      $_functionAppMetadata = Get-DeployedFunctionAppInfo -ResourceGroup $_outputResourceGroup -FunctionAppName $_azdFunctionAppName
       if ($_functionAppMetadata) {
         if (-not $_azdFunctionAppName -and $_functionAppMetadata.name) {
           $_azdFunctionAppName = [string]$_functionAppMetadata.name
@@ -2893,6 +2900,29 @@ try {
           $_azdMiOid = [string]$_functionAppMetadata.principalId
         }
       }
+    }
+
+    if (-not $_azdFunctionBaseUrl -and $_azdFunctionAppName -and $_outputResourceGroup) {
+      try {
+        $_defaultHostName = (Invoke-AzureCliQuiet -Arguments @(
+            'functionapp', 'show',
+            '--resource-group', $_outputResourceGroup,
+            '--name', $_azdFunctionAppName,
+            '--query', 'defaultHostName',
+            '-o', 'tsv'
+          ) | Out-String).Trim()
+
+        if ($_defaultHostName -and $_defaultHostName -ne 'null') {
+          $_azdFunctionBaseUrl = "https://$_defaultHostName"
+        }
+      }
+      catch {
+        Write-Verbose "Could not resolve Function App base URL from Azure CLI after provision: $_"
+      }
+    }
+
+    if (-not $_azdFunctionBaseUrl -and $_azdFunctionAppName) {
+      $_azdFunctionBaseUrl = "https://$($_azdFunctionAppName).azurewebsites.net"
     }
 
     if (-not $_azdWebPartClientId -and $_azdFunctionAppName) {
@@ -2953,10 +2983,7 @@ try {
     $_ns.Add(('  {0,-28}: {1}' -f 'Guest Sponsor API Base URL', $_azdFunctionBaseUrl))
   }
   else {
-    $_ns.Add(('  {0,-28}: {1}' -f 'Guest Sponsor API Base URL', 'see the function app URL in the Azure portal'))
-    if ($env:AZURE_RESOURCE_GROUP) {
-      $_ns.Add(('  {0,-28}: {1}' -f 'Resource group', $env:AZURE_RESOURCE_GROUP))
-    }
+    $_ns.Add(('  {0,-28}: {1}' -f 'Guest Sponsor API Base URL', 'could not be resolved automatically'))
   }
   if (-not $_whatIf) {
     if ($_azdWebPartClientId) {
