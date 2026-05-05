@@ -816,17 +816,46 @@ function Get-WebPartClientId {
 }
 
 function Get-SetupGraphPermissionsScriptReference {
-  $_repoRoot = Get-RepoRoot
-  if (Test-Path (Join-Path $_repoRoot '.git')) {
-    return (Join-Path $PSScriptRoot 'setup-graph-permissions.ps1')
+  $_localScript = Join-Path $PSScriptRoot 'setup-graph-permissions.ps1'
+  if (Test-Path $_localScript) {
+    return $_localScript
   }
 
   $_releaseBaseUrl = 'https://github.com/workoho/spfx-guest-sponsor-info/releases'
   if ($InstallerVersion -and $InstallerVersion -ne 'latest') {
-    return "$_releaseBaseUrl/download/$InstallerVersion/setup-graph-permissions.ps1"
+    if ($InstallerVersion -match '^v[0-9]+\.[0-9]+\.[0-9]+([.-][A-Za-z0-9.]+)?$') {
+      return "$_releaseBaseUrl/download/$InstallerVersion/setup-graph-permissions.ps1"
+    }
+
+    $_installerRef = [System.Uri]::EscapeDataString($InstallerVersion)
+    return "https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/$_installerRef/azure-function/infra/setup-graph-permissions.ps1"
   }
 
   return "$_releaseBaseUrl/latest/download/setup-graph-permissions.ps1"
+}
+
+function Get-InstallerSourceDisplayText {
+  if ($InstallerVersion) {
+    if ($InstallerVersion -eq 'latest' -or $InstallerVersion -match '^v[0-9]+\.[0-9]+\.[0-9]+([.-][A-Za-z0-9.]+)?$') {
+      return "downloaded release package ($InstallerVersion)"
+    }
+
+    return "downloaded repository snapshot ($InstallerVersion)"
+  }
+
+  if (Test-Path (Join-Path $PSScriptRoot 'azure.yaml')) {
+    return 'local extracted infra package'
+  }
+
+  return 'local repository checkout'
+}
+
+function Get-FunctionPackageDisplayText {
+  if ($AppVersion -eq 'latest') {
+    return 'latest release'
+  }
+
+  return $AppVersion
 }
 
 function Install-AzureCliIfNeeded {
@@ -1746,6 +1775,9 @@ try {
   Write-Host ''
   Write-Host "  Guest Sponsor Info  $(if ($_u) { [string][char]0x00B7 } else { '|' })  Azure Deployment" -ForegroundColor DarkCyan
   Write-Host $_sep -ForegroundColor DarkGray
+  Write-Host "  Installer source   : $(Get-InstallerSourceDisplayText)" -ForegroundColor DarkGray
+  Write-Host "  Function package   : $(Get-FunctionPackageDisplayText)" -ForegroundColor DarkGray
+  Write-Host ''
   Show-PreflightOverview
 
   # ── Install tools and connect to Azure ────────────────────────────────────

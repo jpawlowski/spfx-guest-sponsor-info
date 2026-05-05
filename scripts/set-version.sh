@@ -344,6 +344,13 @@ if [[ -f "azure-function/infra/install.ps1" ]]; then
   sed -i -E \
     "s|${_RAW_BASE}/[^/]+/azure-function/infra/install.ps1|${_RAW_BASE}/${VTAG}/azure-function/infra/install.ps1|g" \
     "azure-function/infra/install.ps1"
+
+  # Keep tagged installers self-consistent by defaulting Version to the tag
+  # that is being cut, rather than to the mutable main branch.
+  sed -i -E \
+    "s|\[string\]\$Version = '[^']+'|[string]\$Version = '${VTAG}'|" \
+    "azure-function/infra/install.ps1"
+
   echo "${C_GRN}✓${C_RST} azure-function/infra/install.ps1 → ${C_CYN}${VTAG}${C_RST}"
 fi
 

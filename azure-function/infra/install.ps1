@@ -5,16 +5,20 @@
     Downloads the Guest Sponsor Info infra package and runs the deployment wizard.
 
 .DESCRIPTION
-    Downloads the infra release package from GitHub, extracts it to a temporary
-    directory, and runs deploy-azure.ps1. All parameters are forwarded to the
-    wizard. The temporary directory is removed when the wizard exits.
+  Downloads the Guest Sponsor Info infra package or a repository snapshot
+  from GitHub, extracts it to a temporary directory, and runs
+  deploy-azure.ps1. All parameters are forwarded to the wizard. The
+  temporary directory is removed when the wizard exits.
 
     This script is the recommended iwr entry point:
 
-      & ([scriptblock]::Create((iwr 'https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/v1.2.1/azure-function/infra/install.ps1').Content))
+      & ([scriptblock]::Create((iwr 'https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/main/azure-function/infra/install.ps1').Content))
 
 .PARAMETER Version
-    Release tag to download (e.g. "v1.2.0"). Defaults to "latest".
+  Installer payload source. Supports release tags (e.g. "v1.2.0"),
+  "latest" for the newest published release, and "main" for the current
+  main branch snapshot. Defaults to "main" on the mutable branch and is
+  stamped to the release tag during release packaging.
 
 .PARAMETER AzdEnvironmentName
     Forwarded to deploy-azure.ps1.
@@ -62,10 +66,10 @@
     Forwarded to deploy-azure.ps1.
 
 .EXAMPLE
-    & ([scriptblock]::Create((iwr 'https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/v1.2.1/azure-function/infra/install.ps1').Content))
+    & ([scriptblock]::Create((iwr 'https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/main/azure-function/infra/install.ps1').Content))
 
 .EXAMPLE
-    & ([scriptblock]::Create((iwr 'https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/v1.2.1/azure-function/infra/install.ps1').Content)) -Version v1.2.0 -ResourceGroupName rg-gsi -TenantName contoso
+    & ([scriptblock]::Create((iwr 'https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/main/azure-function/infra/install.ps1').Content)) -Version v1.2.0 -ResourceGroupName rg-gsi -TenantName contoso
 
 .NOTES
     Copyright 2026 Workoho GmbH <https://workoho.com>
@@ -77,7 +81,7 @@
 #Requires -Version 5.1
 [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
 param(
-  [string]$Version = 'latest',
+  [string]$Version = 'main',
   [string]$AzdEnvironmentName,
   [string]$ResourceGroupName,
   [string]$AzureLocation,
@@ -167,22 +171,58 @@ function Get-ReleaseAssetSha256 {
   return $_digest.Substring(7).ToUpperInvariant()
 }
 
+function Test-ReleasePackageVersion {
+  param([Parameter(Mandatory)][string]$Version)
+
+  return $Version -eq 'latest' -or $Version -match '^v[0-9]+\.[0-9]+\.[0-9]+([.-][A-Za-z0-9.]+)?$'
+}
+
+function Get-InstallerDownloadPlan {
+  param([Parameter(Mandatory)][string]$Version)
+
+  $_releaseBaseUrl = 'https://github.com/workoho/spfx-guest-sponsor-info/releases'
+  if (Test-ReleasePackageVersion -Version $Version) {
+    return [pscustomobject]@{
+      SourceKind   = 'release-package'
+      DisplayLabel = "release package ($Version)"
+      ZipUrl       = if ($Version -eq 'latest') {
+        "$_releaseBaseUrl/latest/download/guest-sponsor-info-infra.zip"
+      }
+      else {
+        "$_releaseBaseUrl/download/$Version/guest-sponsor-info-infra.zip"
+      }
+      ChecksumsUrl = if ($Version -eq 'latest') {
+        "$_releaseBaseUrl/latest/download/checksums.txt"
+      }
+      else {
+        "$_releaseBaseUrl/download/$Version/checksums.txt"
+      }
+    }
+  }
+
+  $_escapedRef = [System.Uri]::EscapeDataString($Version)
+  return [pscustomobject]@{
+    SourceKind   = 'repo-snapshot'
+    DisplayLabel = "repository snapshot ($Version)"
+    ZipUrl       = "https://github.com/workoho/spfx-guest-sponsor-info/archive/refs/heads/$_escapedRef.zip"
+    ChecksumsUrl = $null
+  }
+}
+
+function Get-FunctionPackageDisplayText {
+  param([Parameter(Mandatory)][string]$Version)
+
+  if ($Version -eq 'latest') {
+    return 'latest release'
+  }
+
+  return $Version
+}
+
 # ── Resolve download URLs ─────────────────────────────────────────────────────
-# "latest" resolves via the GitHub "latest" redirect; a specific tag uses
-# the direct download path.
-$_baseUrl = 'https://github.com/workoho/spfx-guest-sponsor-info/releases'
-$_zipUrl = if ($Version -eq 'latest') {
-  "$_baseUrl/latest/download/guest-sponsor-info-infra.zip"
-}
-else {
-  "$_baseUrl/download/$Version/guest-sponsor-info-infra.zip"
-}
-$_checksumsUrl = if ($Version -eq 'latest') {
-  "$_baseUrl/latest/download/checksums.txt"
-}
-else {
-  "$_baseUrl/download/$Version/checksums.txt"
-}
+$_downloadPlan = Get-InstallerDownloadPlan -Version $Version
+$_zipUrl = $_downloadPlan.ZipUrl
+$_checksumsUrl = $_downloadPlan.ChecksumsUrl
 
 # ── Temporary paths ───────────────────────────────────────────────────────────
 $_tempBase = [System.IO.Path]::GetTempPath()
@@ -194,7 +234,9 @@ $_extractDir = Join-Path $_tempBase "gsi-infra-$_tempSuffix"
 Write-Host ''
 Write-Host '  Guest Sponsor Info  ·  Installer' -ForegroundColor DarkCyan
 Write-Host ('  ' + ('─' * 58)) -ForegroundColor DarkGray
-Write-Host "  Downloading infra package ($Version)..." -ForegroundColor DarkGray
+Write-Host "  Installer payload : $($_downloadPlan.DisplayLabel)" -ForegroundColor DarkGray
+Write-Host "  Function package  : $(Get-FunctionPackageDisplayText -Version $AppVersion)" -ForegroundColor DarkGray
+Write-Host "  Downloading $($_downloadPlan.DisplayLabel)..." -ForegroundColor DarkGray
 Write-Host "  Source: $_zipUrl" -ForegroundColor DarkGray
 Write-Host ''
 
@@ -206,7 +248,7 @@ try {
   catch {
     $_statusCode = Get-HttpStatusCodeFromException -Exception $_.Exception
     if ($_statusCode -eq 404) {
-      if ($Version -eq 'latest') {
+      if ($_downloadPlan.SourceKind -eq 'release-package' -and $Version -eq 'latest') {
         throw (
           "Infra package for the latest release was not found (404).`n" +
           "The release may not be fully published yet.`n" +
@@ -214,9 +256,17 @@ try {
         )
       }
 
+      if ($_downloadPlan.SourceKind -eq 'release-package') {
+        throw (
+          "Infra package for release '$Version' was not found (404).`n" +
+          "Verify the release tag and check that release assets are published.`n" +
+          "URL: $_zipUrl"
+        )
+      }
+
       throw (
-        "Infra package for release '$Version' was not found (404).`n" +
-        "Verify the release tag and check that release assets are published.`n" +
+        "Repository snapshot for ref '$Version' was not found (404).`n" +
+        "Verify the branch name and that the ref exists on GitHub.`n" +
         "URL: $_zipUrl"
       )
     }
@@ -224,70 +274,85 @@ try {
     throw
   }
 
-  # ── SHA256 integrity check ──────────────────────────────────────────────────
-  # Primary source: checksums.txt from the same release.
-  # Fallback source: GitHub release asset digest (sha256) from the API.
-  # This catches truncated downloads or CDN-level tampering.
-  Write-Host '  Verifying SHA256 checksum...' -ForegroundColor DarkGray
-  $_checksumsDownloaded = $false
-  try {
-    Invoke-WebRequest -Uri $_checksumsUrl -OutFile $_checksumsFile -UseBasicParsing
-    $_checksumsDownloaded = $true
-  }
-  catch {
-    $_statusCode = Get-HttpStatusCodeFromException -Exception $_.Exception
-    if ($_statusCode -eq 404) {
-      Write-Warning (
-        "checksums.txt was not found (404). Falling back to GitHub release asset digest for integrity verification.`n" +
-        "URL: $_checksumsUrl"
-      )
+  if ($_downloadPlan.SourceKind -eq 'release-package') {
+    # ── SHA256 integrity check ────────────────────────────────────────────────
+    # Primary source: checksums.txt from the same release.
+    # Fallback source: GitHub release asset digest (sha256) from the API.
+    # This catches truncated downloads or CDN-level tampering.
+    Write-Host '  Verifying SHA256 checksum...' -ForegroundColor DarkGray
+    $_checksumsDownloaded = $false
+    try {
+      Invoke-WebRequest -Uri $_checksumsUrl -OutFile $_checksumsFile -UseBasicParsing
+      $_checksumsDownloaded = $true
     }
-    else {
-      throw
-    }
-  }
-
-  $_expectedHash = $null
-
-  if ($_checksumsDownloaded) {
-    # Parse "hash  filename" lines; find the entry for guest-sponsor-info-infra.zip.
-    foreach ($_line in (Get-Content $_checksumsFile)) {
-      $_parts = $_line -split '\s+', 2
-      if ($_parts.Length -eq 2 -and $_parts[1].Trim() -eq 'guest-sponsor-info-infra.zip') {
-        $_expectedHash = $_parts[0].Trim().ToUpperInvariant()
-        break
+    catch {
+      $_statusCode = Get-HttpStatusCodeFromException -Exception $_.Exception
+      if ($_statusCode -eq 404) {
+        Write-Warning (
+          "checksums.txt was not found (404). Falling back to GitHub release asset digest for integrity verification.`n" +
+          "URL: $_checksumsUrl"
+        )
+      }
+      else {
+        throw
       }
     }
-  }
 
-  if (-not $_expectedHash) {
+    $_expectedHash = $null
+
     if ($_checksumsDownloaded) {
-      Write-Warning 'guest-sponsor-info-infra.zip entry was not found in checksums.txt. Falling back to GitHub release asset digest.'
+      # Parse "hash  filename" lines; find the entry for guest-sponsor-info-infra.zip.
+      foreach ($_line in (Get-Content $_checksumsFile)) {
+        $_parts = $_line -split '\s+', 2
+        if ($_parts.Length -eq 2 -and $_parts[1].Trim() -eq 'guest-sponsor-info-infra.zip') {
+          $_expectedHash = $_parts[0].Trim().ToUpperInvariant()
+          break
+        }
+      }
     }
 
-    $_expectedHash = Get-ReleaseAssetSha256 -Version $Version -AssetName 'guest-sponsor-info-infra.zip'
-    Write-Host '  Using checksum source: GitHub release asset digest' -ForegroundColor DarkGray
-  }
+    if (-not $_expectedHash) {
+      if ($_checksumsDownloaded) {
+        Write-Warning 'guest-sponsor-info-infra.zip entry was not found in checksums.txt. Falling back to GitHub release asset digest.'
+      }
 
-  $_actualHash = (Get-FileHash -Path $_zipFile -Algorithm SHA256).Hash.ToUpperInvariant()
-  if ($_actualHash -ne $_expectedHash) {
-    throw (
-      "SHA256 mismatch for guest-sponsor-info-infra.zip.`n" +
-      "  Expected: $_expectedHash`n" +
-      "  Actual:   $_actualHash`n" +
-      "Download may be corrupt or tampered with. Aborting."
-    )
+      $_expectedHash = Get-ReleaseAssetSha256 -Version $Version -AssetName 'guest-sponsor-info-infra.zip'
+      Write-Host '  Using checksum source: GitHub release asset digest' -ForegroundColor DarkGray
+    }
+
+    $_actualHash = (Get-FileHash -Path $_zipFile -Algorithm SHA256).Hash.ToUpperInvariant()
+    if ($_actualHash -ne $_expectedHash) {
+      throw (
+        "SHA256 mismatch for guest-sponsor-info-infra.zip.`n" +
+        "  Expected: $_expectedHash`n" +
+        "  Actual:   $_actualHash`n" +
+        "Download may be corrupt or tampered with. Aborting."
+      )
+    }
+    Write-Host '  checksum verified.' -ForegroundColor DarkGreen
+    Write-Host ''
   }
-  Write-Host '  checksum verified.' -ForegroundColor DarkGreen
-  Write-Host ''
+  else {
+    Write-Host '  Repository snapshots do not publish release checksums; skipping SHA256 verification.' -ForegroundColor DarkGray
+    Write-Host ''
+  }
 
   # Extract the ZIP (hash verified above).
   Expand-Archive -Path $_zipFile -DestinationPath $_extractDir -Force
 
   # Locate deploy-azure.ps1 inside the extracted tree.
-  # The infra ZIP is flat — all files land at the ZIP root, so deploy-azure.ps1
-  # is directly inside the extract directory (no azure-function/infra/ prefix).
-  $_deployScript = Join-Path $_extractDir 'deploy-azure.ps1'
+  if ($_downloadPlan.SourceKind -eq 'release-package') {
+    # The infra ZIP is flat — all files land at the ZIP root, so deploy-azure.ps1
+    # is directly inside the extract directory (no azure-function/infra/ prefix).
+    $_deployScript = Join-Path $_extractDir 'deploy-azure.ps1'
+  }
+  else {
+    $_repoRoot = @(
+      Get-ChildItem -Path $_extractDir -Directory -ErrorAction Stop | Select-Object -First 1
+    )[0].FullName
+    $_deployScript = Join-Path $_repoRoot 'azure-function/infra/deploy-azure.ps1'
+  }
+
   if (-not (Test-Path $_deployScript)) {
     throw "deploy-azure.ps1 not found in the downloaded package. Expected: $_deployScript"
   }

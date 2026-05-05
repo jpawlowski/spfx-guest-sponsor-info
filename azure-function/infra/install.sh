@@ -13,7 +13,8 @@
 
 set -euo pipefail
 
-INSTALL_PS1_URL="${GSI_INSTALL_PS1_URL:-https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/v1.2.1/azure-function/infra/install.ps1}"
+# scripts/set-version.sh stamps this fallback URL to the exact release tag.
+INSTALL_PS1_URL="${GSI_INSTALL_PS1_URL:-https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/main/azure-function/infra/install.ps1}"
 TMP_DIR=''
 
 cleanup() {
@@ -34,6 +35,73 @@ info() {
 
 have() {
   command -v "$1" >/dev/null 2>&1
+}
+
+get_argument_value() {
+  local option_name="$1"
+  shift
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      "${option_name}")
+        if [[ $# -ge 2 ]]; then
+          printf '%s\n' "$2"
+          return
+        fi
+        ;;
+      "${option_name}="*)
+        printf '%s\n' "${1#*=}"
+        return
+        ;;
+      "${option_name}:"*)
+        printf '%s\n' "${1#*:}"
+        return
+        ;;
+    esac
+    shift
+  done
+}
+
+extract_install_ps1_ref() {
+  if [[ "${INSTALL_PS1_URL}" =~ ^https://raw\.githubusercontent\.com/workoho/spfx-guest-sponsor-info/(.+)/azure-function/infra/install\.ps1$ ]]; then
+    printf '%s\n' "${BASH_REMATCH[1]}"
+    return
+  fi
+
+  printf '%s\n' 'custom-url'
+}
+
+describe_installer_source() {
+  local ref_name="$1"
+
+  case "${ref_name}" in
+    latest)
+      printf '%s\n' 'release package (latest)'
+      ;;
+    v[0-9]*)
+      printf 'release package (%s)\n' "${ref_name}"
+      ;;
+    main)
+      printf '%s\n' 'repository snapshot (main)'
+      ;;
+    custom-url)
+      printf 'custom installer URL (%s)\n' "${INSTALL_PS1_URL}"
+      ;;
+    *)
+      printf 'repository snapshot (%s)\n' "${ref_name}"
+      ;;
+  esac
+}
+
+describe_function_package() {
+  local app_version="$1"
+
+  if [[ -z "${app_version}" || "${app_version}" == 'latest' ]]; then
+    printf '%s\n' 'latest release'
+    return
+  fi
+
+  printf '%s\n' "${app_version}"
 }
 
 run_with_terminal_stdin() {
@@ -242,11 +310,29 @@ run_powershell_installer() {
 }
 
 main() {
+  local install_ps1_ref
+  local explicit_payload_ref
+  local explicit_app_version
+  local payload_display
+
   make_temp_dir
+
+  install_ps1_ref="$(extract_install_ps1_ref)"
+  explicit_payload_ref="$(get_argument_value '-Version' "$@" || true)"
+  explicit_app_version="$(get_argument_value '-AppVersion' "$@" || true)"
+  if [[ -n "${explicit_payload_ref}" ]]; then
+    payload_display="$(describe_installer_source "${explicit_payload_ref}")"
+  else
+    payload_display="$(describe_installer_source "${install_ps1_ref}")"
+  fi
 
   printf '\n'
   printf '  Guest Sponsor Info  -  Bootstrap Installer\n'
   printf '  ----------------------------------------------------------\n'
+  printf '  PowerShell installer  : %s\n' "$(describe_installer_source "${install_ps1_ref}")"
+  printf '  Installer payload     : %s\n' "${payload_display}"
+  printf '  Function package      : %s\n' "$(describe_function_package "${explicit_app_version}")"
+  printf '\n'
 
   have curl || die 'curl is required to download the installer.'
   install_powershell_if_needed
