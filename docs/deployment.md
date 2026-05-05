@@ -548,7 +548,11 @@ Run this command in PowerShell 7+:
 
 In Azure Cloud Shell, prefer this PowerShell entry point instead of
 `install.sh`. The wizard reuses the active Cloud Shell Azure login and keeps
-the shared `~/.azure` and `~/.azd` directories in place for the run.
+the shared `~/.azure` and `~/.azd` directories in place for the run. For the
+Azure side of the deployment, this is the recommended installation path. If
+`azd` is missing, the wizard can install it into the Cloud Shell user profile
+without sudo. With persisted Cloud Shell storage, that is usually a one-time
+setup; ephemeral sessions may need the `azd` install again.
 
 On macOS or Linux, you can start from a plain shell instead. The shell
 bootstrapper installs PowerShell when needed, downloads `install.ps1`, and then

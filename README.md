@@ -208,6 +208,9 @@ Run the following command in PowerShell 7+ to deploy everything in one step:
 In Azure Cloud Shell, prefer this PowerShell entry point instead of
 `install.sh`. The wizard reuses the active Cloud Shell Azure login and only
 falls back to a fresh `az login` when that session is missing or expired.
+For the Azure side of the setup, this is the recommended installation path.
+If `azd` is missing, the wizard can install it into your Cloud Shell user
+profile. With persisted Cloud Shell storage, that is usually a one-time setup.
 
 On macOS or Linux, you can also start from a plain shell. This bootstraps
 PowerShell when needed, then runs the same installer:

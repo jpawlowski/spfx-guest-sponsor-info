@@ -709,6 +709,8 @@ function Show-CloudShellSessionBanner {
   Write-Hint @(
     'Azure Cloud Shell detected.'
     'This run reuses the current Cloud Shell Azure CLI login and shared ~/.azure and ~/.azd directories.'
+    'If azd is missing, the wizard can install it into your Cloud Shell home directory without sudo.'
+    'Persisted Cloud Shell storage usually keeps that azd install for later sessions.'
     'Use -AzureLoginMode browser if you want to force a fresh browser sign-in.'
   )
 }
