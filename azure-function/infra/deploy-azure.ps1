@@ -165,6 +165,7 @@ $script:AzdConfigDir = $null
 $script:AzureAuthIsolationMode = ''
 $script:AzureSessionRootPrefix = 'gsi-azure-session'
 $script:AzdUsesAzureCliAuth = $false
+$script:CanRepairGraphPermissionsInThisRun = $false
 foreach ($_parameterName in $PSBoundParameters.Keys) {
   $null = $script:ExplicitDeployParameters.Add($_parameterName)
 }
@@ -318,6 +319,24 @@ function Test-FunctionAppNameLength {
 # guidance instead of a raw exception. Other errors re-throw normally.
 trap {
   $_errMsg = if ($_.Exception -and $_.Exception.Message) { $_.Exception.Message } else { [string]$_ }
+  if ($_errMsg -match '(?i)Authorization_RequestDenied|insufficient.privilege|graph\.microsoft\.com|Microsoft\.Graph|appRoleAssignments?|appRoleAssignedTo|microsoft\.directory/') {
+    Write-Failure -Lines @(
+      'The request was denied — your account lacks the required permissions.'
+      ''
+      'Required Entra roles:'
+      '  - Privileged Role Administrator      (to assign Graph app roles to the Managed Identity)'
+      '  - Cloud Application Administrator    (to configure the App Registration)'
+      '    (or Application Administrator, or Global Administrator)'
+      ''
+      'If your roles are eligible (PIM): activate them, then re-run.'
+      'If you do not have the roles yet: request them from your admin.'
+    )
+    Write-Link -Url 'https://entra.microsoft.com/#view/Microsoft_Azure_PIMCommon/ActivationMenuBlade/~/aadRoles' `
+      -Text 'PIM → My roles → Entra roles  (activate eligible roles)'
+    Write-Link -Url 'https://entra.microsoft.com/#view/Microsoft_AAD_IAM/RolesManagementMenuBlade/~/AllRoles' `
+      -Text 'Entra admin center → Roles and administrators'
+    return
+  }
   if ($_errMsg -match '(?i)AuthorizationFailed|does not have authorization|403|Forbidden') {
     Write-Failure -Lines @(
       'The request was denied — your account lacks the required permissions.'
@@ -893,6 +912,33 @@ function Enable-AzdAzureCliAuth {
   throw 'Azure Developer CLI could not be configured to reuse the Azure CLI login for this session.'
 }
 
+function Enable-AzdDeploymentStackSupport {
+  $_configKey = 'alpha.deployment.stacks'
+  $_currentValue = ''
+
+  try {
+    $_configOutput = & $script:AzdPath 'config' 'get' $_configKey 2>$null
+    if ($LASTEXITCODE -eq 0) {
+      $_currentValue = [string](@($_configOutput | Where-Object { $_ } | Select-Object -First 1)[0]).Trim()
+    }
+  }
+  catch {
+    $_currentValue = ''
+  }
+
+  if ($_currentValue -notmatch '^(?i:on|true)$') {
+    & $script:AzdPath 'config' 'set' $_configKey 'on' | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+      throw @(
+        'Azure Developer CLI deployment stacks could not be enabled for this session.',
+        'Run ''azd config set alpha.deployment.stacks on'' and retry the deployment.'
+      ) -join ' '
+    }
+  }
+
+  Write-Host "  $_chk azd deployment stacks: enabled for the active azd config." -ForegroundColor Green
+}
+
 function Get-DeployedFunctionAppInfo {
   param(
     [Parameter(Mandatory)][string]$ResourceGroup,
@@ -929,6 +975,72 @@ function Get-DeployedFunctionAppInfo {
   catch {
     Write-Verbose "Could not resolve Function App metadata from Azure CLI: $_"
     return $null
+  }
+}
+
+function Test-ResourceGroupPresence {
+  param([Parameter(Mandatory)][string]$ResourceGroupName)
+
+  try {
+    return ((Invoke-AzureCliQuiet -Arguments @('group', 'exists', '--name', $ResourceGroupName)).Trim() -eq 'true')
+  }
+  catch {
+    return $false
+  }
+}
+
+function Get-AzdEnvironmentStoredValue {
+  param(
+    [Parameter(Mandatory)][string]$EnvName,
+    [Parameter(Mandatory)][string]$Name
+  )
+
+  $_envFile = Join-Path (Get-RepoRoot) ".azure/$EnvName/.env"
+  if (-not (Test-Path $_envFile)) {
+    return ''
+  }
+
+  $_pattern = '^' + [regex]::Escape($Name) + '="?([^\"]*)"?$'
+  $_matchedLine = Get-Content -Path $_envFile -ErrorAction SilentlyContinue |
+  Where-Object { $_ -match $_pattern } |
+  Select-Object -First 1
+  if (-not $_matchedLine) {
+    return ''
+  }
+
+  return $Matches[1]
+}
+
+function Get-GraphPermissionAssignmentRecommendation {
+  param(
+    [Parameter(Mandatory)][string]$EnvName,
+    [Parameter(Mandatory)][string]$ResourceGroupName,
+    [AllowEmptyString()][string]$FunctionAppName
+  )
+
+  $_signals = [System.Collections.Generic.List[string]]::new()
+  $_storedManagedIdentityObjectId = Get-AzdEnvironmentStoredValue -EnvName $EnvName -Name 'managedIdentityObjectId'
+  $_storedGraphAssignmentMarker = Get-AzdEnvironmentStoredValue -EnvName $EnvName -Name 'graphPermissionsAssignedManagedIdentityObjectId'
+  $_storedFunctionAppName = Get-AzdEnvironmentStoredValue -EnvName $EnvName -Name 'functionAppName'
+  $_effectiveFunctionAppName = if ($FunctionAppName) { $FunctionAppName } elseif ($_storedFunctionAppName) { $_storedFunctionAppName } else { '' }
+
+  if ($_storedManagedIdentityObjectId) {
+    $_signals.Add('azd environment already contains a Managed Identity object ID')
+  }
+  if ($_storedGraphAssignmentMarker) {
+    $_signals.Add('azd environment already contains a Graph permission assignment marker')
+  }
+
+  if (Test-ResourceGroupPresence -ResourceGroupName $ResourceGroupName) {
+    $_functionAppInfo = Get-DeployedFunctionAppInfo -ResourceGroup $ResourceGroupName -FunctionAppName $_effectiveFunctionAppName
+    if ($_functionAppInfo) {
+      $_signals.Add("Azure Function App '$($_functionAppInfo.name)' already exists in the target resource group")
+    }
+  }
+
+  return [pscustomobject]@{
+    ProbablyUpdate = $_signals.Count -gt 0
+    Signals        = @($_signals)
   }
 }
 
@@ -1246,6 +1358,39 @@ function Invoke-GraphPermissionProvision {
     '--parameters', "managedIdentityObjectId=$ManagedIdentityObjectId",
     '--output', 'none'
   ) | Out-Null
+}
+
+function Test-GraphPermissionAssignmentCurrent {
+  param(
+    [AllowEmptyString()][string]$AssignedManagedIdentityObjectId,
+    [AllowEmptyString()][string]$CurrentManagedIdentityObjectId
+  )
+
+  return -not [string]::IsNullOrWhiteSpace($CurrentManagedIdentityObjectId) -and
+  $AssignedManagedIdentityObjectId -eq $CurrentManagedIdentityObjectId
+}
+
+function Set-GraphPermissionAssignmentMarker {
+  [CmdletBinding(SupportsShouldProcess)]
+  param(
+    [Parameter(Mandatory)][string]$RepoRoot,
+    [Parameter(Mandatory)][string]$ManagedIdentityObjectId
+  )
+
+  $markerName = 'graphPermissionsAssignedManagedIdentityObjectId'
+  if (-not $PSCmdlet.ShouldProcess("azd environment marker '$markerName'", "Store Managed Identity Object ID '$ManagedIdentityObjectId'")) {
+    return
+  }
+
+  Push-Location -Path $RepoRoot
+  try {
+    Invoke-Azd -Arguments @('env', 'set', $markerName, $ManagedIdentityObjectId)
+  }
+  finally {
+    Pop-Location
+  }
+
+  Set-Item -Path "Env:$markerName" -Value $ManagedIdentityObjectId
 }
 
 function Restart-DeployedFunctionApp {
@@ -2003,6 +2148,7 @@ function Test-DeploymentPrerequisite {
 
   $script:LastPreflightMissingPermissions = $false
   $script:LastPreflightUnverifiedPermissions = $false
+  $script:CanRepairGraphPermissionsInThisRun = $false
   $missing = [System.Collections.Generic.List[string]]::new()
   $subscriptionScope = "/subscriptions/$($script:SubscriptionId)"
   $resourceGroupScope = "$subscriptionScope/resourceGroups/$ResourceGroupName"
@@ -2065,6 +2211,7 @@ function Test-DeploymentPrerequisite {
     $hasPrivilegedRoleAdmin = ($entraRoles | Where-Object {
         $_ -in @('Global Administrator', 'Privileged Role Administrator')
       }).Count -gt 0
+    $script:CanRepairGraphPermissionsInThisRun = -not $SkipGraphRoleAssignments -and $hasPrivilegedRoleAdmin
 
     if ($hasAppAdmin) {
       Write-Host "  $_chk Entra app registration role: available." -ForegroundColor Green
@@ -2147,6 +2294,9 @@ function Invoke-AzdProvision {
   # Tell azd to reuse the Azure CLI token so the user is not prompted to
   # log in a second time via a separate azd browser window.
   Enable-AzdAzureCliAuth
+  # Enable deployment stacks in the active azd config so the wizard does not
+  # silently fall back to non-stack provisioning when it uses an isolated .azd.
+  Enable-AzdDeploymentStackSupport
 
   # Create or select the azd environment, then pre-populate all required env
   # vars so azd does not open any additional interactive prompts during provision.
@@ -2640,6 +2790,16 @@ try {
     }
 
     # ── Graph Permission Assignment ───────────────────────────────────────────
+    $_graphPermissionRecommendation = Get-GraphPermissionAssignmentRecommendation `
+      -EnvName $AzdEnvironmentName `
+      -ResourceGroupName $ResourceGroupName `
+      -FunctionAppName $FunctionAppName
+    $_graphPermissionsDefaultToSkip = $_graphPermissionRecommendation.ProbablyUpdate -and
+    -not $script:ExplicitDeployParameters.Contains('SkipGraphRoleAssignments')
+    if ($_graphPermissionsDefaultToSkip) {
+      $SkipGraphRoleAssignments = $true
+    }
+
     if (Test-DeployParameterPromptRequired -Name 'SkipGraphRoleAssignments') {
       $_graphPermissionsDefault = if ($SkipGraphRoleAssignments) { '2' } else { '1' }
       Write-Host ''
@@ -2648,9 +2808,22 @@ try {
       Write-Host '  Bicep assigns Microsoft Graph app roles to the Managed Identity during'
       Write-Host '  deployment. This requires Privileged Role Administrator in Entra ID.'
       Write-Host ''
-      Write-Host '    [1]  Assign now (default) — requires Privileged Role Administrator'
-      Write-Host '    [2]  Defer — run setup-graph-permissions.ps1 after deployment'
-      Write-Host '         (useful when a separate PAW or account holds that Entra role)'
+      if ($_graphPermissionRecommendation.ProbablyUpdate) {
+        Write-Host '  Existing deployment signals were detected. This looks like an update run.' -ForegroundColor DarkGray
+        foreach ($_signal in $_graphPermissionRecommendation.Signals) {
+          Write-Host "       - $_signal" -ForegroundColor DarkGray
+        }
+        Write-Host '  Default is to leave Microsoft Graph permissions unchanged for this run.' -ForegroundColor DarkGray
+        Write-Host '  Choose [1] only when you intentionally want to assign or repair them now.' -ForegroundColor DarkGray
+        Write-Host ''
+        Write-Host '    [1]  Assign / repair now — requires Privileged Role Administrator'
+        Write-Host '    [2]  Skip for this run (default for updates) — do not change Graph permissions'
+      }
+      else {
+        Write-Host '    [1]  Assign now (default) — requires Privileged Role Administrator'
+        Write-Host '    [2]  Defer — run setup-graph-permissions.ps1 after deployment'
+        Write-Host '         (useful when a separate PAW or account holds that Entra role)'
+      }
       Write-Host ''
       do {
         $_choice = (Read-Host "  Graph permissions [$_graphPermissionsDefault]").Trim()
@@ -2661,10 +2834,19 @@ try {
       } while ($_choice -notin @('1', '2'))
       $SkipGraphRoleAssignments = $_choice -eq '2'
       if ($SkipGraphRoleAssignments) {
-        Write-Host '  Graph role assignments deferred to setup-graph-permissions.ps1.' -ForegroundColor DarkGray
+        if ($_graphPermissionRecommendation.ProbablyUpdate) {
+          Write-Host '  Automatic Graph permission changes are skipped for this update run.' -ForegroundColor DarkGray
+        }
+        else {
+          Write-Host '  Graph role assignments deferred to setup-graph-permissions.ps1.' -ForegroundColor DarkGray
+        }
       }
       Write-Host ''
       $_promptsShown = $true
+    }
+    elseif ($_graphPermissionsDefaultToSkip) {
+      Write-Host ''
+      Write-Host '  Existing deployment detected — automatic Graph permission changes are skipped by default for this run.' -ForegroundColor DarkGray
     }
 
     # ── Required role guidance ────────────────────────────────────────────────
@@ -2769,7 +2951,12 @@ try {
       Write-Host "  Monitoring          : $EnableMonitoring"
       Write-Host "  Function package    : $AppVersion"
       if ($SkipGraphRoleAssignments) {
-        Write-Host '  Graph roles         : deferred to setup-graph-permissions.ps1'
+        if ($_graphPermissionRecommendation.ProbablyUpdate) {
+          Write-Host '  Graph roles         : unchanged by default for detected update'
+        }
+        else {
+          Write-Host '  Graph roles         : deferred to setup-graph-permissions.ps1'
+        }
       }
       else {
         Write-Host '  Graph roles         : app registration before Azure, role assignment after Azure'
@@ -2865,6 +3052,7 @@ try {
   $_azdFunctionBaseUrl = $null
   $_azdWebPartClientId = $null
   $_azdMiOid = $null
+  $_graphPermissionsAssignedMiOid = $null
   $_azdFunctionAppName = if ($FunctionAppName) { $FunctionAppName } else { $null }
   $_outputResourceGroup = if ($ResourceGroupName) { $ResourceGroupName } elseif ($env:AZURE_RESOURCE_GROUP) { $env:AZURE_RESOURCE_GROUP } else { $null }
   if (-not $_whatIf) {
@@ -2879,6 +3067,7 @@ try {
         elseif ($_azdLine -match '^webPartClientId="?([^"]+)"?') { $_azdWebPartClientId = $Matches[1] }
         elseif ($_azdLine -match '^AZURE_WEB_PART_CLIENT_ID="?([^\"]+)"?') { $_azdWebPartClientId = $Matches[1] }
         elseif ($_azdLine -match '^managedIdentityObjectId="?([^"]+)"?') { $_azdMiOid = $Matches[1] }
+        elseif ($_azdLine -match '^graphPermissionsAssignedManagedIdentityObjectId="?([^\"]+)"?') { $_graphPermissionsAssignedMiOid = $Matches[1] }
       }
     }
     catch {
@@ -2942,15 +3131,42 @@ try {
         throw 'Managed Identity Object ID was not available after azd provision; Graph role assignments cannot continue.'
       }
 
-      Write-Host ''
-      Write-Host '  Assigning Microsoft Graph permissions...' -ForegroundColor Cyan
-      Invoke-GraphPermissionProvision `
-        -ResourceGroup $ResourceGroupName `
-        -ManagedIdentityObjectId $_azdMiOid
-      if (-not $_azdWebPartClientId) {
-        $_azdWebPartClientId = $_provisionAppClientId
+      $_graphPermissionsAlreadyMarked = Test-GraphPermissionAssignmentCurrent `
+        -AssignedManagedIdentityObjectId $_graphPermissionsAssignedMiOid `
+        -CurrentManagedIdentityObjectId $_azdMiOid
+
+      if ($_graphPermissionsAlreadyMarked -and -not $script:CanRepairGraphPermissionsInThisRun) {
+        $_graphPermissionsStatus = 'already assigned for the current managed identity'
+        $_functionAppRestartStatus = 'not needed (managed identity unchanged)'
+        Write-Host ''
+        Write-Host "  $_chk Microsoft Graph permissions already match the current Managed Identity." -ForegroundColor Green
       }
-      Restart-DeployedFunctionApp -ResourceGroup $ResourceGroupName -FunctionAppName $_azdFunctionAppName
+      else {
+        Write-Host ''
+        if ($_graphPermissionsAlreadyMarked -and $script:CanRepairGraphPermissionsInThisRun) {
+          Write-Host '  Re-applying Microsoft Graph permissions to repair possible manual drift...' -ForegroundColor Cyan
+        }
+        else {
+          Write-Host '  Assigning Microsoft Graph permissions...' -ForegroundColor Cyan
+        }
+        Invoke-GraphPermissionProvision `
+          -ResourceGroup $ResourceGroupName `
+          -ManagedIdentityObjectId $_azdMiOid
+        Set-GraphPermissionAssignmentMarker `
+          -RepoRoot $repoRoot `
+          -ManagedIdentityObjectId $_azdMiOid
+        $_graphPermissionsStatus = if ($_graphPermissionsAlreadyMarked) {
+          're-applied during this run to repair possible drift'
+        }
+        else {
+          'assigned during this run'
+        }
+        $_functionAppRestartStatus = 'completed automatically'
+        if (-not $_azdWebPartClientId) {
+          $_azdWebPartClientId = $_provisionAppClientId
+        }
+        Restart-DeployedFunctionApp -ResourceGroup $ResourceGroupName -FunctionAppName $_azdFunctionAppName
+      }
     }
   }
 

@@ -103,6 +103,9 @@ if (-not $env:FUNCTION_APP_NAME) {
 if (-not $env:MANAGED_IDENTITY_OBJECT_ID) {
   $env:MANAGED_IDENTITY_OBJECT_ID = $env:managedIdentityObjectId
 }
+if (-not $env:GRAPH_PERMISSIONS_ASSIGNED_MANAGED_IDENTITY_OBJECT_ID) {
+  $env:GRAPH_PERMISSIONS_ASSIGNED_MANAGED_IDENTITY_OBJECT_ID = $env:graphPermissionsAssignedManagedIdentityObjectId
+}
 
 if (-not $env:FUNCTION_APP_URL -and $env:FUNCTION_APP_NAME -and $env:AZURE_RESOURCE_GROUP) {
   try {
@@ -173,23 +176,35 @@ else {
     throw 'Managed Identity Object ID was not available after azd provision; Graph role assignments cannot continue.'
   }
 
-  Write-Host ''
-  Write-Host 'Assigning Microsoft Graph permissions...'
-  az deployment group create `
-    --name 'gsi-graph-permissions' `
-    --resource-group $env:AZURE_RESOURCE_GROUP `
-    --template-file (Join-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath '..') -ChildPath 'assign-graph-permissions.bicep') `
-    --parameters "managedIdentityObjectId=$($env:MANAGED_IDENTITY_OBJECT_ID)" `
-    --output none | Out-Null
-  if ($LASTEXITCODE -ne 0) {
-    throw 'Could not assign Microsoft Graph permissions in the post-provision phase.'
+  if ($env:GRAPH_PERMISSIONS_ASSIGNED_MANAGED_IDENTITY_OBJECT_ID -eq $env:MANAGED_IDENTITY_OBJECT_ID) {
+    $graphPermissionStatus = 'already assigned for the current managed identity'
+    $restartStatus = 'not needed (managed identity unchanged)'
+    Write-Host ''
+    Write-Host 'Skipping Microsoft Graph permission assignment because the current Managed Identity was already completed earlier.'
   }
+  else {
+    Write-Host ''
+    Write-Host 'Assigning Microsoft Graph permissions...'
+    az deployment group create `
+      --name 'gsi-graph-permissions' `
+      --resource-group $env:AZURE_RESOURCE_GROUP `
+      --template-file (Join-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath '..') -ChildPath 'assign-graph-permissions.bicep') `
+      --parameters "managedIdentityObjectId=$($env:MANAGED_IDENTITY_OBJECT_ID)" `
+      --output none | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+      throw 'Could not assign Microsoft Graph permissions in the post-provision phase.'
+    }
 
-  Write-Host ''
-  Write-Host "Restarting Function App '$($env:FUNCTION_APP_NAME)' to activate Graph permissions..."
-  az functionapp restart --resource-group $env:AZURE_RESOURCE_GROUP --name $env:FUNCTION_APP_NAME --output none | Out-Null
-  if ($LASTEXITCODE -ne 0) {
-    throw "Could not restart Function App '$($env:FUNCTION_APP_NAME)' after assigning Graph permissions."
+    $env:GRAPH_PERMISSIONS_ASSIGNED_MANAGED_IDENTITY_OBJECT_ID = $env:MANAGED_IDENTITY_OBJECT_ID
+    $env:graphPermissionsAssignedManagedIdentityObjectId = $env:MANAGED_IDENTITY_OBJECT_ID
+    Sync-AzdEnvValue -Name 'graphPermissionsAssignedManagedIdentityObjectId' -Value $env:MANAGED_IDENTITY_OBJECT_ID
+
+    Write-Host ''
+    Write-Host "Restarting Function App '$($env:FUNCTION_APP_NAME)' to activate Graph permissions..."
+    az functionapp restart --resource-group $env:AZURE_RESOURCE_GROUP --name $env:FUNCTION_APP_NAME --output none | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+      throw "Could not restart Function App '$($env:FUNCTION_APP_NAME)' after assigning Graph permissions."
+    }
   }
 }
 

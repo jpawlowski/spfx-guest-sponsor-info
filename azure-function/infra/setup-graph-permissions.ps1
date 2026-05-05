@@ -209,6 +209,33 @@ function Write-Link {
     Write-Host "$Indent  $Url" -ForegroundColor DarkCyan
   }
 }
+
+function Sync-GraphPermissionAssignmentMarker {
+  [CmdletBinding()]
+  param([Parameter(Mandatory)][string]$ManagedIdentityObjectId)
+
+  $markerName = 'graphPermissionsAssignedManagedIdentityObjectId'
+  $_azdCommand = Get-Command -Name 'azd' -ErrorAction SilentlyContinue
+  if (-not $_azdCommand) {
+    return
+  }
+
+  Push-Location -Path $PSScriptRoot
+  try {
+    & $_azdCommand.Source 'env' 'get-values' 1>$null 2>$null
+    if ($LASTEXITCODE -ne 0) {
+      return
+    }
+
+    & $_azdCommand.Source 'env' 'set' $markerName $ManagedIdentityObjectId 1>$null 2>$null
+    if ($LASTEXITCODE -eq 0) {
+      Write-Host "  $_chk Recorded Graph permission state for future azd/deploy-azure updates." -ForegroundColor DarkGray
+    }
+  }
+  finally {
+    Pop-Location
+  }
+}
 #endregion
 
 #region Error handler
@@ -762,6 +789,10 @@ foreach ($role in $requiredRoles) {
   Write-Host "  $_chk $($role.Name) assigned." -ForegroundColor Green
   $assignedRoles += $role.Name
   $newlyAssignedRoles += $role.Name
+}
+
+if (-not $_whatIf) {
+  Sync-GraphPermissionAssignmentMarker -ManagedIdentityObjectId $ManagedIdentityObjectId
 }
 #endregion
 

@@ -82,6 +82,7 @@ WEB_PART_CLIENT_ID="${webPartClientId:-${AZURE_WEB_PART_CLIENT_ID:-${WEB_PART_CL
 # value when that output is not present in the current hook environment.
 FUNCTION_APP_NAME="${functionAppName:-${AZURE_FUNCTION_APP_NAME:-}}"
 MANAGED_IDENTITY_OBJECT_ID="${managedIdentityObjectId:-${MANAGED_IDENTITY_OBJECT_ID:-}}"
+GRAPH_PERMISSIONS_ASSIGNED_MANAGED_IDENTITY_OBJECT_ID="${graphPermissionsAssignedManagedIdentityObjectId:-${GRAPH_PERMISSIONS_ASSIGNED_MANAGED_IDENTITY_OBJECT_ID:-}}"
 
 if [[ -z "${FUNCTION_APP_URL:-}" && -n "${FUNCTION_APP_NAME:-}" && -n "${AZURE_RESOURCE_GROUP:-}" ]]; then
   if default_host_name="$(az functionapp show --name "${FUNCTION_APP_NAME}" --resource-group "${AZURE_RESOURCE_GROUP}" --query defaultHostName -o tsv 2>/dev/null)"; then
@@ -148,21 +149,33 @@ else
     exit 1
   fi
 
-  echo ""
-  echo 'Assigning Microsoft Graph permissions...'
-  if ! az deployment group create \
-    --name 'gsi-graph-permissions' \
-    --resource-group "${AZURE_RESOURCE_GROUP}" \
-    --template-file "${INFRA_DIR}/assign-graph-permissions.bicep" \
-    --parameters "managedIdentityObjectId=${MANAGED_IDENTITY_OBJECT_ID}" \
-    --output none >/dev/null; then
-    echo 'ERROR: Could not assign Microsoft Graph permissions in the post-provision phase.' >&2
-    exit 1
-  fi
+  if [[ "${GRAPH_PERMISSIONS_ASSIGNED_MANAGED_IDENTITY_OBJECT_ID:-}" == "${MANAGED_IDENTITY_OBJECT_ID}" ]]; then
+    GRAPH_PERMISSION_STATUS='already assigned for the current managed identity'
+    RESTART_STATUS='not needed (managed identity unchanged)'
+    echo ""
+    echo 'Skipping Microsoft Graph permission assignment because the current Managed Identity was already completed earlier.'
+  else
+    echo ""
+    echo 'Assigning Microsoft Graph permissions...'
+    if ! az deployment group create \
+      --name 'gsi-graph-permissions' \
+      --resource-group "${AZURE_RESOURCE_GROUP}" \
+      --template-file "${INFRA_DIR}/assign-graph-permissions.bicep" \
+      --parameters "managedIdentityObjectId=${MANAGED_IDENTITY_OBJECT_ID}" \
+      --output none >/dev/null; then
+      echo 'ERROR: Could not assign Microsoft Graph permissions in the post-provision phase.' >&2
+      exit 1
+    fi
 
-  echo ""
-  echo "Restarting Function App '${FUNCTION_APP_NAME}' to activate Graph permissions..."
-  az functionapp restart --resource-group "${AZURE_RESOURCE_GROUP}" --name "${FUNCTION_APP_NAME}" --output none >/dev/null
+    GRAPH_PERMISSIONS_ASSIGNED_MANAGED_IDENTITY_OBJECT_ID="${MANAGED_IDENTITY_OBJECT_ID}"
+    export GRAPH_PERMISSIONS_ASSIGNED_MANAGED_IDENTITY_OBJECT_ID
+    export graphPermissionsAssignedManagedIdentityObjectId="${MANAGED_IDENTITY_OBJECT_ID}"
+    sync_azd_env_value graphPermissionsAssignedManagedIdentityObjectId "${MANAGED_IDENTITY_OBJECT_ID}"
+
+    echo ""
+    echo "Restarting Function App '${FUNCTION_APP_NAME}' to activate Graph permissions..."
+    az functionapp restart --resource-group "${AZURE_RESOURCE_GROUP}" --name "${FUNCTION_APP_NAME}" --output none >/dev/null
+  fi
 fi
 
 # ── Print concise post-provision summary ─────────────────────────────────────
