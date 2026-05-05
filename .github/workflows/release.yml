@@ -86,9 +86,12 @@ jobs:
           cd azure-function/infra
           zip -r ../../guest-sponsor-info-infra.zip \
             azure.yaml \
+            assign-graph-permissions.bicep \
             bicepconfig.json \
             main.bicep \
             main.parameters.json \
+            entra-auth.bicep \
+            resolve-function-app-name.bicep \
             modules \
             hooks \
             deploy-azure.ps1 \
