@@ -511,8 +511,52 @@ function Show-PreflightOverview {
     '  macOS fallback: Homebrew when Azure CLI installation needs it'
     ''
     'Interactive steps you may see: tool installation prompts, sudo/admin password prompts,'
-    'browser-based az login, subscription selection, and deployment parameter prompts.'
+    'az login, subscription selection, and deployment parameter prompts.'
   )
+}
+
+function Get-AzureCliLoginPreference {
+  $_isInstallerRun = -not [string]::IsNullOrWhiteSpace($InstallerVersion)
+  $_isRemoteTerminal = (
+    $env:SSH_CONNECTION -or
+    $env:SSH_CLIENT -or
+    $env:SSH_TTY -or
+    $env:CODESPACES -or
+    $env:GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN -or
+    $env:REMOTE_CONTAINERS -or
+    ($env:TERM_PROGRAM -eq 'vscode' -and (Test-Path -Path '/.dockerenv'))
+  ) -as [bool]
+  $_isHeadlessLinux = (
+    -not (Test-WindowsHost) -and
+    -not (Test-MacOSHost) -and
+    -not $env:DISPLAY -and
+    -not $env:WAYLAND_DISPLAY
+  )
+
+  if ($_isInstallerRun) {
+    return [pscustomobject]@{
+      Mode       = 'device-code'
+      StatusText = 'device code (auto for downloaded installer)'
+      DetailText = 'Downloaded installer runs avoid waiting on browser auto-launch.'
+      StartText  = 'Starting az login with device code...'
+    }
+  }
+
+  if ($_isRemoteTerminal -or $_isHeadlessLinux) {
+    return [pscustomobject]@{
+      Mode       = 'device-code'
+      StatusText = 'device code (auto for remote/headless terminal)'
+      DetailText = 'This avoids browser launch delays when the terminal session has no direct GUI.'
+      StartText  = 'Starting az login with device code...'
+    }
+  }
+
+  return [pscustomobject]@{
+    Mode       = 'browser'
+    StatusText = 'browser (default for local console)'
+    DetailText = ''
+    StartText  = 'Starting az login in your default browser...'
+  }
 }
 
 function Get-CommandVersionText {
@@ -602,6 +646,7 @@ function Show-ToolVersion {
   $pwshVersion = $PSVersionTable.PSVersion.ToString()
   $azVersion = Get-AzureCliVersionText
   $azdVersion = Get-AzdVersionText
+  $azLoginPreference = Get-AzureCliLoginPreference
 
   Write-Host ''
   Write-Host '  Tool preflight' -ForegroundColor Cyan
@@ -609,6 +654,10 @@ function Show-ToolVersion {
   Write-PreflightStatus -Label 'PowerShell' -Value $pwshVersion
   Write-PreflightStatus -Label 'Azure CLI (az)' -Value $azVersion
   Write-PreflightStatus -Label 'Azure Developer CLI' -Value $azdVersion
+  Write-PreflightStatus -Label 'az login mode' -Value $azLoginPreference.StatusText
+  if ($azLoginPreference.DetailText) {
+    Write-Host "       $($azLoginPreference.DetailText)" -ForegroundColor DarkGray
+  }
   if ($script:AzureAuthIsolationMode -eq 'isolated') {
     Write-PreflightStatus -Label 'Azure auth session' -Value 'isolated to this PowerShell console'
     Write-Host '       Existing logins in ~/.azure and ~/.azd are ignored for this console.' -ForegroundColor DarkGray
@@ -978,7 +1027,8 @@ function Install-AzdIfNeeded {
 
 function Connect-AzureCliIfNeeded {
   if (-not (Test-AzureCliAccountAvailable)) {
-    Write-Host "  $_arr No active Azure CLI session found for this PowerShell console. Starting az login..." -ForegroundColor Cyan
+    $_loginPreference = Get-AzureCliLoginPreference
+    Write-Host "  $_arr No active Azure CLI session found for this PowerShell console. $($_loginPreference.StartText)" -ForegroundColor Cyan
 
     $_loginTenantId = ''
     if ($AzureTenantId) {
@@ -1003,6 +1053,9 @@ function Connect-AzureCliIfNeeded {
     }
 
     $_loginArgs = @('login')
+    if ($_loginPreference.Mode -eq 'device-code') {
+      $_loginArgs += '--use-device-code'
+    }
     if ($_loginTenantId) {
       $_loginArgs += @('--tenant', $_loginTenantId)
     }
@@ -1081,7 +1134,7 @@ function Test-DeployParameterProvided {
   return $script:ExplicitDeployParameters.Contains($Name) -or $script:CachedDeployParameters.Contains($Name)
 }
 
-function Should-PromptDeployParameter {
+function Test-DeployParameterPromptRequired {
   param([Parameter(Mandatory)][string]$Name)
 
   return $script:ReconfigureMode -or -not (Test-DeployParameterProvided -Name $Name)
@@ -1583,7 +1636,6 @@ function Invoke-AzdProvision {
     [Parameter(Mandatory)][string]$SharePointTenant,
     [Parameter(Mandatory)][AllowEmptyString()][string]$Environment,
     [Parameter(Mandatory)][AllowEmptyString()][string]$Criticality,
-    [string]$AppName,
     [Parameter(Mandatory)][bool]$Maps,
     [Parameter(Mandatory)][string]$Version,
     [Parameter(Mandatory)][bool]$Monitoring,
@@ -1715,7 +1767,6 @@ try {
   Use-DeployCachedValue -Key 'AzureLocation' -Target ([ref]$AzureLocation)
   Use-DeployCachedValue -Key 'TenantName' -Target ([ref]$TenantName)
   Use-DeployCachedValue -Key 'FunctionAppName' -Target ([ref]$FunctionAppName) -AllowEmptyString
-  Use-DeployCachedValue -Key 'HostingPlan' -Target ([ref]$HostingPlan)
   Use-DeployCachedValue -Key 'DeployAzureMaps' -Target ([ref]$DeployAzureMaps)
   Use-DeployCachedValue -Key 'AppVersion' -Target ([ref]$AppVersion)
   Use-DeployCachedValue -Key 'Environment' -Target ([ref]$Environment) -AllowEmptyString
@@ -1805,7 +1856,7 @@ try {
     }
 
     # ── Environment Tag ───────────────────────────────────────────────────────
-    if (Should-PromptDeployParameter -Name 'Environment') {
+    if (Test-DeployParameterPromptRequired -Name 'Environment') {
       $_environmentDefault = Get-PromptDefaultValue -CurrentValue $Environment -FallbackValue 'prod' -EmptyDisplay '-'
       Write-Host ''
       Write-Host '  Environment Tag' -ForegroundColor Cyan
@@ -1829,7 +1880,7 @@ try {
     }
 
     # ── Criticality Tag ───────────────────────────────────────────────────────
-    if (Should-PromptDeployParameter -Name 'Criticality') {
+    if (Test-DeployParameterPromptRequired -Name 'Criticality') {
       $_criticalityDefault = Get-PromptDefaultValue -CurrentValue $Criticality -FallbackValue 'low' -EmptyDisplay '-'
       Write-Host ''
       Write-Host '  Criticality Tag' -ForegroundColor Cyan
@@ -1884,7 +1935,7 @@ try {
       throw "FunctionAppName must be between $($script:FunctionAppNameMinLength) and $($script:FunctionAppNameMaxLength) characters so Bicep can derive valid resource names."
     }
 
-    if (Should-PromptDeployParameter -Name 'FunctionAppName') {
+    if (Test-DeployParameterPromptRequired -Name 'FunctionAppName') {
       $_functionAppNameDefault = Get-PromptDefaultValue -CurrentValue $FunctionAppName -FallbackValue 'auto-generate' -EmptyDisplay 'auto-generate'
       Write-Host ''
       Write-Host '  Function App Name  (optional)' -ForegroundColor Cyan
@@ -1914,7 +1965,7 @@ try {
     }
 
     # ── Azure Maps ────────────────────────────────────────────────────────────
-    if (Should-PromptDeployParameter -Name 'DeployAzureMaps') {
+    if (Test-DeployParameterPromptRequired -Name 'DeployAzureMaps') {
       $_deployAzureMapsDefault = if ($DeployAzureMaps) { 'true' } else { 'false' }
       Write-Host ''
       Write-Host '  Azure Maps' -ForegroundColor Cyan
@@ -1936,7 +1987,7 @@ try {
     }
 
     # ── App Version ───────────────────────────────────────────────────────────
-    if (Should-PromptDeployParameter -Name 'AppVersion') {
+    if (Test-DeployParameterPromptRequired -Name 'AppVersion') {
       $_appVersionDefault = Get-PromptDefaultValue -CurrentValue $AppVersion -FallbackValue 'latest'
       Write-Host ''
       Write-Host '  Function Package Version' -ForegroundColor Cyan
@@ -1953,7 +2004,7 @@ try {
     }
 
     # ── Monitoring Stack ──────────────────────────────────────────────────────
-    if (Should-PromptDeployParameter -Name 'EnableMonitoring') {
+    if (Test-DeployParameterPromptRequired -Name 'EnableMonitoring') {
       $_enableMonitoringDefault = if ($EnableMonitoring) { 'true' } else { 'false' }
       Write-Host ''
       Write-Host '  Monitoring Stack' -ForegroundColor Cyan
@@ -1975,7 +2026,7 @@ try {
     }
 
     # ── Failure Anomalies Alert ───────────────────────────────────────────────
-    if ($EnableMonitoring -and (Should-PromptDeployParameter -Name 'EnableFailureAnomaliesAlert')) {
+    if ($EnableMonitoring -and (Test-DeployParameterPromptRequired -Name 'EnableFailureAnomaliesAlert')) {
       $_failureAnomaliesDefault = if ($EnableFailureAnomaliesAlert) { 'true' } else { 'false' }
       Write-Host ''
       Write-Host '  Failure Anomalies Alert' -ForegroundColor Cyan
@@ -2000,7 +2051,7 @@ try {
     }
 
     # ── Always-Ready Instances ────────────────────────────────────────────────
-    if (Should-PromptDeployParameter -Name 'AlwaysReadyInstances') {
+    if (Test-DeployParameterPromptRequired -Name 'AlwaysReadyInstances') {
       $_alwaysReadyDefault = $AlwaysReadyInstances.ToString()
       Write-Host ''
       Write-Host '  Always-Ready Instances' -ForegroundColor Cyan
@@ -2024,7 +2075,7 @@ try {
     }
 
     # ── Maximum Flex Instances ────────────────────────────────────────────────
-    if (Should-PromptDeployParameter -Name 'MaximumFlexInstances') {
+    if (Test-DeployParameterPromptRequired -Name 'MaximumFlexInstances') {
       $_maximumFlexInstancesDefault = $MaximumFlexInstances.ToString()
       Write-Host ''
       Write-Host '  Maximum Flex Instances' -ForegroundColor Cyan
@@ -2048,7 +2099,7 @@ try {
     }
 
     # ── Flex Instance Memory ──────────────────────────────────────────────────
-    if (Should-PromptDeployParameter -Name 'InstanceMemoryMB') {
+    if (Test-DeployParameterPromptRequired -Name 'InstanceMemoryMB') {
       $_instanceMemoryDefault = $InstanceMemoryMB.ToString()
       Write-Host ''
       Write-Host '  Flex Instance Memory' -ForegroundColor Cyan
@@ -2072,7 +2123,7 @@ try {
     }
 
     # ── Graph Permission Assignment ───────────────────────────────────────────
-    if (Should-PromptDeployParameter -Name 'SkipGraphRoleAssignments') {
+    if (Test-DeployParameterPromptRequired -Name 'SkipGraphRoleAssignments') {
       $_graphPermissionsDefault = if ($SkipGraphRoleAssignments) { '2' } else { '1' }
       Write-Host ''
       Write-Host '  Graph Permission Assignment' -ForegroundColor Cyan
