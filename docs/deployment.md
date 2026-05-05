@@ -585,6 +585,19 @@ selected Azure tenant against the SharePoint tenant name and requires explicit
 confirmation if they do not appear to match, for example after a SharePoint
 domain rename.
 
+Azure CLI login mode defaults to `auto`: browser login for local consoles,
+device code for remote or headless terminals. Use `-AzureLoginMode browser`
+when device code is disabled for the affected account, or
+`-AzureLoginMode device-code` when browser launch is unavailable.
+
+```powershell
+& ([scriptblock]::Create((iwr 'https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/main/azure-function/infra/install.ps1').Content)) -AzureLoginMode browser
+```
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/main/azure-function/infra/install.sh | bash -s -- -AzureLoginMode device-code
+```
+
 To check local tools, sign-in, subscription selection, and visible Azure/Entra
 roles without deploying resources, add `-PreflightOnly`:
 

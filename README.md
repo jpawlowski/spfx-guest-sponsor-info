@@ -219,6 +219,9 @@ is omitted, release-based `-Version` values also pin the Azure Function package
 to the same release. Treat `-AppVersion` as an expert override, or use it
 alongside `-Version main`.
 
+Use `-AzureLoginMode browser` or `-AzureLoginMode device-code` when Azure CLI
+login should not rely on automatic environment detection.
+
 The wizard creates the Entra App Registration, deploys all Azure infrastructure,
 and assigns Microsoft Graph permissions automatically. No local repository clone
 is required.

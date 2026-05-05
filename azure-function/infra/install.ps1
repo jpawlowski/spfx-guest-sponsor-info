@@ -36,6 +36,10 @@
 .PARAMETER AzureTenantId
     Forwarded to deploy-azure.ps1.
 
+.PARAMETER AzureLoginMode
+  Forwarded to deploy-azure.ps1. Overrides automatic Azure CLI login-mode
+  detection. Supported values: "auto", "browser", "device-code".
+
 .PARAMETER TenantName
     Forwarded to deploy-azure.ps1.
 
@@ -94,6 +98,8 @@ param(
   [string]$ResourceGroupName,
   [string]$AzureLocation,
   [string]$AzureTenantId,
+  [ValidateSet('auto', 'browser', 'device-code')]
+  [string]$AzureLoginMode = 'auto',
   [string]$TenantName,
   [string]$FunctionAppName,
   [bool]$DeployAzureMaps = $true,

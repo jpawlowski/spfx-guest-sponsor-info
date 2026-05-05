@@ -36,6 +36,11 @@
     is a guest in other tenants that block tenant enumeration via Conditional
     Access.
 
+.PARAMETER AzureLoginMode
+  Azure CLI login mode. "auto" (default) chooses browser login for local
+  consoles and device code for remote/headless terminals. Use "browser" or
+  "device-code" to override that detection explicitly.
+
 .PARAMETER TenantName
     SharePoint tenant short name — the part before .sharepoint.com
     (e.g. "contoso" for contoso.sharepoint.com).
@@ -109,6 +114,8 @@ param(
   [string]$ResourceGroupName,
   [string]$AzureLocation,
   [string]$AzureTenantId,
+  [ValidateSet('auto', 'browser', 'device-code')]
+  [string]$AzureLoginMode = 'auto',
   [string]$TenantName,
   [string]$FunctionAppName,
   [bool]$DeployAzureMaps = $true,
@@ -518,7 +525,24 @@ function Show-PreflightOverview {
 }
 
 function Get-AzureCliLoginPreference {
-  $_isInstallerRun = -not [string]::IsNullOrWhiteSpace($InstallerVersion)
+  if ($AzureLoginMode -eq 'browser') {
+    return [pscustomobject]@{
+      Mode       = 'browser'
+      StatusText = 'browser (forced by -AzureLoginMode)'
+      DetailText = 'The script will not fall back to device code for this run.'
+      StartText  = 'Starting az login in your default browser...'
+    }
+  }
+
+  if ($AzureLoginMode -eq 'device-code') {
+    return [pscustomobject]@{
+      Mode       = 'device-code'
+      StatusText = 'device code (forced by -AzureLoginMode)'
+      DetailText = 'Use this when browser launch is unavailable or intentionally disabled.'
+      StartText  = 'Starting az login with device code...'
+    }
+  }
+
   $_isRemoteTerminal = (
     $env:SSH_CONNECTION -or
     $env:SSH_CLIENT -or
@@ -534,15 +558,6 @@ function Get-AzureCliLoginPreference {
     -not $env:DISPLAY -and
     -not $env:WAYLAND_DISPLAY
   )
-
-  if ($_isInstallerRun) {
-    return [pscustomobject]@{
-      Mode       = 'device-code'
-      StatusText = 'device code (auto for downloaded installer)'
-      DetailText = 'Downloaded installer runs avoid waiting on browser auto-launch.'
-      StartText  = 'Starting az login with device code...'
-    }
-  }
 
   if ($_isRemoteTerminal -or $_isHeadlessLinux) {
     return [pscustomobject]@{
@@ -1665,6 +1680,7 @@ function Invoke-AzdProvision {
     [Parameter(Mandatory)][string]$ResourceGroup,
     [Parameter(Mandatory)][string]$Location,
     [Parameter(Mandatory)][string]$SharePointTenant,
+    [Parameter(Mandatory)][AllowEmptyString()][string]$FunctionAppName,
     [Parameter(Mandatory)][AllowEmptyString()][string]$Environment,
     [Parameter(Mandatory)][AllowEmptyString()][string]$Criticality,
     [Parameter(Mandatory)][bool]$Maps,
@@ -1678,6 +1694,31 @@ function Invoke-AzdProvision {
   )
 
   $repoRoot = Get-RepoRoot
+
+  function Sync-AzdOptionalEnvValue {
+    param(
+      [Parameter(Mandatory)][string]$Name,
+      [AllowEmptyString()][string]$Value
+    )
+
+    if (-not [string]::IsNullOrWhiteSpace($Value)) {
+      Invoke-Azd -Arguments @('env', 'set', $Name, $Value)
+      Set-Item -Path "Env:$Name" -Value $Value
+      return
+    }
+
+    $_envFile = Join-Path $repoRoot ".azure/$EnvName/.env"
+    if (Test-Path $_envFile) {
+      $_keepPattern = '^' + [regex]::Escape($Name) + '='
+      $_filteredLines = @(
+        Get-Content -Path $_envFile -ErrorAction Stop |
+        Where-Object { $_ -notmatch $_keepPattern }
+      )
+      Set-Content -Path $_envFile -Value $_filteredLines
+    }
+
+    Remove-Item -Path "Env:$Name" -ErrorAction SilentlyContinue
+  }
 
   Write-Host ''
   Write-Host '  azd provision' -ForegroundColor Cyan
@@ -1706,6 +1747,7 @@ function Invoke-AzdProvision {
     Invoke-Azd -Arguments @('env', 'set', 'AZURE_RESOURCE_GROUP', $ResourceGroup)
     Invoke-Azd -Arguments @('env', 'set', 'AZURE_LOCATION', $Location)
     Invoke-Azd -Arguments @('env', 'set', 'AZURE_SHAREPOINT_TENANT_NAME', $SharePointTenant)
+    Sync-AzdOptionalEnvValue -Name 'AZURE_FUNCTION_APP_NAME' -Value $FunctionAppName
     Invoke-Azd -Arguments @('env', 'set', 'AZURE_TAG_ENVIRONMENT', $Environment)
     Invoke-Azd -Arguments @('env', 'set', 'AZURE_TAG_CRITICALITY', $Criticality)
     Invoke-Azd -Arguments @('env', 'set', 'AZURE_APP_VERSION', $Version)
@@ -1731,6 +1773,12 @@ function Invoke-AzdProvision {
   $env:AZURE_LOCATION = $Location
   $env:AZURE_RESOURCE_GROUP = $ResourceGroup
   $env:AZURE_SHAREPOINT_TENANT_NAME = $SharePointTenant
+  if ($FunctionAppName) {
+    $env:AZURE_FUNCTION_APP_NAME = $FunctionAppName
+  }
+  else {
+    Remove-Item -Path 'Env:AZURE_FUNCTION_APP_NAME' -ErrorAction SilentlyContinue
+  }
   $env:AZURE_TAG_ENVIRONMENT = $Environment
   $env:AZURE_TAG_CRITICALITY = $Criticality
   $env:AZURE_APP_VERSION = $Version
@@ -2326,9 +2374,9 @@ try {
     -ResourceGroup $ResourceGroupName `
     -Location $AzureLocation `
     -SharePointTenant $TenantName `
+    -FunctionAppName $FunctionAppName `
     -Environment $Environment `
     -Criticality $Criticality `
-    -AppName $FunctionAppName `
     -Maps:$DeployAzureMaps `
     -Version $AppVersion `
     -Monitoring:$EnableMonitoring `
