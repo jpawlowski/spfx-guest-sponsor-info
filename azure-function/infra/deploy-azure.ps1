@@ -38,7 +38,8 @@
 
 .PARAMETER AzureLoginMode
   Azure CLI login mode. "auto" (default) chooses browser login for local
-  consoles and device code for remote/headless terminals. Use "browser" or
+  consoles, reuses the existing login in Azure Cloud Shell, and falls back to
+  device code for other remote/headless terminals. Use "browser" or
   "device-code" to override that detection explicitly.
 
 .PARAMETER TenantName
@@ -510,9 +511,16 @@ function Invoke-Azd {
 }
 
 function Show-PreflightOverview {
+  $_authSessionBehavior = if (Test-AzureCloudShell) {
+    'In Azure Cloud Shell the wizard reuses the current Azure CLI session instead of isolating a new one.'
+  }
+  else {
+    'Azure auth is isolated to this PowerShell console so older az/azd logins do not leak into this run.'
+  }
+
   Write-Hint @(
     'Before deployment this wizard checks the local tools and signs in to Azure.'
-    'Azure auth is isolated to this PowerShell console so older az/azd logins do not leak into this run.'
+    $_authSessionBehavior
     ''
     'It can install missing tools when needed:'
     '  PowerShell bootstrapper (install.sh): PowerShell 7+'
@@ -522,6 +530,31 @@ function Show-PreflightOverview {
     'Interactive steps you may see: tool installation prompts, sudo/admin password prompts,'
     'az login, subscription selection, and deployment parameter prompts.'
   )
+}
+
+function Test-AzureCloudShell {
+  return (
+    $env:ACC_TERMID -or
+    $env:ACC_LOCATION -or
+    $env:CLOUD_SHELL -or
+    (($env:AZUREPS_HOST_ENVIRONMENT -as [string]) -match 'cloud-shell')
+  ) -as [bool]
+}
+
+function Get-DefaultAzureCliConfigDirectory {
+  if (-not [string]::IsNullOrWhiteSpace($env:AZURE_CONFIG_DIR)) {
+    return $env:AZURE_CONFIG_DIR
+  }
+
+  return Join-Path $HOME '.azure'
+}
+
+function Get-DefaultAzdConfigDirectory {
+  if (-not [string]::IsNullOrWhiteSpace($env:AZD_CONFIG_DIR)) {
+    return $env:AZD_CONFIG_DIR
+  }
+
+  return Join-Path $HOME '.azd'
 }
 
 function Get-AzureCliLoginPreference {
@@ -540,6 +573,15 @@ function Get-AzureCliLoginPreference {
       StatusText = 'device code (forced by -AzureLoginMode)'
       DetailText = 'Use this when browser launch is unavailable or intentionally disabled.'
       StartText  = 'Starting az login with device code...'
+    }
+  }
+
+  if (Test-AzureCloudShell) {
+    return [pscustomobject]@{
+      Mode       = 'browser'
+      StatusText = 'browser if re-login is required (auto for Azure Cloud Shell)'
+      DetailText = 'The script first reuses the active Cloud Shell Azure CLI session.'
+      StartText  = 'Starting az login in your browser...'
     }
   }
 
@@ -659,6 +701,18 @@ function Write-PreflightStatus {
   Write-Host ('  {0} {1,-20}: {2}' -f $_chk, $Label, $Value) -ForegroundColor Green
 }
 
+function Show-CloudShellSessionBanner {
+  if ($script:AzureAuthIsolationMode -ne 'cloud-shell') {
+    return
+  }
+
+  Write-Hint @(
+    'Azure Cloud Shell detected.'
+    'This run reuses the current Cloud Shell Azure CLI login and shared ~/.azure and ~/.azd directories.'
+    'Use -AzureLoginMode browser if you want to force a fresh browser sign-in.'
+  )
+}
+
 function Show-ToolVersion {
   $pwshVersion = $PSVersionTable.PSVersion.ToString()
   $azVersion = Get-AzureCliVersionText
@@ -680,6 +734,10 @@ function Show-ToolVersion {
     Write-Host '       Existing logins in ~/.azure and ~/.azd are ignored for this console.' -ForegroundColor DarkGray
     Write-Host '       Close the console to drop this isolated login context.' -ForegroundColor DarkGray
   }
+  elseif ($script:AzureAuthIsolationMode -eq 'cloud-shell') {
+    Write-PreflightStatus -Label 'Azure auth session' -Value 'reuses the active Azure Cloud Shell login'
+    Write-Host '       The shared ~/.azure and ~/.azd directories stay in use for this run.' -ForegroundColor DarkGray
+  }
   elseif ($script:AzureAuthIsolationMode -eq 'caller-supplied') {
     Write-PreflightStatus -Label 'Azure auth session' -Value 'using caller-provided config dirs'
   }
@@ -688,6 +746,8 @@ function Show-ToolVersion {
     Write-Host '       azd does not keep an independent tenant login for this script run.' -ForegroundColor DarkGray
   }
   Write-Host '       azd uses its own scoped Bicep CLI during azd provision.' -ForegroundColor DarkGray
+
+  Show-CloudShellSessionBanner
 }
 
 function Initialize-AzureSessionRoot {
@@ -723,6 +783,7 @@ function Initialize-AzureAuthIsolation {
     return
   }
 
+  $_isAzureCloudShell = Test-AzureCloudShell
   $_managedRoot = if ($Global:GsiDeploy_AzureSessionRoot) { [string]$Global:GsiDeploy_AzureSessionRoot } else { '' }
   $_managedAzureConfigDir = if ($_managedRoot) { Join-Path $_managedRoot '.azure' } else { '' }
   $_managedAzdConfigDir = if ($_managedRoot) { Join-Path $_managedRoot '.azd' } else { '' }
@@ -742,6 +803,11 @@ function Initialize-AzureAuthIsolation {
   }
   elseif ($_hasAzureConfigDir -and $_hasAzdConfigDir) {
     $script:AzureAuthIsolationMode = 'caller-supplied'
+  }
+  elseif ($_isAzureCloudShell) {
+    $env:AZURE_CONFIG_DIR = Get-DefaultAzureCliConfigDirectory
+    $env:AZD_CONFIG_DIR = Get-DefaultAzdConfigDirectory
+    $script:AzureAuthIsolationMode = 'cloud-shell'
   }
   else {
     $script:AzureSessionRoot = Initialize-AzureSessionRoot

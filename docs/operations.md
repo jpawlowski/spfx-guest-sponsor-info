@@ -197,6 +197,9 @@ To pin to a specific published release:
 & ([scriptblock]::Create((iwr 'https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/main/azure-function/infra/install.ps1').Content)) -Version v1.x.y
 ```
 
+In Azure Cloud Shell, prefer this PowerShell installer entry point instead of
+`install.sh` so the wizard can reuse the active Cloud Shell Azure login.
+
 Use `-AppVersion` only as an expert override when the function package should
 differ from the release selected by `-Version`.
 

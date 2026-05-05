@@ -546,6 +546,10 @@ Run this command in PowerShell 7+:
 & ([scriptblock]::Create((iwr 'https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/main/azure-function/infra/install.ps1').Content))
 ```
 
+In Azure Cloud Shell, prefer this PowerShell entry point instead of
+`install.sh`. The wizard reuses the active Cloud Shell Azure login and keeps
+the shared `~/.azure` and `~/.azd` directories in place for the run.
+
 On macOS or Linux, you can start from a plain shell instead. The shell
 bootstrapper installs PowerShell when needed, downloads `install.ps1`, and then
 hands off to the same deployment wizard:
@@ -586,9 +590,10 @@ confirmation if they do not appear to match, for example after a SharePoint
 domain rename.
 
 Azure CLI login mode defaults to `auto`: browser login for local consoles,
-device code for remote or headless terminals. Use `-AzureLoginMode browser`
-when device code is disabled for the affected account, or
-`-AzureLoginMode device-code` when browser launch is unavailable.
+reusing the existing session in Azure Cloud Shell, and device code for other
+remote or headless terminals. Use `-AzureLoginMode browser` when device code
+is disabled for the affected account or when Cloud Shell needs a fresh browser
+sign-in, or `-AzureLoginMode device-code` when browser launch is unavailable.
 
 ```powershell
 & ([scriptblock]::Create((iwr 'https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/main/azure-function/infra/install.ps1').Content)) -AzureLoginMode browser

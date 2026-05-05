@@ -205,6 +205,10 @@ Run the following command in PowerShell 7+ to deploy everything in one step:
 & ([scriptblock]::Create((iwr 'https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/main/azure-function/infra/install.ps1').Content))
 ```
 
+In Azure Cloud Shell, prefer this PowerShell entry point instead of
+`install.sh`. The wizard reuses the active Cloud Shell Azure login and only
+falls back to a fresh `az login` when that session is missing or expired.
+
 On macOS or Linux, you can also start from a plain shell. This bootstraps
 PowerShell when needed, then runs the same installer:
 
@@ -219,8 +223,9 @@ is omitted, release-based `-Version` values also pin the Azure Function package
 to the same release. Treat `-AppVersion` as an expert override, or use it
 alongside `-Version main`.
 
-Use `-AzureLoginMode browser` or `-AzureLoginMode device-code` when Azure CLI
-login should not rely on automatic environment detection.
+In Azure Cloud Shell, `auto` reuses the current Cloud Shell login first. Use
+`-AzureLoginMode browser` or `-AzureLoginMode device-code` when a fresh Azure
+CLI login should not rely on automatic environment detection.
 
 The wizard creates the Entra App Registration, deploys all Azure infrastructure,
 and assigns Microsoft Graph permissions automatically. No local repository clone
