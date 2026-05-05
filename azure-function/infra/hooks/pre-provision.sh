@@ -96,22 +96,60 @@ fi
 echo ''
 
 # ── 0. Validate required Azure resource providers ───────────────────────────
-# Read from azd env — set by deploy-azure.ps1 via 'azd env set' before running provision.
-# Fall back to main.parameters.json defaults when running azd directly without the wizard.
+# Read from azd env — set by deploy-azure.ps1 via 'azd env set' before running
+# provision. Fall back to the same defaults used by main.bicep when running azd
+# directly without the wizard.
+get_azd_env_bool() {
+  local env_values="$1"
+  local key="$2"
+  local default_value="$3"
+  local raw_value
+
+  raw_value="$(printf '%s\n' "${env_values}" | grep "^${key}=" | cut -d'=' -f2 | tr -d '"' || true)"
+
+  case "${raw_value,,}" in
+    true)
+      printf 'true\n'
+      ;;
+    false)
+      printf 'false\n'
+      ;;
+    *)
+      printf '%s\n' "${default_value}"
+      ;;
+  esac
+}
+
 _ENV_VALUES="$(azd env get-values 2>/dev/null || true)"
-DEPLOY_AZURE_MAPS="$(echo "${_ENV_VALUES}" | grep '^AZURE_DEPLOY_AZURE_MAPS=' | cut -d'=' -f2 | tr -d '"' || true)"
-DEPLOY_AZURE_MAPS="${DEPLOY_AZURE_MAPS:-true}"
+DEPLOY_AZURE_MAPS="$(get_azd_env_bool "${_ENV_VALUES}" 'AZURE_DEPLOY_AZURE_MAPS' 'true')"
+ENABLE_MONITORING="$(get_azd_env_bool "${_ENV_VALUES}" 'AZURE_ENABLE_MONITORING' 'true')"
+ENABLE_FAILURE_ANOMALIES_ALERT="$(get_azd_env_bool "${_ENV_VALUES}" 'AZURE_ENABLE_FAILURE_ANOMALIES_ALERT' 'false')"
+
+# deploymentScripts still run on Azure Container Instance, so
+# Microsoft.ContainerInstance remains required even for Flex Consumption.
+# Microsoft.App is intentionally omitted: this template does not configure
+# Flex Consumption VNet integration or subnet delegation.
 REQUIRED_PROVIDERS=(
-  'Microsoft.AlertsManagement'
   'Microsoft.Authorization'
   'Microsoft.ContainerInstance'
-  'Microsoft.Insights'
   'Microsoft.ManagedIdentity'
-  'Microsoft.OperationalInsights'
   'Microsoft.Resources'
   'Microsoft.Storage'
   'Microsoft.Web'
 )
+
+if [[ "${ENABLE_MONITORING}" == 'true' ]]; then
+  REQUIRED_PROVIDERS+=(
+    'Microsoft.Insights'
+    'Microsoft.OperationalInsights'
+  )
+fi
+
+if [[ "${ENABLE_MONITORING}" == 'true' && "${ENABLE_FAILURE_ANOMALIES_ALERT}" == 'true' ]]; then
+  REQUIRED_PROVIDERS+=(
+    'Microsoft.AlertsManagement'
+  )
+fi
 
 if [[ "${DEPLOY_AZURE_MAPS,,}" == 'true' ]]; then
   REQUIRED_PROVIDERS+=(

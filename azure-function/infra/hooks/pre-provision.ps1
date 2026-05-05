@@ -106,21 +106,60 @@ else {
 Write-Host ''
 
 # ── 0. Validate required Azure resource providers ───────────────────────────
-# Read from azd env — set by deploy-azure.ps1 via 'azd env set' before running provision.
-# Fall back to main.parameters.json defaults when running azd directly without the wizard.
-$_mapsMatch = ($envValues | Select-String '^AZURE_DEPLOY_AZURE_MAPS="?([^"]+)"?').Matches
-$deployAzureMaps = -not ($_mapsMatch -and $_mapsMatch.Count -gt 0 -and $_mapsMatch[0].Groups[1].Value -eq 'false')
+# Read from azd env — set by deploy-azure.ps1 via 'azd env set' before running
+# provision. Fall back to the same defaults used by main.bicep when running azd
+# directly without the wizard.
+function Get-AzdEnvBooleanFlag {
+  param(
+    [Parameter(Mandatory)][string[]]$EnvValues,
+    [Parameter(Mandatory)][string]$Name,
+    [Parameter(Mandatory)][bool]$DefaultValue
+  )
+
+  $_flagPattern = '^{0}="?([^"]+)"?' -f [regex]::Escape($Name)
+  $_flagMatch = ($EnvValues | Select-String $_flagPattern).Matches
+  if (-not $_flagMatch -or $_flagMatch.Count -eq 0) {
+    return $DefaultValue
+  }
+
+  $_rawValue = $_flagMatch[0].Groups[1].Value.Trim()
+  if ($_rawValue -match '^(?i:true)$') {
+    return $true
+  }
+  if ($_rawValue -match '^(?i:false)$') {
+    return $false
+  }
+
+  return $DefaultValue
+}
+
+$deployAzureMaps = Get-AzdEnvBooleanFlag -EnvValues $envValues -Name 'AZURE_DEPLOY_AZURE_MAPS' -DefaultValue $true
+$enableMonitoring = Get-AzdEnvBooleanFlag -EnvValues $envValues -Name 'AZURE_ENABLE_MONITORING' -DefaultValue $true
+$enableFailureAnomaliesAlert = Get-AzdEnvBooleanFlag -EnvValues $envValues -Name 'AZURE_ENABLE_FAILURE_ANOMALIES_ALERT' -DefaultValue $false
+
+# deploymentScripts still run on Azure Container Instance, so
+# Microsoft.ContainerInstance remains required even for Flex Consumption.
+# Microsoft.App is intentionally omitted: this template does not configure
+# Flex Consumption VNet integration or subnet delegation.
 $requiredProviders = @(
-  'Microsoft.AlertsManagement',
   'Microsoft.Authorization',
   'Microsoft.ContainerInstance',
-  'Microsoft.Insights',
   'Microsoft.ManagedIdentity',
-  'Microsoft.OperationalInsights',
   'Microsoft.Resources',
   'Microsoft.Storage',
   'Microsoft.Web'
 )
+
+if ($enableMonitoring) {
+  $requiredProviders += @(
+    'Microsoft.Insights',
+    'Microsoft.OperationalInsights'
+  )
+}
+
+if ($enableMonitoring -and $enableFailureAnomaliesAlert) {
+  $requiredProviders += 'Microsoft.AlertsManagement'
+}
 
 if ($deployAzureMaps) {
   $requiredProviders += 'Microsoft.Maps'
