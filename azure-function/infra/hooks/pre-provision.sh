@@ -76,6 +76,27 @@ set_azd_env_value() {
   refresh_azd_env_values
 }
 
+ensure_resource_group_exists() {
+  local resource_group_name="$1"
+  local location="$2"
+  local resource_group_exists=''
+
+  resource_group_exists="$(az group exists --name "${resource_group_name}" -o tsv 2>/dev/null || true)"
+  if [[ -z "${resource_group_exists}" ]]; then
+    echo "ERROR: Could not verify whether resource group '${resource_group_name}' already exists." >&2
+    exit 1
+  fi
+
+  if [[ "${resource_group_exists}" == 'true' ]]; then
+    return 0
+  fi
+
+  if ! az group create --name "${resource_group_name}" --location "${location}" --output none >/dev/null 2>&1; then
+    echo "ERROR: Could not create resource group '${resource_group_name}' in location '${location}'." >&2
+    exit 1
+  fi
+}
+
 prepare_direct_azd_entra_inputs() {
   local tenant_id=''
   local resource_group_name=''
@@ -105,6 +126,8 @@ prepare_direct_azd_entra_inputs() {
     exit 1
   fi
 
+  ensure_resource_group_exists "${resource_group_name}" "${location}"
+
   if [[ -z "$(get_azd_env_value 'AZURE_FUNCTION_APP_NAME')" ]]; then
     existing_function_app_name="$(az functionapp list \
       --resource-group "${resource_group_name}" \
@@ -114,11 +137,10 @@ prepare_direct_azd_entra_inputs() {
     if [[ -n "${existing_function_app_name}" && "${existing_function_app_name}" != 'null' ]]; then
       function_app_name="${existing_function_app_name}"
     else
-      function_app_name="$(az deployment sub create \
+      function_app_name="$(az deployment group create \
         --name 'gsi-resolve-function-app-name' \
-        --location "${location}" \
+        --resource-group "${resource_group_name}" \
         --template-file "${INFRA_DIR}/resolve-function-app-name.bicep" \
-        --parameters "resourceGroupName=${resource_group_name}" \
         --query 'properties.outputs.effectiveFunctionAppName.value' \
         -o tsv 2>/dev/null || true)"
     fi

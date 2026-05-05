@@ -957,7 +957,6 @@ function Initialize-ResourceGroup {
 function Resolve-EffectiveFunctionAppName {
   param(
     [Parameter(Mandatory)][string]$ResourceGroup,
-    [Parameter(Mandatory)][string]$Location,
     [AllowEmptyString()][string]$FunctionAppName
   )
 
@@ -977,11 +976,10 @@ function Resolve-EffectiveFunctionAppName {
   $_templatePath = Join-Path $PSScriptRoot 'resolve-function-app-name.bicep'
   $_deploymentName = "gsi-resolve-function-name-$([guid]::NewGuid().ToString('N').Substring(0, 8))"
   $_resolvedName = (Invoke-AzureCliQuiet -Arguments @(
-      'deployment', 'sub', 'create',
+      'deployment', 'group', 'create',
       '--name', $_deploymentName,
-      '--location', $Location,
+      '--resource-group', $ResourceGroup,
       '--template-file', $_templatePath,
-      '--parameters', "resourceGroupName=$ResourceGroup",
       '--query', 'properties.outputs.effectiveFunctionAppName.value',
       '-o', 'tsv'
     ) | Out-String).Trim()
@@ -2589,9 +2587,12 @@ try {
   }
 
   # ── Deploy ────────────────────────────────────────────────────────────────
+  if (-not $_whatIf) {
+    Initialize-ResourceGroup -ResourceGroup $ResourceGroupName -Location $AzureLocation
+  }
+
   $_effectiveFunctionAppName = Resolve-EffectiveFunctionAppName `
     -ResourceGroup $ResourceGroupName `
-    -Location $AzureLocation `
     -FunctionAppName $FunctionAppName
   $FunctionAppName = $_effectiveFunctionAppName
 
@@ -2606,7 +2607,6 @@ try {
     }
   }
   else {
-    Initialize-ResourceGroup -ResourceGroup $ResourceGroupName -Location $AzureLocation
     $_provisionAppClientId = Get-WebPartClientId -FunctionAppName $FunctionAppName
     if ($_provisionAppClientId) {
       Write-Host ''

@@ -76,6 +76,27 @@ function Set-AzdEnvValue {
   }
 }
 
+function Initialize-ResourceGroup {
+  param(
+    [Parameter(Mandatory)][string]$ResourceGroupName,
+    [Parameter(Mandatory)][string]$Location
+  )
+
+  $resourceGroupExists = az group exists --name $ResourceGroupName -o tsv 2>$null
+  if ($LASTEXITCODE -ne 0) {
+    throw "Could not verify whether resource group '$ResourceGroupName' already exists."
+  }
+
+  if ($resourceGroupExists -eq 'true') {
+    return
+  }
+
+  az group create --name $ResourceGroupName --location $Location --output none 2>$null | Out-Null
+  if ($LASTEXITCODE -ne 0) {
+    throw "Could not create resource group '$ResourceGroupName' in location '$Location'."
+  }
+}
+
 function Initialize-DirectAzdEntraContext {
   $tenantId = Get-AzdEnvValue -Name 'AZURE_TENANT_ID'
   if (-not $tenantId) {
@@ -99,6 +120,8 @@ function Initialize-DirectAzdEntraContext {
     ) -join ' '
   }
 
+  Initialize-ResourceGroup -ResourceGroupName $resourceGroupName -Location $location
+
   $functionAppName = Get-AzdEnvValue -Name 'AZURE_FUNCTION_APP_NAME'
   if (-not $functionAppName) {
     $existingFunctionAppName = az functionapp list `
@@ -110,11 +133,10 @@ function Initialize-DirectAzdEntraContext {
       $functionAppName = $existingFunctionAppName
     }
     else {
-      $functionAppName = az deployment sub create `
+      $functionAppName = az deployment group create `
         --name 'gsi-resolve-function-app-name' `
-        --location $location `
+        --resource-group $resourceGroupName `
         --template-file (Join-Path -Path $infraRoot -ChildPath 'resolve-function-app-name.bicep') `
-        --parameters "resourceGroupName=$resourceGroupName" `
         --query 'properties.outputs.effectiveFunctionAppName.value' `
         -o tsv 2>$null
     }
