@@ -730,7 +730,12 @@ separate privileged workstation.
 > be deferred. Cloud Application Administrator is always required for the
 > Bicep deployment to succeed.
 
-**Prerequisites (standard machine):**
+Azure Cloud Shell is often the simplest Step A environment on a PAW. It runs
+in the browser, uses Cloud Shell's own PowerShell / Azure CLI toolchain, and
+does not depend on what is installed locally on the PAW. If your PAW policy
+allows access to Azure Cloud Shell, prefer that path for the deployment step.
+
+**Prerequisites (Azure Cloud Shell or standard machine):**
 
 - PowerShell 7+
 - Azure Contributor + Owner on the resource group
@@ -745,6 +750,12 @@ separate privileged workstation.
 The pre-provision hook will display a confirmation that role assignments are
 deferred. The NEXT STEPS box at the end shows the Managed Identity Object ID
 and the command to run in Step B.
+
+This split is also the trust boundary: Step A still lets the deployment
+automation create or update the Entra App Registration through Bicep. Step B
+keeps the Privileged Role Administrator action separate, so each admin can
+decide whether to use `setup-graph-permissions.ps1` on the PAW or the lower-
+level Graph Explorer fallback below.
 
 **Required Azure roles:** Contributor + Owner on the resource group
 **Required Entra roles:** Cloud Application Administrator (Bicep creates App Registration)

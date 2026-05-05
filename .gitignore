@@ -52,7 +52,7 @@ azure-function/local.settings.json
 
 # Generated release notes (produced by scripts/release-notes.sh or the release workflow)
 RELEASE_NOTES.md
-guest-sponsor-info-function.zip
+released-package.zip
 
 # Jekyll (GitHub Pages site)
 website/_site/

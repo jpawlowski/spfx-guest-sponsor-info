@@ -29,7 +29,7 @@ footer = """
 | File | Purpose |
 |---|---|
 | [`guest-sponsor-info.sppkg`](https://github.com/workoho/spfx-guest-sponsor-info/releases/download/{{ releases.0.version }}/guest-sponsor-info.sppkg) | SharePoint web part — upload to App Catalog |
-| [`guest-sponsor-info-function.zip`](https://github.com/workoho/spfx-guest-sponsor-info/releases/download/{{ releases.0.version }}/guest-sponsor-info-function.zip) | Azure Function package |
+| [`released-package.zip`](https://github.com/workoho/spfx-guest-sponsor-info/releases/download/{{ releases.0.version }}/released-package.zip) | Azure Function package |
 | [`guest-sponsor-info-function-sbom.spdx.json`](https://github.com/workoho/spfx-guest-sponsor-info/releases/download/{{ releases.0.version }}/guest-sponsor-info-function-sbom.spdx.json) | SBOM — SPDX 2.2 (attested) |
 | [`guest-sponsor-info-function-sbom.spdx3.json`](https://github.com/workoho/spfx-guest-sponsor-info/releases/download/{{ releases.0.version }}/guest-sponsor-info-function-sbom.spdx3.json) | SBOM — SPDX 3.0 |
 | [`guest-sponsor-info-infra.zip`](https://github.com/workoho/spfx-guest-sponsor-info/releases/download/{{ releases.0.version }}/guest-sponsor-info-infra.zip) | Full deployment bundle — Bicep, hooks, and scripts |

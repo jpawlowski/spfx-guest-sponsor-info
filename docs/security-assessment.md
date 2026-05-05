@@ -153,11 +153,10 @@ All release artifacts are published through the GitHub Actions release workflow
 the complete delivery chain from source to Azure:
 
 **SHA256 checksums** — a `checksums.txt` file is published with every release.
-During Flex Consumption provisioning the Bicep `deployZipScript` automatically
-verifies the SHA256 of the downloaded ZIP before uploading it to Blob storage
-and aborts if the hashes differ, catching truncated downloads or CDN-level
-tampering. Deployers can also verify artifacts manually; see
-[deployment.md](deployment.md) for the commands.
+For Flex Consumption releases, the workflow publishes the function package as
+`released-package.zip`, which is the same immutable asset used by the native
+`onedeploy` path in Bicep. Deployers can verify that package manually;
+see [operations.md](operations.md) for the commands.
 
 **Sigstore build-provenance attestations** — the CI workflow uses
 `actions/attest-build-provenance` to publish a cryptographic attestation for
@@ -169,7 +168,7 @@ verified offline using the GitHub CLI.
 **SBOM attestation + dual-format publication** — `microsoft/sbom-tool` generates
 two SBOMs for the Azure Function package (all bundled npm dependencies): SPDX
 2.2 for broad ecosystem compatibility and SPDX 3.0 for newer tooling and policy
-engines. `actions/attest` ties the SPDX 2.2 SBOM to the function ZIP via a
+engines. `actions/attest` ties the SPDX 2.2 SBOM to `released-package.zip` via a
 Sigstore attestation. The SPDX 3.0 SBOM is published as a release asset for
 forward compatibility without blocking releases on the current attestation size
 limit.
@@ -185,6 +184,16 @@ before extracting. A hash mismatch aborts the installation with an error.
 The download URLs in `install.ps1` and `install.sh` are stamped with the
 concrete release tag during the version-stamping step, so they point to a
 specific, immutable GitHub Release asset rather than the mutable `main` branch.
+The standard Flex deployment path then points the native `onedeploy` resource
+at the immutable `released-package.zip` release asset instead of running a
+custom upload script inside the Bicep deployment.
+
+**Runtime source after publish** — GitHub is only the source for the OneDeploy
+publish operation. Once published, Azure Functions copies `released-package.zip`
+into the configured deployment container in the storage account, and restarts or
+scale-out events use that stored package from Azure Storage rather than pulling
+the ZIP from GitHub again. This means GitHub availability matters for new
+deployments, but steady-state runtime depends on the deployment container.
 
 ## Recommended Hardening Actions
 

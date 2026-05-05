@@ -19,7 +19,7 @@ For telemetry and attribution details, see [telemetry.md](telemetry.md).
   - [Step 3 (Optional) - Allow required endpoints in CSP](#step-3-optional---allow-required-endpoints-in-csp)
 - [Updating the Function](#updating-the-function)
   - [Step 1 - Update the function package](#step-1---update-the-function-package)
-  - [Alternative - Manual package upload](#alternative---manual-package-upload)
+  - [Alternative - Manual deployment via Azure CLI](#alternative---manual-deployment-via-azure-cli)
   - [Advanced - Re-run the full deployment when infrastructure changes](#advanced---re-run-the-full-deployment-when-infrastructure-changes)
 
 ---
@@ -169,20 +169,17 @@ solution.
 
 ## Updating the Function
 
-The Azure Function uses the **Flex Consumption** plan. During deployment the `deployZipScript`
-ARM resource downloads the release ZIP from GitHub (resolving `latest` at that moment) and
-stores it as `function.zip` in the `app-package` Blob container. The Function App runs from
-this frozen copy — **a restart alone does not pull a newer release**.
+The Azure Function uses the **Flex Consumption** plan. During deployment the
+native Flex `onedeploy` step copies the selected release ZIP into the app's
+configured deployment container. The Function App runs from that frozen copy —
+**a restart alone does not pull a newer release**.
 
 ### Step 1 - Update the function package
 
 Re-run the deployment wizard. By default, the installer resolves the newest
 published infra release and uses that same release for the Azure Function
-package. The wizard then re-uploads that function ZIP to Blob storage,
-replacing the frozen copy.
-
-This standard deployment path also verifies the function ZIP checksum via the
-`deployZipScript` step before upload.
+package. The wizard then republishes that function ZIP through the native Flex
+deployment path, replacing the frozen copy.
 
 `-Version` and `-AppVersion` control different artifacts:
 
@@ -212,10 +209,10 @@ Or, when running `deploy-azure.ps1` directly:
 `deploy-azure.ps1` also supports `-AppVersion`, but keep that for expert
 override scenarios.
 
-### Alternative - Manual package upload
+### Alternative - Manual deployment via Azure CLI
 
-Use this only when you need to replace the storage-backed package directly
-instead of rerunning the deployment wizard.
+Use this only when you need to publish the ZIP directly instead of rerunning the
+deployment wizard.
 
 Before a manual upload, verify the function artifact integrity:
 
@@ -223,7 +220,7 @@ Before a manual upload, verify the function artifact integrity:
 >
 > **Recommended:** verify SHA256 **and** run GitHub attestation verification.
 
-1. Download `guest-sponsor-info-function.zip` and `checksums.txt` from the
+1. Download `released-package.zip` and `checksums.txt` from the
    same release page.
 2. Verify SHA256 locally.
 
@@ -236,49 +233,35 @@ sha256sum -c checksums.txt --ignore-missing
 PowerShell:
 
 ```powershell
-$expected = ((Select-String -Path ./checksums.txt -Pattern 'guest-sponsor-info-function.zip').Line -split ' +')[0].ToLower()
-$actual = (Get-FileHash ./guest-sponsor-info-function.zip -Algorithm SHA256).Hash.ToLower()
-if ($actual -ne $expected) { throw 'SHA256 mismatch for guest-sponsor-info-function.zip' }
+$expected = ((Select-String -Path ./checksums.txt -Pattern 'released-package.zip').Line -split ' +')[0].ToLower()
+$actual = (Get-FileHash ./released-package.zip -Algorithm SHA256).Hash.ToLower()
+if ($actual -ne $expected) { throw 'SHA256 mismatch for released-package.zip' }
 ```
 
 Optional (requires `gh`):
 
 ```bash
-gh attestation verify guest-sponsor-info-function.zip \
+gh attestation verify released-package.zip \
   --repo workoho/spfx-guest-sponsor-info
 ```
 
 <details>
-<summary>Manual upload via Azure Portal or CLI</summary>
-
-**Via the Azure Portal:**
-
-1. Open **Storage Account -> Containers -> app-package**.
-2. Upload and select the ZIP from the
-   [Releases page](https://github.com/workoho/spfx-guest-sponsor-info/releases).
-3. Under Advanced, set blob name to `function.zip`, enable overwrite, then
-   upload.
-4. Restart the Function App so the unchanged package URL is reloaded and
-  triggers are refreshed.
+<summary>Manual deployment via Azure CLI</summary>
 
 **Via Azure CLI ([Cloud Shell](https://shell.azure.com)):**
 
 ```bash
-curl -sSfL -o function.zip \
-  https://github.com/workoho/spfx-guest-sponsor-info/releases/latest/download/guest-sponsor-info-function.zip
+curl -sSfL -o released-package.zip \
+  https://github.com/workoho/spfx-guest-sponsor-info/releases/latest/download/released-package.zip
 
-az storage blob upload \
-  --account-name <storage-account-name> \
-  --container-name app-package \
-  --name function.zip \
-  --file function.zip \
-  --auth-mode login \
-  --overwrite
-
-az functionapp restart \
+az functionapp deployment source config-zip \
   --resource-group <your-resource-group> \
-  --name <your-function-app-name>
+  --name <your-function-app-name> \
+  --src released-package.zip
 ```
+
+This is the native Flex publish path. Azure handles the deployment container and
+site refresh for you; no manual blob overwrite is required.
 
 </details>
 

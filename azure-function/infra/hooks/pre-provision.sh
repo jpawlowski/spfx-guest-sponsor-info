@@ -125,13 +125,12 @@ DEPLOY_AZURE_MAPS="$(get_azd_env_bool "${_ENV_VALUES}" 'AZURE_DEPLOY_AZURE_MAPS'
 ENABLE_MONITORING="$(get_azd_env_bool "${_ENV_VALUES}" 'AZURE_ENABLE_MONITORING' 'true')"
 ENABLE_FAILURE_ANOMALIES_ALERT="$(get_azd_env_bool "${_ENV_VALUES}" 'AZURE_ENABLE_FAILURE_ANOMALIES_ALERT' 'false')"
 
-# deploymentScripts still run on Azure Container Instance, so
-# Microsoft.ContainerInstance remains required even for Flex Consumption.
+# Native Flex deployment uses Microsoft.Web plus the deployment storage
+# container
 # Microsoft.App is intentionally omitted: this template does not configure
 # Flex Consumption VNet integration or subnet delegation.
 REQUIRED_PROVIDERS=(
   'Microsoft.Authorization'
-  'Microsoft.ContainerInstance'
   'Microsoft.ManagedIdentity'
   'Microsoft.Resources'
   'Microsoft.Storage'

@@ -40,7 +40,7 @@ param maximumFlexInstances string = '10'
 param instanceMemoryMB string = '512'
 
 @metadata({ category: 'Deployment' })
-@description('Function package version to deploy. "latest" (default) = always pull the newest GitHub Release at provisioning time. SemVer without "v" prefix, e.g. "1.4.2" = pin to that specific release. The provisioning script re-runs and re-uploads the ZIP whenever this value changes — set it on each redeployment to trigger a code update.')
+@description('Function package version to deploy. "latest" (default) = always pull the newest GitHub Release at provisioning time. SemVer without "v" prefix, e.g. "1.4.2" = pin to that specific release. The native Flex OneDeploy publish step re-runs whenever the resolved package URL changes — set it on each redeployment to trigger a code update.')
 param appVersion string = 'latest'
 
 @metadata({ category: 'Deployment' })
@@ -218,8 +218,8 @@ var normalizedAppVersion = startsWith(appVersion, 'v') ? substring(appVersion, 1
 var resolvedPackageUrl = !empty(packageUrl)
   ? packageUrl
   : appVersion == 'latest'
-      ? '${baseReleaseUrl}/latest/download/guest-sponsor-info-function.zip'
-      : '${baseReleaseUrl}/download/v${normalizedAppVersion}/guest-sponsor-info-function.zip'
+      ? '${baseReleaseUrl}/latest/download/released-package.zip'
+      : '${baseReleaseUrl}/download/v${normalizedAppVersion}/released-package.zip'
 var baseBuiltInTags = {
   application: 'guest-sponsor-info'
   'managed-by': 'bicep'
@@ -385,7 +385,7 @@ output azureMapsKeyCommand string = deployAzureMapsEnabled
   ? 'az maps account keys list -g ${resourceGroup().name} -n ${azureMapsAccount.name} --query primaryKey -o tsv'
   : ''
 
-@description('Name of the Storage Account. For Flex Consumption: upload updated ZIPs to the app-package container here to trigger a redeployment (use --auth-mode login). For Consumption: the runtime uses this account for trigger state and blob/queue/table operations.')
+@description('Name of the Storage Account. For Flex Consumption: this account hosts the deployment container configured on the Function App. Re-run the deployment wizard or use az functionapp deployment source config-zip to publish updated code. For Consumption: the runtime uses this account for trigger state and blob/queue/table operations.')
 output deploymentStorageAccountName string = functionApp.outputs.deploymentStorageAccountName
 
 @description('The function package version deployed. "latest" = newest release at provisioning time; otherwise the pinned SemVer tag without "v" prefix.')

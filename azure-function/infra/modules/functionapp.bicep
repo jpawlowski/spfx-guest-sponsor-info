@@ -3,7 +3,7 @@
 //
 // Deploys the Azure Functions hosting stack:
 //   - Storage Account (identity-based access, no keys)
-//   - Blob container + deployment script for Flex Consumption package upload
+//   - Blob container + native OneDeploy publishing for Flex Consumption
 //   - App Service Plan (FC1 / Flex Consumption, Linux)
 //   - Function App (including EasyAuth and all storage role assignments)
 //
@@ -80,8 +80,8 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
 
 // ── Blob container for deployment package ────────────────────────────────────
 // Flex Consumption cannot pull a ZIP from a remote URL; the package must live in
-// a blob container. The container is created here; the deployment script below
-// uploads the actual ZIP during ARM provisioning.
+// a blob container. The container is created here; the native OneDeploy
+// extension publishes the actual ZIP into this container during deployment.
 resource blobService 'Microsoft.Storage/storageAccounts/blobServices@2023-01-01' = {
   parent: storageAccount
   name: 'default'
@@ -91,95 +91,6 @@ resource deploymentContainer 'Microsoft.Storage/storageAccounts/blobServices/con
   parent: blobService
   name: deploymentContainerName
   properties: { publicAccess: 'None' }
-}
-
-// ── Deployment script (ZIP upload) ───────────────────────────────────────────
-// An Azure CLI container script runs once per unique packageUrl during ARM
-// provisioning: downloads the function ZIP and uploads it to the blob container.
-// forceUpdateTag = hash of the URL so the script re-runs only when the URL changes.
-//
-// Deployment scripts require a User-Assigned Managed Identity — System-Assigned
-// is not supported by the deploymentScripts resource type.
-resource deployScriptIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
-  name: '${functionAppName}-deploy-id'
-  location: location
-  tags: tags
-}
-
-// Grant the deployment script identity Storage Blob Data Contributor on the
-// storage account so it can upload the ZIP. Full owner access is not required.
-resource deployScriptBlobRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  scope: storageAccount
-  // Deterministic GUID: account + identity name + Storage Blob Data Contributor role ID.
-  name: guid(storageAccount.id, '${functionAppName}-deploy-id', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')
-  properties: {
-    roleDefinitionId: subscriptionResourceId(
-      'Microsoft.Authorization/roleDefinitions',
-      'ba92f5b4-2d11-453d-a403-e96b0029c9fe' // Storage Blob Data Contributor
-    )
-    principalId: deployScriptIdentity.properties.principalId
-    principalType: 'ServicePrincipal'
-  }
-}
-
-var deployScriptIdentityResourceId = deployScriptIdentity.id
-
-resource deployZipScript 'Microsoft.Resources/deploymentScripts@2023-08-01' = {
-  name: '${functionAppName}-deploy-zip'
-  location: location
-  kind: 'AzureCLI'
-  tags: tags
-  identity: {
-    type: 'UserAssigned'
-    userAssignedIdentities: {
-      '${deployScriptIdentityResourceId}': {}
-    }
-  }
-  dependsOn: [deployScriptBlobRole, deploymentContainer]
-  properties: {
-    azCliVersion: '2.60.0'
-    retentionInterval: 'PT2H'
-    forceUpdateTag: uniqueString(resolvedPackageUrl)
-    environmentVariables: [
-      { name: 'STORAGE_ACCOUNT', value: storageAccount.name }
-      { name: 'CONTAINER', value: deploymentContainerName }
-      { name: 'PACKAGE_URL', value: resolvedPackageUrl }
-    ]
-    // Retry loop handles RBAC propagation delay (~30-60 s after role assignment).
-    // SHA256 integrity check: for GitHub-hosted packages a checksums.txt is
-    // published alongside the ZIP. The check is skipped for custom packageUrl
-    // overrides (non-github.com URLs) where no checksums file is expected.
-    scriptContent: '''
-      set -euo pipefail
-      curl -sSfL -o /tmp/function.zip "$PACKAGE_URL"
-
-      # Verify SHA256 integrity for GitHub-hosted releases.
-      if echo "$PACKAGE_URL" | grep -q 'github.com'; then
-        CHECKSUM_URL="${PACKAGE_URL%/*}/checksums.txt"
-        curl -sSfL -o /tmp/checksums.txt "$CHECKSUM_URL"
-        EXPECTED=$(awk '/guest-sponsor-info-function\.zip/{print $1}' /tmp/checksums.txt)
-        ACTUAL=$(sha256sum /tmp/function.zip | awk '{print $1}')
-        if [ "$EXPECTED" != "$ACTUAL" ]; then
-          echo "SHA256 mismatch! Expected: $EXPECTED  Got: $ACTUAL"
-          exit 1
-        fi
-        echo "SHA256 verified: $ACTUAL"
-      fi
-
-      for attempt in 1 2 3; do
-        az storage blob upload \
-          --account-name "$STORAGE_ACCOUNT" \
-          --container-name "$CONTAINER" \
-          --name function.zip \
-          --file /tmp/function.zip \
-          --auth-mode login \
-          --overwrite && break || {
-            echo "Upload attempt $attempt failed — waiting for RBAC propagation"
-            sleep 30
-          }
-      done
-    '''
-  }
 }
 
 // ── App Service Plan ──────────────────────────────────────────────────────────
@@ -283,10 +194,11 @@ resource authSettings 'Microsoft.Web/sites/config@2023-12-01' = {
 
 // ── Storage role assignments (identity-based, no key) ────────────────────────
 // The current app uses only HTTP and timer triggers. With identity-based
-// AzureWebJobsStorage, the Functions host needs blob access for timer locks and
-// host artifacts. We also keep table access so host diagnostic events can still
-// be persisted. Queue access is intentionally omitted because no queue- or
-// blob-triggered workloads are deployed in this app.
+// AzureWebJobsStorage, the Functions host needs blob access for timer locks,
+// host artifacts, and the Flex deployment container. We also keep table access
+// so host diagnostic events can still be persisted. Queue access is
+// intentionally omitted because no queue- or blob-triggered workloads are
+// deployed in this app.
 //
 // roleDefinition IDs:
 //   b7e6dc6d-f1e8-4753-8033-0f276bb0955b  Storage Blob Data Owner
@@ -317,6 +229,23 @@ resource storageTableRole 'Microsoft.Authorization/roleAssignments@2022-04-01' =
     )
     principalId: functionApp.identity.principalId
     principalType: 'ServicePrincipal'
+  }
+}
+
+// ── Native Flex package publish (OneDeploy) ─────────────────────────────────
+// Flex Consumption uses OneDeploy to copy a ready-to-run ZIP from a remote URL
+// into the configured deployment container. This keeps code publishing in the
+// native Microsoft.Web control plane instead of a custom deployment script.
+resource functionAppOneDeploy 'Microsoft.Web/sites/extensions@2022-09-01' = {
+  parent: functionApp
+  name: 'onedeploy'
+  dependsOn: [storageBlobRole]
+  // The Azure Functions Flex docs require packageUri/remoteBuild here, but the
+  // current Bicep type provider does not model onedeploy's request body yet.
+  #disable-next-line BCP187
+  properties: {
+    packageUri: resolvedPackageUrl
+    remoteBuild: false
   }
 }
 

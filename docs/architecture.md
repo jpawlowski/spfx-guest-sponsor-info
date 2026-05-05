@@ -234,14 +234,13 @@ Manual fallback: `infra/setup-graph-permissions.ps1` (for role assignment only; 
 
 The Azure Function runs on the **Flex Consumption** plan (SKU: FC1 / Linux). This is the only
 supported hosting plan. The legacy Consumption plan (Y1) was dropped because it does not
-support ZIP-from-Blob deployment via `deployZipScript`, lacks per-instance memory
+support native Flex `onedeploy` publishing, lacks per-instance memory
 configuration, and is being superseded by Flex Consumption across new Azure regions.
 
-- **ZIP deployment**: during provisioning, the `deployZipScript` ARM deployment script
-  downloads the release ZIP from GitHub (resolving `latest` at that moment) and stores it as
-  `function.zip` in the `app-package` Blob container. The Function App then runs from this
-  frozen copy. A restart alone does not pull a newer release — re-run the deployment wizard or
-  upload a new ZIP manually.
+- **ZIP deployment**: during provisioning, the native Flex `onedeploy` path copies the
+  selected release ZIP into the configured deployment container. The Function App then runs
+  from this frozen copy. A restart alone does not pull a newer release — re-run the deployment
+  wizard or publish a new ZIP with the Azure CLI.
 - **Cost**: with `alwaysReadyInstances=0` (default) costs stay within the free execution grant.
   Set `alwaysReadyInstances=1` to keep one instance always warm and eliminate cold starts
   (~€2–5/month).

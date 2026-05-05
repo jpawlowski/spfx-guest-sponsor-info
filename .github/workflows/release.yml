@@ -150,7 +150,7 @@ jobs:
         with:
           subject-path: |
             sharepoint/solution/guest-sponsor-info.sppkg
-            azure-function/guest-sponsor-info-function.zip
+            azure-function/released-package.zip
             guest-sponsor-info-infra.zip
 
       # Attest the SPDX SBOM against the function ZIP so the full dependency
@@ -159,20 +159,19 @@ jobs:
       - name: Attest Function SBOM (SPDX 2.2)
         uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
         with:
-          subject-path: azure-function/guest-sponsor-info-function.zip
+          subject-path: azure-function/released-package.zip
           sbom-path: guest-sponsor-info-function-sbom.spdx.json
 
       # Generate a SHA256 checksums file for all release artifacts.
       # Published so deployers and auditors can verify downloads independently.
-      # Also consumed by the Bicep deployZipScript to verify the function
-      # package during Flex Consumption provisioning.
+      # The native Flex OneDeploy path consumes released-package.zip directly.
       # Attestation bundles are stored in GitHub's attestation store and
       # verifiable via: gh attestation verify <file> --repo workoho/spfx-guest-sponsor-info
       - name: Generate checksums
         run: |
           sha256sum \
             sharepoint/solution/guest-sponsor-info.sppkg \
-            azure-function/guest-sponsor-info-function.zip \
+            azure-function/released-package.zip \
             guest-sponsor-info-function-sbom.spdx.json \
             guest-sponsor-info-function-sbom.spdx3.json \
             guest-sponsor-info-infra.zip \
@@ -190,7 +189,7 @@ jobs:
           body_path: RELEASE_NOTES.md
           files: |
             sharepoint/solution/guest-sponsor-info.sppkg
-            azure-function/guest-sponsor-info-function.zip
+            azure-function/released-package.zip
             guest-sponsor-info-function-sbom.spdx.json
             guest-sponsor-info-function-sbom.spdx3.json
             guest-sponsor-info-infra.zip
