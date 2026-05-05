@@ -163,7 +163,7 @@ All extensions install automatically when the devcontainer starts.
 
 | Extension | Purpose |
 |---|---|
-| **Azure Developer CLI** | Deploy and manage the full app stack with `azd up` / `azd down`. |
+| **Azure Developer CLI** | Deploy and manage the Azure environment with `azd provision`, `azd deploy`, and `azd down`. |
 | **Azure Functions** | Browse, deploy, and live-debug Azure Functions from VS Code. |
 | **Azure Resources** | Browse subscriptions, resource groups, and resources in the sidebar. |
 | **Azure Storage** | Browse blob containers and table storage directly in the editor. |

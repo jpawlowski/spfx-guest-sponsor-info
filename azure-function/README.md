@@ -66,7 +66,7 @@ environment-variable service-principal credentials.
 |---|---|---|
 | `Presence.Read.All` | Fetch online presence status for sponsor cards. Requires Microsoft Teams licensing in the tenant. | Sponsors are shown without presence indicator. |
 | `MailboxSettings.Read` | Read `userPurpose` to filter out shared/room/equipment mailboxes from sponsor cards. | Filter is skipped — all mailbox types are included (fail-open). |
-| `TeamMember.Read.All` | Check if the guest user is a member of any Microsoft Team (used to show/hide Teams action buttons on sponsor cards). | Falls back to presence check without Teams membership signal. |
+| `TeamMember.Read.All` | Check if the guest user is a member of any Microsoft Team to control Teams action buttons on sponsor cards. | Falls back to presence check without Teams membership signal. |
 
 The function detects which optional permissions are granted at cold-start by
 inspecting the Managed Identity token and logs the result to Application
@@ -201,8 +201,11 @@ to Azure CLI (`az login`) or a service principal when `AZURE_CLIENT_ID`,
 | File | Purpose |
 |---|---|
 | `src/getGuestSponsors.ts` | Single function entry point — all logic |
+| `infra/entra-auth.bicep` | Entra bootstrap for the EasyAuth App Registration |
+| `infra/assign-graph-permissions.bicep` | Post-provision Graph app-role assignments for the Managed Identity |
 | `infra/setup-graph-permissions.ps1` | Assigns Graph app roles to the Managed Identity |
-| `infra/main.bicep` | Azure infrastructure (Function App, Storage, MI, EasyAuth, App Registration, Alerts) |
+| `infra/main.bicep` | Azure-only infrastructure (Function App, Storage, MI, EasyAuth, monitoring, OneDeploy publish) |
+| `infra/resolve-function-app-name.bicep` | Reproduces the deterministic default Function App name outside the main deployment |
 | `local.settings.json.example` | Template for local development settings |
 
 ## License

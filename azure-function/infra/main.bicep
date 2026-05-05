@@ -1,9 +1,7 @@
-extension microsoftGraphV1
-
 targetScope = 'resourceGroup'
 
 metadata name = 'Guest Sponsor API for Microsoft Entra B2B'
-metadata description = 'Deploys an Azure Function App that acts as a Graph API proxy for the Guest Sponsor Info for Microsoft Entra B2B SharePoint web part. Includes a Storage Account, App Service Plan, EasyAuth configuration, Log Analytics Workspace, and Application Insights. Always creates the Entra App Registration. Graph application role assignments to the Managed Identity are included by default and can be deferred to setup-graph-permissions.ps1 via skipGraphRoleAssignments=true.'
+metadata description = 'Deploys the Azure-only hosting stack for the Guest Sponsor Info Function App, including Storage, Flex Consumption hosting, EasyAuth configuration, Log Analytics Workspace, and Application Insights. The Entra App Registration and Microsoft Graph role assignments are managed separately by entra-auth.bicep.'
 metadata repository = 'https://github.com/workoho/spfx-guest-sponsor-info'
 metadata author = 'Workoho GmbH'
 metadata license = 'PolyForm-Shield-1.0.0'
@@ -17,8 +15,12 @@ param location string = resourceGroup().location
 param tenantId string = tenant().tenantId
 
 @metadata({ category: 'Basics' })
-@description('Tenant name without domain suffix, e.g. "contoso".')
-param tenantName string
+@description('Tenant name without domain suffix, e.g. "contoso". The pre-provision hook fills this for direct azd runs when it is still empty.')
+param tenantName string = ''
+
+@metadata({ category: 'Basics' })
+@description('Client ID (appId) of the Entra App Registration used by EasyAuth. The pre-provision hook fills this for direct azd runs when it is still empty.')
+param appClientId string = ''
 
 @metadata({ category: 'Basics' })
 @description('Name for the Function App (2–58 characters, letters, numbers, and hyphens only). Leave empty to auto-generate a deterministic name scoped to this resource group — re-deployments always produce the same name, and the URL is not easily guessable.')
@@ -198,11 +200,6 @@ param defaultInfoActionGroupShortName string = 'GSIInfo'
 @description('Enable Customer Usage Attribution (CUA): an empty nested deployment named pid-18fb4033-c9f3-41fa-a5db-e3a03b012939 is created in your resource group. Microsoft forwards aggregated Azure consumption figures for that GUID to Workoho via Partner Center — no personal data or resource details ever leave your subscription. Set to false to opt out. See https://aka.ms/partnercenter-attribution')
 param enableTelemetry bool = true
 
-@metadata({ category: 'Entra' })
-@description('Skip Microsoft Graph application role assignments to the Managed Identity. Set to "true" when setup-graph-permissions.ps1 will be run separately by an admin with Privileged Role Administrator rights. The App Registration and its configuration are always managed by Bicep regardless of this setting. Default: "false" — Bicep assigns all required Graph permissions in the same deployment.')
-param skipGraphRoleAssignments string = 'false'
-
-var skipRoleAssignments = skipGraphRoleAssignments == 'true'
 var deployAzureMapsEnabled = deployAzureMaps == 'true'
 var enableMonitoringEnabled = enableMonitoring == 'true'
 var enableFailureAnomaliesAlertEnabled = enableFailureAnomaliesAlert == 'true'
@@ -248,16 +245,6 @@ var resourceGroupEffectiveTags = union(resourceGroup().tags, effectiveTags)
 var azureMapsName = empty(azureMapsAccountName)
   ? toLower('maps${uniqueString(resourceGroup().id, functionAppName)}')
   : toLower(azureMapsAccountName)
-var appRegDescription = 'EasyAuth identity provider for the "Guest Sponsor Info" SharePoint Online web part (SPFx). Authenticates requests from the web part to the Azure Function proxy, which calls Microsoft Graph on behalf of signed-in guest users to retrieve their Entra sponsor information. Tokens are acquired silently via pre-authorized SharePoint Online Web Client Extensibility. Docs: ${docsUrl}'
-var appRegNotes = 'Do not delete — the "Guest Sponsor Info" SharePoint web part depends on this for guest sponsor lookups via Microsoft Graph. The associated Azure Function uses a system-assigned Managed Identity for Graph API calls (User.Read.All, Presence.Read.All, MailboxSettings.Read, TeamMember.Read.All). Docs: ${docsUrl}'
-var appRegInfo = {
-  termsOfServiceUrl: '${repositoryUrl}/blob/main/docs/terms-of-use.md'
-  privacyStatementUrl: '${repositoryUrl}/blob/main/docs/privacy-policy.md'
-  supportUrl: '${repositoryUrl}/issues'
-  marketingUrl: docsUrl
-}
-var appRegLogo = loadFileAsBase64('./assets/icon-300.png')
-var userImpersonationScopeId = guid(functionAppName, 'user-impersonation')
 
 // ── Customer Usage Attribution (Partner Center tracking) ─────────────────────
 // Empty nested deployment whose name carries the Partner Center GUID. Azure
@@ -326,7 +313,7 @@ module monitoring './modules/monitoring.bicep' = if (enableMonitoringEnabled) {
 
 // ── Function App module ───────────────────────────────────────────────────────
 // Storage Account, App Service Plan (FC1/Flex Consumption), Function App,
-// EasyAuth, deployment script, and storage role assignments are all
+// EasyAuth, OneDeploy publishing, and storage role assignments are all
 // managed in a dedicated module.
 module functionApp './modules/functionapp.bicep' = {
   params: {
@@ -339,7 +326,7 @@ module functionApp './modules/functionapp.bicep' = {
     appVersion: appVersion
     tenantId: tenantId
     tenantName: tenantName
-    appClientId: effectiveAppClientId
+    appClientId: appClientId
     appInsightsConnectionString: enableMonitoringEnabled
       #disable-next-line BCP318 // Safe: monitoring module is always deployed when enableMonitoringEnabled=true.
       ? monitoring.outputs.appInsightsConnectionString
@@ -393,92 +380,3 @@ output deployedAppVersion string = appVersion
 
 @description('The Function App name (auto-generated or explicitly supplied).')
 output functionAppName string = functionApp.outputs.functionAppName
-
-// ── Entra App Registration ────────────────────────────────────────────────────
-// Creates (or idempotently updates) the App Registration used by EasyAuth as
-// the identity provider. The web part acquires delegated tokens against this
-// audience using the pre-authorized SharePoint Online Web Client Extensibility
-// client — no user consent prompt is shown.
-//
-// uniqueName acts as the stable key across re-deployments; it must be globally
-// unique in the tenant.  We incorporate functionAppName which is already
-// required to be globally unique across Azure.
-//
-// NOTE: migration from the old pre-provision-hook-created App Registration:
-// That App Registration had no uniqueName set, so Bicep will create a new one
-// alongside it on the first run with this template.  Delete the old registration
-// in the Entra admin center after confirming the new one is working.
-resource appReg 'Microsoft.Graph/applications@v1.0' = {
-  displayName: 'Guest Sponsor Info - SharePoint Web Part Auth'
-  uniqueName: 'guest-sponsor-info-proxy-${functionAppName}'
-  description: appRegDescription
-  notes: appRegNotes
-  signInAudience: 'AzureADMyOrg'
-  info: appRegInfo
-  logo: appRegLogo
-  serviceManagementReference: '${repositoryUrl}/issues'
-  web: {
-    homePageUrl: repositoryUrl
-  }
-  // identifierUri uses functionAppName (globally unique) instead of appId to avoid
-  // a circular reference (appId is read-only and not available inside the same resource).
-  identifierUris: [
-    'api://guest-sponsor-info-${functionAppName}'
-  ]
-  api: {
-    requestedAccessTokenVersion: 2
-    oauth2PermissionScopes: [
-      {
-        // Deterministic GUID based on the Function App name — stable across re-deployments.
-        id: userImpersonationScopeId
-        adminConsentDescription: 'Allows the SharePoint web part to call the Azure Function proxy on behalf of the signed-in user.'
-        adminConsentDisplayName: 'Access Guest Sponsor Info web part proxy as the signed-in user'
-        isEnabled: true
-        type: 'User'
-        userConsentDescription: 'Allows the app to call the Azure Function proxy on your behalf.'
-        userConsentDisplayName: 'Access Guest Sponsor Info web part proxy'
-        value: 'user_impersonation'
-      }
-    ]
-    // Pre-authorize the SharePoint Online Web Client Extensibility client app
-    // so the web part can acquire tokens silently without a user consent prompt.
-    preAuthorizedApplications: [
-      {
-        appId: '08e18876-6177-487e-b8b5-cf950c1e598c' // SharePoint Online Web Client Extensibility
-        delegatedPermissionIds: [
-          userImpersonationScopeId
-        ]
-      }
-    ]
-  }
-}
-
-var effectiveAppClientId = appReg.appId
-
-// ── EasyAuth App Registration Service Principal ───────────────────────────────
-// Configure the Enterprise Application (Service Principal) created automatically
-// when the App Registration is deployed. Sets appRoleAssignmentRequired=false so
-// all users (including guests) can acquire tokens without individual assignment,
-// and hides the app from the My Apps portal (HideApp tag).
-// Requires: Application.ReadWrite.All (Cloud Application Administrator).
-resource easyAuthSp 'Microsoft.Graph/servicePrincipals@v1.0' = {
-  appId: appReg.appId
-  tags: ['HideApp']
-  appRoleAssignmentRequired: false
-  description: appRegDescription
-  notes: appRegNotes
-}
-
-// ── Graph permissions module ──────────────────────────────────────────────────
-// Assigns the four required Microsoft Graph application permissions to the
-// Managed Identity. Isolated in a module so security reviewers can audit the
-// exact permission grants independently of the rest of the deployment.
-module graphPermissions './modules/graph-permissions.bicep' = {
-  params: {
-    managedIdentityObjectId: functionApp.outputs.managedIdentityObjectId
-    skipRoleAssignments: skipRoleAssignments
-  }
-}
-
-@description('Client ID (appId) of the Entra App Registration used for EasyAuth. Paste this into the SPFx web part property pane (Application (client) ID field).')
-output webPartClientId string = effectiveAppClientId

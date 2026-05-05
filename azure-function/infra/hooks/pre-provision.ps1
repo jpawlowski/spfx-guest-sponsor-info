@@ -4,17 +4,14 @@
 # SPDX-License-Identifier: LicenseRef-PolyForm-Shield-1.0.0
 #
 # Pre-provision hook for Azure Developer CLI (azd).
-# Runs before Bicep deployment to:
-#   1. Derive a default Function App name from the azd environment name.
-#   2. Detect or prompt for the SharePoint tenant name.
+# Runs before the Azure-only Bicep deployment to:
+#   1. Validate the Azure-side prerequisites and required environment values.
+#   2. Detect or prompt for the SharePoint tenant name when it is unset.
 #
-# The Entra App Registration and Microsoft Graph permission assignments are
-# now managed declaratively by the Bicep template (Microsoft Graph Bicep
-# extension v1.0).  The deploying principal needs:
-#   - Application.ReadWrite.All  (Cloud Application Administrator,
-#                                  Application Administrator, or Global Administrator)
-#   - AppRoleAssignment.ReadWrite.All  (Privileged Role Administrator
-#                                        or Global Administrator)
+# deploy-azure.ps1 prepares the Entra App Registration before azd provision and
+# writes the resolved Function App name plus EasyAuth client ID into the azd
+# environment. When azd is run directly, this hook derives the same values so
+# the Azure-only template can deploy end to end.
 #
 # All operations are idempotent — safe to re-run on 'azd provision' or 'azd up'.
 
@@ -49,7 +46,135 @@ function Get-AzdProjectRoot {
 
 Set-Location -Path (Get-AzdProjectRoot)
 
-$envValues = azd env get-values
+$infraRoot = Split-Path -Path $PSScriptRoot -Parent
+
+function Get-AzdEnvSnapshot {
+  return @(azd env get-values 2>$null)
+}
+
+function Get-AzdEnvValue {
+  param([Parameter(Mandatory)][string]$Name)
+
+  $_pattern = '^{0}="?([^\"]*)"?' -f [regex]::Escape($Name)
+  $_match = ((Get-AzdEnvSnapshot) | Select-String $_pattern).Matches
+  if ($_match -and $_match.Count -gt 0) {
+    return $_match[0].Groups[1].Value
+  }
+
+  return ''
+}
+
+function Set-AzdEnvValue {
+  [CmdletBinding(SupportsShouldProcess)]
+  param(
+    [Parameter(Mandatory)][string]$Name,
+    [Parameter(Mandatory)][string]$Value
+  )
+
+  if ($PSCmdlet.ShouldProcess('azd environment', "set $Name")) {
+    azd env set $Name $Value | Out-Null
+  }
+}
+
+function Initialize-DirectAzdEntraContext {
+  $tenantId = Get-AzdEnvValue -Name 'AZURE_TENANT_ID'
+  if (-not $tenantId) {
+    $tenantId = az account show --query tenantId -o tsv 2>$null
+    if ($LASTEXITCODE -ne 0 -or -not $tenantId -or $tenantId -eq 'null') {
+      throw @(
+        'AZURE_TENANT_ID is not set and could not be derived from the active Azure CLI context.',
+        'Run az login first or set it manually with: azd env set AZURE_TENANT_ID <tenant-guid>'
+      ) -join ' '
+    }
+
+    Set-AzdEnvValue -Name 'AZURE_TENANT_ID' -Value $tenantId
+  }
+
+  $resourceGroupName = Get-AzdEnvValue -Name 'AZURE_RESOURCE_GROUP'
+  $location = Get-AzdEnvValue -Name 'AZURE_LOCATION'
+  if (-not $resourceGroupName -or -not $location) {
+    throw @(
+      'AZURE_RESOURCE_GROUP and AZURE_LOCATION must be set before azd can run the Azure-only template.',
+      'Use deploy-azure.ps1 or set them manually with: azd env set AZURE_RESOURCE_GROUP <name> and azd env set AZURE_LOCATION <region>'
+    ) -join ' '
+  }
+
+  $functionAppName = Get-AzdEnvValue -Name 'AZURE_FUNCTION_APP_NAME'
+  if (-not $functionAppName) {
+    $existingFunctionAppName = az functionapp list `
+      --resource-group $resourceGroupName `
+      --query "[?tags.application=='guest-sponsor-info'].name | [0]" `
+      -o tsv 2>$null
+
+    if ($LASTEXITCODE -eq 0 -and $existingFunctionAppName -and $existingFunctionAppName -ne 'null') {
+      $functionAppName = $existingFunctionAppName
+    }
+    else {
+      $functionAppName = az deployment sub create `
+        --name 'gsi-resolve-function-app-name' `
+        --location $location `
+        --template-file (Join-Path -Path $infraRoot -ChildPath 'resolve-function-app-name.bicep') `
+        --parameters "resourceGroupName=$resourceGroupName" `
+        --query 'properties.outputs.effectiveFunctionAppName.value' `
+        -o tsv 2>$null
+    }
+
+    if ($LASTEXITCODE -ne 0 -or -not $functionAppName -or $functionAppName -eq 'null') {
+      throw @(
+        'Could not determine the Function App name for the Azure-only deployment.',
+        'Set it manually with: azd env set AZURE_FUNCTION_APP_NAME <function-app-name>'
+      ) -join ' '
+    }
+
+    Set-AzdEnvValue -Name 'AZURE_FUNCTION_APP_NAME' -Value $functionAppName
+  }
+
+  $webPartClientId = Get-AzdEnvValue -Name 'AZURE_WEB_PART_CLIENT_ID'
+  if (-not $webPartClientId) {
+    try {
+      $appRegUniqueName = "guest-sponsor-info-proxy-$functionAppName"
+      $webPartClientId = (az ad app list --filter "uniqueName eq '$appRegUniqueName'" --query '[0].appId' -o tsv 2>$null).Trim()
+      if ($LASTEXITCODE -ne 0 -or $webPartClientId -eq 'null') {
+        $webPartClientId = $null
+      }
+    }
+    catch {
+      $webPartClientId = $null
+    }
+
+    if (-not $webPartClientId) {
+      $resourceGroupExists = (az group exists --name $resourceGroupName 2>$null)
+      if ($LASTEXITCODE -ne 0) {
+        $resourceGroupExists = 'false'
+      }
+
+      if ($resourceGroupExists -ne 'true') {
+        Write-Host ''
+        Write-Host "Preparing resource group '$resourceGroupName' for the Entra auth bootstrap..."
+        az group create --name $resourceGroupName --location $location --output none | Out-Null
+      }
+
+      $webPartClientId = az deployment group create `
+        --name 'gsi-entra-auth-pre' `
+        --resource-group $resourceGroupName `
+        --template-file (Join-Path -Path $infraRoot -ChildPath 'entra-auth.bicep') `
+        --parameters "functionAppName=$functionAppName" `
+        --query 'properties.outputs.webPartClientId.value' `
+        -o tsv 2>$null
+    }
+
+    if ($LASTEXITCODE -ne 0 -or -not $webPartClientId -or $webPartClientId -eq 'null') {
+      throw @(
+        'Could not prepare the EasyAuth App Registration before azd provision.',
+        'Ensure the signed-in account can create/update Entra applications, or set the client ID manually with: azd env set AZURE_WEB_PART_CLIENT_ID <app-client-id>'
+      ) -join ' '
+    }
+
+    Set-AzdEnvValue -Name 'AZURE_WEB_PART_CLIENT_ID' -Value $webPartClientId
+  }
+}
+
+$envValues = Get-AzdEnvSnapshot
 
 # ── 0a. Check Azure RBAC permission ─────────────────────────────────────────
 # Contributor (or Owner) on the subscription is needed to register resource
@@ -281,82 +406,20 @@ if ($envValues -notmatch 'AZURE_INSTANCE_MEMORY_MB=') {
   azd env set AZURE_INSTANCE_MEMORY_MB '512'
 }
 
+Initialize-DirectAzdEntraContext
+
 # ── 3. Entra role check ──────────────────────────────────────────────────────
-# Cloud Application Administrator (or Application Administrator / Global Admin)
-# is always required — Bicep creates and manages the App Registration.
-#
-# Privileged Role Administrator (or Global Admin) is required for Graph app role
-# assignments to the Managed Identity. If that role is not available, defer by
-# setting AZURE_SKIP_GRAPH_ROLE_ASSIGNMENTS=true before running azd provision:
-#
-#   azd env set AZURE_SKIP_GRAPH_ROLE_ASSIGNMENTS true
-#
-# Then run setup-graph-permissions.ps1 after deployment with the
-# managedIdentityObjectId Bicep output (azd env get-values).
+# The Azure-only azd phase deploys the hosting resources. The Entra bootstrap
+# runs before azd provision, and Microsoft Graph role assignment runs after the
+# Azure phase when automatic assignment is enabled.
 Write-Host ''
-Write-Host 'Checking Entra roles...'
-$_appRegRoles = @('Cloud Application Administrator', 'Application Administrator', 'Global Administrator')
-$_assignmentRoles = @('Privileged Role Administrator', 'Global Administrator')
+Write-Host 'Entra phase status...'
 $_skipRoleAssignments = $env:AZURE_SKIP_GRAPH_ROLE_ASSIGNMENTS -eq 'true'
-try {
-  $_entraRaw = az rest `
-    --method GET `
-    --url 'https://graph.microsoft.com/v1.0/me/transitiveMemberOf/microsoft.graph.directoryRole?$select=displayName' `
-    --query 'value[*].displayName' `
-    -o tsv 2>$null
-  if ($LASTEXITCODE -eq 0) {
-    $_activeRoles = @(
-      $_entraRaw -split "`n" |
-      Where-Object { $_ } |
-      ForEach-Object { $_.Trim() }
-    )
-    $_hasAppRegRole = @($_activeRoles | Where-Object { $_appRegRoles -contains $_ })
-    $_hasAssignmentRole = @($_activeRoles | Where-Object { $_assignmentRoles -contains $_ })
-    if (-not $_hasAppRegRole) {
-      Write-Host '  ! Missing: Cloud Application Administrator, Application Administrator,'
-      Write-Host '    or Global Administrator — required to create/update the App Registration.'
-      Write-Host '    Bicep will fail without this role. Activate via PIM before re-running:'
-      Write-Host '    https://entra.microsoft.com/#view/Microsoft_Azure_PIMCommon/ActivationMenuBlade/~/aadRoles'
-    }
-    if (-not $_skipRoleAssignments -and -not $_hasAssignmentRole) {
-      Write-Host '  ! Missing: Privileged Role Administrator (or Global Administrator) —'
-      Write-Host '    needed to assign Graph app roles to the Managed Identity.'
-      Write-Host '    Either activate the role via PIM, or defer the assignments:'
-      Write-Host '      azd env set AZURE_SKIP_GRAPH_ROLE_ASSIGNMENTS true'
-      Write-Host '    Then run setup-graph-permissions.ps1 after deployment.'
-      Write-Host '    PIM → My roles → Entra roles:'
-      Write-Host '    https://entra.microsoft.com/#view/Microsoft_Azure_PIMCommon/ActivationMenuBlade/~/aadRoles'
-    }
-    if ($_hasAppRegRole) {
-      if ($_skipRoleAssignments) {
-        Write-Host "  + Entra role: $($_hasAppRegRole[0]) — App Registration management covered."
-        Write-Host '    Graph role assignments: deferred to setup-graph-permissions.ps1.'
-      }
-      elseif ($_hasAssignmentRole) {
-        if ($_hasAppRegRole[0] -eq $_hasAssignmentRole[0]) {
-          Write-Host "  + Entra role: $($_hasAppRegRole[0]) — covers both required permissions."
-        }
-        else {
-          Write-Host "  + Entra roles: $($_hasAppRegRole[0]) + $($_hasAssignmentRole[0]) — both required roles active."
-        }
-      }
-    }
-  }
-  else {
-    Write-Host '  ! Entra role check returned an error — continuing anyway.'
-    Write-Host '    Required: Cloud Application Administrator (or similar).'
-    if (-not $_skipRoleAssignments) {
-      Write-Host '    Also required: Privileged Role Administrator (or Global Administrator).'
-      Write-Host '    To defer Graph role assignments: azd env set AZURE_SKIP_GRAPH_ROLE_ASSIGNMENTS true'
-    }
-  }
+Write-Host '  + EasyAuth App Registration is prepared before azd provision.'
+if ($_skipRoleAssignments) {
+  Write-Host '  + Microsoft Graph role assignments remain deferred to setup-graph-permissions.ps1.'
 }
-catch {
-  Write-Host '  ! Entra role check encountered an error — continuing anyway.'
-  Write-Host '    Required: Cloud Application Administrator (or similar).'
-  if (-not $_skipRoleAssignments) {
-    Write-Host '    Also required: Privileged Role Administrator (or Global Administrator).'
-    Write-Host '    To defer Graph role assignments: azd env set AZURE_SKIP_GRAPH_ROLE_ASSIGNMENTS true'
-  }
+else {
+  Write-Host '  + Microsoft Graph role assignments run in deploy-azure.ps1 after azd provision.'
 }
 Write-Host ''

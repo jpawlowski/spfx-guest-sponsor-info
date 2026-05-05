@@ -21,7 +21,7 @@ operator flow still has three phases:
 | Phase | What you finish | Typical role |
 |---|---|---|
 | 1 - SharePoint | Install the web part package, make the bundle reachable for guests, and confirm landing-page access | SharePoint Administrator |
-| 2 - Guest Sponsor API | Deploy the Azure Function, App Registration, and Graph permissions | Azure `Contributor` + `Owner` (or `User Access Administrator`) + required Entra roles |
+| 2 - Guest Sponsor API | Run the Azure plus Entra two-stage deployment for the Function App, EasyAuth App Registration, and Graph permissions | Azure `Contributor` + `Owner` (or `User Access Administrator`) + required Entra roles |
 | 3 - Web part configuration | Paste the API URL and Client ID into the landing-page web part and verify the live connection | Site Owner |
 
 If you only need one specific area, jump to the matching section below. If you
@@ -528,8 +528,9 @@ This section is ordered by execution sequence. Items marked **Alternative** or
 
 If your organisation uses
 [PIM](https://learn.microsoft.com/entra/id-governance/privileged-identity-management/pim-configure),
-activate the Entra roles before running the script. The pre-provision hook
-checks your active directory roles and warns if any are missing.
+activate the Entra roles before running the script. The deployment wizard
+checks the visible Azure and Entra permissions up front and warns when roles
+are missing.
 
 ### Step 2 - Run the deployment wizard
 
@@ -627,8 +628,9 @@ creating Azure resources, use PowerShell `-WhatIf`:
 
 [Azure Developer CLI (azd)](https://aka.ms/azd) is installed automatically if
 not already present. The wizard walks through selecting a subscription and
-resource group, creates the Entra App Registration, deploys all Azure
-infrastructure, and assigns Microsoft Graph permissions.
+resource group, then runs the deployment in three stages: it prepares the
+EasyAuth App Registration first, runs the Azure-only `azd provision` phase,
+and finally assigns Microsoft Graph permissions plus a Function App restart.
 
 ---
 
@@ -654,6 +656,13 @@ Set-Location ./infra
 
 The wizard behaviour is identical to the `install.ps1` path — the ZIP simply
 provides the files locally so you can review them first.
+
+Advanced operator path: from the extracted ZIP (or a local repository clone),
+you can also run `azd provision --no-prompt` directly after selecting the azd
+environment. The hooks derive `AZURE_TENANT_ID`, `AZURE_FUNCTION_APP_NAME`,
+and `AZURE_WEB_PART_CLIENT_ID` when they are missing, and direct azd
+runs also complete the post-Azure Graph-permission and restart phase unless
+`AZURE_SKIP_GRAPH_ROLE_ASSIGNMENTS=true` is set.
 
 </details>
 
@@ -716,8 +725,8 @@ itself:
 
 On PAW environments where **Privileged Role Administrator** cannot be
 activated (required to assign Graph app roles to Managed Identities), the
-standard single-step `deploy-azure.ps1` path can still create the App
-Registration via Bicep — you only need to defer the Graph role assignments.
+standard `deploy-azure.ps1` path prepares the App Registration, so you only
+need to defer the Graph role assignments.
 
 Use this advanced path only when Graph app-role assignment must happen from a
 separate privileged workstation.
@@ -725,10 +734,12 @@ separate privileged workstation.
 <details>
 <summary>Expand PAW deployment steps</summary>
 
-> **Note:** The App Registration is always created by Bicep. Only the Graph
-> app role assignment step (which requires Privileged Role Administrator) can
-> be deferred. Cloud Application Administrator is always required for the
-> Bicep deployment to succeed.
+> **Note:** The App Registration is always created by the separate Entra
+> bootstrap (`entra-auth.bicep`) before the Azure-only `azd provision` phase.
+> The Graph app role assignment step runs via `assign-graph-permissions.bicep`
+> after the Azure-only `azd provision` phase, so only that Privileged Role
+> Administrator step can be deferred. Cloud Application Administrator is
+> always required for the Entra bootstrap to succeed.
 
 Azure Cloud Shell is often the simplest Step A environment on a PAW. It runs
 in the browser, uses Cloud Shell's own PowerShell / Azure CLI toolchain, and
@@ -739,7 +750,7 @@ allows access to Azure Cloud Shell, prefer that path for the deployment step.
 
 - PowerShell 7+
 - Azure Contributor + Owner on the resource group
-- Entra **Cloud Application Administrator** (for Bicep to create the App Registration)
+- Entra **Cloud Application Administrator** (for the Entra bootstrap to create the App Registration)
 
 #### Step A — Run the deployment with role assignments deferred
 
@@ -747,18 +758,18 @@ allows access to Azure Cloud Shell, prefer that path for the deployment step.
 & ([scriptblock]::Create((iwr 'https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/main/azure-function/infra/install.ps1').Content)) -SkipGraphRoleAssignments $true
 ```
 
-The pre-provision hook will display a confirmation that role assignments are
-deferred. The NEXT STEPS box at the end shows the Managed Identity Object ID
-and the command to run in Step B.
+The wizard summary lists the deferred Graph role assignments, prints the
+Managed Identity Object ID, and includes the command to run in Step B.
 
-This split is also the trust boundary: Step A still lets the deployment
-automation create or update the Entra App Registration through Bicep. Step B
+This split is also the trust boundary: Step A lets the deployment
+automation create or update the Entra App Registration through the dedicated
+Entra bootstrap. Step B
 keeps the Privileged Role Administrator action separate, so each admin can
 decide whether to use `setup-graph-permissions.ps1` on the PAW or the lower-
 level Graph Explorer fallback below.
 
 **Required Azure roles:** Contributor + Owner on the resource group
-**Required Entra roles:** Cloud Application Administrator (Bicep creates App Registration)
+**Required Entra roles:** Cloud Application Administrator (Entra bootstrap creates App Registration)
 
 #### Step B — On the PAW: assign Graph permissions
 

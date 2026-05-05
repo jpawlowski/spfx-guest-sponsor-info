@@ -179,8 +179,8 @@ Inside an embedded web part iframe, an interactive prompt either triggers a
 full page reload (to break out of the iframe for the redirect) or a blocked
 popup — both of which break the user experience.
 
-The `setup-graph-permissions.ps1` script (and the `azd` post-provision hook)
-configure this automatically:
+The Entra bootstrap template (`entra-auth.bicep`) configures this
+automatically before the Azure-only infrastructure deploy runs:
 
 1. Expose a `user_impersonation` delegated scope on the App Registration.
 2. Add the SharePoint Online Web Client Extensibility app ID as a
@@ -188,6 +188,9 @@ configure this automatically:
 3. Set `appRoleAssignmentRequired = false` on the Service Principal so all
    tenant users (including guests) can acquire tokens without individual
    assignment.
+
+The Graph-permission phase grants only the Function's
+application permissions on the Managed Identity.
 
 ### Data Filtering
 
@@ -212,14 +215,24 @@ Three concurrent Graph requests per invocation: sponsor lookup, presence, `$batc
 Timeout app settings: `SPONSOR_LOOKUP_TIMEOUT_MS`, `BATCH_TIMEOUT_MS`,
 `PRESENCE_TIMEOUT_MS`. Presence/manager degrade gracefully; sponsor lookup failure → 504.
 
-### Deployment (`azd up`)
+### Deployment (`azd provision` / deployment wizard)
 
 1. **Pre-provision** — validates required subscription resource providers,
-   registers missing ones when the caller has subscription-level register
-   permission, creates/reuses EasyAuth App Registration, detects SharePoint tenant.
-2. **Bicep** — provisions storage (RBAC, no keys), Function App with MI + EasyAuth,
-   Log Analytics, App Insights.
-3. **Post-provision** — grants Graph permissions to MI, prints API URL + Client ID.
+  registers missing ones when the caller has subscription-level register
+  permission, detects the SharePoint tenant, derives the deterministic
+  Function App name, and prepares the EasyAuth App Registration when needed.
+2. **Bicep** — provisions the Azure-only hosting stack: storage (RBAC, no
+  keys), Function App with MI + EasyAuth, Log Analytics, App Insights, and the
+  native Flex OneDeploy publish step.
+3. **Post-provision** — resolves the Managed Identity object ID, assigns
+  Microsoft Graph app roles, and restarts the Function App. In the full
+  `deploy-azure.ps1` wizard this happens after `azd` returns; in direct
+  `azd provision` runs the post-provision hook performs the same step.
+
+When Deployment Stacks are enabled, the Azure-only resources remain grouped
+under the stack lifecycle, while direct portal deletes are not blocked by an
+additional deny assignment. The resource group is detached on stack
+delete so existing RG-scoped access assignments can stay in place.
 
 > RBAC propagation can take 1–2 min after deploy. Wait and retry if errors appear
 > immediately. Azure deployment needs **Contributor** plus **Owner** (or **User
@@ -228,7 +241,10 @@ Timeout app settings: `SPONSOR_LOOKUP_TIMEOUT_MS`, `BATCH_TIMEOUT_MS`,
 > **Privileged Role Administrator** for Graph app-role assignment. See
 > [deployment.md](deployment.md) for the operator-facing workflow.
 
-Manual fallback: `infra/setup-graph-permissions.ps1` (for role assignment only; App Registration is always created by Bicep).
+Manual fallback: `infra/setup-graph-permissions.ps1` (for deferred Graph role
+assignment only; the EasyAuth App Registration is managed separately by
+`entra-auth.bicep`, while the automatic post-phase uses
+`assign-graph-permissions.bicep`).
 
 ### Hosting Plan
 

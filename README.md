@@ -230,16 +230,16 @@ In Azure Cloud Shell, `auto` reuses the current Cloud Shell login first. Use
 `-AzureLoginMode browser` or `-AzureLoginMode device-code` when a fresh Azure
 CLI login should not rely on automatic environment detection.
 
-The wizard creates the Entra App Registration, deploys all Azure infrastructure,
-and assigns Microsoft Graph permissions automatically. No local repository clone
-is required.
+The wizard prepares the Entra App Registration, deploys the Azure-only hosting
+stack, and then assigns Microsoft Graph permissions automatically. No local
+repository clone is required.
 
 In the web part property pane, open the **Guest Sponsor API** section and enter
 the **Guest Sponsor API Base URL** and the **Guest Sponsor API Client ID
 (App Registration)**. The Client ID comes from the App Registration named
 **"Guest Sponsor Info - SharePoint Web Part Auth"** in your Entra tenant.
 
-> Full deployment details (Flex Consumption, Deployment Stacks, Azure Maps,
+> Full deployment details (Flex Consumption, Azure Maps,
 > updating, security assessment, legacy options without the Guest Sponsor API):
 > **[docs/deployment.md](docs/deployment.md)**
 

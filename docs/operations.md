@@ -248,20 +248,24 @@ gh attestation verify released-package.zip \
 <details>
 <summary>Manual deployment via Azure CLI</summary>
 
+Flex Consumption does **not** use `config-zip`. The supported control-plane
+path in this project is the native `onedeploy` site extension, which copies a
+release ZIP from a reachable HTTPS URL into the Function App's configured
+deployment container.
+
 **Via Azure CLI ([Cloud Shell](https://shell.azure.com)):**
 
 ```bash
-curl -sSfL -o released-package.zip \
-  https://github.com/workoho/spfx-guest-sponsor-info/releases/latest/download/released-package.zip
+package_url="https://github.com/workoho/spfx-guest-sponsor-info/releases/latest/download/released-package.zip"
 
-az functionapp deployment source config-zip \
-  --resource-group <your-resource-group> \
-  --name <your-function-app-name> \
-  --src released-package.zip
+az rest --method PUT \
+  --url "https://management.azure.com/subscriptions/<subscription-id>/resourceGroups/<your-resource-group>/providers/Microsoft.Web/sites/<your-function-app-name>/extensions/onedeploy?api-version=2022-09-01" \
+  --body "{\"properties\":{\"packageUri\":\"${package_url}\",\"remoteBuild\":false}}"
 ```
 
-This is the native Flex publish path. Azure handles the deployment container and
-site refresh for you; no manual blob overwrite is required.
+This re-triggers the same OneDeploy mechanism that the Bicep deployment uses.
+Azure copies the ZIP into the deployment container configured on the Function
+App; a plain restart would not fetch the new package.
 
 </details>
 
@@ -286,16 +290,18 @@ Or, when running `deploy-azure.ps1` directly from an extracted infra ZIP:
 ./deploy-azure.ps1
 ```
 
-For Deployment Stacks, use `az stack group create` with the same parameters.
-
-To remove all deployed resources:
+Or, when you are already working from a local repo or extracted infra package,
+re-run the Azure-only phase directly through `azd`:
 
 ```bash
-az stack group delete \
-  --name guest-sponsor-info \
-  --resource-group <your-resource-group> \
-  --action-on-unmanage deleteResources \
-  --yes
+azd env select <env-name>
+azd provision --no-prompt
 ```
+
+The direct `azd` path reuses the same pre/post hooks as the wizard. Missing
+`AZURE_TENANT_ID`, `AZURE_FUNCTION_APP_NAME`, and `AZURE_WEB_PART_CLIENT_ID`
+are derived automatically when possible. If
+`AZURE_SKIP_GRAPH_ROLE_ASSIGNMENTS=true` is set, finish with
+`setup-graph-permissions.ps1` afterwards.
 
 </details>

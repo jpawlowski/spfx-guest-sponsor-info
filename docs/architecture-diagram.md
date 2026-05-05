@@ -15,8 +15,11 @@ The setup path always combines SharePoint administration with Azure and Entra
 responsibilities. The **SharePoint Admin** only needs the standard SharePoint
 Administrator role. The Azure-side rollout is started by a **Deployment
 Operator**; the Graph-permission step is an **Entra Admin** responsibility.
-In the default one-step path, the same person can wear both hats at once. In
-split-duty or PAW deployments, Step 4 remains a separate Entra-admin action.
+The automation runs in two Entra-aware slices around the Azure-only deploy:
+it prepares the EasyAuth App Registration before `azd provision`, then applies
+the Managed Identity's Graph permissions after the Function App exists. In the
+default wizard path, the same person can wear both hats at once. In split-duty
+or PAW deployments, Step 4 remains a separate Entra-admin action.
 
 ```mermaid
 flowchart LR
@@ -57,11 +60,11 @@ flowchart LR
     SpAdmin -- "② grants access (Everyone)"    --> Visitors
 
     DeployOp -- "③ runs deployment flow"       --> Deploy
-    Deploy  -- "creates EasyAuth app"          --> AppReg
+    Deploy  -- "prepares EasyAuth app"         --> AppReg
     AppReg  -. "auto-creates"                .-> SP
     Deploy  -- "provisions Function App"       --> Func
     Func    -. "EasyAuth bound to"            .-> SP
-    EntraAdmin -- "④ completes Graph-permission step" --> MI
+    EntraAdmin -- "④ assigns Graph app roles after Azure deploy" --> MI
     Func    -. "uses"                        .-> MI
     MI      -- "Graph app permissions"        --> Graph
     Deploy  -. "provisions"                  .-> AI
@@ -100,8 +103,8 @@ flowchart LR
 |---|---|---|---|
 | 1 | SharePoint Admin | Enables Site Collection App Catalog on the landing page site and uploads `.sppkg` | **SharePoint Administrator** (+ **Site Collection Admin** on the landing page site) |
 | 2 | SharePoint Admin | Verifies guest Visitor access on the landing page site. If you rely on the *Everyone* group pattern for B2B guests, explicitly enable `ShowEveryoneClaim` first; otherwise keep the site's existing reliable guest-access model. | **SharePoint Administrator** |
-| 3 | Deployment Operator | Runs `install.ps1` / `deploy-azure.ps1`. The deployment automation then provisions Azure resources, Storage role assignments, the EasyAuth App Registration (via Microsoft Graph Bicep extension), and the Function App. | Azure **Contributor** + **Owner** (or **User Access Administrator**) on the target resource group + Entra **Cloud Application Administrator** |
-| 4 | Entra Admin | Completes the Graph permission assignment step. In the default one-step path this happens inside the deployment flow; in PAW / split-duty setups it is run separately via `setup-graph-permissions.ps1`. | **Privileged Role Administrator** |
+| 3 | Deployment Operator | Runs `install.ps1` / `deploy-azure.ps1`. The deployment automation first prepares the EasyAuth App Registration via the separate Entra bootstrap, then provisions Azure resources, Storage role assignments, and the Function App. | Azure **Contributor** + **Owner** (or **User Access Administrator**) on the target resource group + Entra **Cloud Application Administrator** |
+| 4 | Entra Admin | Completes the Graph permission assignment step after the Managed Identity exists. In the default wizard path this continues automatically after Azure provisioning; in PAW / split-duty setups it is run separately via `setup-graph-permissions.ps1`. | **Privileged Role Administrator** |
 
 In smaller deployments, the same person can perform Steps 3 and 4 by
 activating both the Azure and Entra roles temporarily. In PAW or split-duty
@@ -109,8 +112,8 @@ setups, treat Step 4 as a separate Entra-admin action.
 
 ¹ `Contributor` alone is not sufficient — the template creates
 `Microsoft.Authorization/roleAssignments` on the Storage Account.
-Cloud Application Administrator is required for the Microsoft Graph Bicep
-extension to create and configure the App Registration.
+Cloud Application Administrator is required for the separate Entra bootstrap
+template to create and configure the App Registration.
 
 ² Granting application permissions (app roles) to a Managed Identity requires
 `AppRoleAssignment.ReadWrite.All`, which requires Privileged Role Administrator

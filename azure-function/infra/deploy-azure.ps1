@@ -919,6 +919,144 @@ function Get-SetupGraphPermissionsScriptReference {
   return "$_releaseBaseUrl/latest/download/setup-graph-permissions.ps1"
 }
 
+function Initialize-ResourceGroup {
+  [CmdletBinding(SupportsShouldProcess)]
+  param(
+    [Parameter(Mandatory)][string]$ResourceGroup,
+    [Parameter(Mandatory)][string]$Location
+  )
+
+  try {
+    $_exists = (Invoke-AzureCliQuiet -Arguments @(
+        'group', 'exists',
+        '--name', $ResourceGroup
+      ) | Out-String).Trim()
+
+    if ($_exists -eq 'true') {
+      return
+    }
+  }
+  catch {
+    Write-Verbose "Could not determine whether resource group '$ResourceGroup' already exists: $_"
+  }
+
+  if (-not $PSCmdlet.ShouldProcess("resource group '$ResourceGroup'", "Create in location '$Location'")) {
+    return
+  }
+
+  Write-Host ''
+  Write-Host "  $_arr Creating resource group '$ResourceGroup'..." -ForegroundColor Cyan
+  Invoke-AzureCli -Arguments @(
+    'group', 'create',
+    '--name', $ResourceGroup,
+    '--location', $Location,
+    '--output', 'none'
+  )
+}
+
+function Resolve-EffectiveFunctionAppName {
+  param(
+    [Parameter(Mandatory)][string]$ResourceGroup,
+    [Parameter(Mandatory)][string]$Location,
+    [AllowEmptyString()][string]$FunctionAppName
+  )
+
+  if (Test-FunctionAppNameLength -Value $FunctionAppName) {
+    return $FunctionAppName
+  }
+
+  $_existingFunctionApp = Get-DeployedFunctionAppInfo -ResourceGroup $ResourceGroup
+  if ($_existingFunctionApp -and $_existingFunctionApp.name) {
+    return [string]$_existingFunctionApp.name
+  }
+
+  if ($_whatIf) {
+    return 'gsi-preview-placeholder'
+  }
+
+  $_templatePath = Join-Path $PSScriptRoot 'resolve-function-app-name.bicep'
+  $_deploymentName = "gsi-resolve-function-name-$([guid]::NewGuid().ToString('N').Substring(0, 8))"
+  $_resolvedName = (Invoke-AzureCliQuiet -Arguments @(
+      'deployment', 'sub', 'create',
+      '--name', $_deploymentName,
+      '--location', $Location,
+      '--template-file', $_templatePath,
+      '--parameters', "resourceGroupName=$ResourceGroup",
+      '--query', 'properties.outputs.effectiveFunctionAppName.value',
+      '-o', 'tsv'
+    ) | Out-String).Trim()
+
+  if (-not (Test-FunctionAppNameLength -Value $_resolvedName)) {
+    throw 'Could not resolve a deterministic Function App name for the deployment.'
+  }
+
+  return $_resolvedName
+}
+
+function Invoke-EntraAuthBootstrapProvision {
+  param(
+    [Parameter(Mandatory)][string]$ResourceGroup,
+    [Parameter(Mandatory)][string]$FunctionAppName
+  )
+
+  $_templatePath = Join-Path $PSScriptRoot 'entra-auth.bicep'
+  $_deploymentName = 'gsi-entra-auth-pre'
+  $_outputsJson = Invoke-AzureCliQuiet -Arguments @(
+    'deployment', 'group', 'create',
+    '--name', $_deploymentName,
+    '--resource-group', $ResourceGroup,
+    '--template-file', $_templatePath,
+    '--parameters', "functionAppName=$FunctionAppName",
+    '--query', 'properties.outputs',
+    '-o', 'json'
+  )
+
+  $_outputsText = ($_outputsJson -join "`n").Trim()
+  if (-not $_outputsText -or $_outputsText -eq 'null') {
+    throw 'The Entra auth deployment did not return any outputs.'
+  }
+
+  return $_outputsText | ConvertFrom-Json
+}
+
+function Invoke-GraphPermissionProvision {
+  param(
+    [Parameter(Mandatory)][string]$ResourceGroup,
+    [Parameter(Mandatory)][string]$ManagedIdentityObjectId
+  )
+
+  $_templatePath = Join-Path $PSScriptRoot 'assign-graph-permissions.bicep'
+  Invoke-AzureCliQuiet -Arguments @(
+    'deployment', 'group', 'create',
+    '--name', 'gsi-graph-permissions',
+    '--resource-group', $ResourceGroup,
+    '--template-file', $_templatePath,
+    '--parameters', "managedIdentityObjectId=$ManagedIdentityObjectId",
+    '--output', 'none'
+  ) | Out-Null
+}
+
+function Restart-DeployedFunctionApp {
+  [CmdletBinding(SupportsShouldProcess)]
+  param(
+    [Parameter(Mandatory)][string]$ResourceGroup,
+    [Parameter(Mandatory)][string]$FunctionAppName
+  )
+
+  if (-not $PSCmdlet.ShouldProcess("Function App '$FunctionAppName' in resource group '$ResourceGroup'", 'Restart to activate Graph permissions')) {
+    return
+  }
+
+  Write-Host ''
+  Write-Host "  $_arr Restarting Function App '$FunctionAppName' to activate Graph permissions..." -ForegroundColor Cyan
+  Invoke-AzureCli -Arguments @(
+    'functionapp', 'restart',
+    '--resource-group', $ResourceGroup,
+    '--name', $FunctionAppName,
+    '--output', 'none'
+  )
+}
+
 function Get-InstallerSourceDisplayText {
   if ($InstallerVersion) {
     if ($InstallerVersion -eq 'latest' -or $InstallerVersion -match '^v[0-9]+\.[0-9]+\.[0-9]+([.-][A-Za-z0-9.]+)?$') {
@@ -1747,8 +1885,10 @@ function Invoke-AzdProvision {
     [Parameter(Mandatory)][string]$EnvName,
     [Parameter(Mandatory)][string]$ResourceGroup,
     [Parameter(Mandatory)][string]$Location,
+    [Parameter(Mandatory)][string]$TenantId,
     [Parameter(Mandatory)][string]$SharePointTenant,
     [Parameter(Mandatory)][AllowEmptyString()][string]$FunctionAppName,
+    [Parameter(Mandatory)][string]$AppClientId,
     [Parameter(Mandatory)][AllowEmptyString()][string]$Environment,
     [Parameter(Mandatory)][AllowEmptyString()][string]$Criticality,
     [Parameter(Mandatory)][bool]$Maps,
@@ -1812,10 +1952,12 @@ function Invoke-AzdProvision {
       Invoke-Azd -Arguments @('env', 'new', $EnvName)
     }
     Invoke-Azd -Arguments @('env', 'set', 'AZURE_SUBSCRIPTION_ID', $script:SubscriptionId)
+    Invoke-Azd -Arguments @('env', 'set', 'AZURE_TENANT_ID', $TenantId)
     Invoke-Azd -Arguments @('env', 'set', 'AZURE_RESOURCE_GROUP', $ResourceGroup)
     Invoke-Azd -Arguments @('env', 'set', 'AZURE_LOCATION', $Location)
     Invoke-Azd -Arguments @('env', 'set', 'AZURE_SHAREPOINT_TENANT_NAME', $SharePointTenant)
     Sync-AzdOptionalEnvValue -Name 'AZURE_FUNCTION_APP_NAME' -Value $FunctionAppName
+    Invoke-Azd -Arguments @('env', 'set', 'AZURE_WEB_PART_CLIENT_ID', $AppClientId)
     Invoke-Azd -Arguments @('env', 'set', 'AZURE_TAG_ENVIRONMENT', $Environment)
     Invoke-Azd -Arguments @('env', 'set', 'AZURE_TAG_CRITICALITY', $Criticality)
     Invoke-Azd -Arguments @('env', 'set', 'AZURE_APP_VERSION', $Version)
@@ -1838,6 +1980,7 @@ function Invoke-AzdProvision {
   # Keep process env vars too — the post-provision hook and NEXT STEPS block read them.
   $env:AZURE_ENV_NAME = $EnvName
   $env:AZURE_SUBSCRIPTION_ID = $script:SubscriptionId
+  $env:AZURE_TENANT_ID = $TenantId
   $env:AZURE_LOCATION = $Location
   $env:AZURE_RESOURCE_GROUP = $ResourceGroup
   $env:AZURE_SHAREPOINT_TENANT_NAME = $SharePointTenant
@@ -1847,6 +1990,7 @@ function Invoke-AzdProvision {
   else {
     Remove-Item -Path 'Env:AZURE_FUNCTION_APP_NAME' -ErrorAction SilentlyContinue
   }
+  $env:AZURE_WEB_PART_CLIENT_ID = $AppClientId
   $env:AZURE_TAG_ENVIRONMENT = $Environment
   $env:AZURE_TAG_CRITICALITY = $Criticality
   $env:AZURE_APP_VERSION = $Version
@@ -1865,13 +2009,15 @@ function Invoke-AzdProvision {
   }
   else {
     Write-Host "  $_arr Running azd provision..." -ForegroundColor Cyan
-    Write-Host '       Bicep deploys the Azure infrastructure, creates the Entra App Registration,' -ForegroundColor DarkGray
-    Write-Host '       configures EasyAuth, and (unless deferred) assigns Graph permissions' -ForegroundColor DarkGray
-    Write-Host '       to the Managed Identity. The post-provision hook restarts the Function App.' -ForegroundColor DarkGray
+    Write-Host '       Bicep deploys the Azure-only infrastructure, configures EasyAuth with the' -ForegroundColor DarkGray
+    Write-Host '       pre-created Entra App Registration, and publishes the function package via' -ForegroundColor DarkGray
+    Write-Host '       the native Flex OneDeploy path. Graph permissions are handled after azd.' -ForegroundColor DarkGray
   }
   Write-Host ''
 
   Push-Location -Path $repoRoot
+  $_previousExternalPostProvisionEntra = $env:GSI_EXTERNAL_POST_PROVISION_ENTRA
+  $env:GSI_EXTERNAL_POST_PROVISION_ENTRA = 'true'
   try {
     # --no-prompt: azd v1.24+ still shows a resource group picker even when
     # AZURE_RESOURCE_GROUP is written to the env file via 'azd env set'.
@@ -1884,6 +2030,12 @@ function Invoke-AzdProvision {
     }
   }
   finally {
+    if ([string]::IsNullOrWhiteSpace($_previousExternalPostProvisionEntra)) {
+      Remove-Item -Path 'Env:GSI_EXTERNAL_POST_PROVISION_ENTRA' -ErrorAction SilentlyContinue
+    }
+    else {
+      $env:GSI_EXTERNAL_POST_PROVISION_ENTRA = $_previousExternalPostProvisionEntra
+    }
     Pop-Location
   }
 }
@@ -2407,7 +2559,7 @@ try {
         Write-Host '  Graph roles         : deferred to setup-graph-permissions.ps1'
       }
       else {
-        Write-Host '  Graph roles         : assign during deployment'
+        Write-Host '  Graph roles         : app registration before Azure, role assignment after Azure'
       }
       Write-Host ''
       Write-Host '  Deployment: azd provision (creates or updates all Azure resources).' -ForegroundColor DarkGray
@@ -2437,12 +2589,50 @@ try {
   }
 
   # ── Deploy ────────────────────────────────────────────────────────────────
+  $_effectiveFunctionAppName = Resolve-EffectiveFunctionAppName `
+    -ResourceGroup $ResourceGroupName `
+    -Location $AzureLocation `
+    -FunctionAppName $FunctionAppName
+  $FunctionAppName = $_effectiveFunctionAppName
+
+  $_provisionAppClientId = $null
+  $_graphPermissionsStatus = if ($SkipGraphRoleAssignments) { 'managed separately in this mode' } else { 'ready to use' }
+  $_functionAppRestartStatus = if ($SkipGraphRoleAssignments) { 'not run automatically in this mode' } else { 'completed automatically' }
+
+  if ($_whatIf) {
+    $_provisionAppClientId = Get-WebPartClientId -FunctionAppName $FunctionAppName
+    if (-not $_provisionAppClientId) {
+      $_provisionAppClientId = '00000000-0000-0000-0000-000000000000'
+    }
+  }
+  else {
+    Initialize-ResourceGroup -ResourceGroup $ResourceGroupName -Location $AzureLocation
+    $_provisionAppClientId = Get-WebPartClientId -FunctionAppName $FunctionAppName
+    if ($_provisionAppClientId) {
+      Write-Host ''
+      Write-Host '  Reusing existing Entra App Registration...' -ForegroundColor DarkGray
+    }
+    else {
+      Write-Host ''
+      Write-Host '  Preparing Entra App Registration...' -ForegroundColor Cyan
+      $_entraAppOutputs = Invoke-EntraAuthBootstrapProvision `
+        -ResourceGroup $ResourceGroupName `
+        -FunctionAppName $FunctionAppName
+      $_provisionAppClientId = [string]$_entraAppOutputs.webPartClientId.value
+      if (-not $_provisionAppClientId) {
+        throw 'The Entra App Registration deployment did not return a client ID.'
+      }
+    }
+  }
+
   Invoke-AzdProvision `
     -EnvName $AzdEnvironmentName `
     -ResourceGroup $ResourceGroupName `
     -Location $AzureLocation `
+    -TenantId $script:TenantId `
     -SharePointTenant $TenantName `
     -FunctionAppName $FunctionAppName `
+    -AppClientId $_provisionAppClientId `
     -Environment $Environment `
     -Criticality $Criticality `
     -Maps:$DeployAzureMaps `
@@ -2507,6 +2697,22 @@ try {
       Write-Host "  $_chk Managed Identity Object ID cached: $_azdMiOid" -ForegroundColor Green
     }
     $Global:GsiSetup_TenantId = $script:TenantId
+
+    if (-not $SkipGraphRoleAssignments) {
+      if (-not $_azdMiOid) {
+        throw 'Managed Identity Object ID was not available after azd provision; Graph role assignments cannot continue.'
+      }
+
+      Write-Host ''
+      Write-Host '  Assigning Microsoft Graph permissions...' -ForegroundColor Cyan
+      Invoke-GraphPermissionProvision `
+        -ResourceGroup $ResourceGroupName `
+        -ManagedIdentityObjectId $_azdMiOid
+      if (-not $_azdWebPartClientId) {
+        $_azdWebPartClientId = $_provisionAppClientId
+      }
+      Restart-DeployedFunctionApp -ResourceGroup $ResourceGroupName -FunctionAppName $_azdFunctionAppName
+    }
   }
 
   # ── NEXT STEPS ────────────────────────────────────────────────────────────
@@ -2525,8 +2731,8 @@ try {
     $_ns.Add('')
     $_ns.Add(('  {0,-28}: {1}' -f 'Application registration', 'created or updated'))
     $_ns.Add(('  {0,-28}: {1}' -f 'Azure resources', 'created or updated'))
-    $_ns.Add(('  {0,-28}: {1}' -f 'Microsoft Graph permissions', $(if ($SkipGraphRoleAssignments) { 'managed separately in this mode' } else { 'ready to use' })))
-    $_ns.Add(('  {0,-28}: {1}' -f 'Function app restart', $(if ($SkipGraphRoleAssignments) { 'not run automatically in this mode' } else { 'completed automatically' })))
+    $_ns.Add(('  {0,-28}: {1}' -f 'Microsoft Graph permissions', $_graphPermissionsStatus))
+    $_ns.Add(('  {0,-28}: {1}' -f 'Function app restart', $_functionAppRestartStatus))
     $_ns.Add('')
     $_ns.Add('Web part configuration (SharePoint property pane → Guest Sponsor API):')
   }

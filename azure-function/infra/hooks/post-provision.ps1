@@ -4,15 +4,14 @@
 # SPDX-License-Identifier: LicenseRef-PolyForm-Shield-1.0.0
 #
 # Post-provision hook for Azure Developer CLI (azd).
-# Runs after Bicep deployment to:
-#   - Restart the Function App when this deployment run managed Microsoft Graph
-#     permissions and the Managed Identity token cache should be refreshed.
+# Runs after the Azure-only Bicep deployment to:
+#   - Sync the key outputs used by the deployment wizard.
 #   - Print the web part configuration values.
 #
-# The Entra App Registration and all Microsoft Graph application role
-# assignments (User.Read.All, Presence.Read.All, MailboxSettings.Read,
-# TeamMember.Read.All) are now managed by the Bicep template via the
-# Microsoft Graph Bicep extension v1.0 — no manual permission grants here.
+# The Entra App Registration is prepared before azd provision. Direct azd runs
+# finish the Microsoft Graph role-assignment phase here, while deploy-azure.ps1
+# opts out because it manages that post-phase itself. Deferred deployments use
+# setup-graph-permissions.ps1.
 #
 # Bicep outputs (functionAppUrl, webPartClientId) are available as environment
 # variables via 'azd env get-values' after provisioning.
@@ -65,9 +64,11 @@ if (-not $env:FUNCTION_APP_URL) {
     $env:FUNCTION_APP_URL = $env:sponsorApiUrl -replace '/api/getGuestSponsors$', ''
   }
 }
-if (-not $env:WEB_PART_CLIENT_ID) { $env:WEB_PART_CLIENT_ID = $env:webPartClientId }
-# functionAppName is now a Bicep output (camelCase); fall back to the azd env
-# var for deployments that still have AZURE_FUNCTION_APP_NAME persisted.
+if (-not $env:WEB_PART_CLIENT_ID) {
+  $env:WEB_PART_CLIENT_ID = if ($env:webPartClientId) { $env:webPartClientId } else { $env:AZURE_WEB_PART_CLIENT_ID }
+}
+# functionAppName is exposed as a Bicep output (camelCase). Use the azd env
+# value when that output is not present in the current hook environment.
 if (-not $env:FUNCTION_APP_NAME) {
   $env:FUNCTION_APP_NAME = if ($env:functionAppName) { $env:functionAppName } else { $env:AZURE_FUNCTION_APP_NAME }
 }
@@ -123,28 +124,51 @@ if ($env:FUNCTION_APP_NAME) {
   }
 }
 
-# ── Restart Function App ──────────────────────────────────────────────────────
-# When Microsoft Graph permissions are managed as part of this deployment run,
-# a restart ensures the Managed Identity token cache is cleared and fresh roles
-# are picked up immediately. In deferred mode the permissions are managed
-# separately, so an automatic restart here would be unnecessary.
-$functionAppName = $env:FUNCTION_APP_NAME
-$resourceGroup = $env:AZURE_RESOURCE_GROUP
+# ── Graph post-phase and restart status ──────────────────────────────────────
+# Direct azd runs finish the Microsoft Graph role-assignment phase here after
+# the Managed Identity object ID is resolved. The deployment wizard opts out
+# via a transient process env var and performs the same post-phase after azd
+# returns.
 $_skipRoles = $env:AZURE_SKIP_GRAPH_ROLE_ASSIGNMENTS -eq 'true'
-$restartStatus = if ($_skipRoles) { 'not run in this deployment mode' } else { 'restart manually if needed' }
+$_externalPostProvisionEntra = $env:GSI_EXTERNAL_POST_PROVISION_ENTRA -eq 'true'
+$graphPermissionStatus = 'assigned during post-provision'
+$restartStatus = 'completed'
 if ($_skipRoles) {
+  $graphPermissionStatus = 'managed separately in this mode'
+  $restartStatus = 'not run in this deployment mode'
   Write-Host ''
   Write-Host 'Skipping automatic Function App restart because Microsoft Graph permissions are managed separately in this deployment mode.'
 }
-elseif ($functionAppName -and $resourceGroup) {
+elseif ($_externalPostProvisionEntra) {
+  $graphPermissionStatus = 'handled in deploy-azure.ps1 after azd provision'
+  $restartStatus = 'handled in deploy-azure.ps1 after azd provision'
   Write-Host ''
-  Write-Host "Restarting Function App '$functionAppName' to activate Graph permissions..."
-  az functionapp restart --name $functionAppName --resource-group $resourceGroup | Out-Null
-  $restartStatus = 'completed'
+  Write-Host 'Skipping automatic Function App restart during the Azure-only azd phase.'
+  Write-Host 'deploy-azure.ps1 performs the Graph permission assignment and restart after azd provision.'
 }
 else {
+  if (-not $env:FUNCTION_APP_NAME -or -not $env:MANAGED_IDENTITY_OBJECT_ID -or -not $env:AZURE_RESOURCE_GROUP) {
+    throw 'Managed Identity Object ID was not available after azd provision; Graph role assignments cannot continue.'
+  }
+
   Write-Host ''
-  Write-Host 'Skipping automatic Function App restart (function app name or resource group missing).'
+  Write-Host 'Assigning Microsoft Graph permissions...'
+  az deployment group create `
+    --name 'gsi-graph-permissions' `
+    --resource-group $env:AZURE_RESOURCE_GROUP `
+    --template-file (Join-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath '..') -ChildPath 'assign-graph-permissions.bicep') `
+    --parameters "managedIdentityObjectId=$($env:MANAGED_IDENTITY_OBJECT_ID)" `
+    --output none | Out-Null
+  if ($LASTEXITCODE -ne 0) {
+    throw 'Could not assign Microsoft Graph permissions in the post-provision phase.'
+  }
+
+  Write-Host ''
+  Write-Host "Restarting Function App '$($env:FUNCTION_APP_NAME)' to activate Graph permissions..."
+  az functionapp restart --resource-group $env:AZURE_RESOURCE_GROUP --name $env:FUNCTION_APP_NAME --output none | Out-Null
+  if ($LASTEXITCODE -ne 0) {
+    throw "Could not restart Function App '$($env:FUNCTION_APP_NAME)' after assigning Graph permissions."
+  }
 }
 
 # ── Print concise post-provision summary ─────────────────────────────────────
@@ -152,15 +176,15 @@ Write-Host ''
 Write-Host 'Post-provision summary'
 Write-Host '----------------------' -ForegroundColor DarkGray
 Write-SummaryLine -Label 'Function app restart' -Value $restartStatus
+Write-SummaryLine -Label 'Microsoft Graph permissions' -Value $graphPermissionStatus
 Write-SummaryLine -Label 'Guest Sponsor API Base URL' -Value $env:FUNCTION_APP_URL
 Write-SummaryLine -Label 'Guest Sponsor API Client ID' -Value $env:WEB_PART_CLIENT_ID
 
 # ── Deferred Graph permissions reminder ───────────────────────────────────────
-# When deploy-azure.ps1 was used with SkipGraphRoleAssignments, the Bicep
-# parameter skipGraphRoleAssignments=true was passed and AZURE_SKIP_GRAPH_ROLE_ASSIGNMENTS
-# was written to the azd env. Remind the operator to run the follow-up script.
+# deploy-azure.ps1 writes AZURE_SKIP_GRAPH_ROLE_ASSIGNMENTS to the azd env
+# when Graph role assignment is deferred.
+# Remind the operator to run the follow-up script.
 if ($_skipRoles) {
-  Write-SummaryLine -Label 'Microsoft Graph permissions' -Value 'managed separately in this mode'
   Write-SummaryLine -Label 'Managed identity object ID' -Value $env:MANAGED_IDENTITY_OBJECT_ID
   Write-SummaryLine -Label 'TenantId' -Value $env:AZURE_TENANT_ID
   Write-SummaryLine -Label 'If needed, run this script' -Value 'setup-graph-permissions.ps1'
@@ -171,6 +195,9 @@ Write-Host 'Note: Storage role assignment propagation can take 1-2 minutes.'
 if ($_skipRoles) {
   Write-Host 'If the web part shows permission errors, run setup-graph-permissions.ps1 and then restart the Function App once.'
 }
+elseif ($_externalPostProvisionEntra) {
+  Write-Host 'If you are using deploy-azure.ps1, it finishes Graph permissions and restarts the Function App after azd provision.'
+}
 else {
-  Write-Host 'If you see errors right after deployment, wait a moment and try again.'
+  Write-Host 'Microsoft Graph permissions were assigned and the Function App was restarted automatically.'
 }
