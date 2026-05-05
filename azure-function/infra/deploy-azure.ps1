@@ -157,7 +157,9 @@ $script:FunctionAppNameMaxLength = 58
 $script:DeploySessionCache = if ($Global:GsiDeploy_Cache -is [hashtable]) { $Global:GsiDeploy_Cache } else { $null }
 $script:CachedDeployParameters = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
 $script:ExplicitDeployParameters = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+$script:InferredDeployParameters = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
 $script:UsedDeploySessionCache = $false
+$script:UsedInferredDeployDefaults = $false
 $script:ReconfigureMode = $false
 $script:AzureSessionRoot = $null
 $script:AzureCliConfigDir = $null
@@ -1011,6 +1013,190 @@ function Get-AzdEnvironmentStoredValue {
   return $Matches[1]
 }
 
+function Get-AzdEnvironmentStoredBooleanValue {
+  param(
+    [Parameter(Mandatory)][string]$EnvName,
+    [Parameter(Mandatory)][string]$Name
+  )
+
+  $_value = Get-AzdEnvironmentStoredValue -EnvName $EnvName -Name $Name
+  if ($_value -match '^(?i:true|false)$') {
+    return $_value -match '^(?i:true)$'
+  }
+
+  return $null
+}
+
+function Get-AzdEnvironmentStoredIntegerValue {
+  param(
+    [Parameter(Mandatory)][string]$EnvName,
+    [Parameter(Mandatory)][string]$Name
+  )
+
+  $_value = Get-AzdEnvironmentStoredValue -EnvName $EnvName -Name $Name
+  $_parsedValue = 0
+  if ([int]::TryParse($_value, [ref]$_parsedValue)) {
+    return $_parsedValue
+  }
+
+  return $null
+}
+
+function Use-InferredDeployValue {
+  param(
+    [Parameter(Mandatory)][string]$Key,
+    [Parameter(Mandatory)][ref]$Target,
+    $Value,
+    [switch]$AllowEmptyString,
+    [switch]$ReplaceExistingInferred
+  )
+
+  if ($script:ExplicitDeployParameters.Contains($Key) -or $script:CachedDeployParameters.Contains($Key)) {
+    return
+  }
+  if ($script:InferredDeployParameters.Contains($Key) -and -not $ReplaceExistingInferred) {
+    return
+  }
+  if ($null -eq $Value) {
+    return
+  }
+  if (-not $AllowEmptyString -and $Value -is [string] -and [string]::IsNullOrWhiteSpace($Value)) {
+    return
+  }
+
+  $Target.Value = $Value
+  $null = $script:InferredDeployParameters.Add($Key)
+  $script:UsedInferredDeployDefaults = $true
+}
+
+function Get-TagValue {
+  param(
+    [AllowNull()][object]$Tags,
+    [Parameter(Mandatory)][string]$Name
+  )
+
+  if ($null -eq $Tags) {
+    return ''
+  }
+
+  if ($Tags -is [System.Collections.IDictionary]) {
+    foreach ($_key in $Tags.Keys) {
+      if ([string]$_key -ieq $Name) {
+        return [string]$Tags[$_key]
+      }
+    }
+
+    return ''
+  }
+
+  $_property = $Tags.PSObject.Properties | Where-Object { $_.Name -ieq $Name } | Select-Object -First 1
+  if ($_property) {
+    return [string]$_property.Value
+  }
+
+  return ''
+}
+
+function Use-AzdEnvironmentStoredDeploymentProfile {
+  param(
+    [Parameter(Mandatory)][string]$EnvName,
+    [Parameter(Mandatory)][ref]$ResourceGroupName,
+    [Parameter(Mandatory)][ref]$AzureLocation,
+    [Parameter(Mandatory)][ref]$TenantName,
+    [Parameter(Mandatory)][ref]$FunctionAppName,
+    [Parameter(Mandatory)][ref]$DeployAzureMaps,
+    [Parameter(Mandatory)][ref]$Environment,
+    [Parameter(Mandatory)][ref]$Criticality,
+    [Parameter(Mandatory)][ref]$EnableMonitoring,
+    [Parameter(Mandatory)][ref]$EnableFailureAnomaliesAlert,
+    [Parameter(Mandatory)][ref]$AlwaysReadyInstances,
+    [Parameter(Mandatory)][ref]$MaximumFlexInstances,
+    [Parameter(Mandatory)][ref]$InstanceMemoryMB
+  )
+
+  if ([string]::IsNullOrWhiteSpace($EnvName)) {
+    return
+  }
+
+  Use-InferredDeployValue -Key 'ResourceGroupName' -Target $ResourceGroupName `
+    -Value (Get-AzdEnvironmentStoredValue -EnvName $EnvName -Name 'AZURE_RESOURCE_GROUP') -ReplaceExistingInferred
+  Use-InferredDeployValue -Key 'AzureLocation' -Target $AzureLocation `
+    -Value (Get-AzdEnvironmentStoredValue -EnvName $EnvName -Name 'AZURE_LOCATION') -ReplaceExistingInferred
+  Use-InferredDeployValue -Key 'TenantName' -Target $TenantName `
+    -Value (Get-AzdEnvironmentStoredValue -EnvName $EnvName -Name 'AZURE_SHAREPOINT_TENANT_NAME') -ReplaceExistingInferred
+
+  $_storedFunctionAppName = Get-AzdEnvironmentStoredValue -EnvName $EnvName -Name 'functionAppName'
+  if (-not $_storedFunctionAppName) {
+    $_storedFunctionAppName = Get-AzdEnvironmentStoredValue -EnvName $EnvName -Name 'AZURE_FUNCTION_APP_NAME'
+  }
+  Use-InferredDeployValue -Key 'FunctionAppName' -Target $FunctionAppName `
+    -Value $_storedFunctionAppName -AllowEmptyString -ReplaceExistingInferred
+
+  Use-InferredDeployValue -Key 'Environment' -Target $Environment `
+    -Value (Get-AzdEnvironmentStoredValue -EnvName $EnvName -Name 'AZURE_TAG_ENVIRONMENT') `
+    -AllowEmptyString -ReplaceExistingInferred
+  Use-InferredDeployValue -Key 'Criticality' -Target $Criticality `
+    -Value (Get-AzdEnvironmentStoredValue -EnvName $EnvName -Name 'AZURE_TAG_CRITICALITY') `
+    -AllowEmptyString -ReplaceExistingInferred
+  Use-InferredDeployValue -Key 'DeployAzureMaps' -Target $DeployAzureMaps `
+    -Value (Get-AzdEnvironmentStoredBooleanValue -EnvName $EnvName -Name 'AZURE_DEPLOY_AZURE_MAPS') -ReplaceExistingInferred
+  Use-InferredDeployValue -Key 'EnableMonitoring' -Target $EnableMonitoring `
+    -Value (Get-AzdEnvironmentStoredBooleanValue -EnvName $EnvName -Name 'AZURE_ENABLE_MONITORING') -ReplaceExistingInferred
+  Use-InferredDeployValue -Key 'EnableFailureAnomaliesAlert' -Target $EnableFailureAnomaliesAlert `
+    -Value (Get-AzdEnvironmentStoredBooleanValue -EnvName $EnvName -Name 'AZURE_ENABLE_FAILURE_ANOMALIES_ALERT') -ReplaceExistingInferred
+  Use-InferredDeployValue -Key 'AlwaysReadyInstances' -Target $AlwaysReadyInstances `
+    -Value (Get-AzdEnvironmentStoredIntegerValue -EnvName $EnvName -Name 'AZURE_ALWAYS_READY_INSTANCES') -ReplaceExistingInferred
+  Use-InferredDeployValue -Key 'MaximumFlexInstances' -Target $MaximumFlexInstances `
+    -Value (Get-AzdEnvironmentStoredIntegerValue -EnvName $EnvName -Name 'AZURE_MAXIMUM_FLEX_INSTANCES') -ReplaceExistingInferred
+  Use-InferredDeployValue -Key 'InstanceMemoryMB' -Target $InstanceMemoryMB `
+    -Value (Get-AzdEnvironmentStoredIntegerValue -EnvName $EnvName -Name 'AZURE_INSTANCE_MEMORY_MB') -ReplaceExistingInferred
+}
+
+function Use-LiveDeploymentProfile {
+  param(
+    [Parameter(Mandatory)][string]$ResourceGroupName,
+    [AllowEmptyString()][string]$FunctionAppName,
+    [Parameter(Mandatory)][ref]$AzureLocation,
+    [Parameter(Mandatory)][ref]$Environment,
+    [Parameter(Mandatory)][ref]$Criticality,
+    [Parameter(Mandatory)][ref]$FunctionAppNameTarget
+  )
+
+  if (-not (Test-ResourceGroupPresence -ResourceGroupName $ResourceGroupName)) {
+    return
+  }
+
+  try {
+    $_groupJson = Invoke-AzureCliQuiet -Arguments @(
+      'group', 'show',
+      '--name', $ResourceGroupName,
+      '--query', '{location:location,tags:tags}',
+      '-o', 'json'
+    )
+    $_groupText = ($_groupJson -join "`n").Trim()
+    if ($_groupText -and $_groupText -ne 'null') {
+      $_groupInfo = $_groupText | ConvertFrom-Json
+      Use-InferredDeployValue -Key 'AzureLocation' -Target $AzureLocation `
+        -Value ([string]$_groupInfo.location) -ReplaceExistingInferred
+      Use-InferredDeployValue -Key 'Environment' -Target $Environment `
+        -Value (Get-TagValue -Tags $_groupInfo.tags -Name 'environment') `
+        -AllowEmptyString -ReplaceExistingInferred
+      Use-InferredDeployValue -Key 'Criticality' -Target $Criticality `
+        -Value (Get-TagValue -Tags $_groupInfo.tags -Name 'criticality') `
+        -AllowEmptyString -ReplaceExistingInferred
+    }
+  }
+  catch {
+    Write-Verbose "Could not derive location or tags from resource group '$ResourceGroupName': $_"
+  }
+
+  $_functionAppInfo = Get-DeployedFunctionAppInfo -ResourceGroup $ResourceGroupName -FunctionAppName $FunctionAppName
+  if ($_functionAppInfo -and $_functionAppInfo.name) {
+    Use-InferredDeployValue -Key 'FunctionAppName' -Target $FunctionAppNameTarget `
+      -Value ([string]$_functionAppInfo.name) -AllowEmptyString -ReplaceExistingInferred
+  }
+}
+
 function Get-GraphPermissionAssignmentRecommendation {
   param(
     [Parameter(Mandatory)][string]$EnvName,
@@ -1740,7 +1926,9 @@ function Use-DeployCachedValue {
 function Test-DeployParameterProvided {
   param([Parameter(Mandatory)][string]$Name)
 
-  return $script:ExplicitDeployParameters.Contains($Name) -or $script:CachedDeployParameters.Contains($Name)
+  return $script:ExplicitDeployParameters.Contains($Name) -or
+  $script:CachedDeployParameters.Contains($Name) -or
+  $script:InferredDeployParameters.Contains($Name)
 }
 
 function Test-DeployParameterPromptRequired {
@@ -2449,6 +2637,8 @@ try {
 
   while ($true) {
     $_promptsShown = $false
+    $_usedAzdStoredDefaults = $false
+    $_usedLiveAzureDefaults = $false
 
     if ($script:ReconfigureMode) {
       Select-AzureSubscription
@@ -2481,6 +2671,23 @@ try {
       $_promptsShown = $true
     }
 
+    $_inferredDefaultsBefore = $script:InferredDeployParameters.Count
+    Use-AzdEnvironmentStoredDeploymentProfile `
+      -EnvName $AzdEnvironmentName `
+      -ResourceGroupName ([ref]$ResourceGroupName) `
+      -AzureLocation ([ref]$AzureLocation) `
+      -TenantName ([ref]$TenantName) `
+      -FunctionAppName ([ref]$FunctionAppName) `
+      -DeployAzureMaps ([ref]$DeployAzureMaps) `
+      -Environment ([ref]$Environment) `
+      -Criticality ([ref]$Criticality) `
+      -EnableMonitoring ([ref]$EnableMonitoring) `
+      -EnableFailureAnomaliesAlert ([ref]$EnableFailureAnomaliesAlert) `
+      -AlwaysReadyInstances ([ref]$AlwaysReadyInstances) `
+      -MaximumFlexInstances ([ref]$MaximumFlexInstances) `
+      -InstanceMemoryMB ([ref]$InstanceMemoryMB)
+    $_usedAzdStoredDefaults = $script:InferredDeployParameters.Count -gt $_inferredDefaultsBefore
+
     # ── Resource Group ────────────────────────────────────────────────────────
     if ($script:ReconfigureMode -or -not $ResourceGroupName) {
       $_rgDefault = if ($ResourceGroupName) { $ResourceGroupName } else { "rg-$AzdEnvironmentName" }
@@ -2495,6 +2702,27 @@ try {
       if ($ResourceGroupName -eq '') { $ResourceGroupName = $_rgDefault }
       Write-Host ''
       $_promptsShown = $true
+    }
+
+    $_inferredDefaultsBefore = $script:InferredDeployParameters.Count
+    Use-LiveDeploymentProfile `
+      -ResourceGroupName $ResourceGroupName `
+      -FunctionAppName $FunctionAppName `
+      -AzureLocation ([ref]$AzureLocation) `
+      -Environment ([ref]$Environment) `
+      -Criticality ([ref]$Criticality) `
+      -FunctionAppNameTarget ([ref]$FunctionAppName)
+    $_usedLiveAzureDefaults = $script:InferredDeployParameters.Count -gt $_inferredDefaultsBefore
+    if ($_usedAzdStoredDefaults -or $_usedLiveAzureDefaults) {
+      Write-Host ''
+      Write-Host '  Existing deployment settings were reused as safe defaults to avoid accidental drift.' -ForegroundColor DarkGray
+      if ($_usedAzdStoredDefaults) {
+        Write-Host "       Source: .azure/$AzdEnvironmentName/.env" -ForegroundColor DarkGray
+      }
+      if ($_usedLiveAzureDefaults) {
+        Write-Host '       Source: current Azure resource group / Function App' -ForegroundColor DarkGray
+      }
+      Write-Host '       Use re-configure later if you intentionally want to change them.' -ForegroundColor DarkGray
     }
 
     # ── Azure Location ────────────────────────────────────────────────────────
