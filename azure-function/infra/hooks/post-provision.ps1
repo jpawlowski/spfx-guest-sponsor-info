@@ -105,12 +105,12 @@ if (-not $env:MANAGED_IDENTITY_OBJECT_ID -and $env:FUNCTION_APP_NAME -and $env:A
 }
 
 # azd can retain a stale webPartClientId in the env file. Resolve the EasyAuth
-# App Registration directly by its deterministic uniqueName and sync the azd
-# environment so both this hook and deploy-azure.ps1 print the real client ID.
+# App Registration directly by its deterministic identifier URI and sync the
+# azd environment so both this hook and deploy-azure.ps1 print the real client ID.
 if ($env:FUNCTION_APP_NAME) {
   try {
-    $_appRegUniqueName = "guest-sponsor-info-proxy-$($env:FUNCTION_APP_NAME)"
-    $_resolvedClientId = (az ad app list --filter "uniqueName eq '$_appRegUniqueName'" --query '[0].appId' -o tsv 2>$null).Trim()
+    $_identifierUri = "api://guest-sponsor-info-$($env:FUNCTION_APP_NAME)"
+    $_resolvedClientId = (az ad app show --id $_identifierUri --query 'appId' -o tsv 2>$null).Trim()
     if ($_resolvedClientId -and $_resolvedClientId -ne 'null') {
       $env:WEB_PART_CLIENT_ID = $_resolvedClientId
       $env:webPartClientId = $_resolvedClientId

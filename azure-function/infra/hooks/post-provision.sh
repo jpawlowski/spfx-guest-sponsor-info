@@ -83,11 +83,11 @@ if [[ -z "${MANAGED_IDENTITY_OBJECT_ID:-}" && -n "${FUNCTION_APP_NAME:-}" && -n 
 fi
 
 # azd can retain a stale webPartClientId in the env file. Resolve the EasyAuth
-# App Registration directly by its deterministic uniqueName and sync the azd
-# environment so both this hook and deploy-azure.ps1 print the real client ID.
+# App Registration directly by its deterministic identifier URI and sync the
+# azd environment so both this hook and deploy-azure.ps1 print the real client ID.
 if [[ -n "${FUNCTION_APP_NAME:-}" ]]; then
-  app_reg_unique_name="guest-sponsor-info-proxy-${FUNCTION_APP_NAME}"
-  if resolved_client_id="$(az ad app list --filter "uniqueName eq '${app_reg_unique_name}'" --query '[0].appId' -o tsv 2>/dev/null)"; then
+  identifier_uri="api://guest-sponsor-info-${FUNCTION_APP_NAME}"
+  if resolved_client_id="$(az ad app show --id "${identifier_uri}" --query 'appId' -o tsv 2>/dev/null)"; then
     if [[ -n "${resolved_client_id}" && "${resolved_client_id}" != "null" ]]; then
       WEB_PART_CLIENT_ID="${resolved_client_id}"
       export WEB_PART_CLIENT_ID

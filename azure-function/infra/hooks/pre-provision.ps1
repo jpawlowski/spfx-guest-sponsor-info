@@ -76,6 +76,40 @@ function Set-AzdEnvValue {
   }
 }
 
+function Get-EasyAuthAppRegistrationIdentifierUri {
+  param([Parameter(Mandatory)][string]$FunctionAppName)
+
+  return "api://guest-sponsor-info-$FunctionAppName"
+}
+
+function Get-WebPartClientIdFromEntra {
+  param([Parameter(Mandatory)][string]$FunctionAppName)
+
+  try {
+    $identifierUri = Get-EasyAuthAppRegistrationIdentifierUri -FunctionAppName $FunctionAppName
+    $webPartClientId = (az ad app show --id $identifierUri --query appId -o tsv 2>$null).Trim()
+    if ($LASTEXITCODE -eq 0 -and $webPartClientId -and $webPartClientId -ne 'null') {
+      return $webPartClientId
+    }
+  }
+  catch {
+    Write-Verbose "Could not resolve EasyAuth App Registration client ID by identifier URI from Entra: $_"
+  }
+
+  try {
+    $appRegUniqueName = "guest-sponsor-info-proxy-$FunctionAppName"
+    $webPartClientId = (az ad app list --filter "uniqueName eq '$appRegUniqueName'" --query '[0].appId' -o tsv 2>$null).Trim()
+    if ($LASTEXITCODE -eq 0 -and $webPartClientId -and $webPartClientId -ne 'null') {
+      return $webPartClientId
+    }
+  }
+  catch {
+    Write-Verbose "Could not resolve EasyAuth App Registration client ID by uniqueName from Entra: $_"
+  }
+
+  return $null
+}
+
 function Test-AzureCliBicepAvailable {
   az bicep version 2>$null | Out-Null
   return $LASTEXITCODE -eq 0
@@ -166,16 +200,7 @@ function Initialize-DirectAzdEntraContext {
 
   $webPartClientId = Get-AzdEnvValue -Name 'AZURE_WEB_PART_CLIENT_ID'
   if (-not $webPartClientId) {
-    try {
-      $appRegUniqueName = "guest-sponsor-info-proxy-$functionAppName"
-      $webPartClientId = (az ad app list --filter "uniqueName eq '$appRegUniqueName'" --query '[0].appId' -o tsv 2>$null).Trim()
-      if ($LASTEXITCODE -ne 0 -or $webPartClientId -eq 'null') {
-        $webPartClientId = $null
-      }
-    }
-    catch {
-      $webPartClientId = $null
-    }
+    $webPartClientId = Get-WebPartClientIdFromEntra -FunctionAppName $functionAppName
 
     if (-not $webPartClientId) {
       $resourceGroupExists = (az group exists --name $resourceGroupName 2>$null)
@@ -189,13 +214,23 @@ function Initialize-DirectAzdEntraContext {
         az group create --name $resourceGroupName --location $location --output none | Out-Null
       }
 
-      $webPartClientId = az deployment group create `
+      $deploymentOutput = @(az deployment group create `
         --name 'gsi-entra-auth-pre' `
         --resource-group $resourceGroupName `
         --template-file (Join-Path -Path $infraRoot -ChildPath 'entra-auth.bicep') `
         --parameters "functionAppName=$functionAppName" `
         --query 'properties.outputs.webPartClientId.value' `
-        -o tsv 2>$null
+        -o tsv 2>&1)
+
+      if ($LASTEXITCODE -eq 0) {
+        $webPartClientId = ($deploymentOutput | Out-String).Trim()
+      }
+      elseif ((($deploymentOutput | Out-String).Trim()) -match 'same value for property uniqueName already exists') {
+        $webPartClientId = Get-WebPartClientIdFromEntra -FunctionAppName $functionAppName
+      }
+      else {
+        $webPartClientId = $null
+      }
     }
 
     if ($LASTEXITCODE -ne 0 -or -not $webPartClientId -or $webPartClientId -eq 'null') {

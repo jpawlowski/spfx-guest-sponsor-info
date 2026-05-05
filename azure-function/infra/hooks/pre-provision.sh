@@ -76,6 +76,38 @@ set_azd_env_value() {
   refresh_azd_env_values
 }
 
+get_easy_auth_app_registration_identifier_uri() {
+  local function_app_name="$1"
+
+  printf 'api://guest-sponsor-info-%s\n' "${function_app_name}"
+}
+
+get_web_part_client_id_from_entra() {
+  local function_app_name="$1"
+  local identifier_uri=''
+  local app_reg_unique_name=''
+  local app_client_id=''
+
+  identifier_uri="$(get_easy_auth_app_registration_identifier_uri "${function_app_name}")"
+  app_client_id="$(az ad app show --id "${identifier_uri}" --query appId -o tsv 2>/dev/null || true)"
+  if [[ -n "${app_client_id}" && "${app_client_id}" != 'null' ]]; then
+    printf '%s\n' "${app_client_id}"
+    return 0
+  fi
+
+  app_reg_unique_name="guest-sponsor-info-proxy-${function_app_name}"
+  app_client_id="$(az ad app list \
+    --filter "uniqueName eq '${app_reg_unique_name}'" \
+    --query '[0].appId' \
+    -o tsv 2>/dev/null || true)"
+  if [[ -n "${app_client_id}" && "${app_client_id}" != 'null' ]]; then
+    printf '%s\n' "${app_client_id}"
+    return 0
+  fi
+
+  return 1
+}
+
 ensure_azure_cli_bicep_ready() {
   if az bicep version >/dev/null 2>&1; then
     return 0
@@ -168,12 +200,7 @@ prepare_direct_azd_entra_inputs() {
 
   if [[ -z "$(get_azd_env_value 'AZURE_WEB_PART_CLIENT_ID')" ]]; then
     function_app_name="$(get_azd_env_value 'AZURE_FUNCTION_APP_NAME')"
-    app_reg_unique_name="guest-sponsor-info-proxy-${function_app_name}"
-
-    app_client_id="$(az ad app list \
-      --filter "uniqueName eq '${app_reg_unique_name}'" \
-      --query '[0].appId' \
-      -o tsv 2>/dev/null || true)"
+    app_client_id="$(get_web_part_client_id_from_entra "${function_app_name}" || true)"
 
     if [[ -z "${app_client_id}" || "${app_client_id}" == 'null' ]]; then
       if [[ "$(az group exists --name "${resource_group_name}" 2>/dev/null || true)" != 'true' ]]; then
@@ -182,13 +209,22 @@ prepare_direct_azd_entra_inputs() {
         az group create --name "${resource_group_name}" --location "${location}" --output none >/dev/null
       fi
 
-      app_client_id="$(az deployment group create \
+      deployment_output="$(az deployment group create \
         --name 'gsi-entra-auth-pre' \
         --resource-group "${resource_group_name}" \
         --template-file "${INFRA_DIR}/entra-auth.bicep" \
         --parameters "functionAppName=${function_app_name}" \
         --query 'properties.outputs.webPartClientId.value' \
-        -o tsv 2>/dev/null || true)"
+        -o tsv 2>&1)"
+      deployment_exit_code=$?
+
+      if [[ ${deployment_exit_code} -eq 0 ]]; then
+        app_client_id="${deployment_output}"
+      elif grep -q 'same value for property uniqueName already exists' <<<"${deployment_output}"; then
+        app_client_id="$(get_web_part_client_id_from_entra "${function_app_name}" || true)"
+      else
+        app_client_id=''
+      fi
     fi
 
     if [[ -z "${app_client_id}" || "${app_client_id}" == 'null' ]]; then

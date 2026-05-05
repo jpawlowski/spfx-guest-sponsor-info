@@ -932,11 +932,129 @@ function Get-DeployedFunctionAppInfo {
   }
 }
 
+function Get-EasyAuthAppRegistrationUniqueName {
+  param([Parameter(Mandatory)][string]$FunctionAppName)
+
+  return "guest-sponsor-info-proxy-$FunctionAppName"
+}
+
+function Get-EasyAuthAppRegistrationIdentifierUri {
+  param([Parameter(Mandatory)][string]$FunctionAppName)
+
+  return "api://guest-sponsor-info-$FunctionAppName"
+}
+
+function Get-DeletedEasyAuthApplication {
+  param([Parameter(Mandatory)][string]$FunctionAppName)
+
+  $_identifierUri = Get-EasyAuthAppRegistrationIdentifierUri -FunctionAppName $FunctionAppName
+  $_select = [System.Uri]::EscapeDataString('id,appId,displayName,deletedDateTime,identifierUris')
+  $_filter = [System.Uri]::EscapeDataString("displayName eq '$($script:AppRegistrationDisplayName)'")
+  $_url = "https://graph.microsoft.com/v1.0/directory/deletedItems/microsoft.graph.application?`$select=$_select&`$filter=$_filter"
+
+  try {
+    $_rawJson = Invoke-AzureCliQuiet -Arguments @(
+      'rest',
+      '--method', 'GET',
+      '--url', $_url,
+      '-o', 'json'
+    )
+
+    $_jsonText = ($_rawJson -join "`n").Trim()
+    if (-not $_jsonText -or $_jsonText -eq 'null') {
+      return @()
+    }
+
+    $_payload = $_jsonText | ConvertFrom-Json
+    return @($_payload.value | Where-Object {
+        $_.identifierUris -and ($_.identifierUris -contains $_identifierUri)
+      })
+  }
+  catch {
+    Write-Verbose "Could not inspect deleted Entra applications for '$FunctionAppName': $_"
+    return @()
+  }
+}
+
+function Remove-DeletedEasyAuthApplication {
+  [CmdletBinding(SupportsShouldProcess)]
+  param([Parameter(Mandatory)][object[]]$DeletedApplications)
+
+  foreach ($_deletedApp in $DeletedApplications) {
+    if ($PSCmdlet.ShouldProcess("deleted Entra application '$($_deletedApp.id)'", 'Permanently delete from deleted applications')) {
+      Invoke-AzureCli -Arguments @(
+        'rest',
+        '--method', 'DELETE',
+        '--url', "https://graph.microsoft.com/v1.0/directory/deletedItems/$($_deletedApp.id)"
+      )
+    }
+  }
+}
+
+function Resolve-DeletedEasyAuthApplicationConflict {
+  param([Parameter(Mandatory)][string]$FunctionAppName)
+
+  $_deletedApps = @(Get-DeletedEasyAuthApplication -FunctionAppName $FunctionAppName)
+  if ($_deletedApps.Count -eq 0) {
+    return $false
+  }
+
+  Write-Important @(
+    'A soft-deleted Entra App Registration is blocking the EasyAuth bootstrap.'
+    'The deleted application still reserves the deterministic uniqueName for this Function App.'
+    ''
+    'To continue, the deleted application can be permanently removed from Entra deleted applications.'
+    'This is irreversible, but it only affects the deleted app object that is already in the recycle bin.'
+  )
+
+  Write-Host '  Matching deleted Entra application(s):' -ForegroundColor Cyan
+  foreach ($_deletedApp in $_deletedApps) {
+    $_deletedWhen = if ($_.deletedDateTime) { [string]$_.deletedDateTime } else { 'unknown' }
+    $_deletedAppId = if ($_.appId) { [string]$_.appId } else { 'unknown' }
+    Write-Host "    • appId: $_deletedAppId   deleted: $_deletedWhen" -ForegroundColor DarkGray
+  }
+
+  do {
+    $_answer = (Read-Host '  Permanently delete the matching deleted application(s) now? [Y/n]').Trim()
+    if (-not $_answer) { $_answer = 'y' }
+    if ($_answer -notmatch '^(?i:y|yes|n|no)$') {
+      Write-Host "  $_wrn Enter Y or N." -ForegroundColor Yellow
+      $_answer = ''
+    }
+  } while (-not $_answer)
+
+  if ($_answer -notmatch '^(?i:y|yes)$') {
+    return $false
+  }
+
+  Write-Host ''
+  Write-Host '  Removing matching deleted Entra application(s)...' -ForegroundColor Cyan
+  Remove-DeletedEasyAuthApplication -DeletedApplications $_deletedApps
+  return $true
+}
+
 function Get-WebPartClientId {
   param([Parameter(Mandatory)][string]$FunctionAppName)
 
   try {
-    $_appRegUniqueName = "guest-sponsor-info-proxy-$FunctionAppName"
+    $_identifierUri = Get-EasyAuthAppRegistrationIdentifierUri -FunctionAppName $FunctionAppName
+    $_clientId = (Invoke-AzureCliQuiet -Arguments @(
+        'ad', 'app', 'show',
+        '--id', $_identifierUri,
+        '--query', 'appId',
+        '-o', 'tsv'
+      )).Trim()
+
+    if ($_clientId -and $_clientId -ne 'null') {
+      return $_clientId
+    }
+  }
+  catch {
+    Write-Verbose "Could not resolve EasyAuth App Registration client ID by identifier URI from Entra: $_"
+  }
+
+  try {
+    $_appRegUniqueName = Get-EasyAuthAppRegistrationUniqueName -FunctionAppName $FunctionAppName
     $_clientId = (Invoke-AzureCliQuiet -Arguments @(
         'ad', 'app', 'list',
         '--filter', "uniqueName eq '$_appRegUniqueName'",
@@ -949,7 +1067,7 @@ function Get-WebPartClientId {
     }
   }
   catch {
-    Write-Verbose "Could not resolve EasyAuth App Registration client ID from Entra: $_"
+    Write-Verbose "Could not resolve EasyAuth App Registration client ID by uniqueName from Entra: $_"
   }
 
   return $null
@@ -1054,15 +1172,50 @@ function Invoke-EntraAuthBootstrapProvision {
 
   $_templatePath = Join-Path $PSScriptRoot 'entra-auth.bicep'
   $_deploymentName = 'gsi-entra-auth-pre'
-  $_outputsJson = Invoke-AzureCliQuiet -Arguments @(
-    'deployment', 'group', 'create',
-    '--name', $_deploymentName,
-    '--resource-group', $ResourceGroup,
-    '--template-file', $_templatePath,
-    '--parameters', "functionAppName=$FunctionAppName",
-    '--query', 'properties.outputs',
-    '-o', 'json'
-  )
+
+  try {
+    $_outputsJson = Invoke-AzureCliQuiet -Arguments @(
+      'deployment', 'group', 'create',
+      '--name', $_deploymentName,
+      '--resource-group', $ResourceGroup,
+      '--template-file', $_templatePath,
+      '--parameters', "functionAppName=$FunctionAppName",
+      '--query', 'properties.outputs',
+      '-o', 'json'
+    )
+  }
+  catch {
+    $_existingClientId = $null
+    if ($_.Exception.Message -match 'same value for property uniqueName already exists') {
+      $_existingClientId = Get-WebPartClientId -FunctionAppName $FunctionAppName
+      if ($_existingClientId) {
+        return [pscustomobject]@{
+          webPartClientId           = [pscustomobject]@{ value = $_existingClientId }
+          appRegistrationUniqueName = [pscustomobject]@{ value = (Get-EasyAuthAppRegistrationUniqueName -FunctionAppName $FunctionAppName) }
+        }
+      }
+
+      if (Resolve-DeletedEasyAuthApplicationConflict -FunctionAppName $FunctionAppName) {
+        Write-Host ''
+        Write-Host '  Retrying Entra App Registration bootstrap...' -ForegroundColor Cyan
+        $_outputsJson = Invoke-AzureCliQuiet -Arguments @(
+          'deployment', 'group', 'create',
+          '--name', $_deploymentName,
+          '--resource-group', $ResourceGroup,
+          '--template-file', $_templatePath,
+          '--parameters', "functionAppName=$FunctionAppName",
+          '--query', 'properties.outputs',
+          '-o', 'json'
+        )
+      }
+      else {
+        throw
+      }
+    }
+    else {
+      throw
+    }
+  }
 
   $_outputsText = ($_outputsJson -join "`n").Trim()
   if (-not $_outputsText -or $_outputsText -eq 'null') {
