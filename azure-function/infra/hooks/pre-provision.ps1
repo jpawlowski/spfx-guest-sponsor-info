@@ -76,6 +76,11 @@ function Set-AzdEnvValue {
   }
 }
 
+function Test-AzureCliBicepAvailable {
+  az bicep version 2>$null | Out-Null
+  return $LASTEXITCODE -eq 0
+}
+
 function Initialize-ResourceGroup {
   param(
     [Parameter(Mandatory)][string]$ResourceGroupName,
@@ -98,6 +103,14 @@ function Initialize-ResourceGroup {
 }
 
 function Initialize-DirectAzdEntraContext {
+  if (-not (Test-AzureCliBicepAvailable)) {
+    throw @(
+      'Azure CLI cannot run Bicep templates in this session.',
+      'Run: az bicep install',
+      'Then re-run azd provision or use deploy-azure.ps1, which can install this interactively.'
+    ) -join ' '
+  }
+
   $tenantId = Get-AzdEnvValue -Name 'AZURE_TENANT_ID'
   if (-not $tenantId) {
     $tenantId = az account show --query tenantId -o tsv 2>$null

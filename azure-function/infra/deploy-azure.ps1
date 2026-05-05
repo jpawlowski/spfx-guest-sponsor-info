@@ -470,6 +470,7 @@ function Invoke-AzureCliQuiet {
   param([Parameter(ValueFromRemainingArguments)][string[]]$Arguments)
 
   $_previousPythonWarnings = $env:PYTHONWARNINGS
+  $_stderrFile = Join-Path ([System.IO.Path]::GetTempPath()) "gsi-az-stderr-$([guid]::NewGuid().ToString('n')).log"
   try {
     $env:PYTHONWARNINGS = if ($_previousPythonWarnings) {
       "ignore::SyntaxWarning,$_previousPythonWarnings"
@@ -478,12 +479,23 @@ function Invoke-AzureCliQuiet {
       'ignore::SyntaxWarning'
     }
 
-    $output = & $script:AzPath @Arguments 2>$null
+    $output = & $script:AzPath @Arguments 2>$_stderrFile
     if ($LASTEXITCODE -ne 0) {
+      $_stderrText = ''
+      if (Test-Path -Path $_stderrFile) {
+        $_stderrText = (Get-Content -Path $_stderrFile -Raw -ErrorAction SilentlyContinue).Trim()
+      }
+
+      if ($_stderrText) {
+        throw "Azure CLI failed (exit code $LASTEXITCODE): az $($Arguments -join ' ')`n$_stderrText"
+      }
+
       throw "Azure CLI failed (exit code $LASTEXITCODE): az $($Arguments -join ' ')"
     }
   }
   finally {
+    Remove-Item -Path $_stderrFile -Force -ErrorAction SilentlyContinue
+
     if ($null -eq $_previousPythonWarnings) {
       Remove-Item -Path Env:PYTHONWARNINGS -ErrorAction SilentlyContinue
     }
@@ -656,6 +668,47 @@ function Get-AzureCliVersionText {
   return 'available'
 }
 
+function Get-AzureCliBicepVersionText {
+  $_versionLine = Get-CommandVersionText -Command $script:AzPath -Arguments @('bicep', 'version')
+  if (-not $_versionLine) {
+    return $null
+  }
+
+  $_cleanVersionLine = $_versionLine.Trim()
+  if ($_cleanVersionLine -match '([0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?)') {
+    return $Matches[1]
+  }
+
+  return $_cleanVersionLine
+}
+
+function Install-AzureCliBicepIfNeeded {
+  $_bicepVersion = Get-AzureCliBicepVersionText
+  if ($_bicepVersion) {
+    return
+  }
+
+  Write-Host "  $_wrn Azure CLI Bicep backend is not available." -ForegroundColor Yellow
+  $answer = (Read-Host '  Install it now via Azure CLI? [Y/n]').Trim()
+  if ($answer -ne '' -and $answer -notmatch '^[Yy]') {
+    throw @(
+      'Azure CLI Bicep support is required because this wizard runs small pre- and post-provision Bicep deployments before azd provision.',
+      'Install it manually with: az bicep install',
+      'Then re-run this script.'
+    ) -join ' '
+  }
+
+  Write-Host "  $_arr Installing Azure CLI Bicep backend..." -ForegroundColor Cyan
+  Invoke-AzureCli -Arguments @('bicep', 'install')
+
+  $_bicepVersion = Get-AzureCliBicepVersionText
+  if (-not $_bicepVersion) {
+    throw 'Azure CLI Bicep backend was installed, but the current session still cannot use it. Open a new terminal and re-run the script.'
+  }
+
+  Write-Host "  $_chk Azure CLI Bicep backend is available." -ForegroundColor Green
+}
+
 function Get-AzdVersionText {
   $_versionLine = Get-CommandVersionText -Command $script:AzdPath -Arguments @('version', '--no-prompt')
   if (-not $_versionLine) {
@@ -718,6 +771,7 @@ function Show-CloudShellSessionBanner {
 function Show-ToolVersion {
   $pwshVersion = $PSVersionTable.PSVersion.ToString()
   $azVersion = Get-AzureCliVersionText
+  $azBicepVersion = Get-AzureCliBicepVersionText
   $azdVersion = Get-AzdVersionText
   $azLoginPreference = Get-AzureCliLoginPreference
 
@@ -726,6 +780,7 @@ function Show-ToolVersion {
   Write-Host $_sep -ForegroundColor DarkGray
   Write-PreflightStatus -Label 'PowerShell' -Value $pwshVersion
   Write-PreflightStatus -Label 'Azure CLI (az)' -Value $azVersion
+  Write-PreflightStatus -Label 'Azure CLI Bicep' -Value $(if ($azBicepVersion) { $azBicepVersion } else { 'not available' })
   Write-PreflightStatus -Label 'Azure Developer CLI' -Value $azdVersion
   Write-PreflightStatus -Label 'az login mode' -Value $azLoginPreference.StatusText
   if ($azLoginPreference.DetailText) {
@@ -2051,6 +2106,7 @@ try {
   # ── Install tools and connect to Azure ────────────────────────────────────
   Initialize-AzureAuthIsolation
   Install-AzureCliIfNeeded
+  Install-AzureCliBicepIfNeeded
   Install-AzdIfNeeded
   Enable-AzdAzureCliAuth
   Show-ToolVersion

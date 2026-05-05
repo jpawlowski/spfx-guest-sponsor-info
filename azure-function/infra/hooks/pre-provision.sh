@@ -76,6 +76,17 @@ set_azd_env_value() {
   refresh_azd_env_values
 }
 
+ensure_azure_cli_bicep_ready() {
+  if az bicep version >/dev/null 2>&1; then
+    return 0
+  fi
+
+  echo 'ERROR: Azure CLI cannot run Bicep templates in this session.' >&2
+  echo 'Run: az bicep install' >&2
+  echo 'Then re-run azd provision or use deploy-azure.ps1, which can install this interactively.' >&2
+  exit 1
+}
+
 ensure_resource_group_exists() {
   local resource_group_name="$1"
   local location="$2"
@@ -106,6 +117,7 @@ prepare_direct_azd_entra_inputs() {
   local app_client_id=''
 
   refresh_azd_env_values
+  ensure_azure_cli_bicep_ready
 
   if [[ -z "$(get_azd_env_value 'AZURE_TENANT_ID')" ]]; then
     tenant_id="$(az account show --query tenantId -o tsv 2>/dev/null || true)"
