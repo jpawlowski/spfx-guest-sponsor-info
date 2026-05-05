@@ -14,7 +14,7 @@
 set -euo pipefail
 
 # scripts/set-version.sh stamps this fallback URL to the exact release tag.
-INSTALL_PS1_URL="${GSI_INSTALL_PS1_URL:-https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/main/azure-function/infra/install.ps1}"
+INSTALL_PS1_URL="${GSI_INSTALL_PS1_URL:-https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/v1.2.1/azure-function/infra/install.ps1}"
 TMP_DIR=''
 
 cleanup() {
@@ -93,6 +93,12 @@ describe_installer_source() {
   esac
 }
 
+is_release_version_ref() {
+  local ref_name="$1"
+
+  [[ "${ref_name}" == 'latest' || "${ref_name}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-][A-Za-z0-9.]+)?$ ]]
+}
+
 describe_function_package() {
   local app_version="$1"
 
@@ -102,6 +108,34 @@ describe_function_package() {
   fi
 
   printf '%s\n' "${app_version}"
+}
+
+describe_effective_function_package() {
+  local explicit_app_version="$1"
+  local requested_payload_ref="$2"
+
+  if [[ -n "${explicit_app_version}" ]]; then
+    describe_function_package "${explicit_app_version}"
+    return
+  fi
+
+  if is_release_version_ref "${requested_payload_ref}"; then
+    describe_function_package "${requested_payload_ref}"
+    return
+  fi
+
+  printf '%s\n' 'auto (resolved by install.ps1)'
+}
+
+describe_requested_payload() {
+  local requested_ref="$1"
+
+  if [[ -z "${requested_ref}" ]]; then
+    printf '%s\n' 'auto (resolved by install.ps1)'
+    return
+  fi
+
+  describe_installer_source "${requested_ref}"
 }
 
 run_with_terminal_stdin() {
@@ -291,18 +325,20 @@ install_powershell_if_needed() {
 
 run_powershell_installer() {
   local install_ps1="${TMP_DIR}/install.ps1"
-  local installer_tag=''
+  local install_ps1_ref=''
+  local -a pwsh_args=()
 
-  if [[ "${INSTALL_PS1_URL}" =~ /v([0-9]+\.[0-9]+\.[0-9]+[^/]*)/azure-function/infra/install\.ps1$ ]]; then
-    installer_tag="v${BASH_REMATCH[1]}"
-  fi
+  install_ps1_ref="$(extract_install_ps1_ref)"
 
   download_to "${INSTALL_PS1_URL}" "${install_ps1}"
 
   info 'Starting Guest Sponsor Info PowerShell installer...'
-  if ! run_with_terminal_stdin pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File "${install_ps1}" "$@"; then
-    if [[ -n "${installer_tag}" ]]; then
-      die "PowerShell installer failed. Release assets may still be publishing. Retry in a few minutes or run with -Version ${installer_tag}."
+  pwsh_args=(-NoLogo -NoProfile -ExecutionPolicy Bypass -File "${install_ps1}")
+  pwsh_args+=("$@")
+
+  if ! run_with_terminal_stdin pwsh "${pwsh_args[@]}"; then
+    if is_release_version_ref "${install_ps1_ref}" && [[ "${install_ps1_ref}" != 'latest' ]]; then
+      die "PowerShell installer failed. Release assets may still be publishing. Retry in a few minutes or run with -Version ${install_ps1_ref}."
     fi
 
     die 'PowerShell installer failed. Release assets may still be publishing. Retry in a few minutes.'
@@ -314,24 +350,22 @@ main() {
   local explicit_payload_ref
   local explicit_app_version
   local payload_display
+  local requested_payload_ref
 
   make_temp_dir
 
   install_ps1_ref="$(extract_install_ps1_ref)"
   explicit_payload_ref="$(get_argument_value '-Version' "$@" || true)"
   explicit_app_version="$(get_argument_value '-AppVersion' "$@" || true)"
-  if [[ -n "${explicit_payload_ref}" ]]; then
-    payload_display="$(describe_installer_source "${explicit_payload_ref}")"
-  else
-    payload_display="$(describe_installer_source "${install_ps1_ref}")"
-  fi
+  payload_display="$(describe_requested_payload "${explicit_payload_ref}")"
+  requested_payload_ref="${explicit_payload_ref:-${install_ps1_ref}}"
 
   printf '\n'
   printf '  Guest Sponsor Info  -  Bootstrap Installer\n'
   printf '  ----------------------------------------------------------\n'
   printf '  PowerShell installer  : %s\n' "$(describe_installer_source "${install_ps1_ref}")"
-  printf '  Installer payload     : %s\n' "${payload_display}"
-  printf '  Function package      : %s\n' "$(describe_function_package "${explicit_app_version}")"
+  printf '  Requested payload     : %s\n' "${payload_display}"
+  printf '  Function package      : %s\n' "$(describe_effective_function_package "${explicit_app_version}" "${requested_payload_ref}")"
   printf '\n'
 
   have curl || die 'curl is required to download the installer.'

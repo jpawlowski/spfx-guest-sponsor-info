@@ -212,6 +212,13 @@ PowerShell when needed, then runs the same installer:
 curl -fsSL https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/main/azure-function/infra/install.sh | bash
 ```
 
+Without `-Version`, the installer deploys the newest published infra release.
+Use `-Version vX.Y.Z` to pin a specific infra release, or `-Version main` only
+when you explicitly want the mutable main-branch snapshot. When `-AppVersion`
+is omitted, release-based `-Version` values also pin the Azure Function package
+to the same release. Treat `-AppVersion` as an expert override, or use it
+alongside `-Version main`.
+
 The wizard creates the Entra App Registration, deploys all Azure infrastructure,
 and assigns Microsoft Graph permissions automatically. No local repository clone
 is required.

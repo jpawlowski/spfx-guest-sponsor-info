@@ -533,10 +533,12 @@ checks your active directory roles and warns if any are missing.
 
 ### Step 2 - Run the deployment wizard
 
-The `install.ps1` script is the recommended entry point. It downloads the
-latest infra bundle from GitHub Releases, runs the interactive deployment
-wizard (`deploy-azure.ps1`), and cleans up afterwards. No local repository
-clone is required.
+The `install.ps1` script is the recommended entry point. It resolves the infra
+bundle in this order: explicit `-Version`, stamped release metadata in tagged
+installers, then the newest published release. `main` is used only when you
+request it explicitly. The script then runs the interactive deployment wizard
+(`deploy-azure.ps1`) and cleans up afterwards. No local repository clone is
+required.
 
 Run this command in PowerShell 7+:
 
@@ -558,6 +560,12 @@ To pass PowerShell installer parameters through the shell bootstrapper, use
 ```bash
 curl -fsSL https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/main/azure-function/infra/install.sh | bash -s -- -Version v1.2.0
 ```
+
+`-Version` selects the installer/infra payload and supports only `latest`,
+`main`, or a release tag such as `v1.2.0`. When `-AppVersion` is omitted,
+release-based `-Version` values also pin the Azure Function package to the
+same release. Treat `-AppVersion` as an expert override, or use it together
+with `-Version main`.
 
 If your Azure account is a guest in other tenants and `az login` reports
 Conditional Access warnings for those tenants, pass the target Azure/Entra

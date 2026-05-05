@@ -345,10 +345,10 @@ if [[ -f "azure-function/infra/install.ps1" ]]; then
     "s|${_RAW_BASE}/[^/]+/azure-function/infra/install.ps1|${_RAW_BASE}/${VTAG}/azure-function/infra/install.ps1|g" \
     "azure-function/infra/install.ps1"
 
-  # Keep tagged installers self-consistent by defaulting Version to the tag
-  # that is being cut, rather than to the mutable main branch.
+  # Stamp installer source metadata so tagged install.ps1 files resolve their
+  # own release without mutating the public Version parameter default.
   sed -i -E \
-    "s|\[string\]\$Version = '[^']+'|[string]\$Version = '${VTAG}'|" \
+    "s|[\$]script:InstallerRef = '[^']*'|\$script:InstallerRef = '${VTAG}'|" \
     "azure-function/infra/install.ps1"
 
   echo "${C_GRN}✓${C_RST} azure-function/infra/install.ps1 → ${C_CYN}${VTAG}${C_RST}"

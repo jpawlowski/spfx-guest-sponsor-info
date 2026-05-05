@@ -176,24 +176,38 @@ this frozen copy — **a restart alone does not pull a newer release**.
 
 ### Step 1 - Update the function package
 
-Re-run the deployment wizard. The wizard downloads the current GitHub release ZIP and
-re-uploads it to Blob storage, replacing the frozen copy.
+Re-run the deployment wizard. By default, the installer resolves the newest
+published infra release and uses that same release for the Azure Function
+package. The wizard then re-uploads that function ZIP to Blob storage,
+replacing the frozen copy.
 
 This standard deployment path also verifies the function ZIP checksum via the
 `deployZipScript` step before upload.
 
-To pin to a specific version:
+`-Version` and `-AppVersion` control different artifacts:
+
+- `-Version` selects the installer/infra payload and, by default, also the
+  Azure Function package version.
+- `-AppVersion` is an expert override when you intentionally want a different
+  function package version, or when using `-Version main`.
+
+To pin to a specific published release:
 
 ```powershell
-& ([scriptblock]::Create((iwr 'https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/main/azure-function/infra/install.ps1').Content)) -AppVersion 1.x.y
+& ([scriptblock]::Create((iwr 'https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/main/azure-function/infra/install.ps1').Content)) -Version v1.x.y
 ```
 
-Or, when running `deploy-azure.ps1` directly (with or without `-AppVersion`):
+Use `-AppVersion` only as an expert override when the function package should
+differ from the release selected by `-Version`.
+
+Or, when running `deploy-azure.ps1` directly:
 
 ```powershell
 ./deploy-azure.ps1
-./deploy-azure.ps1 -AppVersion 1.x.y
 ```
+
+`deploy-azure.ps1` also supports `-AppVersion`, but keep that for expert
+override scenarios.
 
 ### Alternative - Manual package upload
 

@@ -12,13 +12,17 @@
 
     This script is the recommended iwr entry point:
 
-      & ([scriptblock]::Create((iwr 'https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/main/azure-function/infra/install.ps1').Content))
+      & ([scriptblock]::Create((iwr 'https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/v1.2.1/azure-function/infra/install.ps1').Content))
 
 .PARAMETER Version
   Installer payload source. Supports release tags (e.g. "v1.2.0"),
   "latest" for the newest published release, and "main" for the current
-  main branch snapshot. Defaults to "main" on the mutable branch and is
-  stamped to the release tag during release packaging.
+  main branch snapshot. When omitted, the installer first reuses its stamped
+  installer ref when that ref points to a release tag. As a compatibility
+  fallback, it can still infer a release tag from the install.ps1 URL and
+  otherwise falls back to the newest published release ("latest"). Release
+  packaging stamps installer metadata so tagged install.ps1 files resolve their
+  own release without mutating the Version parameter default.
 
 .PARAMETER AzdEnvironmentName
     Forwarded to deploy-azure.ps1.
@@ -42,7 +46,11 @@
     Forwarded to deploy-azure.ps1.
 
 .PARAMETER AppVersion
-    Forwarded to deploy-azure.ps1.
+  Advanced override for the Function package version. When omitted,
+  install.ps1 reuses `-Version` for `latest` and release tags, while
+  `-Version main` keeps the function package on `latest`. Most installations
+  should leave AppVersion unset and use it only to force a different published
+  Function release.
 
 .PARAMETER EnableMonitoring
     Forwarded to deploy-azure.ps1.
@@ -66,10 +74,10 @@
     Forwarded to deploy-azure.ps1.
 
 .EXAMPLE
-    & ([scriptblock]::Create((iwr 'https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/main/azure-function/infra/install.ps1').Content))
+    & ([scriptblock]::Create((iwr 'https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/v1.2.1/azure-function/infra/install.ps1').Content))
 
 .EXAMPLE
-    & ([scriptblock]::Create((iwr 'https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/main/azure-function/infra/install.ps1').Content)) -Version v1.2.0 -ResourceGroupName rg-gsi -TenantName contoso
+    & ([scriptblock]::Create((iwr 'https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/v1.2.1/azure-function/infra/install.ps1').Content)) -Version v1.2.0 -ResourceGroupName rg-gsi -TenantName contoso
 
 .NOTES
     Copyright 2026 Workoho GmbH <https://workoho.com>
@@ -81,7 +89,7 @@
 #Requires -Version 5.1
 [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
 param(
-  [string]$Version = 'main',
+  [string]$Version = '',
   [string]$AzdEnvironmentName,
   [string]$ResourceGroupName,
   [string]$AzureLocation,
@@ -101,6 +109,8 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+$script:InstallerRef = 'v1.2.1'
+$script:InstallerInvocationLine = [string]$MyInvocation.Line
 
 function Get-HttpStatusCodeFromException {
   param([System.Exception]$Exception)
@@ -177,10 +187,81 @@ function Test-ReleasePackageVersion {
   return $Version -eq 'latest' -or $Version -match '^v[0-9]+\.[0-9]+\.[0-9]+([.-][A-Za-z0-9.]+)?$'
 }
 
+function Test-SupportedInstallerVersion {
+  param([Parameter(Mandatory)][string]$Version)
+
+  return $Version -eq 'main' -or (Test-ReleasePackageVersion -Version $Version)
+}
+
+function Assert-SupportedInstallerVersion {
+  param(
+    [Parameter(Mandatory)][string]$Version,
+    [string]$ParameterName = 'Version'
+  )
+
+  if (-not (Test-SupportedInstallerVersion -Version $Version)) {
+    throw "Unsupported $ParameterName '$Version'. Supported values: latest, main, or a release tag like v1.2.3."
+  }
+}
+
+function Get-InstallerInvocationRefFallback {
+  $_invocationLine = $script:InstallerInvocationLine
+  if ([string]::IsNullOrWhiteSpace($_invocationLine)) {
+    return ''
+  }
+
+  if ($_invocationLine -match 'raw\.githubusercontent\.com/workoho/spfx-guest-sponsor-info/(?<ref>.+?)/azure-function/infra/install\.ps1') {
+    return $Matches.ref
+  }
+
+  return ''
+}
+
+function Get-InstallerSourceRef {
+  $_declaredRef = [string]$script:InstallerRef
+  if (-not [string]::IsNullOrWhiteSpace($_declaredRef) -and $_declaredRef -ne 'main') {
+    return $_declaredRef
+  }
+
+  $_invocationRef = Get-InstallerInvocationRefFallback
+  if (-not [string]::IsNullOrWhiteSpace($_invocationRef)) {
+    return $_invocationRef
+  }
+
+  return $_declaredRef
+}
+
+function Get-InstallerImplicitVersion {
+  $_sourceRef = Get-InstallerSourceRef
+  if (Test-ReleasePackageVersion -Version $_sourceRef) {
+    return $_sourceRef
+  }
+
+  return ''
+}
+
+function Resolve-InstallerPayloadVersion {
+  param([string]$RequestedVersion)
+
+  if (-not [string]::IsNullOrWhiteSpace($RequestedVersion)) {
+    Assert-SupportedInstallerVersion -Version $RequestedVersion
+    return $RequestedVersion
+  }
+
+  $_implicitVersion = Get-InstallerImplicitVersion
+  if (-not [string]::IsNullOrWhiteSpace($_implicitVersion)) {
+    return $_implicitVersion
+  }
+
+  return 'latest'
+}
+
 function Get-InstallerDownloadPlan {
   param([Parameter(Mandatory)][string]$Version)
 
   $_releaseBaseUrl = 'https://github.com/workoho/spfx-guest-sponsor-info/releases'
+  Assert-SupportedInstallerVersion -Version $Version
+
   if (Test-ReleasePackageVersion -Version $Version) {
     return [pscustomobject]@{
       SourceKind   = 'release-package'
@@ -200,11 +281,10 @@ function Get-InstallerDownloadPlan {
     }
   }
 
-  $_escapedRef = [System.Uri]::EscapeDataString($Version)
   return [pscustomobject]@{
     SourceKind   = 'repo-snapshot'
-    DisplayLabel = "repository snapshot ($Version)"
-    ZipUrl       = "https://github.com/workoho/spfx-guest-sponsor-info/archive/refs/heads/$_escapedRef.zip"
+    DisplayLabel = 'repository snapshot (main)'
+    ZipUrl       = 'https://github.com/workoho/spfx-guest-sponsor-info/archive/refs/heads/main.zip'
     ChecksumsUrl = $null
   }
 }
@@ -219,8 +299,31 @@ function Get-FunctionPackageDisplayText {
   return $Version
 }
 
+function Resolve-FunctionPackageVersion {
+  param(
+    [Parameter(Mandatory)][string]$RequestedAppVersion,
+    [Parameter(Mandatory)][string]$ResolvedInstallerVersion,
+    [Parameter(Mandatory)][bool]$AppVersionWasExplicitlySet
+  )
+
+  if ($AppVersionWasExplicitlySet) {
+    return $RequestedAppVersion
+  }
+
+  if (Test-ReleasePackageVersion -Version $ResolvedInstallerVersion) {
+    return $ResolvedInstallerVersion
+  }
+
+  return 'latest'
+}
+
 # ── Resolve download URLs ─────────────────────────────────────────────────────
-$_downloadPlan = Get-InstallerDownloadPlan -Version $Version
+$_resolvedVersion = Resolve-InstallerPayloadVersion -RequestedVersion $Version
+$_resolvedAppVersion = Resolve-FunctionPackageVersion `
+  -RequestedAppVersion $AppVersion `
+  -ResolvedInstallerVersion $_resolvedVersion `
+  -AppVersionWasExplicitlySet $PSBoundParameters.ContainsKey('AppVersion')
+$_downloadPlan = Get-InstallerDownloadPlan -Version $_resolvedVersion
 $_zipUrl = $_downloadPlan.ZipUrl
 $_checksumsUrl = $_downloadPlan.ChecksumsUrl
 
@@ -235,7 +338,7 @@ Write-Host ''
 Write-Host '  Guest Sponsor Info  ·  Installer' -ForegroundColor DarkCyan
 Write-Host ('  ' + ('─' * 58)) -ForegroundColor DarkGray
 Write-Host "  Installer payload : $($_downloadPlan.DisplayLabel)" -ForegroundColor DarkGray
-Write-Host "  Function package  : $(Get-FunctionPackageDisplayText -Version $AppVersion)" -ForegroundColor DarkGray
+Write-Host "  Function package  : $(Get-FunctionPackageDisplayText -Version $_resolvedAppVersion)" -ForegroundColor DarkGray
 Write-Host "  Downloading $($_downloadPlan.DisplayLabel)..." -ForegroundColor DarkGray
 Write-Host "  Source: $_zipUrl" -ForegroundColor DarkGray
 Write-Host ''
@@ -248,7 +351,7 @@ try {
   catch {
     $_statusCode = Get-HttpStatusCodeFromException -Exception $_.Exception
     if ($_statusCode -eq 404) {
-      if ($_downloadPlan.SourceKind -eq 'release-package' -and $Version -eq 'latest') {
+      if ($_downloadPlan.SourceKind -eq 'release-package' -and $_resolvedVersion -eq 'latest') {
         throw (
           "Infra package for the latest release was not found (404).`n" +
           "The release may not be fully published yet.`n" +
@@ -258,14 +361,14 @@ try {
 
       if ($_downloadPlan.SourceKind -eq 'release-package') {
         throw (
-          "Infra package for release '$Version' was not found (404).`n" +
+          "Infra package for release '$_resolvedVersion' was not found (404).`n" +
           "Verify the release tag and check that release assets are published.`n" +
           "URL: $_zipUrl"
         )
       }
 
       throw (
-        "Repository snapshot for ref '$Version' was not found (404).`n" +
+        "Repository snapshot for ref '$_resolvedVersion' was not found (404).`n" +
         "Verify the branch name and that the ref exists on GitHub.`n" +
         "URL: $_zipUrl"
       )
@@ -316,7 +419,7 @@ try {
         Write-Warning 'guest-sponsor-info-infra.zip entry was not found in checksums.txt. Falling back to GitHub release asset digest.'
       }
 
-      $_expectedHash = Get-ReleaseAssetSha256 -Version $Version -AssetName 'guest-sponsor-info-infra.zip'
+      $_expectedHash = Get-ReleaseAssetSha256 -Version $_resolvedVersion -AssetName 'guest-sponsor-info-infra.zip'
       Write-Host '  Using checksum source: GitHub release asset digest' -ForegroundColor DarkGray
     }
 
@@ -365,7 +468,10 @@ try {
       $_forwardParams[$_key] = $PSBoundParameters[$_key]
     }
   }
-  $_forwardParams['InstallerVersion'] = $Version
+  if (-not $PSBoundParameters.ContainsKey('AppVersion')) {
+    $_forwardParams['AppVersion'] = $_resolvedAppVersion
+  }
+  $_forwardParams['InstallerVersion'] = $_resolvedVersion
 
   & $_deployScript @_forwardParams
 }

@@ -48,7 +48,9 @@
     Deploy an Azure Maps account for address map rendering. Defaults to true.
 
 .PARAMETER AppVersion
-    Function package version tag. Defaults to "latest".
+  Advanced override for the Function package version tag. Defaults to
+  "latest" when deploy-azure.ps1 runs directly. When invoked via
+  install.ps1, the installer usually aligns this with `-Version`.
 
 .PARAMETER Environment
     Optional workload environment tag. The wizard suggests "prod" by default.
@@ -1114,7 +1116,7 @@ function Connect-AzureCliIfNeeded {
   }
 
   if ($script:AzdUsesAzureCliAuth) {
-    Write-Host "  $_chk Azure tenant         : $($script:TenantId)" -ForegroundColor Green
+    Write-Host "  $_chk Azure tenant        : $($script:TenantId)" -ForegroundColor Green
     Write-Host '       azd will reuse this Azure CLI tenant for all deployment commands.' -ForegroundColor DarkGray
   }
 
@@ -2022,14 +2024,16 @@ try {
     if (Test-DeployParameterPromptRequired -Name 'AppVersion') {
       $_appVersionDefault = Get-PromptDefaultValue -CurrentValue $AppVersion -FallbackValue 'latest'
       Write-Host ''
-      Write-Host '  Function Package Version' -ForegroundColor Cyan
+      Write-Host '  Function Package Override (Advanced)' -ForegroundColor Cyan
       Write-Host $_sep -ForegroundColor DarkGray
-      Write-Host '  The release tag of the Function App package to deploy.'
+      Write-Host '  Most deployments should keep the default value.'
+      Write-Host '  Set this only when you intentionally want a different published'
+      Write-Host '  Function package version than the installer default.'
       Write-Host '  Use "latest" to always pull the most recent published release.'
       Write-Link -Url 'https://github.com/workoho/spfx-guest-sponsor-info/releases' `
         -Text "GitHub releases $_arr workoho/spfx-guest-sponsor-info"
       Write-Host ''
-      $AppVersion = (Read-Host "  Function package version [$_appVersionDefault]").Trim()
+      $AppVersion = (Read-Host "  Function package override [$_appVersionDefault]").Trim()
       if ($AppVersion -eq '') { $AppVersion = $_appVersionDefault }
       Write-Host ''
       $_promptsShown = $true
@@ -2282,7 +2286,7 @@ try {
       Write-Host "  Instance memory MB  : $InstanceMemoryMB"
       Write-Host "  Azure Maps          : $DeployAzureMaps"
       Write-Host "  Monitoring          : $EnableMonitoring"
-      Write-Host "  App version         : $AppVersion"
+      Write-Host "  Function package    : $AppVersion"
       if ($SkipGraphRoleAssignments) {
         Write-Host '  Graph roles         : deferred to setup-graph-permissions.ps1'
       }
