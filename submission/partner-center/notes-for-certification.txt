@@ -1,0 +1,27 @@
+Use the supplied environment and accounts below.
+For the full step-by-step procedure, see the attached detailed test
+instructions document.
+
+Before each sign-in flow, close all existing InPrivate/Incognito windows so the
+next test starts with a clean session.
+
+Host tenant: [HOST-TENANT].onmicrosoft.com
+Guest home tenant: [GUEST-HOME-TENANT].onmicrosoft.com
+SharePoint site: https://[HOST-TENANT].sharepoint.com/sites/[SITE-NAME]
+
+Internal editor account
+UPN: [INTERNAL-EDITOR-UPN]
+Password: [INTERNAL-EDITOR-PASSWORD]
+
+External guest account
+UPN: [EXTERNAL-GUEST-UPN]
+Password: [EXTERNAL-GUEST-PASSWORD]
+
+Requested checks
+1. Primary check: sign in as the External Guest account at the SharePoint site
+   verify the real guest experience.
+2. Secondary check: sign in as the Internal Editor account and verify that the
+   web part is hidden in view mode, then open Edit mode and verify the preview
+   and representative property-pane settings.
+3. Additional check: on a new page, add a new instance of the already deployed
+   web part and complete the setup wizard in Explore in Demo Mode.

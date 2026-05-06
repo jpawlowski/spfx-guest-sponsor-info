@@ -1,270 +1,251 @@
-# Test Instructions — Guest Sponsor Info (AppSource / Partner Center)
+# Test Instructions — Guest Sponsor Info (Microsoft Marketplace / Partner Center)
 
-> **Status:** Draft — not yet uploaded to Partner Center.\
-> **Version these instructions apply to:** 0.21.x\
-> **Last updated:** 2026-03-26
+> **Version these instructions apply to:** 1.2.1\
+> **Solution package version:** 1.2.1.0\
+> **Last updated:** 2026-05-05
 
 ---
 
 ## Overview
 
-**Guest Sponsor Info** is a SharePoint Online web part that surfaces the
-Microsoft Entra B2B sponsors of a guest user. On a shared guest landing page,
-the web part shows every guest exactly who to call, chat with, or email —
-live profile photo, contact details, and one-click Teams chat included.
+**Guest Sponsor Info** is a SharePoint Framework web part for SharePoint Online.
+It shows the Microsoft Entra B2B sponsors of the signed-in guest user on a
+SharePoint landing page.
 
-For users who are **not** guests the web part renders nothing in view mode.
-In **edit mode** it shows a static placeholder regardless of the visitor's
-account type — no Microsoft Graph calls are made while editing.
+The live page behavior is intentionally simple:
+
+- Guest users see their sponsor cards.
+- Internal users see nothing in view mode while public demo mode is off.
+- Page authors see a live preview with mock sponsor cards in edit mode.
 
 ---
 
-## Test Environment (pre-provisioned)
+## Setup
 
-The following has already been set up in the test tenant before submission.
-No additional admin configuration is required.
+Please use the supplied environment and accounts exactly as listed below.
+Use the existing guest user, site home page, and web part instance.
+Before starting, close all existing InPrivate / Incognito windows so the test
+begins with a clean sign-in session.
 
-| Item | Details |
-|---|---|
-| Tenant | `[TENANT].onmicrosoft.com` (to be filled in) |
-| SharePoint site | `https://[TENANT].sharepoint.com/sites/guests` |
-| Page with web part | `Guest Landing Page` (default page of the site) |
-| `.sppkg` deployed | Site Collection App Catalog of the guests site |
-| Web part added | Already on the page, pre-configured |
+---
+
+## Supplied Environment
+
+- Host tenant: `[HOST-TENANT].onmicrosoft.com`
+- Guest home tenant: `[GUEST-HOME-TENANT].onmicrosoft.com`
+- SharePoint site: `https://[HOST-TENANT].sharepoint.com/sites/[SITE-NAME]`
+- Solution package: already deployed
+- Web part instance: already added to the page and pre-configured
+- Companion Azure Function: already configured and reachable
+
+Guest sign-in:
+
+- Open
+   `https://[HOST-TENANT].sharepoint.com/sites/[SITE-NAME]`.
+- At the Microsoft sign-in page, sign in with the **guest user's home-tenant
+   account** listed in the next section.
+- Inside the host tenant, SharePoint resolves this user to the invited guest
+  object, which is the account that carries the Entra `#EXT#` guest marker.
 
 ---
 
 ## Test Accounts
 
-| Role | UPN | Password | Purpose |
-|---|---|---|---|
-| Internal editor | `reviewer-editor@[TENANT].onmicrosoft.com` | `[PASSWORD]` | Edit mode, property pane, Demo Mode |
-| Guest user | `reviewer-guest_partner.com#EXT#@[TENANT].onmicrosoft.com` | `[PASSWORD]` | Real guest experience (Path B) |
+### 1. Internal Editor (Host Tenant Member)
 
-The guest account is a B2B guest from a separate partner tenant. It has been
-assigned two sponsors in Entra ID: one with a profile photo, one without
-(to verify the initials-avatar fallback).
+- UPN: `[INTERNAL-EDITOR-UPN]`
+- Password: `[INTERNAL-EDITOR-PASSWORD]`
+- Use for: edit mode preview, property pane checks, public demo mode check
 
----
+### 2. External Guest (Home-Tenant Account)
 
-## Path A — Demo Mode (no guest account needed)
-
-Use this path to verify all core UI features without signing in as a guest.
-Demo Mode shows simulated sponsor cards to **any** signed-in user.
-
-### Step 1 — Sign in as the internal editor
-
-1. Open a private browser window.
-2. Navigate to `https://[TENANT].sharepoint.com/sites/guests`.
-3. Sign in with the **internal editor** account.
-
-> **Expected:** You are taken to the guest landing page. The web part area is
-> **empty** (no cards, no message) because Demo Mode is off by default when
-> viewing as an internal user.
+- UPN: `[EXTERNAL-GUEST-UPN]`
+- Password: `[EXTERNAL-GUEST-PASSWORD]`
+- Use for: end-to-end guest validation
 
 ---
 
-### Step 2 — Open the page in edit mode
+## Expected Data On The Supplied Site
 
-1. Click **Edit** (pencil icon, top-right of the page).
+Expected data in the supplied environment:
 
-> **Expected:** The web part zone shows a text placeholder indicating that the
-> web part is in edit mode. Sponsor cards are not rendered in edit mode.
+- The external guest is already invited into the host tenant.
+- The external guest already has at least **2 active sponsors** assigned in
+   Microsoft Entra.
+- At least one sponsor has a real profile photo.
+- At least one sponsor has **no** profile photo so the initials fallback can be
+   observed.
+- Public demo mode is **off** on the live page before testing starts.
+- The pre-configured page shows the normal feature set unless noted otherwise in
+   the submission notes:
+   presence status, sponsor photo, manager section, business phone, work
+   location, and map link.
 
----
-
-### Step 3 — Open the property pane
-
-1. Click the web part to select it, then click the **pencil / edit** icon that
-   appears in the web part toolbar.
-
-> **Expected:** The property pane slides in from the right. It contains at least
-> the following sections: **Settings**, **Guest notifications**, **Display**,
-> **Advanced display**.
-
----
-
-### Step 4 — Enable Demo Mode
-
-1. In the property pane, scroll to the **Settings** section.
-2. Toggle **Enable public demo mode for internal users** to **On**.
-
-> **Expected:** A description explaining Demo Mode appears below the toggle.
-> The web part canvas still shows the edit-mode placeholder
-> ("Demo mode active — Switch to view mode to see mock sponsors.").
+If an inline Azure Maps preview is visible, it should load successfully.
+If no Azure Maps key was configured for the supplied site, only the external map
+link is expected.
 
 ---
 
-### Step 5 — Switch to view mode
+## Review Steps
 
-1. Click **Publish** or use the page toolbar to switch to view mode.
+Run the checks in this order.
 
-> **Expected:** The web part now shows **2 mock sponsor cards** (the default
-> count) with simulated names, job titles, and Workoho-coloured initials avatars.
-> No real profile data is fetched.
+### 1. Real Guest Experience
 
----
+1. Close all existing InPrivate / Incognito windows.
+2. Open a new InPrivate / Incognito window.
+3. Navigate to
+   `https://[HOST-TENANT].sharepoint.com/sites/[SITE-NAME]`.
+4. At the Microsoft sign-in page, sign in with the **External Guest** account
+   listed above.
 
-### Step 6 — Inspect a sponsor card (hover / focus)
+Expected result:
 
-1. Hover over (or Tab to) one of the sponsor cards.
+- The page loads without any additional setup.
+- No configuration dialog appears on the live page.
+- The web part renders sponsor cards for the signed-in guest.
+- At least two sponsor cards are visible.
+- One sponsor should show a real photo.
+- One sponsor should fall back to initials because no profile photo is present.
+- Sponsor name and job title are visible.
+- The layout may appear as full or compact depending on available page width.
+   Either is acceptable.
 
-   **Expected:** A contact popover appears containing: display name and job
-   title, email address with a copy button, business phone (if configured),
-   Teams Chat and Teams Call buttons, office location / address fields (if
-   configured), and a map link (external, since no Azure Maps key is set).
+1. Open the first sponsor card by hovering over it or by tabbing to it.
 
-2. Click the **copy** button next to the email address.
+Expected result:
 
-   **Expected:** A checkmark appears for ~1.5 seconds, then reverts to the
-   copy icon.
+- A contact surface opens for that sponsor.
+- Email is shown together with a copy button.
+- If configured on the supplied site, business phone, work location, address or
+   map link, manager information, and presence are visible.
 
-3. Click **Teams Chat**.
+1. Click the copy button next to the email address.
 
-   **Expected:** The browser attempts to open the Teams client (or the Teams
-   web app) in a new tab/window. The link uses the correct guest UPN format.
+Expected result:
 
----
+- Temporary copied feedback appears.
 
-### Step 7 — Verify accessibility
+1. Click **Chat**.
 
-1. With the web part in view, use **Tab** to navigate through the sponsor cards.
-2. Press **Enter** or **Space** on a card.
+Expected result:
 
-> **Expected:** The contact popover opens and all interactive elements inside
-> (copy buttons, Teams buttons, map link) are reachable by keyboard. The popover
-> closes when focus moves away or **Escape** is pressed.
+- Microsoft Teams desktop or Teams on the web opens, or the browser offers the
+   Teams deep link according to local system settings.
 
----
+1. If a map link is visible, click it.
 
-### Step 8 — Disable Demo Mode before Path B
+Expected result:
 
-1. Return to edit mode (click **Edit**).
-2. Open the property pane and toggle **Demo Mode** back to **Off**.
-3. Publish / save the page.
+- The selected map provider opens in the browser or operating-system map app.
 
----
+### 2. Non-Guest View Mode
 
-## Path B — Real Guest User
+1. Close all existing InPrivate / Incognito windows.
+2. Open a new InPrivate / Incognito window.
+3. Navigate to
+   `https://[HOST-TENANT].sharepoint.com/sites/[SITE-NAME]`.
+4. At the Microsoft sign-in page, sign in with the **Internal Editor** account.
+5. Make sure the page is in normal **view mode**.
 
-Use this path to validate the actual end-to-end guest experience.
+Expected result:
 
-### Step 1 — Sign in as the guest
+- Because public demo mode is off, the web part does **not** render for this
+   internal user.
+- No sponsor cards, placeholder, or error message are shown.
 
-1. Open a private browser window.
-2. Navigate to `https://[TENANT].sharepoint.com/sites/guests`.
-3. Sign in with the **guest user** account
-   (`reviewer-guest_partner.com#EXT#@[TENANT].onmicrosoft.com`).
+### 3. Edit Mode Preview And Property Pane
 
-> **Expected:** The page loads. The web part automatically detects the `#EXT#`
-> marker in the login name, calls Microsoft Graph (`/me/sponsors`), and renders
-> the sponsor cards.
->
-> - No "configure" dialog or sign-in prompt appears in the web part.
-> - Two sponsor cards appear (matching the assigned sponsors in Entra ID).
-> - One card shows a real profile photo; the other shows a coloured initials
->   avatar (because no photo is available for that sponsor).
+This is a short check.
 
----
+1. Stay signed in as the **Internal Editor** account.
+2. Open the page in **Edit** mode.
 
-### Step 2 — Sponsor cards in full layout
+Expected result:
 
-> **Expected card content:**
->
-> - Sponsor display name (bold)
-> - Job title (below name)
-> - Profile photo or deterministic initials avatar with a unique colour derived
->   from the sponsor's name
->
-> **Expected layout:** Full tile grid (default `Auto` mode at this column width).
+- The web part immediately shows a **live preview with mock sponsor cards**.
+- This is the current intended authoring experience.
+- The preview is available even though the signed-in user is not a guest.
 
----
+1. Select the web part and open its property pane.
 
-### Step 3 — Contact popover
+Expected result:
 
-1. Hover over (or Tab to) the first sponsor card and wait for the popover.
+- The property pane opens successfully.
+- It contains, at minimum, these groups:
+   **Settings**, **Sponsor Eligibility**, **Guest Notifications**,
+   **Display**, **Contact**, **Organization**, and **Guest Sponsor API**.
 
-   **Expected:** The popover shows real data pulled from Microsoft Graph:
-   display name, email address with copy button, business phone / mobile (if
-   in the sponsor's Entra profile), office location, Teams Chat and Teams Call
-   buttons.
+1. Verify one representative change in each core area below.
 
-2. Click **Teams Chat**.
+**Settings**
 
-   **Expected:** Teams opens (or attempts to open) a chat with that sponsor,
-   pre-addressed to the sponsor's UPN.
+- Change **Visible sponsors** from `2` to `1` and back.
+- Expected result: the preview updates to show the new number of visible cards.
 
----
+- Change **Simulate guest notification** to **No sponsors found**.
+- Expected result: the preview shows the corresponding informational banner.
 
-### Step 4 — Non-guest internal user sees nothing
+- Change **Simulate guest notification** to **Sponsor not available** or
+   **Update available**.
+- Expected result: the preview banner changes accordingly.
 
-1. In a separate private window, navigate to
-   `https://[TENANT].sharepoint.com/sites/guests` and sign in with the
-   **internal editor** account (ensure Demo Mode is still off from Step 8 above).
+**Display**
 
-> **Expected:** With Demo Mode off, the web part renders **nothing** for an
-> internal user in view mode — no cards, no error message, no empty space.
+- Change **Card layout** from **Automatic** to **Compact** and back.
+- Expected result: the preview layout changes immediately.
 
----
+- Toggle **Show presence status** off and on.
+- Expected result: the presence indicator disappears and reappears.
 
-## Property Pane Feature Walkthrough
+**Contact**
 
-Sign in as the **internal editor** and open the page in edit mode.
+- Toggle **Show business phone numbers** off and on.
+- Expected result: the phone field disappears and reappears in the preview.
 
-### Settings group
+- Toggle **Show work location** off and on.
+- Expected result: the work location field disappears and reappears.
 
-| Control | What to test | Expected |
-|---|---|---|
-| **Visible sponsors** (slider, 1–5) | Drag to 1, then to 5 | Card count changes when Demo Mode is on and you save |
-| **Enable public demo mode** (toggle) | Toggle on/off | Description text appears below the toggle |
+**Organization**
 
-### Guest notifications group
-
-Toggles to show or suppress advisory banners for specific edge cases
-(Teams access pending, version mismatch, sponsor unavailable, no sponsors).
-These banners appear on the live page when the corresponding condition is
-detected at runtime.
-
-### Display group
-
-| Control | What to test | Expected |
-|---|---|---|
-| **Card layout** (Auto / Full / Compact) | Switch between options | Card grid changes in Demo Mode view |
-| **Show business phone** / **mobile** | Toggle off | Field disappears from the contact popover |
-| **Show work location** / address fields | Toggle off | Location row disappears from the popover |
-| **External map provider** (Bing / Google / Apple / OSM ) | Change selection | Map link updates accordingly |
-
-### Advanced display group
-
-Toggles for showing the sponsor's manager, presence status, and photos.
+- Toggle **Show manager** off and on.
+- Expected result: the manager section disappears and reappears.
 
 ---
 
-## API Permissions Verification
+## Public Demo Mode Check
 
-The web part requests **no Microsoft Graph permissions** of its own. No
-`webApiPermissionRequests` are declared in the solution package.
+1. Stay signed in as the **Internal Editor** account.
+2. In edit mode, open the property pane.
+3. Under **Settings**, enable **Enable public demo mode for internal users**.
+4. Save or publish the page and return to view mode.
 
-To verify: open **SharePoint Admin Center → Advanced → API access**. There are
-no pending or approved permissions originating from this solution — the queue
-remains empty.
+Expected result:
 
-All Graph calls are made server-side by the companion Azure Function using its
-Managed Identity. The web part authenticates exclusively against the Azure
-Function's App Registration — there are no outbound requests to
-`graph.microsoft.com` from the browser.
+- The internal host-tenant user now sees simulated sponsor cards on the live
+   page.
+- This validates the public demo mode behavior for internal users.
+
+1. Turn public demo mode off again after the check.
 
 ---
 
-## Known Limitations (not defects)
+## New Web Part Instance Check
 
-- **Edit mode preview is static.** The web part intentionally shows only a
-  text placeholder in edit mode. No Graph calls are made while editing.
-  This is consistent with the SharePoint People web part behaviour.
-- **Profile photos match what Microsoft 365 stores.** Low-resolution or
-  missing photos reflect the user's Entra profile, not the web part.
-- **Demo Mode uses mock data.** Names, job titles, and avatars in Demo Mode
-  are simulated and unrelated to any actual users.
+1. Stay signed in as the **Internal Editor** account.
+2. Create a new modern SharePoint page in
+   `https://[HOST-TENANT].sharepoint.com/sites/[SITE-NAME]`.
+3. Add the already deployed **Guest Sponsor Info** web part to that new page.
+4. In the setup wizard, choose **Explore in Demo Mode**.
+5. Complete the wizard and save the page.
+
+Expected result:
+
+- The web part can be added to the page.
+- A newly added instance opens its first-run setup experience in edit mode.
+- The wizard accepts the demo mode selection and completes successfully.
+- The saved page shows simulated sponsor cards in view mode.
 
 ---
 
