@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Guest Sponsor Info — Honest Teams Status</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="base.css">
+<style>
+  .canvas {
+    background:
+      radial-gradient(circle at 18% 12%, rgba(217, 119, 6, 0.08), transparent 45%),
+      radial-gradient(circle at 85% 88%, rgba(18, 178, 205, 0.10), transparent 50%),
+      linear-gradient(180deg, #FFFFFF 0%, #F5FAFB 100%);
+  }
+
+  .ring-1 { width: 460px; height: 460px; right: -160px; top: -180px; opacity: 0.40; }
+  .ring-2 { width: 220px; height: 220px; left: 540px; bottom: -90px; opacity: 0.35; border-color: rgba(10, 61, 79, 0.30); }
+
+  .frame {
+    position: relative;
+    height: 100%;
+    padding: 56px 80px 80px 80px;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .head {
+    margin-bottom: 28px;
+    max-width: 1000px;
+  }
+  .eyebrow { margin-bottom: 14px; }
+  h2 {
+    font-size: 46px;
+    font-weight: 800;
+    line-height: 1.05;
+    margin-bottom: 12px;
+  }
+  h2 .accent { color: var(--teal); }
+  h2 .warn-accent { color: var(--warn); }
+  .head .lede {
+    font-size: 17px;
+    line-height: 1.5;
+    max-width: 820px;
+    color: var(--ink-muted);
+  }
+
+  /* Two-col layout */
+  .body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    flex: 1;
+    align-items: center;
+  }
+
+  /* Browser-framed screenshot */
+  .desktop {
+    position: relative;
+    width: 100%;
+    max-width: 540px;
+    border-radius: 14px;
+    background: var(--surface);
+    border: 1px solid var(--border-soft);
+    overflow: hidden;
+    box-shadow:
+      0 40px 80px -28px rgba(217, 119, 6, 0.22),
+      0 16px 32px -16px rgba(10, 61, 79, 0.16),
+      0 1px 2px rgba(10, 61, 79, 0.04);
+    transform: rotate(-1deg);
+  }
+  .desktop .browser-bar {
+    height: 28px;
+    background: linear-gradient(180deg, #F3F7F9, #EAF1F4);
+    border-bottom: 1px solid var(--border-soft);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 12px;
+  }
+  .desktop .dot { width: 9px; height: 9px; border-radius: 50%; }
+  .desktop .dot:nth-child(1) { background: #F47174; }
+  .desktop .dot:nth-child(2) { background: #F9C04D; }
+  .desktop .dot:nth-child(3) { background: #57C18A; }
+  .desktop img {
+    width: 100%;
+    display: block;
+  }
+
+  /* Floating spotlight on the warning */
+  .spotlight {
+    position: absolute;
+    top: 175px;
+    left: -34px;
+    background: var(--warn);
+    color: white;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 13px;
+    padding: 8px 14px 8px 12px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 14px 28px -10px rgba(217, 119, 6, 0.45);
+    transform: rotate(-3deg);
+    z-index: 5;
+    letter-spacing: 0.02em;
+  }
+  .spotlight svg { width: 16px; height: 16px; }
+  .spotlight::after {
+    content: "";
+    position: absolute;
+    right: -12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0; height: 0;
+    border-left: 12px solid var(--warn);
+    border-top: 6px solid transparent;
+    border-bottom: 6px solid transparent;
+  }
+
+  /* Right column: messaging + states */
+  .right {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    max-width: 480px;
+  }
+
+  .quote-card {
+    background: var(--surface);
+    border: 1px solid var(--border-soft);
+    border-left: 4px solid var(--warn);
+    border-radius: 12px;
+    padding: 22px 24px;
+    box-shadow: 0 18px 36px -22px rgba(10, 61, 79, 0.12);
+  }
+  .quote-card .qhead {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 14px;
+    color: var(--warn);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 10px;
+  }
+  .quote-card .qhead svg { width: 18px; height: 18px; }
+  .quote-card p {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 18px;
+    line-height: 1.4;
+    color: var(--ink-deep);
+    letter-spacing: -0.01em;
+  }
+
+  /* States row: NOT READY vs READY */
+  .states {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .state {
+    background: var(--surface);
+    border: 1px solid var(--border-soft);
+    border-radius: 12px;
+    padding: 16px 16px 18px;
+    position: relative;
+    box-shadow: 0 8px 20px -14px rgba(10, 61, 79, 0.10);
+  }
+  .state .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 4px 9px;
+    border-radius: 999px;
+    margin-bottom: 10px;
+  }
+  .state.notready .tag {
+    background: var(--warn-bg);
+    color: var(--warn);
+  }
+  .state.ready .tag {
+    background: #E8F8EE;
+    color: #15803D;
+  }
+  .state .tag .pulse {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+  .state h4 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--ink-deep);
+    letter-spacing: -0.01em;
+    margin-bottom: 6px;
+    line-height: 1.25;
+  }
+  .state p {
+    font-size: 12.5px;
+    line-height: 1.45;
+    color: var(--ink-muted);
+  }
+
+  /* Mini button row inside .ready state */
+  .mini-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .mini-actions .mb {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    background: var(--teal-50);
+    color: var(--teal-700);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(18, 178, 205, 0.20);
+  }
+  .mini-actions .mb.solid {
+    background: var(--teal);
+    color: white;
+    border-color: var(--teal);
+  }
+  .mini-actions .mb svg { width: 13px; height: 13px; }
+
+  /* Mini muted button row inside .notready */
+  .mini-disabled {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .mini-disabled .mb {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    background: #F1F4F6;
+    color: #B5C2C9;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px dashed #D8E0E5;
+  }
+  .mini-disabled .mb svg { width: 13px; height: 13px; }
+
+  .closer {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    background: var(--ink-deep);
+    color: white;
+    border-radius: 999px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: -0.005em;
+    align-self: flex-start;
+    box-shadow: 0 12px 24px -12px rgba(10, 61, 79, 0.30);
+  }
+  .closer .ic {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--teal);
+    color: var(--ink-deep);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .closer .ic svg { width: 11px; height: 11px; }
+</style>
+</head>
+<body>
+<div class="canvas">
+  <div class="bg-grid"></div>
+  <div class="dotted-ring ring-1"></div>
+  <div class="dotted-ring ring-2"></div>
+
+  <div class="frame">
+    <div class="head">
+      <div class="eyebrow">No false promises</div>
+      <h2>Honest about what's ready —<br><span class="warn-accent">and what isn't.</span></h2>
+      <p class="lede">
+        Microsoft Teams onboarding for guests can lag behind. Most landing pages hide it.
+        Guest Sponsor Info detects each guest's Teams readiness in real time and tells them — clearly — instead of showing buttons that fail.
+      </p>
+    </div>
+
+    <div class="body">
+      <!-- LEFT: warning screenshot -->
+      <div style="position:relative; width:100%; display:flex; justify-content:center;">
+        <div class="desktop">
+          <div class="browser-bar">
+            <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          </div>
+          <img src="assets/my-sponsors-noteams-example.jpg" alt="Microsoft Teams not set up yet warning">
+        </div>
+        <span class="spotlight">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 1 21h22L12 2zm0 6 7 12H5l7-12zm-1 3v4h2v-4h-2zm0 5v2h2v-2h-2z"/></svg>
+          Detected · in real time
+        </span>
+      </div>
+
+      <!-- RIGHT: messaging -->
+      <div class="right">
+        <div class="quote-card">
+          <div class="qhead">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+            What guests actually see
+          </div>
+          <p>"Your guest access to Microsoft Teams in this organization hasn't been set up yet. Ask your sponsor to add you to a Team."</p>
+        </div>
+
+        <div class="states">
+          <div class="state notready">
+            <span class="tag"><span class="pulse"></span>Not ready</span>
+            <h4>No broken buttons</h4>
+            <p>Chat &amp; call actions stay disabled with a clear, plain-language reason.</p>
+            <div class="mini-disabled">
+              <span class="mb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+              <span class="mb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>
+            </div>
+          </div>
+          <div class="state ready">
+            <span class="tag"><span class="pulse"></span>Ready</span>
+            <h4>Deep links activate</h4>
+            <p>One-click Teams chat &amp; call deep links appear automatically — no admin task.</p>
+            <div class="mini-actions">
+              <span class="mb solid"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+              <span class="mb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>
+            </div>
+          </div>
+        </div>
+
+        <span class="closer">
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+          Fewer "the chat doesn't work" tickets
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div class="maker">
+    <span class="label">Made by</span>
+    <img class="workoho-mark" src="assets/workoho-logo.svg" alt="Workoho">
+  </div>
+  <div class="slide-mark">
+    <span class="num">04</span>
+    <span class="sep"></span>
+    <span>Honest Status</span>
+  </div>
+</div>
+</body>
+</html>

@@ -1,8 +1,8 @@
 # Test Instructions — Guest Sponsor Info (Microsoft Marketplace / Partner Center)
 
-> **Version these instructions apply to:** 1.2.1\
-> **Solution package version:** 1.2.1.0\
-> **Last updated:** 2026-05-05
+> **Version these instructions apply to:** 1.2.2\
+> **Solution package version:** 1.2.2.0\
+> **Last updated:** 2026-05-06
 
 ---
 

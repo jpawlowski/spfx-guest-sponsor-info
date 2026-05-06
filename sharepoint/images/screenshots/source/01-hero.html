@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Guest Sponsor Info — Hero</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="base.css">
+<style>
+  .canvas {
+    background: linear-gradient(180deg, #FFFFFF 0%, #EAF7FB 100%);
+  }
+
+  .ring-1 { width: 560px; height: 560px; right: -190px; top: -180px; opacity: 0.55; }
+  .ring-2 { width: 340px; height: 340px; left: -160px; bottom: -150px; opacity: 0.30; border-color: rgba(10, 61, 79, 0.30); }
+
+  .hero-grid {
+    position: relative;
+    height: 100%;
+    display: grid;
+    grid-template-columns: 700px 1fr;
+    align-items: center;
+    padding: 0 64px 0 80px;
+  }
+
+  .copy { z-index: 3; max-width: 600px; }
+  .copy .brand-row { margin-bottom: 32px; }
+  .copy h1 {
+    font-size: 76px;
+    font-weight: 800;
+    margin-bottom: 26px;
+    line-height: 1.02;
+  }
+  .copy h1 .accent { color: var(--teal); white-space: nowrap; }
+  .copy .lede {
+    font-size: 21px;
+    line-height: 1.5;
+    max-width: 540px;
+    margin-bottom: 36px;
+  }
+  .copy .lede strong { color: var(--ink-deep); font-weight: 600; }
+
+  .badges { display: flex; gap: 10px; flex-wrap: wrap; max-width: 580px; }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 10px 16px 10px 12px;
+    border-radius: 999px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink-deep);
+    box-shadow: 0 2px 4px rgba(10, 61, 79, 0.04);
+  }
+  .badge .icon {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--teal-50);
+    color: var(--teal-700);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .badge .icon svg { width: 13px; height: 13px; }
+
+  .stage {
+    position: relative;
+    height: 100%;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .device {
+    width: 540px;
+    border-radius: 16px;
+    background: var(--surface);
+    border: 1px solid rgba(216, 228, 234, 0.9);
+    box-shadow:
+      0 60px 100px -32px rgba(10, 61, 79, 0.32),
+      0 30px 60px -24px rgba(10, 61, 79, 0.18),
+      0 2px 4px rgba(10, 61, 79, 0.06);
+    transform: rotate(-1.8deg);
+    overflow: hidden;
+    position: relative;
+  }
+  .browser-bar {
+    height: 28px;
+    background: linear-gradient(180deg, #F3F7F9, #EAF1F4);
+    border-bottom: 1px solid var(--border-soft);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 12px;
+  }
+  .browser-bar .dot { width: 9px; height: 9px; border-radius: 50%; }
+  .browser-bar .dot:nth-child(1) { background: #F47174; }
+  .browser-bar .dot:nth-child(2) { background: #F9C04D; }
+  .browser-bar .dot:nth-child(3) { background: #57C18A; }
+  .browser-bar .url {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--ink-soft);
+    font-weight: 500;
+    background: rgba(255,255,255,0.7);
+    padding: 3px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--border-soft);
+  }
+  .device img {
+    width: 100%;
+    display: block;
+  }
+
+  .presence-tag, .sponsor-tag {
+    position: absolute;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    z-index: 5;
+  }
+  .presence-tag {
+    top: 80px;
+    right: 28px;
+    padding: 10px 18px 10px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    box-shadow: 0 18px 30px -12px rgba(10, 61, 79, 0.22);
+    color: var(--ink-deep);
+    transform: rotate(3deg);
+  }
+  .presence-tag .dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--success);
+    box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.18);
+  }
+  .sponsor-tag {
+    bottom: 90px;
+    right: 24px;
+    padding: 10px 18px 10px 12px;
+    background: var(--ink-deep);
+    color: white;
+    box-shadow: 0 18px 30px -12px rgba(10, 61, 79, 0.35);
+    transform: rotate(-2deg);
+  }
+  .sponsor-tag .ic {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--teal);
+    color: var(--ink-deep);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .sponsor-tag .ic svg { width: 12px; height: 12px; }
+
+  .ribbon {
+    position: absolute;
+    top: 38px;
+    left: 80px;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 7px 16px 7px 7px;
+    background: var(--ink-deep);
+    color: white;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 500;
+    z-index: 4;
+  }
+  .ribbon .chip {
+    background: var(--teal);
+    color: var(--ink-deep);
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+<div class="canvas">
+  <div class="glow-tl"></div>
+  <div class="glow-br"></div>
+  <div class="bg-grid"></div>
+
+  <div class="dotted-ring ring-1"></div>
+  <div class="dotted-ring ring-2"></div>
+
+  <div class="ribbon">
+    <span class="chip">SPFx</span>
+    <span>SharePoint web part for Microsoft 365</span>
+  </div>
+
+  <div class="hero-grid">
+
+    <div class="copy">
+      <div class="brand-row">
+        <span class="logo-icon">
+          <svg viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <polyline points="35,24 46,48" stroke="#0A3D4F" stroke-width="2.4" stroke-opacity="0.55" fill="none" stroke-linecap="round"/>
+            <polyline points="35,72 46,48" stroke="#0A3D4F" stroke-width="2.4" stroke-opacity="0.55" fill="none" stroke-linecap="round"/>
+            <line x1="46" y1="48" x2="56" y2="48" stroke="#0A3D4F" stroke-width="2.4" stroke-opacity="0.55" stroke-linecap="round"/>
+            <circle cx="22" cy="24" r="14" fill="#0A3D4F"/>
+            <circle cx="22" cy="18.5" r="4.5" fill="white"/>
+            <ellipse cx="22" cy="30" rx="6.5" ry="4" fill="white"/>
+            <circle cx="22" cy="72" r="14" fill="#0A3D4F"/>
+            <circle cx="22" cy="66.5" r="4.5" fill="white"/>
+            <ellipse cx="22" cy="78" rx="6.5" ry="4" fill="white"/>
+            <circle cx="73" cy="48" r="18" fill="#0A3D4F" fill-opacity="0.15" stroke="#0A3D4F" stroke-width="2.8" stroke-dasharray="5 3" stroke-linecap="round"/>
+            <circle cx="73" cy="42.5" r="5.5" fill="#0A3D4F"/>
+            <ellipse cx="73" cy="55" rx="8" ry="4.5" fill="#0A3D4F"/>
+          </svg>
+        </span>
+        <div>
+          <div class="name">Guest Sponsor Info</div>
+          <div class="sub">for SharePoint &amp; Microsoft 365</div>
+        </div>
+      </div>
+
+      <h1>
+        Let your guests<br>
+        know <span class="accent">who&nbsp;to&nbsp;call.</span>
+      </h1>
+
+      <p class="lede">
+        Live sponsor cards, real-time Teams presence, and an honest onboarding status —
+        right on the SharePoint landing page <strong>Microsoft Entra B2B guests</strong>
+        already see after accepting an invitation.
+      </p>
+
+      <div class="badges">
+        <span class="badge">
+          <span class="icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10"/><path d="M12 2a15.3 15.3 0 0 0-4 10 15.3 15.3 0 0 0 4 10"/></svg>
+          </span>
+          17 Languages
+        </span>
+        <span class="badge">
+          <span class="icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </span>
+          Privacy-First
+        </span>
+        <span class="badge">
+          <span class="icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          </span>
+          Source-Available
+        </span>
+        <span class="badge">
+          <span class="icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>
+          </span>
+          Free for noncompeting use
+        </span>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="device">
+        <div class="browser-bar">
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          <span class="url">contoso.sharepoint.com / guest-landing</span>
+        </div>
+        <img src="assets/my-sponsors-card-example.jpg" alt="">
+      </div>
+
+      <div class="presence-tag">
+        <span class="dot"></span>
+        Real-time Teams presence
+      </div>
+
+      <div class="sponsor-tag">
+        <span class="ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>
+        </span>
+        Sponsors finally visible
+      </div>
+    </div>
+
+  </div>
+
+  <div class="maker">
+    <span class="label">Made by</span>
+    <img class="workoho-mark" src="assets/workoho-logo.svg" alt="Workoho">
+  </div>
+  <div class="slide-mark">
+    <span class="num">01</span>
+    <span class="sep"></span>
+    <span>Overview</span>
+  </div>
+</div>
+</body>
+</html>

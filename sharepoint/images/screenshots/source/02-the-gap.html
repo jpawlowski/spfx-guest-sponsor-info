@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Guest Sponsor Info — The Gap</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="base.css">
+<style>
+  .canvas {
+    background: linear-gradient(180deg, #FFFFFF 0%, #F2F8FA 100%);
+  }
+
+  .ring-1 { width: 460px; height: 460px; right: -200px; bottom: -180px; opacity: 0.35; }
+  .ring-2 { width: 260px; height: 260px; left: -120px; top: -90px; opacity: 0.35; border-color: rgba(18, 178, 205, 0.55); }
+
+  .frame {
+    position: relative;
+    height: 100%;
+    padding: 50px 80px 80px 80px;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .head {
+    margin-bottom: 22px;
+  }
+  .eyebrow { margin-bottom: 14px; }
+  h2 {
+    font-size: 44px;
+    font-weight: 800;
+    line-height: 1.05;
+    max-width: 1080px;
+    margin-bottom: 12px;
+  }
+  h2 .accent { color: var(--teal); }
+  .head .lede {
+    font-size: 16.5px;
+    line-height: 1.5;
+    max-width: 940px;
+    color: var(--ink-muted);
+  }
+
+  .cmp {
+    display: grid;
+    grid-template-columns: 1fr 56px 1fr;
+    align-items: stretch;
+    flex: 0 1 auto;
+  }
+
+  .col {
+    padding: 22px 24px;
+    border-radius: 16px;
+    position: relative;
+  }
+
+  .col.before {
+    background: #F1F4F6;
+    border: 1px solid #E0E7EB;
+  }
+  .col.after {
+    background: linear-gradient(180deg, #FFFFFF 0%, #F4FCFD 100%);
+    border: 1.5px solid var(--teal);
+    box-shadow:
+      0 24px 48px -22px rgba(18, 178, 205, 0.22),
+      0 6px 16px -8px rgba(18, 178, 205, 0.12);
+  }
+
+  .col-tag {
+    display: inline-flex;
+    align-items: center;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    padding: 5px 11px;
+    border-radius: 999px;
+    margin-bottom: 12px;
+  }
+  .col.before .col-tag {
+    background: rgba(122, 149, 160, 0.13);
+    color: #5B7682;
+  }
+  .col.after .col-tag {
+    background: var(--teal);
+    color: var(--ink-deep);
+  }
+  .col-title {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 21px;
+    color: var(--ink-deep);
+    letter-spacing: -0.015em;
+    margin-bottom: 14px;
+    line-height: 1.2;
+  }
+  .col.before .col-title { color: #4F6975; }
+
+  .row {
+    display: grid;
+    grid-template-columns: 30px 1fr;
+    gap: 12px;
+    padding: 9px 0;
+    border-top: 1px solid rgba(160, 180, 190, 0.20);
+    align-items: flex-start;
+  }
+  .row:first-of-type { border-top: none; padding-top: 4px; }
+  .row .ic {
+    width: 26px; height: 26px;
+    border-radius: 7px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .row .ic svg { width: 13px; height: 13px; }
+  .col.before .ic { background: #E1E7EB; color: #6B8290; }
+  .col.after .ic { background: var(--teal); color: var(--ink-deep); }
+  .row .lbl {
+    font-size: 13px;
+    line-height: 1.4;
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .col.before .lbl { color: #5C7682; }
+  .row .lbl strong {
+    display: block;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 14.5px;
+    color: var(--ink-deep);
+    letter-spacing: -0.01em;
+    margin-bottom: 1px;
+  }
+  .col.before .lbl strong { color: #4F6975; }
+
+  .arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .arrow .pulse {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: var(--teal);
+    color: var(--ink-deep);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 0 6px rgba(18, 178, 205, 0.18);
+  }
+  .arrow .pulse svg { width: 17px; height: 17px; }
+
+  .ctx-bar {
+    margin-top: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    font-size: 12.5px;
+    color: var(--ink-muted);
+  }
+  .ctx-bar .pill-mini {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 14px;
+    border-radius: 999px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--ink-deep);
+    font-weight: 600;
+  }
+  .ctx-bar .pill-mini svg {
+    width: 14px; height: 14px;
+    color: var(--teal-700);
+  }
+  .ctx-bar .plus { color: var(--ink-soft); font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="canvas">
+  <div class="glow-tl" style="opacity: 0.35"></div>
+  <div class="bg-grid"></div>
+  <div class="dotted-ring ring-1"></div>
+  <div class="dotted-ring ring-2"></div>
+
+  <div class="frame">
+    <div class="head">
+      <div class="eyebrow">The hidden gap</div>
+      <h2>
+        Your sponsor exists in Microsoft Entra.<br>
+        The guest just <span class="accent">can't see it.</span>
+      </h2>
+      <p class="lede">
+        When a B2B guest accepts an invitation, the sponsor relationship is already recorded in Entra
+        — but SharePoint has no built-in way to surface it. Guests only ever see whoever sent the
+        invitation email. We change that.
+      </p>
+    </div>
+
+    <div class="cmp">
+
+      <div class="col before">
+        <span class="col-tag">Default SharePoint guest landing</span>
+        <div class="col-title">What the guest sees today</div>
+
+        <div class="row">
+          <span class="ic">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.8.4-1.2 1-1.2 1.7v.5"/><circle cx="12" cy="17" r="0.8" fill="currentColor"/></svg>
+          </span>
+          <span class="lbl"><strong>Who are my sponsors?</strong>Not visible to the guest</span>
+        </div>
+        <div class="row">
+          <span class="ic">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.8.4-1.2 1-1.2 1.7v.5"/><circle cx="12" cy="17" r="0.8" fill="currentColor"/></svg>
+          </span>
+          <span class="lbl"><strong>How do I reach them?</strong>Not visible to the guest</span>
+        </div>
+        <div class="row">
+          <span class="ic">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.8.4-1.2 1-1.2 1.7v.5"/><circle cx="12" cy="17" r="0.8" fill="currentColor"/></svg>
+          </span>
+          <span class="lbl"><strong>Who's the backup sponsor?</strong>Not visible to the guest</span>
+        </div>
+        <div class="row">
+          <span class="ic">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.8.4-1.2 1-1.2 1.7v.5"/><circle cx="12" cy="17" r="0.8" fill="currentColor"/></svg>
+          </span>
+          <span class="lbl"><strong>Is Teams ready for me yet?</strong>Buttons may look ready but aren't</span>
+        </div>
+      </div>
+
+      <div class="arrow">
+        <span class="pulse">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+        </span>
+      </div>
+
+      <div class="col after">
+        <span class="col-tag">With Guest Sponsor Info</span>
+        <div class="col-title">What they see now</div>
+
+        <div class="row">
+          <span class="ic">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>
+          </span>
+          <span class="lbl"><strong>Live sponsor cards</strong>Photo, title, email, phone, office address from Microsoft Graph</span>
+        </div>
+        <div class="row">
+          <span class="ic">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>
+          </span>
+          <span class="lbl"><strong>Backup sponsors &amp; manager context</strong>Automatic delegation when the primary is unavailable</span>
+        </div>
+        <div class="row">
+          <span class="ic">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>
+          </span>
+          <span class="lbl"><strong>Real-time Teams presence</strong>Available, Busy, In a Meeting, Away — auto-updating</span>
+        </div>
+        <div class="row">
+          <span class="ic">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>
+          </span>
+          <span class="lbl"><strong>Honest onboarding status</strong>Clear explanation when Teams isn't provisioned yet</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="ctx-bar">
+      <span class="pill-mini">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+        Microsoft Entra B2B
+      </span>
+      <span class="plus">+</span>
+      <span class="pill-mini">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 9h18"/></svg>
+        SharePoint Online
+      </span>
+      <span class="plus">+</span>
+      <span class="pill-mini">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="9"/><path d="M12 3v6M12 15v6M3 12h6M15 12h6"/></svg>
+        Microsoft Graph
+      </span>
+    </div>
+  </div>
+
+  <div class="maker">
+    <span class="label">Made by</span>
+    <img class="workoho-mark" src="assets/workoho-logo.svg" alt="Workoho">
+  </div>
+  <div class="slide-mark">
+    <span class="num">02</span>
+    <span class="sep"></span>
+    <span>The Problem</span>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Guest Sponsor Info — Live Sponsor Cards</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="base.css">
+<style>
+  .canvas {
+    background:
+      radial-gradient(circle at 80% 20%, rgba(18, 178, 205, 0.10), transparent 50%),
+      linear-gradient(180deg, #FFFFFF 0%, #F5FAFB 100%);
+  }
+
+  .ring-1 { width: 480px; height: 480px; right: -180px; top: -180px; opacity: 0.45; }
+  .ring-2 { width: 240px; height: 240px; left: -100px; bottom: -110px; opacity: 0.30; border-color: rgba(10, 61, 79, 0.35); }
+
+  .frame {
+    position: relative;
+    height: 100%;
+    padding: 56px 80px 80px 80px;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .head {
+    margin-bottom: 28px;
+    max-width: 900px;
+  }
+  .eyebrow { margin-bottom: 14px; }
+  h2 {
+    font-size: 46px;
+    font-weight: 800;
+    line-height: 1.05;
+    margin-bottom: 12px;
+  }
+  h2 .accent { color: var(--teal); }
+  .head .lede {
+    font-size: 17px;
+    line-height: 1.5;
+    max-width: 800px;
+    color: var(--ink-muted);
+  }
+
+  /* Three-column showcase */
+  .show {
+    display: grid;
+    grid-template-columns: 480px 1fr 220px;
+    gap: 36px;
+    flex: 1;
+    align-items: center;
+  }
+  /* Desktop showcase */
+  .desktop-stage {
+    position: relative;
+    width: 480px;
+    height: 410px;
+  }
+  .desktop {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 14px;
+    background: var(--surface);
+    border: 1px solid var(--border-soft);
+    overflow: hidden;
+    box-shadow:
+      0 40px 80px -28px rgba(10, 61, 79, 0.30),
+      0 16px 32px -16px rgba(10, 61, 79, 0.16),
+      0 1px 2px rgba(10, 61, 79, 0.04);
+    transform: rotate(-1deg);
+  }
+  .desktop .browser-bar {
+    height: 26px;
+    background: linear-gradient(180deg, #F3F7F9, #EAF1F4);
+    border-bottom: 1px solid var(--border-soft);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0 11px;
+  }
+  .desktop .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .desktop .dot:nth-child(1) { background: #F47174; }
+  .desktop .dot:nth-child(2) { background: #F9C04D; }
+  .desktop .dot:nth-child(3) { background: #57C18A; }
+  .desktop .shot-wrap {
+    width: 100%;
+    height: calc(100% - 26px);
+    overflow: hidden;
+  }
+  .desktop img {
+    width: 100%;
+    display: block;
+    transform-origin: top center;
+  }
+
+  /* Floating callouts on desktop screenshot */
+  .callout {
+    position: absolute;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px 7px 8px;
+    border-radius: 999px;
+    background: var(--ink-deep);
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+    box-shadow: 0 12px 22px -10px rgba(10, 61, 79, 0.35);
+    z-index: 5;
+  }
+  .callout .dot-ic {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--teal);
+    color: var(--ink-deep);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .callout .dot-ic svg { width: 10px; height: 10px; }
+  .callout-presence {
+    top: 30px;
+    left: -32px;
+    transform: rotate(-3deg);
+  }
+  .callout-presence .dot-ic {
+    background: var(--success);
+  }
+  .callout-presence .dot-ic .live-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: white;
+  }
+  .callout-copy {
+    top: 175px;
+    right: -32px;
+    transform: rotate(2deg);
+  }
+  .callout-map {
+    bottom: 18px;
+    left: -32px;
+    transform: rotate(-2deg);
+  }
+
+  /* Middle features column */
+  .features {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .feature-row {
+    display: grid;
+    grid-template-columns: 36px 1fr;
+    gap: 14px;
+    align-items: flex-start;
+  }
+  .feature-row .ic {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    background: var(--teal-50);
+    color: var(--teal-700);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .feature-row .ic svg { width: 18px; height: 18px; }
+  .feature-row .txt strong {
+    display: block;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 15.5px;
+    color: var(--ink-deep);
+    letter-spacing: -0.01em;
+    margin-bottom: 3px;
+    line-height: 1.2;
+  }
+  .feature-row .txt span {
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--ink-muted);
+  }
+
+  /* Phone frame (mobile screenshot) */
+  .phone {
+    position: relative;
+    width: 220px;
+    height: 410px;
+    background: #1a2730;
+    border-radius: 30px;
+    padding: 7px;
+    box-shadow:
+      0 50px 80px -28px rgba(10, 61, 79, 0.40),
+      0 16px 32px -16px rgba(10, 61, 79, 0.20),
+      0 0 0 2px rgba(255, 255, 255, 0.05) inset;
+    transform: rotate(2.5deg);
+    z-index: 2;
+  }
+  .phone-screen {
+    width: 100%;
+    height: 100%;
+    border-radius: 24px;
+    background: white;
+    overflow: hidden;
+    position: relative;
+  }
+  .phone-screen img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top center;
+    display: block;
+  }
+  .phone-notch {
+    position: absolute;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 84px;
+    height: 18px;
+    background: #1a2730;
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+    z-index: 10;
+  }
+  .phone-tag {
+    position: absolute;
+    top: -14px;
+    right: -32px;
+    padding: 6px 12px;
+    background: var(--teal);
+    color: var(--ink-deep);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    border-radius: 999px;
+    z-index: 12;
+    transform: rotate(8deg);
+    box-shadow: 0 8px 20px -6px rgba(18, 178, 205, 0.40);
+  }
+</style>
+</head>
+<body>
+<div class="canvas">
+  <div class="bg-grid"></div>
+  <div class="dotted-ring ring-1"></div>
+  <div class="dotted-ring ring-2"></div>
+
+  <div class="frame">
+    <div class="head">
+      <div class="eyebrow">Live sponsor cards</div>
+      <h2>Real photos. Real titles.<br><span class="accent">Real reach.</span></h2>
+      <p class="lede">
+        Sponsor data sourced live from Microsoft Graph through a privacy-first Azure Function proxy —
+        on every device, in 17 languages. No manual upkeep when sponsors or roles change.
+      </p>
+    </div>
+
+    <div class="show">
+
+      <!-- Desktop with callouts -->
+      <div class="desktop-stage">
+        <div class="desktop">
+          <div class="browser-bar">
+            <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          </div>
+          <div class="shot-wrap">
+            <img src="assets/my-sponsors-card-example.jpg" alt="">
+          </div>
+        </div>
+
+        <span class="callout callout-presence">
+          <span class="dot-ic"><span class="live-dot"></span></span>
+          Live presence
+        </span>
+        <span class="callout callout-copy">
+          <span class="dot-ic">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+          </span>
+          One-click copy
+        </span>
+        <span class="callout callout-map">
+          <span class="dot-ic">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          </span>
+          Inline Azure Maps
+        </span>
+      </div>
+
+      <!-- Feature column -->
+      <div class="features">
+        <div class="feature-row">
+          <span class="ic">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="4"/><path d="M3 21a9 9 0 0 1 18 0"/></svg>
+          </span>
+          <span class="txt">
+            <strong>Live photos &amp; profiles</strong>
+            <span>Display name, job title, department — straight from Microsoft Graph</span>
+          </span>
+        </div>
+        <div class="feature-row">
+          <span class="ic">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="m2 7 10 6 10-6"/></svg>
+          </span>
+          <span class="txt">
+            <strong>Email · phone · mobile</strong>
+            <span>Every contact field with a one-click copy button</span>
+          </span>
+        </div>
+        <div class="feature-row">
+          <span class="ic">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          </span>
+          <span class="txt">
+            <strong>Office address &amp; map</strong>
+            <span>Inline Azure Maps preview, optional and admin-toggleable</span>
+          </span>
+        </div>
+        <div class="feature-row">
+          <span class="ic">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 11h-6M22 15h-6"/></svg>
+          </span>
+          <span class="txt">
+            <strong>Manager context</strong>
+            <span>Optional manager name, title, and department for orientation</span>
+          </span>
+        </div>
+        <div class="feature-row">
+          <span class="ic">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          </span>
+          <span class="txt">
+            <strong>Three layout modes</strong>
+            <span>Full · Compact · Auto — every field individually toggleable by admins</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- Phone -->
+      <div class="phone">
+        <span class="phone-tag">Mobile-ready</span>
+        <div class="phone-screen">
+          <div class="phone-notch"></div>
+          <img src="assets/my-sponsors-card-example-mobile.jpg" alt="">
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="maker">
+    <span class="label">Made by</span>
+    <img class="workoho-mark" src="assets/workoho-logo.svg" alt="Workoho">
+  </div>
+  <div class="slide-mark">
+    <span class="num">03</span>
+    <span class="sep"></span>
+    <span>Live Cards</span>
+  </div>
+</div>
+</body>
+</html>
