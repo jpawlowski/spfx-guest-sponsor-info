@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="canvas-size" content="1200x630">
+<title>Guest Sponsor Info — OG Social Card</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="base.css">
+<style>
+  /* Override base.css 1366x768 sizing for OG format */
+  html, body { width: 1200px; height: 630px; }
+  .canvas {
+    width: 1200px;
+    height: 630px;
+    background:
+      radial-gradient(circle at 88% 12%, rgba(18, 178, 205, 0.16), transparent 45%),
+      radial-gradient(circle at 6% 90%, rgba(10, 61, 79, 0.10), transparent 50%),
+      linear-gradient(180deg, #FFFFFF 0%, #F4F9FB 100%);
+  }
+
+  .ring-1 { width: 360px; height: 360px; right: -120px; top: -150px; opacity: 0.40; }
+  .ring-2 { width: 200px; height: 200px; left: -90px; bottom: -80px; opacity: 0.30; border-color: rgba(10, 61, 79, 0.30); }
+
+  .frame {
+    position: relative;
+    height: 100%;
+    padding: 56px 64px 48px 64px;
+    z-index: 3;
+    display: grid;
+    grid-template-columns: 620px 1fr;
+    gap: 28px;
+    align-items: center;
+  }
+
+  /* LEFT — text column */
+  .copy { display: flex; flex-direction: column; }
+
+  .brand-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .brand-row .brand-icon {
+    width: 44px;
+    height: 44px;
+    display: block;
+    border-radius: 10px;
+    box-shadow: 0 6px 14px -6px rgba(18, 178, 205, 0.45);
+  }
+  .brand-row .name {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 17px;
+    color: var(--ink-deep);
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+  }
+  .brand-row .sub {
+    font-family: var(--font-sans);
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    font-weight: 500;
+    letter-spacing: 0.01em;
+  }
+
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    color: var(--ink-deep);
+    font-size: 60px;
+    line-height: 1.02;
+    letter-spacing: -0.028em;
+    margin-bottom: 18px;
+  }
+  h1 .accent { color: var(--teal); }
+
+  .lede {
+    font-size: 18px;
+    line-height: 1.45;
+    color: var(--ink-muted);
+    max-width: 580px;
+    margin-bottom: 22px;
+  }
+  .lede strong {
+    color: var(--ink-deep);
+    font-weight: 600;
+  }
+
+  .pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 26px;
+  }
+  .pill {
+    padding: 8px 14px;
+    font-size: 12.5px;
+    font-weight: 600;
+  }
+  .pill svg { width: 14px; height: 14px; }
+  .pill .check {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--teal);
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .pill .check svg { width: 9px; height: 9px; }
+
+  .url-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink-deep);
+    margin-top: auto;
+  }
+  .url-row .url-ic {
+    width: 22px; height: 22px;
+    border-radius: 6px;
+    background: var(--teal-50);
+    color: var(--teal-700);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .url-row .url-ic svg { width: 12px; height: 12px; }
+  .url-row .subdomain { color: var(--ink-deep); font-weight: 600; }
+  .url-row .tld { color: var(--ink-soft); font-weight: 500; }
+
+  /* RIGHT — visual column */
+  .visual {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .desktop {
+    position: relative;
+    width: 100%;
+    max-width: 460px;
+    border-radius: 14px;
+    background: var(--surface);
+    border: 1px solid var(--border-soft);
+    overflow: hidden;
+    box-shadow:
+      0 50px 90px -28px rgba(10, 61, 79, 0.32),
+      0 18px 36px -16px rgba(10, 61, 79, 0.18),
+      0 1px 2px rgba(10, 61, 79, 0.04);
+    transform: rotate(-1.5deg);
+  }
+  .desktop .browser-bar {
+    height: 26px;
+    background: linear-gradient(180deg, #F3F7F9, #EAF1F4);
+    border-bottom: 1px solid var(--border-soft);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 12px;
+    position: relative;
+  }
+  .desktop .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .desktop .dot:nth-child(1) { background: #F47174; }
+  .desktop .dot:nth-child(2) { background: #F9C04D; }
+  .desktop .dot:nth-child(3) { background: #57C18A; }
+  .desktop .url-bar {
+    margin-left: 14px;
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    color: #94A8B0;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+  }
+  .desktop .url-bar .seg { color: var(--ink-deep); }
+  .desktop .shot-wrap {
+    width: 100%;
+    height: 380px;
+    overflow: hidden;
+    background: white;
+  }
+  .desktop img {
+    width: 100%;
+    display: block;
+  }
+
+  /* Floating presence pill */
+  .presence-pill {
+    position: absolute;
+    top: 28px;
+    right: -18px;
+    background: white;
+    border: 1px solid var(--border-soft);
+    border-radius: 999px;
+    padding: 8px 14px 8px 11px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink-deep);
+    box-shadow: 0 16px 30px -12px rgba(10, 61, 79, 0.25);
+    z-index: 4;
+    transform: rotate(2deg);
+  }
+  .presence-pill .live-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--success);
+    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.18);
+  }
+
+  /* Floating bottom pill */
+  .visible-pill {
+    position: absolute;
+    bottom: 50px;
+    left: -18px;
+    background: var(--ink-deep);
+    color: white;
+    border-radius: 999px;
+    padding: 8px 16px 8px 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    box-shadow: 0 16px 30px -12px rgba(10, 61, 79, 0.40);
+    z-index: 4;
+    transform: rotate(-2deg);
+  }
+  .visible-pill .ic {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--teal);
+    color: var(--ink-deep);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .visible-pill .ic svg { width: 10px; height: 10px; }
+
+  /* Maker mark — bottom-right of OG card (since URL takes left) */
+  .maker {
+    position: absolute;
+    bottom: 18px;
+    right: 24px;
+    left: auto;
+    font-size: 10.5px;
+  }
+  .maker .label {
+    font-size: 9.5px;
+  }
+  .maker .workoho-mark {
+    height: 13px;
+  }
+</style>
+</head>
+<body>
+<div class="canvas">
+  <div class="bg-grid"></div>
+  <div class="dotted-ring ring-1"></div>
+  <div class="dotted-ring ring-2"></div>
+
+  <div class="frame">
+    <!-- LEFT: copy -->
+    <div class="copy">
+      <div class="brand-row">
+        <img class="brand-icon" src="assets/favicon.svg" alt="">
+        <div>
+          <div class="name">Guest Sponsor Info</div>
+          <div class="sub">for SharePoint &amp; Microsoft 365</div>
+        </div>
+      </div>
+
+      <h1>Let your guests know<br><span class="accent">who to call.</span></h1>
+
+      <p class="lede">
+        Live sponsor cards on every SharePoint guest landing page —
+        with <strong>real-time Teams presence</strong>, contact details, and an
+        honest onboarding status. Built on Microsoft Graph, runs entirely in your tenant.
+      </p>
+
+      <div class="pills">
+        <span class="pill">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg>
+          17 Languages
+        </span>
+        <span class="pill">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.4 9.5 8 11 4.6-1.5 8-6 8-11V5l-8-3z"/></svg>
+          Privacy-First
+        </span>
+        <span class="pill">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          Source-Available
+        </span>
+      </div>
+
+      <div class="url-row">
+        <span class="url-ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg>
+        </span>
+        <span><span class="subdomain">guest-sponsor-info</span><span class="tld">.workoho.cloud</span></span>
+      </div>
+    </div>
+
+    <!-- RIGHT: visual -->
+    <div class="visual">
+      <div class="desktop">
+        <div class="browser-bar">
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          <span class="url-bar"><span class="seg">contoso.sharepoint.com</span> / guest-landing</span>
+        </div>
+        <div class="shot-wrap">
+          <img src="assets/my-sponsors-card-example.jpg" alt="Sponsor card">
+        </div>
+      </div>
+
+      <span class="presence-pill">
+        <span class="live-dot"></span>
+        Real-time Teams presence
+      </span>
+
+      <span class="visible-pill">
+        <span class="ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </span>
+        Sponsors finally visible
+      </span>
+    </div>
+  </div>
+
+  <div class="maker">
+    <span class="label">Made by</span>
+    <img class="workoho-mark" src="assets/workoho-logo.svg" alt="Workoho">
+  </div>
+</div>
+</body>
+</html>

@@ -1,21 +1,24 @@
-# Guest Sponsor Info — AppSource Marketplace Graphics
+# Guest Sponsor Info — Marketing Graphics
 
-Source files for the 5-graphic carousel set (1366×768 JPG) used on the
-Microsoft AppSource listing.
+Source files for:
+
+- 5-graphic AppSource carousel set (1366×768 JPG)
+- Open Graph social card (1200×630 JPG) for the website
 
 ## What's in here
 
-```text
+```txt
 marketplace/
-├── 01-hero.html              ← "Let your guests know who to call."
-├── 02-the-gap.html           ← "Your sponsor exists in Microsoft Entra..."
-├── 03-live-cards.html        ← "Real photos. Real titles. Real reach."
-├── 04-honest-teams.html      ← "Honest about what's ready — and what isn't."
-├── 05-trust-stack.html       ← "Built to stay in your tenant."
+├── 01-hero.html              ← AppSource: "Let your guests know who to call."
+├── 02-the-gap.html           ← AppSource: "Your sponsor exists in Microsoft Entra…"
+├── 03-live-cards.html        ← AppSource: "Real photos. Real titles. Real reach."
+├── 04-honest-teams.html      ← AppSource: "Honest about what's ready — and what isn't."
+├── 05-trust-stack.html       ← AppSource: "Built to stay in your tenant."
+├── og-social-card.html       ← Open Graph card for website meta tags (1200×630)
 ├── base.css                  ← shared design tokens (colors, fonts, motifs)
-├── render.py                 ← Playwright/Chromium renderer
+├── render.py                 ← Playwright/Chromium renderer (auto-detects canvas size)
 ├── assets/                   ← screenshots, logos used in the graphics
-└── renders/                  ← output JPGs (1366×768 @2x then downsampled)
+└── renders/                  ← output JPGs (created when you run render.py)
 ```
 
 ## How the graphics are built
@@ -23,21 +26,34 @@ marketplace/
 Each graphic is a **standalone HTML file** that uses:
 
 - `base.css` for the shared design system (brand colors, type scale, dotted-ring
-  decorations, footer maker mark, slide indicator)
+  decorations, footer maker mark)
 - A `<style>` block inside the HTML for slide-specific layout
 - Images from `assets/` for screenshots and logos
-- Google Fonts (Manrope + Inter) loaded over the network at render time
+- Google Fonts (Manrope + Inter, plus JetBrains Mono on the OG card) loaded at render time
 
-The HTML files render at exactly **1366×768 px** in a headless Chromium browser.
 There is no build step — open any `.html` file in your browser to preview it.
+
+### Canvas size
+
+Each HTML file declares its own canvas size via a meta tag near the top:
+
+```html
+<meta name="canvas-size" content="1200x630">
+```
+
+The render script reads this and renders at the matching viewport. If the tag
+is missing, it falls back to **1366×768** (AppSource carousel format).
+
+The 5 carousel files don't need this tag — they use the default. The OG card
+sets it to **1200×630**.
 
 ## Editing
 
-### Change copy / headline / labels
+### Change copy / headlines / labels
 
-Open the corresponding `0X-*.html` file and edit the text directly. The
-headlines are inside `<h2>` tags, ledes inside `<p class="lede">`, and badges
-inside `<span class="pill">` or `<span class="state">` blocks.
+Open the HTML file and edit the text directly. Headlines are inside `<h1>` /
+`<h2>` tags, ledes inside `<p class="lede">`, and badges inside
+`<span class="pill">` or similar blocks.
 
 ### Change a brand color globally
 
@@ -49,7 +65,7 @@ Edit `base.css` — colors live as CSS variables at the top:
 --ink-deep:    #0A3D4F;
 ```
 
-All 5 graphics will pick up the change automatically.
+All graphics will pick up the change automatically.
 
 ### Replace a screenshot
 
@@ -57,47 +73,88 @@ Drop a new image into `assets/` and update the corresponding
 `<img src="assets/...">` reference in the HTML file. The screenshots
 currently used:
 
-- `my-sponsors-card-example.jpg` — desktop sponsor card popup (graphics 1, 3)
+- `my-sponsors-card-example.jpg` — desktop sponsor card popup
+  (graphics 1, 3, OG card)
 - `my-sponsors-card-example-mobile.jpg` — mobile sponsor card (graphic 3)
 - `my-sponsors-noteams-example.jpg` — "Teams not set up yet" warning (graphic 4)
+- `entrance-landingpage-example.jpg` — full M365 landing page (reference, unused)
 - `workoho-logo.svg` — maker mark in footer of every graphic
 - `logo.svg` / `favicon.svg` — Guest Sponsor Info brand mark
 
-### Add a new graphic
+### Add a new graphic at a different size
 
-Copy any of the existing `0X-*.html` files as a template, change the slide
-number in the bottom-right `<div class="slide-mark">`, and write your content.
+Copy any HTML file as a template and adjust its meta tag:
+
+```html
+<meta name="canvas-size" content="1080x1080">
+```
+
+You'll also need to override the body/canvas size in the file's internal
+`<style>` block, since `base.css` hardcodes 1366×768:
+
+```css
+html, body { width: 1080px; height: 1080px; }
+.canvas { width: 1080px; height: 1080px; }
+```
+
+The OG card (`og-social-card.html`) is a worked example of this override.
 
 ## Re-rendering
 
 You'll need Python 3 and Playwright installed:
 
 ```bash
-pip install playwright
+pip install playwright pillow
 playwright install chromium
 ```
 
 Then from the `marketplace/` directory:
 
 ```bash
-# Render all 5 graphics
+# Render all HTML files
 python3 render.py
 
 # Render just one
 python3 render.py 03-live-cards.html
+python3 render.py og-social-card.html
 ```
 
-Output goes to `renders/`. Files are rendered at 2x device-scale (2732×1536)
-for sharp text, then need to be downsampled to 1366×768 for the AppSource
-spec. Quick downsample with PIL:
+Output goes to `renders/`. Files are rendered at 2× device-scale for sharp text
+(e.g. 2732×1536 for 1366×768, or 2400×1260 for 1200×630), then need to be
+downsampled to the exact target spec for distribution. Quick downsample with
+PIL:
 
 ```python
 from PIL import Image
+
+# AppSource carousel — 1366x768
 for f in ['01-hero.jpg', '02-the-gap.jpg', '03-live-cards.jpg',
           '04-honest-teams.jpg', '05-trust-stack.jpg']:
     Image.open(f'renders/{f}').resize((1366, 768), Image.LANCZOS).save(
         f'final/{f}', 'JPEG', quality=92, optimize=True, progressive=True)
+
+# OG social card — 1200x630
+Image.open('renders/og-social-card.jpg').resize((1200, 630), Image.LANCZOS).save(
+    'final/og-social-card.jpg', 'JPEG', quality=92, optimize=True, progressive=True)
 ```
+
+## Using the OG card on the website
+
+In the site's `<head>`:
+
+```html
+<meta property="og:image" content="https://guest-sponsor-info.workoho.cloud/og-social-card.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:alt" content="Guest Sponsor Info — live sponsor cards on every SharePoint guest landing page">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://guest-sponsor-info.workoho.cloud/og-social-card.jpg">
+```
+
+The 1200×630 format covers Facebook, LinkedIn, X (as `summary_large_image`),
+WhatsApp, Slack/Teams unfurls, and most other platforms in one go.
 
 ## Design system reference
 
@@ -105,25 +162,25 @@ for f in ['01-hero.jpg', '02-the-gap.jpg', '03-live-cards.jpg',
 
 - Teal `#12B2CD` (primary), Teal-700 `#0E96AD`, Teal-50 `#E8F7FB`
 - Ink-Deep `#0A3D4F` (headlines), Ink `#0F2A35` (body), Ink-Muted `#4A6B76`
-- Warn `#D97706` (used on graphic 4 for "not ready" state)
-- Success `#16A34A` (used on graphic 4 "ready" state and presence dots)
+- Warn `#D97706` (graphic 4 "not ready" state)
+- Success `#16A34A` (graphic 4 "ready" state and presence dots)
 
 **Typography**
 
 - Display: **Manrope** 500/700/800 — headlines, eyebrows, badges, card titles
 - Body: **Inter** 400/500/600/700 — paragraphs, labels, lede
-- Mono: **JetBrains Mono** — URLs in browser frames, meta lines on graphic 5
+- Mono: **JetBrains Mono** — URLs in browser frames, meta lines, OG card URL
 
 **Recurring motifs**
 
 - `.bg-grid` — subtle radial dot grid background
 - `.dotted-ring` — large dashed teal circles (echoes the logo's "discovered
   sponsor" person)
-- `.maker` — "Made by Workoho" mark, bottom-left of every slide
-- `.slide-mark` — slide number + name, bottom-right of every slide
-- `.eyebrow` — uppercase teal label with leading dash, above every headline
+- `.maker` — "Made by Workoho" mark
+- `.slide-mark` — slide number + name (carousel only, OG card has no slide mark)
+- `.eyebrow` — uppercase teal label with leading dash, above carousel headlines
 
-## Carousel narrative
+## Carousel narrative (AppSource)
 
 1. **Hero** → product overview + value prop
 2. **The Gap** → problem framing (what guests can't see today)
@@ -133,3 +190,6 @@ for f in ['01-hero.jpg', '02-the-gap.jpg', '03-live-cards.jpg',
 
 This sequence is tuned for AppSource's left-to-right carousel — graphic 1
 serves as the dominant header thumbnail.
+
+The OG card condenses the whole story into one frame: hero headline + sponsor
+card visual + the 3 strongest trust badges + URL.

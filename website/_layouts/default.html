@@ -12,7 +12,7 @@
   endcapture -%}
   {%- assign seo_description = page.description | default: strings.meta.description -%}
   {%- assign page_url = page.url | absolute_url -%}
-  {%- assign social_image_path = page.social_image | default: '/assets/images/social-card.jpg' -%}
+  {%- assign social_image_path = page.social_image | default: '/assets/images/og-social-card.jpg' -%}
   {%- assign social_image_url = social_image_path | absolute_url -%}
   {%- assign social_image_width = page.social_image_width | default: 1200 -%}
   {%- assign social_image_height = page.social_image_height | default: 630 -%}
@@ -366,7 +366,7 @@
 
   <script>
     (function () {
-      var lightbox    = document.getElementById('site-lightbox');
+      var lightbox = document.getElementById('site-lightbox');
       var lightboxImg = document.getElementById('site-lightbox-img');
       if (!lightbox || !lightboxImg || typeof lightbox.showModal !== 'function') return;
 
