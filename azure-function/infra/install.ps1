@@ -12,7 +12,7 @@
 
     This script is the recommended iwr entry point:
 
-      & ([scriptblock]::Create((iwr 'https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/v1.2.1/azure-function/infra/install.ps1').Content))
+      & ([scriptblock]::Create((iwr 'https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/v1.2.2/azure-function/infra/install.ps1').Content))
 
 .PARAMETER Version
   Installer payload source. Supports release tags (e.g. "v1.2.0"),
@@ -79,10 +79,10 @@
     Forwarded to deploy-azure.ps1.
 
 .EXAMPLE
-    & ([scriptblock]::Create((iwr 'https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/v1.2.1/azure-function/infra/install.ps1').Content))
+    & ([scriptblock]::Create((iwr 'https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/v1.2.2/azure-function/infra/install.ps1').Content))
 
 .EXAMPLE
-    & ([scriptblock]::Create((iwr 'https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/v1.2.1/azure-function/infra/install.ps1').Content)) -Version v1.2.0 -ResourceGroupName rg-gsi -TenantName contoso
+    & ([scriptblock]::Create((iwr 'https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/v1.2.2/azure-function/infra/install.ps1').Content)) -Version v1.2.0 -ResourceGroupName rg-gsi -TenantName contoso
 
 .NOTES
     Copyright 2026 Workoho GmbH <https://workoho.com>
@@ -116,7 +116,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$script:InstallerRef = 'v1.2.1'
+$script:InstallerRef = 'v1.2.2'
 $script:InstallerInvocationLine = [string]$MyInvocation.Line
 
 function Get-HttpStatusCodeFromException {
