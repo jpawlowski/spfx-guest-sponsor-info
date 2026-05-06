@@ -18,7 +18,8 @@ define([], function () {
     EditModePlaceholder: "Gæstesponsoroplysninger — skift til visningstilstand for at se sponsorer.",
     GuestOnlyPlaceholder: "Denne webdel er kun synlig for gæstebrugere i visningstilstand.",
     MockModeFieldLabel: "Vis altid demo-sponsorer (offentlig demotilstand)",
-    MockModeFieldDescription: "Applies only to the live page for visitors. In edit mode, the preview does not change.",
+    MockModeFieldDescription:
+      "Gælder kun for live-siden for besøgende. I redigeringstilstand ændres forhåndsvisningen ikke.",
     MockModeFieldTooltip:
       "Når aktiveret, vises demotilstand kun på live-siden til testformål. Redigeringstilstand og eksempel ændres ikke.",
     MockModePlaceholder: "Gæstesponsoroplysninger — Demotilstand aktiv. Skift til visningstilstand for at se testdata.",
@@ -131,7 +132,7 @@ define([], function () {
     AzureMapsPreviewHint:
       "Tilføj din Azure Maps-abonnementsnøgle for at vise en lille kortforhåndsvisning i kontaktsektionen. Hvis du har udrullet Guest Sponsor API'et, er der inkluderet en Azure Maps-konto - kopiér nøglen fra dens godkendelsesindstillinger. Uden nøgle vises kun kortlinket ovenfor.",
     ShowManagerFieldLabel: "Vis chef",
-    UseInformalAddressFieldLabel: "Uformel tiltaleform",
+    UseInformalAddressFieldLabel: "Uformel tiltaleform (du)",
     SponsorEligibilityGroupName: "Sponsorberettigelse",
     SponsorEligibilityGroupHint:
       "Sponsortildelinger i Microsoft Entra vedligeholdes af din organisation og er ikke altid korrekte. Disse filtre forbedrer kvaliteten af de viste sponsorer og forebygger utilsigtet videregivelse af oplysninger som følge af forkerte tildelinger.",
@@ -164,9 +165,9 @@ define([], function () {
     AuthorSectionWebsiteLinkLabel: "Kom i kontakt",
     AuthorSectionConsultingText:
       "Vi har bygget dette webpart, fordi det er præcis det, vi arbejder med til daglig. Fra arkitektur til udrulning hjælper vi organisationer med at opbygge sikre og skalerbare samarbejdsmiljøer på Microsoft 365.",
-    AuthorSectionAppWebsiteLabel: "Website",
+    AuthorSectionAppWebsiteLabel: "Websted",
     AuthorSectionVersionLabel: "Webpart-version",
-    AuthorSectionDeployToAzureLabel: "Deploy to Azure",
+    AuthorSectionDeployToAzureLabel: "Udrul til Azure",
     DeployToAzureClickHint: "Klik p\u00e5 knappen for at starte udrulningen:",
     AuthorSectionDeploymentGuideLabel: "Installationsvejledning",
     NewReleaseAvailableLabel: "Ny version tilg\u00e6ngelig \u2014 \u00e5bn GitHub Releases",
@@ -241,19 +242,19 @@ define([], function () {
     WelcomeDialogDeployNote:
       "Denne mulighed kræver, at Guest Sponsor API er installeret i dit Azure-abonnement. Du kan gøre det her \u2014 det tager kun få minutter.",
     WelcomeDialogCloudShellHint:
-      "For the easiest setup, copy this PowerShell command into Azure Cloud Shell. That way you do not need to install anything on your local machine.",
-    WelcomeDialogPreflightTitle: "Before deployment, the installer checks:",
-    WelcomeDialogPreflightTools: "PowerShell, Azure CLI, Azure Developer CLI, and Bicep support.",
-    WelcomeDialogPreflightSignIn: "Azure sign-in and the target subscription.",
-    WelcomeDialogPreflightRoles: "Azure RBAC and Entra roles, with a copy/paste request if anything is missing.",
+      "For den nemmeste opsætning kan du kopiere denne PowerShell-kommando til Azure Cloud Shell. Så behøver du ikke installere noget på din lokale maskine.",
+    WelcomeDialogPreflightTitle: "Før udrulningen kontrollerer installationsprogrammet:",
+    WelcomeDialogPreflightTools: "PowerShell, Azure CLI, Azure Developer CLI og Bicep-understøttelse.",
+    WelcomeDialogPreflightSignIn: "Azure-logon og målabonnementet.",
+    WelcomeDialogPreflightRoles: "Azure RBAC- og Entra-roller samt en kopiér/indsæt-anmodning, hvis noget mangler.",
     WelcomeDialogSetupStepsOrderHint: "Gennemfør disse trin i rækkefølge:",
     WelcomeDialogSetupStep1Label: "Opret appregistrering",
     WelcomeDialogSetupStep2Hint: "Bruger appregistreringen oprettet i trin 1",
     WelcomeDialogSetupStep3Label: "Tildel Graph-tilladelser",
     WelcomeDialogSetupPwshHint: "PowerShell 7+:",
-    WelcomeDialogSetupShellHint: "macOS/Linux shell:",
-    WelcomeDialogUseShellCommandLabel: "macOS/Linux without PowerShell?",
-    WelcomeDialogUsePowerShellCommandLabel: "Use PowerShell command",
+    WelcomeDialogSetupShellHint: "macOS/Linux-shell:",
+    WelcomeDialogUseShellCommandLabel: "macOS/Linux uden PowerShell?",
+    WelcomeDialogUsePowerShellCommandLabel: "Brug PowerShell-kommando",
     WelcomeDialogSetupStep3Hint: "Bruger appregistreringen (trin 1) og Function App-URL'en (trin 2)",
     ViewScriptSourceLabel: "Undersøg script",
     WelcomeDialogConnectApiTitle: "Angiv API-forbindelsesoplysninger",

@@ -18,7 +18,8 @@ define([], function () {
     EditModePlaceholder: "Infos sur le sponsor invité — passez en mode d’affichage pour voir les sponsors.",
     GuestOnlyPlaceholder: "Ce composant WebPart n’est visible qu’aux utilisateurs invités en mode d’affichage.",
     MockModeFieldLabel: "Toujours afficher les sponsors de démo (mode démo public)",
-    MockModeFieldDescription: "Applies only to the live page for visitors. In edit mode, the preview does not change.",
+    MockModeFieldDescription:
+      "S’applique uniquement à la page en ligne pour les visiteurs. En mode édition, l’aperçu ne change pas.",
     MockModeFieldTooltip:
       "Lorsqu'il est activé, le mode démo s'affiche uniquement sur la page active à des fins de test. Le mode d'édition et l'aperçu restent inchangés.",
     MockModePlaceholder:
@@ -165,9 +166,9 @@ define([], function () {
     AuthorSectionWebsiteLinkLabel: "Travaillons ensemble",
     AuthorSectionConsultingText:
       "Nous avons conçu ce composant parce que c'est notre quotidien. De l'architecture au déploiement, nous aidons les organisations à bâtir une collaboration sécurisée et évolutive sur Microsoft 365.",
-    AuthorSectionAppWebsiteLabel: "Website",
+    AuthorSectionAppWebsiteLabel: "Site web",
     AuthorSectionVersionLabel: "Version du composant Web",
-    AuthorSectionDeployToAzureLabel: "Deploy to Azure",
+    AuthorSectionDeployToAzureLabel: "Déployer sur Azure",
     DeployToAzureClickHint: "Cliquez sur le bouton pour lancer le d\u00e9ploiement :",
     AuthorSectionDeploymentGuideLabel: "Guide de déploiement",
     NewReleaseAvailableLabel: "Nouvelle version disponible \u2014 ouvrir GitHub Releases",
@@ -243,19 +244,20 @@ define([], function () {
     WelcomeDialogDeployNote:
       "Cette option nécessite que l'API Guest Sponsor soit déployée dans votre abonnement Azure. Vous pouvez le faire ici même \u2014 cela ne prend que quelques minutes.",
     WelcomeDialogCloudShellHint:
-      "For the easiest setup, copy this PowerShell command into Azure Cloud Shell. That way you do not need to install anything on your local machine.",
-    WelcomeDialogPreflightTitle: "Before deployment, the installer checks:",
-    WelcomeDialogPreflightTools: "PowerShell, Azure CLI, Azure Developer CLI, and Bicep support.",
-    WelcomeDialogPreflightSignIn: "Azure sign-in and the target subscription.",
-    WelcomeDialogPreflightRoles: "Azure RBAC and Entra roles, with a copy/paste request if anything is missing.",
+      "Pour la configuration la plus simple, copiez cette commande PowerShell dans Azure Cloud Shell. Vous n’aurez ainsi rien à installer sur votre machine locale.",
+    WelcomeDialogPreflightTitle: "Avant le déploiement, le programme d’installation vérifie :",
+    WelcomeDialogPreflightTools: "PowerShell, Azure CLI, Azure Developer CLI et la prise en charge de Bicep.",
+    WelcomeDialogPreflightSignIn: "La connexion à Azure et l’abonnement cible.",
+    WelcomeDialogPreflightRoles:
+      "Les rôles Azure RBAC et Entra, avec une demande à copier-coller s’il manque quelque chose.",
     WelcomeDialogSetupStepsOrderHint: "Effectuez ces étapes dans l'ordre :",
     WelcomeDialogSetupStep1Label: "Créer l'inscription d'application",
     WelcomeDialogSetupStep2Hint: "Utilise l'inscription d'application créée à l'étape 1",
     WelcomeDialogSetupStep3Label: "Accorder les autorisations Graph",
     WelcomeDialogSetupPwshHint: "PowerShell :",
-    WelcomeDialogSetupShellHint: "macOS/Linux shell:",
-    WelcomeDialogUseShellCommandLabel: "macOS/Linux without PowerShell?",
-    WelcomeDialogUsePowerShellCommandLabel: "Use PowerShell command",
+    WelcomeDialogSetupShellHint: "Shell macOS/Linux :",
+    WelcomeDialogUseShellCommandLabel: "macOS/Linux sans PowerShell ?",
+    WelcomeDialogUsePowerShellCommandLabel: "Utiliser la commande PowerShell",
     WelcomeDialogSetupStep3Hint: "Utilise l'inscription d'application (étape 1) et l'URL de Function App (étape 2)",
     ViewScriptSourceLabel: "Inspecter le script",
     WelcomeDialogConnectApiTitle: "Saisir les informations de connexion à l'API",

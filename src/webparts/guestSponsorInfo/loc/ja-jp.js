@@ -18,7 +18,7 @@ define([], function () {
     EditModePlaceholder: "ゲストスポンサー情報 — スポンサーを表示するには表示モードに切り替えてください。",
     GuestOnlyPlaceholder: "この Web パーツは、表示モードではゲスト ユーザーにのみ表示されます。",
     MockModeFieldLabel: "デモ スポンサーを常に表示（公開デモ モード）",
-    MockModeFieldDescription: "Applies only to the live page for visitors. In edit mode, the preview does not change.",
+    MockModeFieldDescription: "訪問者向けのライブ ページにのみ適用されます。編集モードではプレビューは変わりません。",
     MockModeFieldTooltip:
       "有効にすると、デモモードはテスト目的でのみライブページに表示されます。編集モードとプレビューは変わりません。",
     MockModePlaceholder:
@@ -165,9 +165,9 @@ define([], function () {
     AuthorSectionWebsiteLinkLabel: "お問い合わせ",
     AuthorSectionConsultingText:
       "このWebパーツを開発したのは、まさにこの課題に毎日向き合っているからです。アーキテクチャから展開まで、組織が Microsoft 365 上で安全でスケーラブルなコラボレーション環境を構築する支援をしています。",
-    AuthorSectionAppWebsiteLabel: "Website",
+    AuthorSectionAppWebsiteLabel: "Web サイト",
     AuthorSectionVersionLabel: "Web パーツのバージョン",
-    AuthorSectionDeployToAzureLabel: "Deploy to Azure",
+    AuthorSectionDeployToAzureLabel: "Azure にデプロイ",
     DeployToAzureClickHint:
       "\u30dc\u30bf\u30f3\u3092\u30af\u30ea\u30c3\u30af\u3057\u3066\u30c7\u30d7\u30ed\u30a4\u3092\u958b\u59cb\u3057\u3066\u304f\u3060\u3055\u3044\uff1a",
     AuthorSectionDeploymentGuideLabel: "デプロイガイド",
@@ -244,19 +244,19 @@ define([], function () {
     WelcomeDialogDeployNote:
       "このオプションには、Azure サブスクリプションへの Guest Sponsor API のデプロイが必要です。ここから数分で完了できます。",
     WelcomeDialogCloudShellHint:
-      "For the easiest setup, copy this PowerShell command into Azure Cloud Shell. That way you do not need to install anything on your local machine.",
-    WelcomeDialogPreflightTitle: "Before deployment, the installer checks:",
-    WelcomeDialogPreflightTools: "PowerShell, Azure CLI, Azure Developer CLI, and Bicep support.",
-    WelcomeDialogPreflightSignIn: "Azure sign-in and the target subscription.",
-    WelcomeDialogPreflightRoles: "Azure RBAC and Entra roles, with a copy/paste request if anything is missing.",
+      "最も簡単にセットアップするには、この PowerShell コマンドを Azure Cloud Shell にコピーしてください。そうすれば、ローカル環境に何もインストールする必要はありません。",
+    WelcomeDialogPreflightTitle: "デプロイ前にインストーラーが確認する項目:",
+    WelcomeDialogPreflightTools: "PowerShell、Azure CLI、Azure Developer CLI、および Bicep のサポート。",
+    WelcomeDialogPreflightSignIn: "Azure へのサインインと対象のサブスクリプション。",
+    WelcomeDialogPreflightRoles: "Azure RBAC と Entra のロール。不足があれば、コピーして使える依頼文も表示します。",
     WelcomeDialogSetupStepsOrderHint: "以下の手順を順番に実行してください:",
     WelcomeDialogSetupStep1Label: "アプリの登録を作成",
     WelcomeDialogSetupStep2Hint: "ステップ 1 で作成したアプリの登録を使用",
     WelcomeDialogSetupStep3Label: "Graph のアクセス許可を付与",
     WelcomeDialogSetupPwshHint: "PowerShell 7+:",
-    WelcomeDialogSetupShellHint: "macOS/Linux shell:",
-    WelcomeDialogUseShellCommandLabel: "macOS/Linux without PowerShell?",
-    WelcomeDialogUsePowerShellCommandLabel: "Use PowerShell command",
+    WelcomeDialogSetupShellHint: "macOS/Linux シェル:",
+    WelcomeDialogUseShellCommandLabel: "macOS/Linux で PowerShell を使わない場合",
+    WelcomeDialogUsePowerShellCommandLabel: "PowerShell コマンドを使う",
     WelcomeDialogSetupStep3Hint: "アプリの登録 (ステップ 1) と Function App の URL (ステップ 2) を使用",
     ViewScriptSourceLabel: "スクリプトを確認",
     WelcomeDialogConnectApiTitle: "API 接続情報を入力",

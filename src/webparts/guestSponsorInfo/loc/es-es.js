@@ -19,7 +19,8 @@ define([], function () {
       "Información del patrocinador invitado — cambie al modo de visualización para ver los patrocinadores.",
     GuestOnlyPlaceholder: "Este elemento web solo es visible para los usuarios invitados en modo de visualización.",
     MockModeFieldLabel: "Mostrar siempre patrocinadores de demo (modo demo público)",
-    MockModeFieldDescription: "Applies only to the live page for visitors. In edit mode, the preview does not change.",
+    MockModeFieldDescription:
+      "Se aplica solo a la página activa para los visitantes. En el modo de edición, la vista previa no cambia.",
     MockModeFieldTooltip:
       "Cuando está habilitado, el modo de demostración aparece solo en la página activa para fines de prueba. El modo de edición y vista previa no cambian.",
     MockModePlaceholder:
@@ -131,12 +132,12 @@ define([], function () {
     AddressMapProviderHint:
       "Active al menos la ciudad y el país — es suficiente para que cualquier proveedor de mapas muestre una ubicación significativa.",
     AzureMapsPreviewHint:
-      "Añade tu clave de suscripción de Azure Maps para mostrar una pequeña vista previa del mapa en la sección de contacto. Si has implementado la API de Guest Sponsor, se ha incluido una cuenta de Azure Maps — copia la clave desde su configuración de autenticación. Sin clave, solo se mostrará el enlace al mapa de arriba.",
+      "Agregue su clave de suscripción de Azure Maps para mostrar una pequeña vista previa del mapa en la sección de contacto. Si ha implementado la API Guest Sponsor, se ha incluido una cuenta de Azure Maps — copie la clave desde su configuración de autenticación. Sin clave, solo se mostrará el enlace al mapa superior.",
     ShowManagerFieldLabel: "Mostrar responsable",
     UseInformalAddressFieldLabel: "Tratamiento informal (tú)",
     SponsorEligibilityGroupName: "Elegibilidad del patrocinador",
     SponsorEligibilityGroupHint:
-      "Las asignaciones de patrocinador en Microsoft Entra las gestiona tu organización y pueden no ser siempre exactas. Estos filtros mejoran la calidad de los patrocinadores que se muestran a los invitados y evitan la divulgación no intencionada de información por asignaciones incorrectas.",
+      "Las asignaciones de patrocinador en Microsoft Entra las gestiona su organización y no siempre son exactas. Estos filtros mejoran la calidad de los patrocinadores que se muestran a los invitados y evitan la divulgación involuntaria de información causada por asignaciones incorrectas.",
     SponsorFilterFieldLabel: "El patrocinador debe estar",
     SponsorFilterTeamsOption: "Con licencia de Teams (recomendado)",
     SponsorFilterExchangeOption: "Con licencia de Exchange Online",
@@ -166,9 +167,9 @@ define([], function () {
     AuthorSectionWebsiteLinkLabel: "Hablemos",
     AuthorSectionConsultingText:
       "Desarrollamos este componente porque es lo que hacemos cada día. De la arquitectura al despliegue, ayudamos a las organizaciones a construir una colaboración segura y escalable en Microsoft 365.",
-    AuthorSectionAppWebsiteLabel: "Website",
+    AuthorSectionAppWebsiteLabel: "Sitio web",
     AuthorSectionVersionLabel: "Versión del web part",
-    AuthorSectionDeployToAzureLabel: "Deploy to Azure",
+    AuthorSectionDeployToAzureLabel: "Implementar en Azure",
     DeployToAzureClickHint: "Haga clic en el bot\u00f3n para iniciar la implementaci\u00f3n:",
     AuthorSectionDeploymentGuideLabel: "Guía de implementación",
     NewReleaseAvailableLabel: "Nueva versi\u00f3n disponible \u2014 abrir en GitHub Releases",
@@ -231,7 +232,7 @@ define([], function () {
     WelcomeDialogSkipApiButton: "Omitir",
     InvalidUrlFormat: "Por favor, introduzca una URL válida (p. ej. my-app.azurewebsites.net)",
     InvalidGuidFormat: "Por favor, introduzca un GUID válido (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)",
-    WelcomeDialogSetupTitle: "Elige tu método de configuración",
+    WelcomeDialogSetupTitle: "Elija su método de configuración",
     WelcomeDialogSetupIntro:
       "Elija su ruta de implementación. Puede cambiar entre ambas opciones en cualquier momento desde la configuración del elemento web.",
     WelcomeDialogOptionApiTitle: "Usar la API Guest Sponsor",
@@ -239,32 +240,33 @@ define([], function () {
       "Experiencia completa impulsada por una Azure Function. Requiere configuración única en Azure — recomendado para producción.",
     WelcomeDialogOptionApiDocsLabel: "Ver la guía de configuración",
     WelcomeDialogSetupGuideNote:
-      "Este comando es un atajo. Antes de ejecutarlo, lee la guía de configuración para entender qué hace.",
+      "Este comando es un atajo. Antes de ejecutarlo, lea la guía de configuración para entender qué hace.",
     WelcomeDialogDeployToAzureLabel: "Implementar la API en Azure",
     WelcomeDialogDeployNote:
-      "Esta opción requiere que la API Guest Sponsor esté implementada en tu suscripción de Azure. Puedes hacerlo aquí mismo \u2014 solo toma unos minutos.",
+      "Esta opción requiere que la API Guest Sponsor esté implementada en su suscripción de Azure. Puede hacerlo aquí mismo \u2014 solo lleva unos minutos.",
     WelcomeDialogCloudShellHint:
-      "For the easiest setup, copy this PowerShell command into Azure Cloud Shell. That way you do not need to install anything on your local machine.",
-    WelcomeDialogPreflightTitle: "Before deployment, the installer checks:",
-    WelcomeDialogPreflightTools: "PowerShell, Azure CLI, Azure Developer CLI, and Bicep support.",
-    WelcomeDialogPreflightSignIn: "Azure sign-in and the target subscription.",
-    WelcomeDialogPreflightRoles: "Azure RBAC and Entra roles, with a copy/paste request if anything is missing.",
+      "Para la configuración más sencilla, copie este comando de PowerShell en Azure Cloud Shell. Así no tendrá que instalar nada en su equipo local.",
+    WelcomeDialogPreflightTitle: "Antes de la implementación, el instalador comprueba:",
+    WelcomeDialogPreflightTools: "PowerShell, Azure CLI, Azure Developer CLI y la compatibilidad con Bicep.",
+    WelcomeDialogPreflightSignIn: "El inicio de sesión en Azure y la suscripción de destino.",
+    WelcomeDialogPreflightRoles:
+      "Los roles de Azure RBAC y Entra, con una solicitud lista para copiar y pegar si falta algo.",
     WelcomeDialogSetupStepsOrderHint: "Completa estos pasos en orden:",
     WelcomeDialogSetupStep1Label: "Crear el registro de aplicación",
     WelcomeDialogSetupStep2Hint: "Usa el Registro de aplicación creado en el paso 1",
     WelcomeDialogSetupStep3Label: "Conceder permisos de Graph",
     WelcomeDialogSetupPwshHint: "PowerShell:",
-    WelcomeDialogSetupShellHint: "macOS/Linux shell:",
-    WelcomeDialogUseShellCommandLabel: "macOS/Linux without PowerShell?",
-    WelcomeDialogUsePowerShellCommandLabel: "Use PowerShell command",
+    WelcomeDialogSetupShellHint: "Shell de macOS/Linux:",
+    WelcomeDialogUseShellCommandLabel: "¿macOS/Linux sin PowerShell?",
+    WelcomeDialogUsePowerShellCommandLabel: "Usar comando de PowerShell",
     WelcomeDialogSetupStep3Hint: "Usa el Registro de aplicación (paso 1) y la URL de Function App (paso 2)",
     ViewScriptSourceLabel: "Inspeccionar script",
     WelcomeDialogConnectApiTitle: "Introduce los datos de conexión de la API",
     WelcomeDialogConnectApiIntro:
-      "Introduce los detalles de conexión de tu API Guest Sponsor. Puedes omitir este paso por ahora y añadirlos más tarde en la configuración del web part.",
+      "Introduzca los datos de conexión de su API Guest Sponsor. Puede omitir este paso por ahora y añadirlos más tarde en la configuración del web part.",
     WelcomeDialogUrlHintLabel: "¿Dónde encontrar la URL?",
     WelcomeDialogUrlHintBody:
-      "Copia la URL de la Function App desde el portal de Azure tras el despliegue. Ve a tu Function App → Información general → Dominio predeterminado.",
+      "Copie la URL de la Function App desde el portal de Azure tras la implementación. Vaya a su Function App → Información general → Dominio predeterminado.",
     WelcomeDialogOptionDemoTitle: "Explorar en modo demo",
     WelcomeDialogOptionDemoBody:
       "Pruebe el elemento web con datos de patrocinadores simulados — sin configuración de Azure. Cambie a la API real desde la configuración en cualquier momento.",
@@ -274,7 +276,7 @@ define([], function () {
       "La conexión a la API Guest Sponsor se ha guardado. Recuerde guardar la página para que la configuración se aplique a todos.",
     WelcomeDialogDoneApiSkippedTitle: "¡Casi listo!",
     WelcomeDialogDoneApiSkippedBody:
-      "No se han introducido credenciales. Para terminar la configuración: abre la configuración del web part, introduce la URL base y el ID de cliente en Guest Sponsor API y guarda la página.",
+      "Todavía no se han introducido credenciales. Para completar la configuración: abra la configuración del web part, introduzca la URL base y el ID de cliente en Guest Sponsor API y guarde la página.",
     WelcomeDialogDoneDemoTitle: "¡Modo demo activado!",
     WelcomeDialogDoneDemoBody:
       "Cambie al modo de visualización para ver el elemento web con tarjetas de patrocinadores simuladas. Conecte la API Guest Sponsor desde la configuración cuando esté listo.",

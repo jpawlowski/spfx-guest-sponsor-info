@@ -131,7 +131,7 @@ define([], function () {
     AddressMapProviderHint:
       "Aktivieren Sie mindestens Stadt und Land - das reicht für jeden Kartenanbieter aus, um einen sinnvollen Ausschnitt anzuzeigen.",
     AzureMapsPreviewHint:
-      "Mit dem Azure Maps-Abonnementschlüssel wird im Kontaktbereich eine kleine Kartenvorschau eingeblendet. Wenn du die Guest Sponsor API deployed hast, wurde dabei auch ein Azure Maps-Konto erstellt - kopiere den Schlüssel aus den Authentifizierungseinstellungen. Ohne Schlüssel wird nur der Kartenlink oben angezeigt.",
+      "Fügen Sie Ihren Azure Maps-Abonnementschlüssel hinzu, um im Kontaktbereich eine kleine Kartenvorschau anzuzeigen. Wenn Sie die Guest Sponsor API bereitgestellt haben, wurde auch ein Azure Maps-Konto erstellt — kopieren Sie den Schlüssel aus dessen Authentifizierungseinstellungen. Ohne Schlüssel wird nur der Kartenlink oben angezeigt.",
     ShowManagerFieldLabel: "Vorgesetzte(n) anzeigen",
     UseInformalAddressFieldLabel: "Informelle Anrede verwenden (du)",
     SponsorEligibilityGroupName: "Sponsor-Berechtigung",
@@ -167,9 +167,9 @@ define([], function () {
     AuthorSectionWebsiteLinkLabel: "Kontakt aufnehmen",
     AuthorSectionConsultingText:
       "Dieses Webpart haben wir gebaut, weil genau das unser tägliches Thema ist. Von der Architektur bis zur Umsetzung helfen wir Unternehmen, sichere und skalierbare Collaboration auf Microsoft 365 aufzubauen.",
-    AuthorSectionAppWebsiteLabel: "Website",
+    AuthorSectionAppWebsiteLabel: "Webseite",
     AuthorSectionVersionLabel: "Webpart-Version",
-    AuthorSectionDeployToAzureLabel: "Deploy to Azure",
+    AuthorSectionDeployToAzureLabel: "In Azure bereitstellen",
     DeployToAzureClickHint: "Klicken Sie auf die Schaltfl\u00e4che, um die Bereitstellung zu starten:",
     AuthorSectionDeploymentGuideLabel: "Deployment-Anleitung",
     NewReleaseAvailableLabel: "Neue Version verfügbar - GitHub Releases öffnen",
@@ -239,12 +239,12 @@ define([], function () {
       "Voller Funktionsumfang über eine Azure Function. Erfordert eine einmalige Azure-Einrichtung — empfohlen für den Produktivbetrieb.",
     WelcomeDialogOptionApiDocsLabel: "Einrichtungsanleitung ansehen",
     WelcomeDialogSetupGuideNote:
-      "Dieser Befehl ist eine Abkürzung. Lies die Einrichtungsanleitung, bevor du ihn ausführst — damit du verstehst, was er tut.",
+      "Dieser Befehl ist eine Abkürzung. Lesen Sie die Einrichtungsanleitung, bevor Sie ihn ausführen — damit Sie verstehen, was er tut.",
     WelcomeDialogDeployToAzureLabel: "API in Azure bereitstellen",
     WelcomeDialogDeployNote:
-      "Diese Option erfordert, dass die Guest Sponsor API in deinem Azure-Abonnement bereitgestellt wird. Das geht direkt hier — es dauert nur wenige Minuten.",
+      "Diese Option setzt voraus, dass die Guest Sponsor API in Ihrem Azure-Abonnement bereitgestellt wird. Sie können das direkt hier erledigen — es dauert nur wenige Minuten.",
     WelcomeDialogCloudShellHint:
-      "Für den einfachsten Weg kopiere diesen PowerShell-Befehl in die Azure Cloud Shell. Dann musst du lokal nichts installieren oder vorbereiten.",
+      "Für die einfachste Einrichtung kopieren Sie diesen PowerShell-Befehl in die Azure Cloud Shell. So müssen Sie lokal nichts installieren oder vorbereiten.",
     WelcomeDialogPreflightTitle: "Vor dem Deployment prüft der Installer:",
     WelcomeDialogPreflightTools: "PowerShell, Azure CLI, Azure Developer CLI und Bicep-Unterstützung.",
     WelcomeDialogPreflightSignIn: "Azure-Anmeldung und das Zielabonnement.",
@@ -261,10 +261,10 @@ define([], function () {
     ViewScriptSourceLabel: "Skript prüfen",
     WelcomeDialogConnectApiTitle: "API-Verbindungsdaten eingeben",
     WelcomeDialogConnectApiIntro:
-      "Gib die Verbindungsdaten für deine Guest Sponsor API ein. Du kannst diesen Schritt auch überspringen und sie später in den Web-Part-Einstellungen ergänzen.",
+      "Geben Sie die Verbindungsdaten für Ihre Guest Sponsor API ein. Sie können diesen Schritt auch überspringen und die Angaben später in den Web-Part-Einstellungen ergänzen.",
     WelcomeDialogUrlHintLabel: "Wo finde ich die URL?",
     WelcomeDialogUrlHintBody:
-      "Kopiere die Function App-URL nach der Bereitstellung aus dem Azure-Portal. Gehe zu deiner Function App → Übersicht → Standarddomäne.",
+      "Kopieren Sie die Function App-URL nach der Bereitstellung aus dem Azure-Portal. Gehen Sie zu Ihrer Function App → Übersicht → Standarddomäne.",
     WelcomeDialogOptionDemoTitle: "Im Demo-Modus erkunden",
     WelcomeDialogOptionDemoBody:
       "Aktivieren Sie den Demo-Modus, um auf der Live-Seite simulierte Sponsoren anzuzeigen — auch für interne Benutzer im Tenant. Ideal zum Testen ohne Azure-Einrichtung; der Wechsel zur echten API ist jederzeit in den Einstellungen möglich.",
@@ -274,7 +274,7 @@ define([], function () {
       "Die Verbindung zur Guest Sponsor API wurde gespeichert. Vergessen Sie nicht, die Seite zu speichern, damit die Einstellungen für alle übernommen werden.",
     WelcomeDialogDoneApiSkippedTitle: "Fast fertig!",
     WelcomeDialogDoneApiSkippedBody:
-      "Es wurden noch keine Zugangsdaten eingegeben. Um die Einrichtung abzuschließen: Öffne die Web-Part-Einstellungen, gib Base-URL und Client-ID unter Guest Sponsor API ein und speichere die Seite.",
+      "Es wurden noch keine Zugangsdaten eingegeben. Um die Einrichtung abzuschließen: Öffnen Sie die Web-Part-Einstellungen, geben Sie Base-URL und Client-ID unter Guest Sponsor API ein und speichern Sie die Seite.",
     WelcomeDialogDoneDemoTitle: "Demo-Modus aktiviert!",
     WelcomeDialogDoneDemoBody:
       "Der Demo-Modus ist jetzt für die Live-Seite aktiv. Speichern Sie die Seite, damit Besucher ihn sehen, und prüfen Sie anschließend im Ansichtsmodus die simulierten Sponsor-Karten.",

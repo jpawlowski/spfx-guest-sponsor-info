@@ -18,7 +18,8 @@ define([], function () {
     EditModePlaceholder: "Gastsponsors — schakel over naar de weergavemodus om sponsors te zien.",
     GuestOnlyPlaceholder: "Dit webonderdeel is alleen zichtbaar voor gastgebruikers in de weergavemodus.",
     MockModeFieldLabel: "Altijd demosponsors tonen (openbare demomodus)",
-    MockModeFieldDescription: "Applies only to the live page for visitors. In edit mode, the preview does not change.",
+    MockModeFieldDescription:
+      "Geldt alleen voor de livepagina voor bezoekers. In de bewerkingsmodus verandert de voorbeeldweergave niet.",
     MockModeFieldTooltip:
       "Wanneer ingeschakeld, wordt de demomodus alleen op de live pagina weergegeven voor testdoeleinden. Bewerkingsmodus en voorbeeld blijven ongewijzigd.",
     MockModePlaceholder: "Gastsponsors — Demomodus actief. Schakel over naar de weergavemodus om testgegevens te zien.",
@@ -91,7 +92,7 @@ define([], function () {
       "Kan sponsorinformatie niet laden — een vereiste servicemachtiging is niet verleend. Neem contact op met uw IT-beheerder.",
     ServiceAuthorizationIssueTitle: "Tijdelijk serviceprobleem",
     ServiceAuthorizationIssueMessage:
-      "Kan sponsorinformatie niet laden omdat de sponsorservice een interne autorisatiestap niet kon voltooien. Probeer het zo opnieuw. Neem contact op met uw IT-beheerder als het probleem blijft bestaan.",
+      "Kan sponsorinformatie niet laden omdat de sponsorservice een interne autorisatiestap niet kon voltooien. Probeer het straks opnieuw. Neem contact op met uw IT-beheerder als het probleem blijft bestaan.",
     GuestNotificationsGroupName: "Meldingen voor gasten",
     GuestNotificationsGroupHint: "Beheer welke informatieve meldingen worden weergegeven aan gastgebruikers.",
     ShowTeamsAccessPendingHintLabel: "Melding «Microsoft Teams nog niet ingesteld» weergeven",
@@ -129,7 +130,7 @@ define([], function () {
     AddressMapProviderHint:
       "Activeer minimaal stad en land — dat volstaat voor elke kaartprovider om een zinvolle locatie weer te geven.",
     AzureMapsPreviewHint:
-      "Voeg je Azure Maps-abonnementssleutel toe om een kleine kaartvoorbeeldweergave in de contactsectie te tonen. Als je de Guest Sponsor API hebt geïmplementeerd, is er een Azure Maps-account meegeleverd — kopieer de sleutel uit de verificatie-instellingen. Zonder sleutel wordt alleen de kaartlink hierboven getoond.",
+      "Voeg uw Azure Maps-abonnementssleutel toe om een kleine kaartvoorbeeldweergave in de contactsectie te tonen. Als u de Guest Sponsor API hebt geïmplementeerd, is er ook een Azure Maps-account meegeleverd — kopieer de sleutel uit de verificatie-instellingen. Zonder sleutel wordt alleen de kaartlink hierboven getoond.",
     ShowManagerFieldLabel: "Manager weergeven",
     UseInformalAddressFieldLabel: "Informeel aanspreken (jij/je)",
     SponsorEligibilityGroupName: "Sponsorgeschiktheid",
@@ -164,9 +165,9 @@ define([], function () {
     AuthorSectionWebsiteLinkLabel: "Neem contact op",
     AuthorSectionConsultingText:
       "We bouwden dit webonderdeel omdat dit precies is wat we dagelijks doen. Van architectuur tot uitrol helpen we organisaties een veilige en schaalbare samenwerking op Microsoft 365 in te richten.",
-    AuthorSectionAppWebsiteLabel: "Website",
+    AuthorSectionAppWebsiteLabel: "Site",
     AuthorSectionVersionLabel: "Webpart-versie",
-    AuthorSectionDeployToAzureLabel: "Deploy to Azure",
+    AuthorSectionDeployToAzureLabel: "Implementeren in Azure",
     DeployToAzureClickHint: "Klik op de knop om de implementatie te starten:",
     AuthorSectionDeploymentGuideLabel: "Implementatiegids",
     NewReleaseAvailableLabel: "Nieuwe versie beschikbaar \u2014 GitHub Releases openen",
@@ -241,19 +242,19 @@ define([], function () {
     WelcomeDialogDeployNote:
       "Voor deze optie moet de Guest Sponsor API worden geïmplementeerd in uw Azure-abonnement. U kunt dit hier doen \u2014 het duurt slechts een paar minuten.",
     WelcomeDialogCloudShellHint:
-      "For the easiest setup, copy this PowerShell command into Azure Cloud Shell. That way you do not need to install anything on your local machine.",
-    WelcomeDialogPreflightTitle: "Before deployment, the installer checks:",
-    WelcomeDialogPreflightTools: "PowerShell, Azure CLI, Azure Developer CLI, and Bicep support.",
-    WelcomeDialogPreflightSignIn: "Azure sign-in and the target subscription.",
-    WelcomeDialogPreflightRoles: "Azure RBAC and Entra roles, with a copy/paste request if anything is missing.",
+      "Voor de eenvoudigste configuratie kopieert u deze PowerShell-opdracht naar Azure Cloud Shell. Zo hoeft u niets op uw lokale machine te installeren.",
+    WelcomeDialogPreflightTitle: "Voor de implementatie controleert het installatieprogramma:",
+    WelcomeDialogPreflightTools: "PowerShell, Azure CLI, Azure Developer CLI en ondersteuning voor Bicep.",
+    WelcomeDialogPreflightSignIn: "De Azure-aanmelding en het doelabonnement.",
+    WelcomeDialogPreflightRoles: "Azure RBAC- en Entra-rollen, met een kopieer-en-plakverzoek als er iets ontbreekt.",
     WelcomeDialogSetupStepsOrderHint: "Voltooi deze stappen in volgorde:",
     WelcomeDialogSetupStep1Label: "App-registratie maken",
     WelcomeDialogSetupStep2Hint: "Gebruikt de in stap 1 gemaakte app-registratie",
     WelcomeDialogSetupStep3Label: "Graph-machtigingen verlenen",
     WelcomeDialogSetupPwshHint: "PowerShell 7+:",
-    WelcomeDialogSetupShellHint: "macOS/Linux shell:",
-    WelcomeDialogUseShellCommandLabel: "macOS/Linux without PowerShell?",
-    WelcomeDialogUsePowerShellCommandLabel: "Use PowerShell command",
+    WelcomeDialogSetupShellHint: "macOS/Linux-shell:",
+    WelcomeDialogUseShellCommandLabel: "macOS/Linux zonder PowerShell?",
+    WelcomeDialogUsePowerShellCommandLabel: "PowerShell-opdracht gebruiken",
     WelcomeDialogSetupStep3Hint: "Gebruikt de App-registratie (stap 1) en de Function App-URL (stap 2)",
     ViewScriptSourceLabel: "Script inspecteren",
     WelcomeDialogConnectApiTitle: "API-verbindingsgegevens invoeren",

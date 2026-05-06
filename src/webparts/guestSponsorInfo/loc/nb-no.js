@@ -18,7 +18,8 @@ define([], function () {
     EditModePlaceholder: "Gjestesponsorinformasjon — bytt til visningsmodus for å se sponsorer.",
     GuestOnlyPlaceholder: "Denne webdelen er bare synlig for gjestebrukere i visningsmodus.",
     MockModeFieldLabel: "Vis alltid demosponsor (offentlig demonstrasjonsmodus)",
-    MockModeFieldDescription: "Applies only to the live page for visitors. In edit mode, the preview does not change.",
+    MockModeFieldDescription:
+      "Gjelder bare live-siden for besøkende. I redigeringsmodus endres ikke forhåndsvisningen.",
     MockModeFieldTooltip:
       "Når den er aktivert, vises demomodus kun på live-siden til testformål. Redigeringsmodus og forhåndsvisning forblir uendret.",
     MockModePlaceholder:
@@ -103,7 +104,7 @@ define([], function () {
     CardLayoutFieldLabel: "Kortoppsett",
     CardLayoutAutoOption: "Automatisk",
     CardLayoutAutoThresholdFieldLabel: "Bytt til kompakt visning fra dette antall sponsorer",
-    CardLayoutFullOption: "Full",
+    CardLayoutFullOption: "Stor",
     CardLayoutCompactOption: "Kompakt",
     ShowBusinessPhonesFieldLabel: "Vis jobbtelefonnumre",
     ShowMobilePhoneFieldLabel: "Vis mobilnummer",
@@ -132,7 +133,7 @@ define([], function () {
     AzureMapsPreviewHint:
       "Legg til Azure Maps-abonnementsnøkkelen for å vise en liten kartforhåndsvisning i kontaktseksjonen. Hvis du har distribuert Guest Sponsor API-et, ble en Azure Maps-konto inkludert — kopier nøkkelen fra autentiseringsinnstillingene. Uten nøkkel vises bare kartlenken ovenfor.",
     ShowManagerFieldLabel: "Vis leder",
-    UseInformalAddressFieldLabel: "Uformell tiltaleform",
+    UseInformalAddressFieldLabel: "Uformell tiltaleform (du)",
     SponsorEligibilityGroupName: "Sponsor-berettigelse",
     SponsorEligibilityGroupHint:
       "Sponsortildelinger i Microsoft Entra vedlikeholdes av organisasjonen din og er ikke alltid korrekte. Disse filtrene forbedrer kvaliteten på sponsorene som vises til gjester, og forhindrer utilsiktet informasjonsdeling forårsaket av feilaktige tildelinger.",
@@ -164,9 +165,9 @@ define([], function () {
     AuthorSectionWebsiteLinkLabel: "Ta kontakt",
     AuthorSectionConsultingText:
       "Vi bygde denne webdelen fordi det er nøyaktig det vi jobber med til daglig. Fra arkitektur til utrulling hjelper vi organisasjoner med å bygge sikre og skalerbare samarbeidsmiljøer på Microsoft 365.",
-    AuthorSectionAppWebsiteLabel: "Website",
+    AuthorSectionAppWebsiteLabel: "Nettsted",
     AuthorSectionVersionLabel: "Webdel-versjon",
-    AuthorSectionDeployToAzureLabel: "Deploy to Azure",
+    AuthorSectionDeployToAzureLabel: "Distribuer til Azure",
     DeployToAzureClickHint: "Klikk p\u00e5 knappen for \u00e5 starte distribusjonen:",
     AuthorSectionDeploymentGuideLabel: "Distribusjonsveiledning",
     NewReleaseAvailableLabel: "Ny versjon tilgjengelig \u2014 \u00e5pne GitHub Releases",
@@ -241,19 +242,19 @@ define([], function () {
     WelcomeDialogDeployNote:
       "Dette alternativet krever at Guest Sponsor API er distribuert i Azure-abonnementet ditt. Du kan gjøre det her \u2014 det tar bare noen minutter.",
     WelcomeDialogCloudShellHint:
-      "For the easiest setup, copy this PowerShell command into Azure Cloud Shell. That way you do not need to install anything on your local machine.",
-    WelcomeDialogPreflightTitle: "Before deployment, the installer checks:",
-    WelcomeDialogPreflightTools: "PowerShell, Azure CLI, Azure Developer CLI, and Bicep support.",
-    WelcomeDialogPreflightSignIn: "Azure sign-in and the target subscription.",
-    WelcomeDialogPreflightRoles: "Azure RBAC and Entra roles, with a copy/paste request if anything is missing.",
+      "For enklest mulig oppsett kopierer du denne PowerShell-kommandoen til Azure Cloud Shell. Da trenger du ikke å installere noe på den lokale maskinen.",
+    WelcomeDialogPreflightTitle: "Før distribusjonen kontrollerer installasjonsprogrammet:",
+    WelcomeDialogPreflightTools: "PowerShell, Azure CLI, Azure Developer CLI og Bicep-støtte.",
+    WelcomeDialogPreflightSignIn: "Azure-pålogging og målabonnementet.",
+    WelcomeDialogPreflightRoles: "Azure RBAC- og Entra-roller, med en kopiér/lim inn-forespørsel hvis noe mangler.",
     WelcomeDialogSetupStepsOrderHint: "Fullfør disse trinnene i rekkefølge:",
     WelcomeDialogSetupStep1Label: "Opprett appregistrering",
     WelcomeDialogSetupStep2Hint: "Bruker appregistreringen opprettet i trinn 1",
     WelcomeDialogSetupStep3Label: "Gi Graph-tillatelser",
     WelcomeDialogSetupPwshHint: "PowerShell 7+:",
-    WelcomeDialogSetupShellHint: "macOS/Linux shell:",
-    WelcomeDialogUseShellCommandLabel: "macOS/Linux without PowerShell?",
-    WelcomeDialogUsePowerShellCommandLabel: "Use PowerShell command",
+    WelcomeDialogSetupShellHint: "macOS/Linux-skall:",
+    WelcomeDialogUseShellCommandLabel: "macOS/Linux uten PowerShell?",
+    WelcomeDialogUsePowerShellCommandLabel: "Bruk PowerShell-kommando",
     WelcomeDialogSetupStep3Hint: "Bruker appregistreringen (trinn 1) og Function App-URL-en (trinn 2)",
     ViewScriptSourceLabel: "Undersøk skript",
     WelcomeDialogConnectApiTitle: "Angi API-tilkoblingsdetaljer",

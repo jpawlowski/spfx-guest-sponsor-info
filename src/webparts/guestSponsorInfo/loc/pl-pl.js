@@ -18,7 +18,8 @@ define([], function () {
     EditModePlaceholder: "Informacje o sponsorze gościa — przełącz do trybu wyświetlania, aby zobaczyć sponsorów.",
     GuestOnlyPlaceholder: "Ten składnik Web Part jest widoczny tylko dla użytkowników-gości w trybie wyświetlania.",
     MockModeFieldLabel: "Zawsze pokazuj sponsorów demo (publiczny tryb demo)",
-    MockModeFieldDescription: "Applies only to the live page for visitors. In edit mode, the preview does not change.",
+    MockModeFieldDescription:
+      "Dotyczy tylko aktywnej strony dla odwiedzających. W trybie edycji podgląd się nie zmienia.",
     MockModeFieldTooltip:
       "Po włączeniu tryb demonstracyjny pojawia się tylko na live stronie do celów testowania. Tryb edycji i podgląd pozostają bez zmian.",
     MockModePlaceholder:
@@ -88,7 +89,7 @@ define([], function () {
       "Połączenie niedostępne w tej organizacji — Twój dostęp gościa Teams nie został jeszcze skonfigurowany",
     VersionMismatchTitle: "Dostępna aktualizacja",
     VersionMismatchMessage:
-      "Dostępna jest aktualizacja tego składnika Web Part. Propoś administratora, aby upewnił się, że składnik Web Part i Guest Sponsor API używają tej samej wersji.",
+      "Dostępna jest aktualizacja tego składnika Web Part. Poproś administratora, aby upewnił się, że składnik Web Part i Guest Sponsor API używają tej samej wersji.",
     InsufficientPermissionsTitle: "Brak uprawnień",
     InsufficientPermissionsMessage:
       "Nie można załadować informacji o sponsorze — wymagane uprawnienie usługi nie zostało przyznane. Skontaktuj się z administratorem IT.",
@@ -96,7 +97,7 @@ define([], function () {
     ServiceAuthorizationIssueMessage:
       "Nie można załadować informacji o sponsorze, ponieważ usługa sponsorów nie mogła ukończyć wewnętrznego kroku autoryzacji. Spróbuj ponownie za chwilę. Jeśli problem będzie się powtarzał, skontaktuj się z administratorem IT.",
     GuestNotificationsGroupName: "Powiadomienia dla gości",
-    GuestNotificationsGroupHint: "Kontroluj, które powiadomienia informacyjne są wyświetlane użytkownikiem-gościom.",
+    GuestNotificationsGroupHint: "Kontroluj, które powiadomienia informacyjne są wyświetlane użytkownikom-gościom.",
     ShowTeamsAccessPendingHintLabel: "Pokaż powiadomienie «Microsoft Teams nie zostało jeszcze skonfigurowane»",
     ShowVersionMismatchHintLabel: "Pokaż powiadomienie «Dostępna aktualizacja»",
     ShowSponsorUnavailableHintLabel: "Pokaż powiadomienie «Sponsor niedostępny»",
@@ -167,9 +168,9 @@ define([], function () {
     AuthorSectionWebsiteLinkLabel: "Skontaktuj się",
     AuthorSectionConsultingText:
       "Stworzyliśmy ten składnik Web Part, bo właśnie tym zajmujemy się na co dzień. Od architektury po wdrożenie pomagamy organizacjom budować bezpieczne i skalowalne środowiska współpracy w usłudze Microsoft 365.",
-    AuthorSectionAppWebsiteLabel: "Website",
+    AuthorSectionAppWebsiteLabel: "Witryna",
     AuthorSectionVersionLabel: "Wersja webpartu",
-    AuthorSectionDeployToAzureLabel: "Deploy to Azure",
+    AuthorSectionDeployToAzureLabel: "Wdróż w Azure",
     DeployToAzureClickHint: "Kliknij przycisk, aby rozpocz\u0105\u0107 wdro\u017cenie:",
     AuthorSectionDeploymentGuideLabel: "Przewodnik wdrożeniowy",
     NewReleaseAvailableLabel: "Dost\u0119pna nowa wersja \u2014 otw\u00f3rz GitHub Releases",
@@ -245,19 +246,20 @@ define([], function () {
     WelcomeDialogDeployNote:
       "Ta opcja wymaga wdrożenia Guest Sponsor API w subskrypcji Azure. Możesz to zrobić tutaj \u2014 zajmuje to tylko kilka minut.",
     WelcomeDialogCloudShellHint:
-      "For the easiest setup, copy this PowerShell command into Azure Cloud Shell. That way you do not need to install anything on your local machine.",
-    WelcomeDialogPreflightTitle: "Before deployment, the installer checks:",
-    WelcomeDialogPreflightTools: "PowerShell, Azure CLI, Azure Developer CLI, and Bicep support.",
-    WelcomeDialogPreflightSignIn: "Azure sign-in and the target subscription.",
-    WelcomeDialogPreflightRoles: "Azure RBAC and Entra roles, with a copy/paste request if anything is missing.",
+      "Aby skonfigurować wszystko najprościej, skopiuj to polecenie PowerShell do Azure Cloud Shell. Dzięki temu nie musisz nic instalować na swoim komputerze.",
+    WelcomeDialogPreflightTitle: "Przed wdrożeniem instalator sprawdza:",
+    WelcomeDialogPreflightTools: "PowerShell, Azure CLI, Azure Developer CLI oraz obsługę Bicep.",
+    WelcomeDialogPreflightSignIn: "Logowanie do Azure i docelową subskrypcję.",
+    WelcomeDialogPreflightRoles:
+      "Role Azure RBAC i Entra, a jeśli czegoś brakuje — także gotową prośbę do skopiowania i wklejenia.",
     WelcomeDialogSetupStepsOrderHint: "Wykonaj te kroki po kolei:",
     WelcomeDialogSetupStep1Label: "Utwórz rejestrację aplikacji",
     WelcomeDialogSetupStep2Hint: "Używa rejestracji aplikacji utworzonej w kroku 1",
     WelcomeDialogSetupStep3Label: "Przyznaj uprawnienia Graph",
     WelcomeDialogSetupPwshHint: "PowerShell 7+:",
-    WelcomeDialogSetupShellHint: "macOS/Linux shell:",
-    WelcomeDialogUseShellCommandLabel: "macOS/Linux without PowerShell?",
-    WelcomeDialogUsePowerShellCommandLabel: "Use PowerShell command",
+    WelcomeDialogSetupShellHint: "Powłoka macOS/Linux:",
+    WelcomeDialogUseShellCommandLabel: "macOS/Linux bez PowerShell?",
+    WelcomeDialogUsePowerShellCommandLabel: "Użyj polecenia PowerShell",
     WelcomeDialogSetupStep3Hint: "Używa rejestracji aplikacji (krok 1) i adresu URL Function App (krok 2)",
     ViewScriptSourceLabel: "Zbadaj skrypt",
     WelcomeDialogConnectApiTitle: "Wprowadź dane połączenia z API",
