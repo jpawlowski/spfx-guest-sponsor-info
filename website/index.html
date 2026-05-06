@@ -6,27 +6,68 @@ permalink: /
 <html lang="en">
 
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="robots" content="noindex,follow">
-    <!-- Fallback for browsers without JS: go to English -->
-    <meta http-equiv="refresh" content="0; url=/en/">
-    <title>Redirecting… — {{ site.title }}</title>
-    <script>
-        (function () {
-            var lang = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
-            var target = lang.startsWith('de') ? '/de/' : '/en/';
-            window.location.replace(target);
-        })();
-    </script>
+  {%- assign preview_page = site.pages | where: 'url', '/en/' | first -%}
+  {%- assign seo_page_title = preview_page.meta_title | default: preview_page.title | default: site.title -%}
+  {%- capture seo_title -%}{% if seo_page_title != site.title %}{{ seo_page_title }} — {% endif %}{{ site.title }}{%-
+  endcapture -%}
+  {%- assign seo_description = preview_page.description | default: site.description -%}
+  {%- assign page_url = page.url | absolute_url -%}
+  {%- assign social_image_path = preview_page.social_image | default: '/assets/images/og-social-card.jpg' -%}
+  {%- assign social_image_url = social_image_path | absolute_url -%}
+  {%- assign social_image_width = preview_page.social_image_width | default: 1200 -%}
+  {%- assign social_image_height = preview_page.social_image_height | default: 630 -%}
+  {%- assign social_image_type = preview_page.social_image_type | default: 'image/jpeg' -%}
+  {%- assign social_image_alt = preview_page.social_image_alt | default: 'SharePoint guest landing page with sponsor
+  cards and guest self-service links for Microsoft Entra B2B users.' -%}
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ seo_title }}</title>
+  <meta name="description" content="{{ seo_description }}">
+  <link rel="canonical" href="{{ page_url }}">
+  <meta name="robots" content="noindex,follow">
+
+  <meta property="og:title" content="{{ seo_page_title }}">
+  <meta property="og:description" content="{{ seo_description }}">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{ page_url }}">
+  <meta property="og:image" content="{{ social_image_url }}">
+  <meta property="og:image:secure_url" content="{{ social_image_url }}">
+  <meta property="og:image:type" content="{{ social_image_type }}">
+  <meta property="og:image:width" content="{{ social_image_width }}">
+  <meta property="og:image:height" content="{{ social_image_height }}">
+  <meta property="og:image:alt" content="{{ social_image_alt }}">
+  <meta property="og:site_name" content="{{ site.title }}">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:locale:alternate" content="de_DE">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ seo_page_title }}">
+  <meta name="twitter:description" content="{{ seo_description }}">
+  <meta name="twitter:image" content="{{ social_image_url }}">
+  <meta name="twitter:image:alt" content="{{ social_image_alt }}">
+
+  <link rel="alternate" hreflang="en" href="{{ '/en/' | absolute_url }}">
+  <link rel="alternate" hreflang="de" href="{{ '/de/' | absolute_url }}">
+  <link rel="alternate" hreflang="x-default" href="{{ page_url }}">
+
+  <!-- Fallback for browsers without JS: go to English -->
+  <meta http-equiv="refresh" content="0; url=/en/">
+  <script>
+    (function () {
+      var lang = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
+      var target = lang.startsWith('de') ? '/de/' : '/en/';
+      window.location.replace(target);
+    })();
+  </script>
 </head>
 
 <body>
-    <p>
-        Redirecting… please follow one of these links:<br>
-        <a href="/en/">English</a> |
-        <a href="/de/">Deutsch</a>
-    </p>
+  <p>
+    Redirecting… please follow one of these links:<br>
+    <a href="/en/">English</a> |
+    <a href="/de/">Deutsch</a>
+  </p>
 </body>
 
 </html>
