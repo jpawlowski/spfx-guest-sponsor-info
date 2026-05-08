@@ -236,11 +236,17 @@ additional deny assignment. The resource group is detached on stack
 delete so existing RG-scoped access assignments can stay in place.
 
 > RBAC propagation can take 1–2 min after deploy. Wait and retry if errors appear
-> immediately. Azure deployment needs **Contributor** plus **Owner** (or **User
-> Access Administrator**) on the resource group. Entra permissions are split:
-> **Cloud Application Administrator** for the App Registration and
-> **Privileged Role Administrator** for Graph app-role assignment. See
-> [deployment.md](deployment.md) for the operator-facing workflow.
+> immediately. For the **first deployment**, Azure **Contributor** on the
+> **subscription** is recommended because provider registration is subscription-
+> wide and the wizard can also create the resource group for convenience.
+> Azure **Owner** (or **User Access Administrator**) is still needed on the
+> target resource group or inherited from the subscription for role
+> assignments. Once the providers are registered and the resource group exists,
+> later deployments usually work with resource-group-scoped Azure roles alone.
+> Entra permissions are split: **Cloud Application Administrator** for the App
+> Registration and **Privileged Role Administrator** for Graph app-role
+> assignment. See [deployment.md](deployment.md) for the operator-facing
+> workflow.
 
 Manual fallback: `infra/setup-graph-permissions.ps1` (for deferred Graph role
 assignment only; the EasyAuth App Registration is managed separately by

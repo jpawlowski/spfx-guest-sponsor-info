@@ -133,7 +133,21 @@ bundle. By default, the Tenant App Catalog asset library is not accessible to
 B2B guests before authentication. The Public CDN serves the bundle anonymously
 from Microsoft's edge network:
 
+PowerShell prerequisites for the commands below:
+
+- **Windows / SharePoint Online Management Shell:** install
+  `Microsoft.Online.SharePoint.PowerShell` once.
+- Prefer `Install-PSResource` for module installation. On Windows PowerShell
+  5.1, first update
+  [PowerShellGet / PSResourceGet](https://learn.microsoft.com/powershell/gallery/powershellget/install-powershellget?view=powershellget-3.x)
+  because `Install-PSResource` isn't available out of the box.
+- **PnP path:** use **PowerShell 7+** even on Windows, install
+  [PnP PowerShell](https://pnp.github.io/powershell/) once, and
+  [register your own Entra app](https://pnp.github.io/powershell/articles/registerapplication.html)
+  because `Connect-PnPOnline -Interactive` requires a client ID.
+
 ```powershell
+# Install once: Install-PSResource Microsoft.Online.SharePoint.PowerShell -Repository PSGallery -Scope CurrentUser
 Connect-SPOService -Url "https://<tenant>-admin.sharepoint.com"
 Set-SPOTenantCdnEnabled -CdnType Public -Enable $true
 ```
@@ -166,11 +180,21 @@ B2B guests who have accepted their invitation — no backend group sync needed.
 
 If *Everyone* is not visible in the People Picker, enable the claim first:
 
+Prefer `Install-PSResource` for module installation. On Windows PowerShell 5.1,
+first update
+[PowerShellGet / PSResourceGet](https://learn.microsoft.com/powershell/gallery/powershellget/install-powershellget?view=powershellget-3.x)
+because `Install-PSResource` isn't available out of the box.
+
 ```powershell
 # SharePoint Online Management Shell:
+# Install once: Install-PSResource Microsoft.Online.SharePoint.PowerShell -Repository PSGallery -Scope CurrentUser
 Set-SPOTenant -ShowEveryoneClaim $true
 
-# PnP PowerShell (cross-platform):
+# PnP PowerShell (cross-platform; PowerShell 7+, also on Windows):
+# Install once: Install-PSResource PnP.PowerShell -Repository PSGallery -Scope CurrentUser
+# Register once: https://pnp.github.io/powershell/articles/registerapplication.html
+Connect-PnPOnline -Url "https://<tenant>-admin.sharepoint.com" `
+  -ClientId "<your-pnp-app-client-id>" -Interactive
 Set-PnPTenant -ShowEveryoneClaim $true
 ```
 

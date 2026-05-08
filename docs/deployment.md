@@ -216,12 +216,17 @@ App Catalog will be mis-provisioned and deployments will silently fail.
 > fails with a cryptic null-reference error.
 
 On Windows, the [**SharePoint Online Management Shell**](https://learn.microsoft.com/powershell/sharepoint/sharepoint-online/connect-sharepoint-online)
-is the simplest option — it works with your existing credentials and requires
-no additional setup:
+is the simplest option once the `Microsoft.Online.SharePoint.PowerShell`
+module is installed:
+
+For module installation, prefer `Install-PSResource`. On Windows PowerShell
+5.1, Microsoft documents that you must first update
+[PowerShellGet / PSResourceGet](https://learn.microsoft.com/powershell/gallery/powershellget/install-powershellget?view=powershellget-3.x)
+because `Install-PSResource` isn't available out of the box.
 
 ```powershell
 # Install once:
-# Install-Module Microsoft.Online.SharePoint.PowerShell -Scope CurrentUser
+# Install-PSResource Microsoft.Online.SharePoint.PowerShell -Repository PSGallery -Scope CurrentUser
 
 Connect-SPOService -Url "https://<tenant>-admin.sharepoint.com"
 Add-SPOSiteCollectionAppCatalog -Site "https://<tenant>.sharepoint.com/sites/<landing-site>"
@@ -231,14 +236,15 @@ Add-SPOSiteCollectionAppCatalog -Site "https://<tenant>.sharepoint.com/sites/<la
 [`Connect-SPOService`](https://learn.microsoft.com/powershell/module/sharepoint-online/connect-sposervice) ·
 [`Add-SPOSiteCollectionAppCatalog`](https://learn.microsoft.com/powershell/module/sharepoint-online/add-spositecollectionappcatalog)*
 
-On macOS or Linux (or if you prefer a cross-platform tool), use
-[PnP PowerShell](https://pnp.github.io/powershell/). Note that current
-versions of PnP PowerShell require you to register your own Entra app and
-pass its Client ID — the built-in interactive login was removed:
+On macOS or Linux, or on Windows when you prefer the modern cross-platform
+tooling, use [PnP PowerShell](https://pnp.github.io/powershell/) in
+**PowerShell 7+**. Do not use Windows PowerShell 5.1 for this path. Current
+PnP PowerShell versions require you to register your own Entra app and pass
+its Client ID because the built-in interactive login was removed:
 
 ```powershell
 # Install once (PowerShell 7+):
-# Install-Module PnP.PowerShell -Scope CurrentUser
+# Install-PSResource PnP.PowerShell -Repository PSGallery -Scope CurrentUser
 
 Connect-PnPOnline -Url "https://<tenant>-admin.sharepoint.com" `
     -ClientId "<your-pnp-app-client-id>" -Interactive
@@ -309,9 +315,22 @@ users and requires no per-site configuration.
 
 **Required role:** SharePoint Administrator.
 
+PowerShell prerequisites for the commands below:
+
+- **Windows / SharePoint Online Management Shell:** install
+  `Microsoft.Online.SharePoint.PowerShell` once.
+- Prefer `Install-PSResource` for module installation. On Windows PowerShell
+  5.1, first update
+  [PowerShellGet / PSResourceGet](https://learn.microsoft.com/powershell/gallery/powershellget/install-powershellget?view=powershellget-3.x)
+  because `Install-PSResource` isn't available out of the box.
+- **PnP path:** use **PowerShell 7+** even on Windows, install
+  [PnP PowerShell](https://pnp.github.io/powershell/) once, and
+  [register your own Entra app](https://pnp.github.io/powershell/articles/registerapplication.html)
+  because `Connect-PnPOnline -Interactive` requires a client ID.
+
 ```powershell
 # SharePoint Online Management Shell (Windows):
-# Install once: Install-Module Microsoft.Online.SharePoint.PowerShell -Scope CurrentUser
+# Install once: Install-PSResource Microsoft.Online.SharePoint.PowerShell -Repository PSGallery -Scope CurrentUser
 Connect-SPOService -Url "https://<tenant>-admin.sharepoint.com"
 
 # Enable the Public CDN:
@@ -329,8 +348,9 @@ Add-SPOTenantCdnOrigin -CdnType Public -OriginUrl "*/CLIENTSIDEASSETS"
 ```
 
 ```powershell
-# PnP PowerShell (cross-platform):
-# Install once (PowerShell 7+): Install-Module PnP.PowerShell -Scope CurrentUser
+# PnP PowerShell (cross-platform; PowerShell 7+, also on Windows):
+# Install once (PowerShell 7+): Install-PSResource PnP.PowerShell -Repository PSGallery -Scope CurrentUser
+# Register once: https://pnp.github.io/powershell/articles/registerapplication.html
 Connect-PnPOnline -Url "https://<tenant>-admin.sharepoint.com" `
     -ClientId "<your-pnp-app-client-id>" -Interactive
 Set-PnPTenantCdnEnabled -CdnType Public -Enable $true
@@ -355,6 +375,19 @@ to load the bundle directly from the App Catalog.
 
 Use this fallback only when the Public CDN cannot be enabled in your tenant.
 
+PowerShell prerequisites for the commands below:
+
+- **Windows / SharePoint Online Management Shell:** install
+  `Microsoft.Online.SharePoint.PowerShell` once.
+- Prefer `Install-PSResource` for module installation. On Windows PowerShell
+  5.1, first update
+  [PowerShellGet / PSResourceGet](https://learn.microsoft.com/powershell/gallery/powershellget/install-powershellget?view=powershellget-3.x)
+  because `Install-PSResource` isn't available out of the box.
+- **PnP path:** use **PowerShell 7+** even on Windows, install
+  [PnP PowerShell](https://pnp.github.io/powershell/) once, and
+  [register your own Entra app](https://pnp.github.io/powershell/articles/registerapplication.html)
+  because `Connect-PnPOnline -Interactive` requires a client ID.
+
 <details>
 <summary>Expand Tenant App Catalog permission instructions</summary>
 
@@ -364,13 +397,17 @@ on the Tenant App Catalog site (typically
 
 ```powershell
 # SharePoint Online Management Shell (Windows):
+# Install once: Install-PSResource Microsoft.Online.SharePoint.PowerShell -Repository PSGallery -Scope CurrentUser
 Connect-SPOService -Url "https://<tenant>-admin.sharepoint.com"
 Add-SPOUser -Site "https://<tenant>.sharepoint.com/sites/appcatalog" `
     -LoginName "c:0(.s|true" -Group "App Catalog Visitors"
 ```
 
 ```powershell
-# PnP PowerShell (cross-platform; connect to the App Catalog site directly):
+# PnP PowerShell (cross-platform; PowerShell 7+, also on Windows):
+# Install once: Install-PSResource PnP.PowerShell -Repository PSGallery -Scope CurrentUser
+# Register once: https://pnp.github.io/powershell/articles/registerapplication.html
+# Connect to the App Catalog site directly:
 Connect-PnPOnline -Url "https://<tenant>.sharepoint.com/sites/appcatalog" `
     -ClientId "<your-pnp-app-client-id>" -Interactive
 Add-PnPGroupMember -LoginName "c:0(.s|true" -Group "App Catalog Visitors"
@@ -378,7 +415,8 @@ Add-PnPGroupMember -LoginName "c:0(.s|true" -Group "App Catalog Visitors"
 
 *Cmdlet references:
 [`Add-SPOUser`](https://learn.microsoft.com/powershell/module/sharepoint-online/add-spouser) ·
-[`Add-PnPGroupMember`](https://pnp.github.io/powershell/cmdlets/Add-PnPGroupMember.html)*
+[`Add-PnPGroupMember`](https://pnp.github.io/powershell/cmdlets/Add-PnPGroupMember.html) ·
+[register an Entra app](https://pnp.github.io/powershell/articles/registerapplication.html)*
 
 > **Limitation:** This covers only guests who have already authenticated to the
 > host tenant. Guests who have never visited the tenant (e.g. before accepting a
@@ -407,12 +445,30 @@ Do not assume that external users already receive the **Everyone** claim.
 Before relying on this pattern for B2B guests, explicitly set
 `ShowEveryoneClaim` to `$true`:
 
+PowerShell prerequisites for the commands below:
+
+- **Windows / SharePoint Online Management Shell:** install
+  `Microsoft.Online.SharePoint.PowerShell` once.
+- Prefer `Install-PSResource` for module installation. On Windows PowerShell
+  5.1, first update
+  [PowerShellGet / PSResourceGet](https://learn.microsoft.com/powershell/gallery/powershellget/install-powershellget?view=powershellget-3.x)
+  because `Install-PSResource` isn't available out of the box.
+- **PnP path:** use **PowerShell 7+** even on Windows, install
+  [PnP PowerShell](https://pnp.github.io/powershell/) once, and
+  [register your own Entra app](https://pnp.github.io/powershell/articles/registerapplication.html)
+  because `Connect-PnPOnline -Interactive` requires a client ID.
+
 ```powershell
 # SharePoint Online Management Shell (Windows):
+# Install once: Install-PSResource Microsoft.Online.SharePoint.PowerShell -Repository PSGallery -Scope CurrentUser
 (Get-SPOTenant).ShowEveryoneClaim   # check current value
 Set-SPOTenant -ShowEveryoneClaim $true
 
-# PnP PowerShell (cross-platform):
+# PnP PowerShell (cross-platform; PowerShell 7+, also on Windows):
+# Install once: Install-PSResource PnP.PowerShell -Repository PSGallery -Scope CurrentUser
+# Register once: https://pnp.github.io/powershell/articles/registerapplication.html
+Connect-PnPOnline -Url "https://<tenant>-admin.sharepoint.com" `
+    -ClientId "<your-pnp-app-client-id>" -Interactive
 (Get-PnPTenant).ShowEveryoneClaim
 Set-PnPTenant -ShowEveryoneClaim $true
 ```
@@ -421,7 +477,8 @@ Set-PnPTenant -ShowEveryoneClaim $true
 [`Get-SPOTenant`](https://learn.microsoft.com/powershell/module/sharepoint-online/get-spotenant) ·
 [`Set-SPOTenant`](https://learn.microsoft.com/powershell/module/sharepoint-online/set-spotenant) ·
 [`Get-PnPTenant`](https://pnp.github.io/powershell/cmdlets/Get-PnPTenant.html) ·
-[`Set-PnPTenant`](https://pnp.github.io/powershell/cmdlets/Set-PnPTenant.html)*
+[`Set-PnPTenant`](https://pnp.github.io/powershell/cmdlets/Set-PnPTenant.html) ·
+[register an Entra app](https://pnp.github.io/powershell/articles/registerapplication.html)*
 
 This setting controls whether external users receive the **Everyone** claim.
 It does not grant site access by itself.
@@ -430,13 +487,30 @@ Then add *Everyone* to the site's Visitors group. The easiest path is the GUI:
 **Site Settings → People and Groups → [Site] Visitors → New → Add Users**
 → search for *Everyone* → **Share**. Alternatively via PowerShell:
 
+PowerShell prerequisites for the commands below:
+
+- **Windows / SharePoint Online Management Shell:** install
+  `Microsoft.Online.SharePoint.PowerShell` once.
+- Prefer `Install-PSResource` for module installation. On Windows PowerShell
+  5.1, first update
+  [PowerShellGet / PSResourceGet](https://learn.microsoft.com/powershell/gallery/powershellget/install-powershellget?view=powershellget-3.x)
+  because `Install-PSResource` isn't available out of the box.
+- **PnP path:** use **PowerShell 7+** even on Windows, install
+  [PnP PowerShell](https://pnp.github.io/powershell/) once, and
+  [register your own Entra app](https://pnp.github.io/powershell/articles/registerapplication.html)
+  because `Connect-PnPOnline -Interactive` requires a client ID.
+
 ```powershell
 # SharePoint Online Management Shell (Windows):
+# Install once: Install-PSResource Microsoft.Online.SharePoint.PowerShell -Repository PSGallery -Scope CurrentUser
 # Connect-SPOService must already be active (see Enable step above)
 Add-SPOUser -Site "https://<tenant>.sharepoint.com/sites/<landing-site>" `
     -LoginName "c:0(.s|true" -Group "<SiteName> Visitors"
 
-# PnP PowerShell (cross-platform; connect to the site, not the admin URL):
+# PnP PowerShell (cross-platform; PowerShell 7+, also on Windows):
+# Install once: Install-PSResource PnP.PowerShell -Repository PSGallery -Scope CurrentUser
+# Register once: https://pnp.github.io/powershell/articles/registerapplication.html
+# Connect to the site, not the admin URL:
 Connect-PnPOnline -Url "https://<tenant>.sharepoint.com/sites/<landing-site>" `
     -ClientId "<your-pnp-app-client-id>" -Interactive
 Add-PnPGroupMember -LoginName "c:0(.s|true" -Group "<SiteName> Visitors"
@@ -444,7 +518,8 @@ Add-PnPGroupMember -LoginName "c:0(.s|true" -Group "<SiteName> Visitors"
 
 *Cmdlet references:
 [`Add-SPOUser`](https://learn.microsoft.com/powershell/module/sharepoint-online/add-spouser) ·
-[`Add-PnPGroupMember`](https://pnp.github.io/powershell/cmdlets/Add-PnPGroupMember.html)*
+[`Add-PnPGroupMember`](https://pnp.github.io/powershell/cmdlets/Add-PnPGroupMember.html) ·
+[register an Entra app](https://pnp.github.io/powershell/articles/registerapplication.html)*
 
 > **Pitfall — similar-sounding groups:**
 >
@@ -517,14 +592,22 @@ This section is ordered by execution sequence. Items marked **Alternative** or
 
 | Scope | Required role |
 |---|---|
-| Resource group | **Contributor** |
-| Resource group | **Owner** (or User Access Administrator) — for Managed Identity role assignments |
+| Subscription (recommended for the first deployment) | **Contributor** — for one-time resource provider registration and optional initial resource group creation |
+| Resource group (later deployments, once the providers are registered and the resource group exists) | **Contributor** |
+| Resource group (or inherited from the subscription) | **Owner** (or User Access Administrator) — for Managed Identity role assignments |
 | Entra ID | **Cloud Application Administrator** — to create and configure the App Registration |
 | Entra ID | **Privileged Role Administrator** — to assign Graph app roles to the Managed Identity |
 
+> For the **first deployment**, prefer Azure rights inherited from the
+> **subscription**. Resource provider registration is a subscription-wide
+> one-time operation, and the wizard can also create the resource group for
+> convenience. After the providers are registered and the resource group
+> already exists, later deployments usually work with resource-group-scoped
+> Azure roles alone.
+>
 > **Global Administrator** replaces both Entra requirements with a single role.
-> The Azure **Contributor** and **Owner** roles on the resource group are still
-> required separately and cannot be substituted by any Entra directory role.
+> The Azure roles still need to be granted separately and cannot be substituted
+> by any Entra directory role.
 
 If your organisation uses
 [PIM](https://learn.microsoft.com/entra/id-governance/privileged-identity-management/pim-configure),
@@ -754,7 +837,11 @@ path for the deployment step.
 **Prerequisites (Azure Cloud Shell or standard machine):**
 
 - PowerShell 7+
-- Azure Contributor + Owner on the resource group
+- Azure Contributor on the subscription for the first deployment; later
+  resource-group-scoped Contributor is usually sufficient once the providers
+  are registered and the resource group exists
+- Azure Owner (or User Access Administrator) on the target resource group, or
+  inherited from the subscription
 - Entra **Cloud Application Administrator** (for the Entra bootstrap to create the App Registration)
 
 #### Step A — Run the deployment with role assignments deferred
@@ -773,7 +860,11 @@ keeps the Privileged Role Administrator action separate, so each admin can
 decide whether to use `setup-graph-permissions.ps1` on the PAW or the lower-
 level Graph Explorer fallback below.
 
-**Required Azure roles:** Contributor + Owner on the resource group
+**Required Azure roles:** For the first deployment, prefer Contributor on the
+subscription plus Owner or User Access Administrator inherited from the
+subscription or present on the target resource group. Later deployments usually
+work with resource-group-scoped Azure roles once the providers are already
+registered and the resource group exists.
 **Required Entra roles:** Cloud Application Administrator (Entra bootstrap creates App Registration)
 
 #### Step B — On the PAW: assign Graph permissions
@@ -799,6 +890,11 @@ only the `Microsoft.Graph.Authentication` module. This fallback does not need
 any `Az.*` modules as long as you already have the `managedIdentityObjectId`
 from Step A:
 
+For module installation, prefer `Install-PSResource`. On Windows PowerShell
+5.1, first update
+[PowerShellGet / PSResourceGet](https://learn.microsoft.com/powershell/gallery/powershellget/install-powershellget?view=powershellget-3.x)
+because `Install-PSResource` isn't available out of the box.
+
 > **PAW policy note:** This fallback still depends on a working
 > `Microsoft.Graph.Authentication` module on the PAW. The published module is
 > not a single self-contained script; it loads PowerShell files plus multiple
@@ -813,7 +909,7 @@ from Step A:
 
 ```powershell
 if (-not (Get-Module -ListAvailable Microsoft.Graph.Authentication)) {
-  Install-Module Microsoft.Graph.Authentication -Scope CurrentUser
+  Install-PSResource Microsoft.Graph.Authentication -Repository PSGallery -Scope CurrentUser
 }
 Import-Module Microsoft.Graph.Authentication
 

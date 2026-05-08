@@ -21,7 +21,7 @@ Guest Sponsor Info setup has three phases:
 | Phase | Where | Minimum role required |
 |---|---|---|
 | 1 — SharePoint | SharePoint Admin Center + landing page site | SharePoint Administrator |
-| 2 — Guest Sponsor API | [Azure Cloud Shell](https://shell.azure.com/) (recommended) or local PowerShell/shell | Azure Contributor + Owner + Entra roles via PIM |
+| 2 — Guest Sponsor API | [Azure Cloud Shell](https://shell.azure.com/) (recommended) or local PowerShell/shell | Azure Contributor + Owner or User Access Administrator + Entra roles via PIM. For the first deployment, prefer subscription scope. |
 | 3 — Web part | SharePoint landing page (edit mode) | Site Owner |
 
 > [!NOTE]
@@ -154,12 +154,26 @@ most reliable approach for guest users.
 
 **Required role:** SharePoint Administrator.
 
+PowerShell prerequisites for the commands below:
+
+- **Windows / SharePoint Online Management Shell:** install
+  `Microsoft.Online.SharePoint.PowerShell` once.
+- Prefer `Install-PSResource` for module installation. On Windows PowerShell
+  5.1, first update
+  [PowerShellGet / PSResourceGet](https://learn.microsoft.com/powershell/gallery/powershellget/install-powershellget?view=powershellget-3.x)
+  because `Install-PSResource` isn't available out of the box.
+- **PnP path:** use **PowerShell 7+** even on Windows, install
+  [PnP PowerShell](https://pnp.github.io/powershell/) once, and
+  [register your own Entra app](https://pnp.github.io/powershell/articles/registerapplication.html)
+  because `Connect-PnPOnline -Interactive` requires a client ID.
+
 Choose one of the following equivalent admin shells:
 
 <details markdown="1">
 <summary>Windows: SharePoint Online Management Shell</summary>
 
 ```powershell
+# Install once: Install-PSResource Microsoft.Online.SharePoint.PowerShell -Repository PSGallery -Scope CurrentUser
 Connect-SPOService -Url "https://<tenant>-admin.sharepoint.com"
 Set-SPOTenantCdnEnabled -CdnType Public -Enable $true
 
@@ -177,6 +191,8 @@ Add-SPOTenantCdnOrigin -CdnType Public -OriginUrl "*/CLIENTSIDEASSETS"
 <summary>Cross-platform: PowerShell 7 with PnP PowerShell (also works on Windows)</summary>
 
 ```powershell
+# Install once (PowerShell 7+): Install-PSResource PnP.PowerShell -Repository PSGallery -Scope CurrentUser
+# Register once: https://pnp.github.io/powershell/articles/registerapplication.html
 Connect-PnPOnline -Url "https://<tenant>-admin.sharepoint.com" `
   -ClientId "<your-pnp-app-client-id>" -Interactive
 Set-PnPTenantCdnEnabled -CdnType Public -Enable $true
@@ -208,12 +224,26 @@ Since March 2018, external users no longer receive the Everyone claim by
 default — you must explicitly enable the setting. If *Everyone* does not
 appear in the People Picker, run:
 
+PowerShell prerequisites for the commands below:
+
+- **Windows / SharePoint Online Management Shell:** install
+  `Microsoft.Online.SharePoint.PowerShell` once.
+- Prefer `Install-PSResource` for module installation. On Windows PowerShell
+  5.1, first update
+  [PowerShellGet / PSResourceGet](https://learn.microsoft.com/powershell/gallery/powershellget/install-powershellget?view=powershellget-3.x)
+  because `Install-PSResource` isn't available out of the box.
+- **PnP path:** use **PowerShell 7+** even on Windows, install
+  [PnP PowerShell](https://pnp.github.io/powershell/) once, and
+  [register your own Entra app](https://pnp.github.io/powershell/articles/registerapplication.html)
+  because `Connect-PnPOnline -Interactive` requires a client ID.
+
 Choose one of the following equivalent admin shells:
 
 <details markdown="1">
 <summary>Windows: SharePoint Online Management Shell</summary>
 
 ```powershell
+# Install once: Install-PSResource Microsoft.Online.SharePoint.PowerShell -Repository PSGallery -Scope CurrentUser
 Set-SPOTenant -ShowEveryoneClaim $true
 ```
 
@@ -223,6 +253,10 @@ Set-SPOTenant -ShowEveryoneClaim $true
 <summary>Cross-platform: PowerShell 7 with PnP PowerShell (also works on Windows)</summary>
 
 ```powershell
+# Install once (PowerShell 7+): Install-PSResource PnP.PowerShell -Repository PSGallery -Scope CurrentUser
+# Register once: https://pnp.github.io/powershell/articles/registerapplication.html
+Connect-PnPOnline -Url "https://<tenant>-admin.sharepoint.com" `
+  -ClientId "<your-pnp-app-client-id>" -Interactive
 Set-PnPTenant -ShowEveryoneClaim $true
 ```
 
@@ -366,12 +400,20 @@ when your Entra roles are active.
 
 | Scope | Required role |
 |---|---|
-| Resource group | **Contributor** |
-| Resource group | **Owner** (or User Access Administrator) — for Managed Identity role assignments |
+| Subscription (recommended for the first deployment) | **Contributor** — for one-time resource provider registration and optional initial resource group creation |
+| Resource group (later deployments, once the providers are registered and the resource group exists) | **Contributor** |
+| Resource group (or inherited from the subscription) | **Owner** (or User Access Administrator) — for Managed Identity role assignments |
 | Entra ID | **Cloud Application Administrator** — to create and configure the App Registration |
 | Entra ID | **Privileged Role Administrator** — to assign Graph app roles to the Managed Identity |
 
 > [!TIP]
+> For the **first deployment**, prefer Azure rights inherited from the
+> **subscription**. Resource provider registration is a subscription-wide
+> one-time operation, and the wizard can also create the resource group for
+> convenience. After the providers are registered and the resource group
+> already exists, later deployments usually work with resource-group-scoped
+> Azure roles alone.
+>
 > **PIM tip:** If your organisation uses
 > [Privileged Identity Management (PIM)](https://learn.microsoft.com/entra/id-governance/privileged-identity-management/pim-configure),
 > activate the required Entra roles before running the script. The
@@ -379,7 +421,7 @@ when your Entra roles are active.
 > are missing.
 >
 > **Global Administrator** also satisfies the Entra requirements with a single
-> role.
+> role. Azure roles still need to be granted separately.
 
 ### Deployment outputs
 

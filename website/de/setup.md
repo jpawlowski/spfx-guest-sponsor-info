@@ -21,7 +21,7 @@ Das Setup von Guest Sponsor Info hat drei Phasen:
 | Phase | Wo | Mindestrolle |
 |---|---|---|
 | 1 — SharePoint | SharePoint Admin Center + Landingpage-Site | SharePoint-Administrator |
-| 2 — Guest Sponsor API | [Azure Cloud Shell](https://shell.azure.com/) (empfohlen) oder lokale PowerShell/Shell | Azure-Mitwirkender + Besitzer + Entra-Rollen via PIM |
+| 2 — Guest Sponsor API | [Azure Cloud Shell](https://shell.azure.com/) (empfohlen) oder lokale PowerShell/Shell | Azure-Mitwirkender + Besitzer oder Benutzerzugriffsadministrator + Entra-Rollen via PIM. Für das erste Deployment wird Subscription-Scope empfohlen. |
 | 3 — Web Part | SharePoint-Landingpage (Bearbeitungsmodus) | Websitebesitzer |
 
 > [!NOTE]
@@ -165,12 +165,27 @@ Gastbenutzer.
 
 **Erforderliche Rolle:** SharePoint-Administrator.
 
+PowerShell-Voraussetzungen für die folgenden Befehle:
+
+- **Windows / SharePoint Online Management Shell:**
+  `Microsoft.Online.SharePoint.PowerShell` einmal installieren.
+- Für die Modulinstallation bevorzugt `Install-PSResource` verwenden. Unter
+  Windows PowerShell 5.1 zuerst
+  [PowerShellGet / PSResourceGet aktualisieren](https://learn.microsoft.com/powershell/gallery/powershellget/install-powershellget?view=powershellget-3.x),
+  weil `Install-PSResource` dort nicht ab Werk verfügbar ist.
+- **PnP-Pfad:** auch unter Windows **PowerShell 7+** verwenden,
+  [PnP PowerShell](https://pnp.github.io/powershell/) einmal installieren und
+  einmalig eine eigene
+  [Entra-App registrieren](https://pnp.github.io/powershell/articles/registerapplication.html),
+  weil `Connect-PnPOnline -Interactive` eine Client-ID benötigt.
+
 Wählen Sie eine der folgenden gleichwertigen Admin-Shells:
 
 <details markdown="1">
 <summary>Windows: SharePoint Online Management Shell</summary>
 
 ```powershell
+# Einmal installieren: Install-PSResource Microsoft.Online.SharePoint.PowerShell -Repository PSGallery -Scope CurrentUser
 Connect-SPOService -Url "https://<tenant>-admin.sharepoint.com"
 Set-SPOTenantCdnEnabled -CdnType Public -Enable $true
 
@@ -188,6 +203,8 @@ Add-SPOTenantCdnOrigin -CdnType Public -OriginUrl "*/CLIENTSIDEASSETS"
 <summary>Plattformübergreifend: PowerShell 7 mit PnP PowerShell (funktioniert auch unter Windows)</summary>
 
 ```powershell
+# Einmal installieren (PowerShell 7+): Install-PSResource PnP.PowerShell -Repository PSGallery -Scope CurrentUser
+# Einmal registrieren: https://pnp.github.io/powershell/articles/registerapplication.html
 Connect-PnPOnline -Url "https://<tenant>-admin.sharepoint.com" `
   -ClientId "<your-pnp-app-client-id>" -Interactive
 Set-PnPTenantCdnEnabled -CdnType Public -Enable $true
@@ -220,12 +237,27 @@ gesteuert. Seit März 2018 erhalten Gastbenutzer den Everyone-Anspruch
 standardmäßig nicht mehr — die Einstellung muss explizit gesetzt werden.
 Falls *Everyone* nicht im Personen-Auswähler erscheint, führen Sie aus:
 
+PowerShell-Voraussetzungen für die folgenden Befehle:
+
+- **Windows / SharePoint Online Management Shell:**
+  `Microsoft.Online.SharePoint.PowerShell` einmal installieren.
+- Für die Modulinstallation bevorzugt `Install-PSResource` verwenden. Unter
+  Windows PowerShell 5.1 zuerst
+  [PowerShellGet / PSResourceGet aktualisieren](https://learn.microsoft.com/powershell/gallery/powershellget/install-powershellget?view=powershellget-3.x),
+  weil `Install-PSResource` dort nicht ab Werk verfügbar ist.
+- **PnP-Pfad:** auch unter Windows **PowerShell 7+** verwenden,
+  [PnP PowerShell](https://pnp.github.io/powershell/) einmal installieren und
+  einmalig eine eigene
+  [Entra-App registrieren](https://pnp.github.io/powershell/articles/registerapplication.html),
+  weil `Connect-PnPOnline -Interactive` eine Client-ID benötigt.
+
 Wählen Sie eine der folgenden gleichwertigen Admin-Shells:
 
 <details markdown="1">
 <summary>Windows: SharePoint Online Management Shell</summary>
 
 ```powershell
+# Einmal installieren: Install-PSResource Microsoft.Online.SharePoint.PowerShell -Repository PSGallery -Scope CurrentUser
 Set-SPOTenant -ShowEveryoneClaim $true
 ```
 
@@ -235,6 +267,10 @@ Set-SPOTenant -ShowEveryoneClaim $true
 <summary>Plattformübergreifend: PowerShell 7 mit PnP PowerShell (funktioniert auch unter Windows)</summary>
 
 ```powershell
+# Einmal installieren (PowerShell 7+): Install-PSResource PnP.PowerShell -Repository PSGallery -Scope CurrentUser
+# Einmal registrieren: https://pnp.github.io/powershell/articles/registerapplication.html
+Connect-PnPOnline -Url "https://<tenant>-admin.sharepoint.com" `
+  -ClientId "<your-pnp-app-client-id>" -Interactive
 Set-PnPTenant -ShowEveryoneClaim $true
 ```
 
@@ -385,12 +421,21 @@ aktiv sind.
 
 | Bereich | Erforderliche Rolle |
 |---|---|
-| Ressourcengruppe | **Mitwirkender** |
-| Ressourcengruppe | **Besitzer** (oder Benutzerzugriffsadministrator) — für Managed Identity-Rollenzuweisungen |
+| Subscription (für das erste Deployment empfohlen) | **Mitwirkender** — für die einmalige Registrierung von Resource Providern und bei Bedarf die erste Anlage der Ressourcengruppe |
+| Ressourcengruppe (für spätere Deployments, sobald die Provider registriert sind und die Ressourcengruppe existiert) | **Mitwirkender** |
+| Ressourcengruppe (oder von der Subscription geerbt) | **Besitzer** (oder Benutzerzugriffsadministrator) — für Managed Identity-Rollenzuweisungen |
 | Entra ID | **Cloud-Anwendungsadministrator** — zum Erstellen und Konfigurieren der App-Registrierung |
 | Entra ID | **Administrator für privilegierte Rollen** — zum Zuweisen von Graph-App-Rollen an die Managed Identity |
 
 > [!TIP]
+> Für das **erste Deployment** sollten die Azure-Rechte möglichst von der
+> **Subscription** geerbt werden. Die Registrierung von Resource Providern ist
+> eine einmalige Operation auf Subscription-Ebene, und der Assistent kann die
+> Ressourcengruppe außerdem der Bequemlichkeit halber selbst anlegen. Sobald
+> die Provider registriert sind und die Ressourcengruppe bereits existiert,
+> reichen für spätere Deployments meist Azure-Rollen nur auf der
+> Ressourcengruppen-Ebene.
+>
 > **PIM-Hinweis:** Wenn Ihre Organisation
 > [Privileged Identity Management (PIM)](https://learn.microsoft.com/entra/id-governance/privileged-identity-management/pim-configure)
 > verwendet, aktivieren Sie die erforderlichen Entra-Rollen vor dem Ausführen
@@ -398,8 +443,8 @@ aktiv sind.
 > warnt, falls eine fehlt.
 >
 > **Globaler Administrator** deckt die Entra-Anforderungen ebenfalls mit einer
-> einzigen Rolle ab — die Azure-Rollen **Mitwirkender** und **Besitzer** auf
-> der Ressourcengruppe werden jedoch weiterhin separat benötigt.
+> einzigen Rolle ab — die Azure-Rollen müssen weiterhin separat vergeben
+> werden.
 
 ### Bereitstellungsausgaben
 
