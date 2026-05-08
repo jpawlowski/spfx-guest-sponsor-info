@@ -300,6 +300,21 @@ function Install-RequiredModule {
     [Parameter(Mandatory)][string]$Name
   )
 
+  $canUseInstallPSResource = ($PSVersionTable.PSVersion.Major -ge 7) -and
+  ($null -ne (Get-Command Install-PSResource -ErrorAction SilentlyContinue))
+  $currentUserInstallCommand = if ($canUseInstallPSResource) {
+    "Install-PSResource -Name '$Name' -Repository PSGallery -Scope CurrentUser"
+  }
+  else {
+    "Install-Module -Name '$Name' -Scope CurrentUser"
+  }
+  $allUsersInstallCommand = if ($canUseInstallPSResource) {
+    "Install-PSResource -Name '$Name' -Repository PSGallery -Scope AllUsers"
+  }
+  else {
+    "Install-Module -Name '$Name' -Scope AllUsers"
+  }
+
   if (Get-Module -ListAvailable -Name $Name) {
     Import-Module -Name $Name
     return
@@ -310,7 +325,7 @@ function Install-RequiredModule {
   Write-Host '  This module is required — it cannot be skipped.'
   Write-Host ''
   Write-Host '  To install manually and then re-run this script:'
-  Write-Host "    Install-Module -Name '$Name' -Scope CurrentUser" -ForegroundColor Cyan
+  Write-Host "    $currentUserInstallCommand" -ForegroundColor Cyan
   Write-Host ''
   $answer = (Read-Host "  Proceed with automatic installation? [Y/n]").Trim()
   if ($answer -ne '' -and $answer -notmatch '^[Yy]') {
@@ -387,14 +402,21 @@ function Install-RequiredModule {
 
       switch ($installChoice) {
         '1' {
-          # Elevate: run Install-Module as a local admin in a new elevated window.
+          # Elevate: run the preferred module install command in a new
+          # elevated window as a local admin.
           # Start-Process -Verb RunAs triggers UAC; -Wait blocks until it finishes.
           # $psExe uses the same PowerShell major version that is currently running.
           $psExe = if ($PSVersionTable.PSVersion.Major -ge 7) { 'pwsh' } else { 'powershell' }
-          # The inner command wraps Install-Module in try/catch and exits with code 1
-          # on failure so the caller can detect the error after the window closes.
-          $innerCmd = "try { Install-Module -Name '$Name' -Scope AllUsers " +
-          "-Force -AllowClobber -ErrorAction Stop } catch { exit 1 }"
+          # The inner command wraps the selected install command in try/catch and
+          # exits with code 1 on failure so the caller can detect the error after
+          # the window closes.
+          $innerInstallCommand = if ($canUseInstallPSResource) {
+            "Install-PSResource -Name '$Name' -Repository PSGallery -Scope AllUsers -TrustRepository -Quiet"
+          }
+          else {
+            "Install-Module -Name '$Name' -Scope AllUsers -Force -AllowClobber"
+          }
+          $innerCmd = "try { $innerInstallCommand -ErrorAction Stop } catch { exit 1 }"
           Write-Host ''
           Write-Host "  Launching elevated installer for '$Name' (AllUsers) …" -ForegroundColor Cyan
           Write-Host '  A UAC prompt will appear — approve it to continue.' -ForegroundColor DarkGray
@@ -413,7 +435,7 @@ function Install-RequiredModule {
               -ForegroundColor Red
             Write-Host ''
             Write-Host '  Install manually and then re-run this script:' -ForegroundColor Yellow
-            Write-Host "    Install-Module -Name '$Name' -Scope AllUsers" -ForegroundColor Cyan
+            Write-Host "    $allUsersInstallCommand" -ForegroundColor Cyan
             Write-Host ''
             exit 1
           }
@@ -428,8 +450,8 @@ function Install-RequiredModule {
         '3' {
           Write-Host ''
           Write-Host '  Install manually and then re-run this script:' -ForegroundColor Yellow
-          Write-Host "    Install-Module -Name '$Name' -Scope AllUsers" -ForegroundColor Cyan
-          Write-Host "    Install-Module -Name '$Name' -Scope CurrentUser  # no admin required" `
+          Write-Host "    $allUsersInstallCommand" -ForegroundColor Cyan
+          Write-Host "    $currentUserInstallCommand  # no admin required" `
             -ForegroundColor DarkGray
           Write-Host ''
           exit 1
@@ -481,7 +503,7 @@ function Install-RequiredModule {
     Write-Host "  $_wrn Auto-installation failed: $($_.Exception.Message)" -ForegroundColor Red
     Write-Host ''
     Write-Host '  Install the module manually and then re-run this script:' -ForegroundColor Yellow
-    Write-Host "    Install-Module -Name '$Name' -Scope CurrentUser" -ForegroundColor Cyan
+    Write-Host "    $currentUserInstallCommand" -ForegroundColor Cyan
     Write-Host ''
     exit 1
   }

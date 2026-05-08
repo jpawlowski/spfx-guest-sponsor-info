@@ -2361,23 +2361,44 @@ function Test-DeploymentPrerequisite {
       @()
     }
     $allAzureRoles = @($subscriptionRoles + $resourceGroupRoles | Select-Object -Unique)
+    $hasSubscriptionContributor = ($subscriptionRoles | Where-Object { $_ -in @('Owner', 'Contributor') }).Count -gt 0
     $hasContributor = ($allAzureRoles | Where-Object { $_ -in @('Owner', 'Contributor') }).Count -gt 0
     $hasRoleAssignment = ($allAzureRoles | Where-Object { $_ -in @('Owner', 'User Access Administrator') }).Count -gt 0
 
     if ($hasContributor) {
-      Write-Host "  $_chk Azure deployment role: Contributor/Owner visible." -ForegroundColor Green
+      if ($hasSubscriptionContributor) {
+        Write-Host "  $_chk Azure deployment role: Contributor/Owner visible." -ForegroundColor Green
+      }
+      else {
+        Write-Host "  $_chk Azure deployment role: Contributor/Owner visible on the target resource group." -ForegroundColor Green
+        Write-Host '       Later deployments usually work with this scope.' -ForegroundColor DarkGray
+        Write-Host '       The first deployment can still need Contributor or Owner on the subscription' -ForegroundColor DarkGray
+        Write-Host '       for provider registration.' -ForegroundColor DarkGray
+      }
     }
     else {
-      Write-Host "  $_wrn Azure deployment role missing: Contributor or Owner." -ForegroundColor Yellow
-      $missing.Add("Azure Contributor or Owner on $resourceGroupScope (or inherited from the subscription)")
+      if (-not $resourceGroupExists) {
+        Write-Host "  $_wrn Azure deployment role missing: Contributor or Owner at subscription scope." -ForegroundColor Yellow
+        $missing.Add("Azure Contributor or Owner on $subscriptionScope for the first deployment (provider registration and initial resource group creation)")
+      }
+      else {
+        Write-Host "  $_wrn Azure deployment role missing: Contributor or Owner." -ForegroundColor Yellow
+        $missing.Add("Azure Contributor or Owner on $resourceGroupScope (or inherited from the subscription)")
+      }
     }
 
     if ($hasRoleAssignment) {
       Write-Host "  $_chk Azure role assignment permission: Owner/User Access Administrator visible." -ForegroundColor Green
     }
     else {
-      Write-Host "  $_wrn Azure role assignment permission missing: Owner or User Access Administrator." -ForegroundColor Yellow
-      $missing.Add("Azure Owner or User Access Administrator on $resourceGroupScope (or inherited from the subscription)")
+      if (-not $resourceGroupExists) {
+        Write-Host "  $_wrn Azure role assignment permission missing: Owner or User Access Administrator at subscription scope." -ForegroundColor Yellow
+        $missing.Add("Azure Owner or User Access Administrator on $subscriptionScope for the first deployment (or inherited from a higher scope)")
+      }
+      else {
+        Write-Host "  $_wrn Azure role assignment permission missing: Owner or User Access Administrator." -ForegroundColor Yellow
+        $missing.Add("Azure Owner or User Access Administrator on $resourceGroupScope (or inherited from the subscription)")
+      }
     }
 
     if (-not $resourceGroupExists) {
@@ -3079,9 +3100,11 @@ try {
 
     # ── Required role guidance ────────────────────────────────────────────────
     Write-Hint @(
-      'Required Azure RBAC role:  Owner or Contributor  (on the target resource group)'
-      '  Owner is also needed for Storage role assignments. Contributor covers the rest.'
-      '  For first-time ARM/Bicep provider auto-registration: Contributor or higher at subscription level.'
+      'Recommended Azure RBAC scope for the first deployment: subscription level.'
+      '  Contributor covers provider registration and, if desired, initial resource group creation.'
+      '  Owner or User Access Administrator is also needed for role assignments.'
+      'Later deployments usually work with target-resource-group scope once the providers are'
+      '  already registered and the resource group exists.'
       ''
       'Required Entra roles:'
       '  Cloud Application Administrator — to create/update the EasyAuth App Registration'
