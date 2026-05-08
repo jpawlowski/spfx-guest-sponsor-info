@@ -217,10 +217,11 @@ Timeout app settings: `SPONSOR_LOOKUP_TIMEOUT_MS`, `BATCH_TIMEOUT_MS`,
 
 ### Deployment (`azd provision` / deployment wizard)
 
-1. **Pre-provision** — validates required subscription resource providers,
-  registers missing ones when the caller has subscription-level register
-  permission, detects the SharePoint tenant, derives the deterministic
-  Function App name, and prepares the EasyAuth App Registration when needed.
+1. **Pre-provision** — performs subscription/RBAC preflight, validates and
+  pre-registers the Azure resource providers used by the current template
+  configuration to surface clearer first-run errors, detects the SharePoint
+  tenant, derives the deterministic Function App name, and prepares the
+  EasyAuth App Registration when needed.
 2. **Bicep** — provisions the Azure-only hosting stack: storage (RBAC, no
   keys), Function App with MI + EasyAuth, Log Analytics, App Insights, and the
   native Flex OneDeploy publish step.

@@ -293,7 +293,7 @@ if ($_subId) {
         }
         else {
           Write-Host '  ! Azure RBAC: no Contributor or Owner role found on this subscription.'
-          Write-Host '    Both are required for resource provider registration and Bicep deployment.'
+          Write-Host '    Both can be needed for first-time provider auto-registration and Bicep deployment.'
           Write-Host '    Contact your subscription owner to request Contributor access or activate'
           Write-Host '    an eligible role via Azure PIM before re-running azd provision.'
           Write-Host '    Azure PIM: https://portal.azure.com/#view/Microsoft_Azure_PIMCommon/ActivationMenuBlade/~/azurerbac'
@@ -321,9 +321,12 @@ else {
 Write-Host ''
 
 # ── 0. Validate required Azure resource providers ───────────────────────────
-# Read from azd env — set by deploy-azure.ps1 via 'azd env set' before running
-# provision. Fall back to the same defaults used by main.bicep when running azd
-# directly without the wizard.
+# ARM/Bicep can auto-register template-defined provider namespaces during
+# deployment, but the resulting deployment failures are often opaque for admins.
+# Pre-register the namespaces this stack can use so the operator gets a clear,
+# early error that points to the missing provider and the required subscription
+# permission. Keep the list aligned to actual resources in the current Bicep
+# templates and conditional feature flags only.
 function Get-AzdEnvBooleanFlag {
   param(
     [Parameter(Mandatory)][string[]]$EnvValues,
@@ -352,13 +355,11 @@ $deployAzureMaps = Get-AzdEnvBooleanFlag -EnvValues $envValues -Name 'AZURE_DEPL
 $enableMonitoring = Get-AzdEnvBooleanFlag -EnvValues $envValues -Name 'AZURE_ENABLE_MONITORING' -DefaultValue $true
 $enableFailureAnomaliesAlert = Get-AzdEnvBooleanFlag -EnvValues $envValues -Name 'AZURE_ENABLE_FAILURE_ANOMALIES_ALERT' -DefaultValue $false
 
-# Native Flex deployment uses Microsoft.Web plus the deployment storage
-# container
-# Microsoft.App is intentionally omitted: this template does not configure
-# Flex Consumption VNet integration or subnet delegation.
+# System-assigned identity on Microsoft.Web/sites does not require a separate
+# Microsoft.ManagedIdentity resource registration. A past exception was
+# Microsoft.ContainerInstance while Flex deployment still used deploymentScripts.
 $requiredProviders = @(
   'Microsoft.Authorization',
-  'Microsoft.ManagedIdentity',
   'Microsoft.Resources',
   'Microsoft.Storage',
   'Microsoft.Web'

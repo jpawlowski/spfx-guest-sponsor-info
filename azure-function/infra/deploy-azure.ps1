@@ -344,7 +344,7 @@ trap {
       'The request was denied — your account lacks the required permissions.'
       ''
       'Required Azure RBAC role:  Contributor  (on the target subscription or resource group)'
-      '  Owner also works. For provider registration: Contributor or higher at subscription level.'
+      '  Owner also works. Provider registration, whether manual or implicit, needs Contributor or higher at subscription level.'
       ''
       'If your role is eligible (PIM): activate it, then re-run.'
       'If you do not have the role yet: request it from your Azure admin.'
@@ -2516,8 +2516,8 @@ function Invoke-AzdProvision {
     Invoke-Azd -Arguments @('env', 'set', 'AZURE_ALWAYS_READY_INSTANCES', $AlwaysReadyInstances.ToString())
     Invoke-Azd -Arguments @('env', 'set', 'AZURE_MAXIMUM_FLEX_INSTANCES', $FlexInstances.ToString())
     Invoke-Azd -Arguments @('env', 'set', 'AZURE_INSTANCE_MEMORY_MB', $InstanceMemoryMB.ToString())
-    # Store deployment params in azd env so the pre-provision hook can read
-    # them for provider preflight (maps → Maps resource provider).
+    # Store deployment params in azd env so pre-provision can derive the same
+    # conditional provider checks and post-provision can reuse the choices.
     Invoke-Azd -Arguments @('env', 'set', 'AZURE_DEPLOY_AZURE_MAPS', $Maps.ToString().ToLower())
     # Store the graph role assignment preference so the post-provision hook
     # can give the correct next-steps guidance.
@@ -3081,7 +3081,7 @@ try {
     Write-Hint @(
       'Required Azure RBAC role:  Owner or Contributor  (on the target resource group)'
       '  Owner is also needed for Storage role assignments. Contributor covers the rest.'
-      '  For resource provider registration: Contributor or higher at subscription level.'
+      '  For first-time ARM/Bicep provider auto-registration: Contributor or higher at subscription level.'
       ''
       'Required Entra roles:'
       '  Cloud Application Administrator — to create/update the EasyAuth App Registration'
@@ -3381,7 +3381,7 @@ try {
           -ResourceGroup $ResourceGroupName `
           -ManagedIdentityObjectId $_azdMiOid
         Set-GraphPermissionAssignmentMarker `
-          -RepoRoot $repoRoot `
+          -RepoRoot (Get-RepoRoot) `
           -ManagedIdentityObjectId $_azdMiOid
         $_graphPermissionsStatus = if ($_graphPermissionsAlreadyMarked) {
           're-applied during this run to repair possible drift'
@@ -3389,11 +3389,14 @@ try {
         else {
           'assigned during this run'
         }
-        $_functionAppRestartStatus = 'completed automatically'
         if (-not $_azdWebPartClientId) {
           $_azdWebPartClientId = $_provisionAppClientId
         }
+        if (-not $_azdFunctionAppName) {
+          throw 'Function App name was not available after azd provision; automatic restart to activate Graph permissions cannot continue.'
+        }
         Restart-DeployedFunctionApp -ResourceGroup $ResourceGroupName -FunctionAppName $_azdFunctionAppName
+        $_functionAppRestartStatus = 'completed automatically'
       }
     }
   }
