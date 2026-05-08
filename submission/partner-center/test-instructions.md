@@ -33,7 +33,7 @@ begins with a clean sign-in session.
 
 - Host tenant: `[HOST-TENANT].onmicrosoft.com`
 - Guest home tenant: `[GUEST-HOME-TENANT].onmicrosoft.com`
-- SharePoint site: `https://[HOST-TENANT].sharepoint.com/sites/[SITE-NAME]`
+- SharePoint site: `https://[HOST-TENANT].sharepoint.com/sites/gsi-demo`
 - Solution package: already deployed
 - Web part instance: already added to the page and pre-configured
 - Companion Azure Function: already configured and reachable
@@ -41,7 +41,7 @@ begins with a clean sign-in session.
 Guest sign-in:
 
 - Open
-   `https://[HOST-TENANT].sharepoint.com/sites/[SITE-NAME]`.
+   `https://[HOST-TENANT].sharepoint.com/sites/gsi-demo`.
 - At the Microsoft sign-in page, sign in with the **guest user's home-tenant
    account** listed in the next section.
 - Inside the host tenant, SharePoint resolves this user to the invited guest
@@ -51,17 +51,17 @@ Guest sign-in:
 
 ## Test Accounts
 
-### 1. Internal Editor (Host Tenant Member)
-
-- UPN: `[INTERNAL-EDITOR-UPN]`
-- Password: `[INTERNAL-EDITOR-PASSWORD]`
-- Use for: edit mode preview, property pane checks, public demo mode check
-
-### 2. External Guest (Home-Tenant Account)
+### 1. External Guest (Home-Tenant Account)
 
 - UPN: `[EXTERNAL-GUEST-UPN]`
 - Password: `[EXTERNAL-GUEST-PASSWORD]`
 - Use for: end-to-end guest validation
+
+### 2. Internal Editor (Host Tenant Member)
+
+- UPN: `[INTERNAL-EDITOR-UPN]`
+- Password: `[INTERNAL-EDITOR-PASSWORD]`
+- Use for: edit mode preview, property pane checks, public demo mode check
 
 ---
 
@@ -96,7 +96,7 @@ Run the checks in this order.
 1. Close all existing InPrivate / Incognito windows.
 2. Open a new InPrivate / Incognito window.
 3. Navigate to
-   `https://[HOST-TENANT].sharepoint.com/sites/[SITE-NAME]`.
+   `https://[HOST-TENANT].sharepoint.com/sites/gsi-demo`.
 4. At the Microsoft sign-in page, sign in with the **External Guest** account
    listed above.
 
@@ -145,7 +145,7 @@ Expected result:
 1. Close all existing InPrivate / Incognito windows.
 2. Open a new InPrivate / Incognito window.
 3. Navigate to
-   `https://[HOST-TENANT].sharepoint.com/sites/[SITE-NAME]`.
+   `https://[HOST-TENANT].sharepoint.com/sites/gsi-demo`.
 4. At the Microsoft sign-in page, sign in with the **Internal Editor** account.
 5. Make sure the page is in normal **view mode**.
 
@@ -235,7 +235,7 @@ Expected result:
 
 1. Stay signed in as the **Internal Editor** account.
 2. Create a new modern SharePoint page in
-   `https://[HOST-TENANT].sharepoint.com/sites/[SITE-NAME]`.
+   `https://[HOST-TENANT].sharepoint.com/sites/gsi-demo`.
 3. Add the already deployed **Guest Sponsor Info** web part to that new page.
 4. In the setup wizard, choose **Explore in Demo Mode**.
 5. Complete the wizard and save the page.
