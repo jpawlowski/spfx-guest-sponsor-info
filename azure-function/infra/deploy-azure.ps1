@@ -3178,10 +3178,14 @@ try {
     }
 
     # ── Confirmation summary ──────────────────────────────────────────────────
-    # When all parameters were supplied on the command line or via the session cache (no interactive
-    # prompts shown) we display a summary so the operator can verify before
-    # the script commits any changes — unless -Confirm:$false or -WhatIf was passed.
-    if (-not $_promptsShown -and
+    # Show the summary and ask "Proceed / re-configure / abort?" when:
+    #   a) all parameters came from the command line / session cache (no interactive
+    #      prompts were shown), OR
+    #   b) the preflight detected at least one missing required permission — in that
+    #      case the operator must explicitly confirm they want to proceed despite the
+    #      known gap, rather than having the deployment fail silently mid-run.
+    # Skipped when -Confirm:$false or -WhatIf was passed.
+    if ((-not $_promptsShown -or $script:LastPreflightMissingPermissions) -and
       $WhatIfPreference -ne [System.Management.Automation.SwitchParameter]$true -and
       $ConfirmPreference -ne 'None') {
       Write-Host ''
