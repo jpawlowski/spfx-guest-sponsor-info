@@ -84,6 +84,14 @@
   .desktop .dot:nth-child(1) { background: #F47174; }
   .desktop .dot:nth-child(2) { background: #F9C04D; }
   .desktop .dot:nth-child(3) { background: #57C18A; }
+  .desktop .url-bar {
+    margin-left: 16px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: #94A8B0;
+    font-weight: 500;
+  }
+  .desktop .url-bar .seg { color: var(--ink-deep); }
   .desktop img {
     width: 100%;
     display: block;
@@ -304,6 +312,7 @@
         <div class="desktop">
           <div class="browser-bar">
             <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+            <span class="url-bar"><span class="seg">contoso.sharepoint.com</span>/sites/entrance</span>
           </div>
           <img src="assets/my-sponsors-noteams-example.jpg" alt="Microsoft Teams not set up yet warning">
         </div>

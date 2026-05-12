@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Guest Sponsor Info — Easy to install. Hard to outgrow.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="base.css">
+<style>
+  .canvas {
+    background:
+      radial-gradient(circle at 10% 100%, rgba(18, 178, 205, 0.12), transparent 50%),
+      radial-gradient(circle at 92% 5%, rgba(10, 61, 79, 0.08), transparent 45%),
+      linear-gradient(180deg, #FFFFFF 0%, #F4F9FB 100%);
+  }
+
+  .ring-1 { width: 460px; height: 460px; right: -200px; top: -220px; opacity: 0.40; }
+  .ring-2 { width: 240px; height: 240px; left: -120px; bottom: -130px; opacity: 0.30; border-color: rgba(10, 61, 79, 0.30); }
+
+  .frame {
+    position: relative;
+    height: 100%;
+    padding: 50px 70px 76px 70px;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Header */
+  .head {
+    margin-bottom: 22px;
+    max-width: 1140px;
+  }
+  .eyebrow { margin-bottom: 12px; font-size: 12px; }
+  h2 {
+    font-size: 42px;
+    font-weight: 800;
+    line-height: 1.04;
+    margin-bottom: 10px;
+    letter-spacing: -0.025em;
+  }
+  h2 .accent { color: var(--teal); }
+  .head .lede {
+    font-size: 15.5px;
+    line-height: 1.45;
+    max-width: 940px;
+  }
+
+  /* Body grid: screenshots left, depth pillars right */
+  .body {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 36px;
+    flex: 1;
+    align-items: stretch;
+    min-height: 0;
+  }
+
+  /* Screenshots area */
+  .shots {
+    display: grid;
+    grid-template-columns: 1fr 175px;
+    gap: 20px;
+    align-items: start;
+  }
+
+  /* Step indicator above each screenshot */
+  .step-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 12px;
+    color: var(--ink-deep);
+    letter-spacing: -0.005em;
+  }
+  .step-label .num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--teal);
+    color: white;
+    font-size: 11px;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+  .step-label .label-text {
+    color: var(--ink-deep);
+  }
+  .step-label .time {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--teal-700);
+    background: var(--teal-50);
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  /* Setup wizard shot — wider, mostly landscape */
+  .wizard-shot {
+    position: relative;
+    border-radius: 12px;
+    border: 1px solid var(--border-soft);
+    background: white;
+    overflow: hidden;
+    height: 360px;
+    box-shadow:
+      0 30px 60px -20px rgba(10, 61, 79, 0.18),
+      0 14px 30px -14px rgba(10, 61, 79, 0.10),
+      0 1px 2px rgba(10, 61, 79, 0.04);
+    display: flex;
+    flex-direction: column;
+  }
+  .wizard-shot .browser-bar {
+    height: 26px;
+    background: linear-gradient(180deg, #F3F7F9, #EAF1F4);
+    border-bottom: 1px solid var(--border-soft);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 12px;
+    flex-shrink: 0;
+  }
+  .wizard-shot .dot { width: 9px; height: 9px; border-radius: 50%; }
+  .wizard-shot .dot:nth-child(1) { background: #F47174; }
+  .wizard-shot .dot:nth-child(2) { background: #F9C04D; }
+  .wizard-shot .dot:nth-child(3) { background: #57C18A; }
+  .wizard-shot .url-bar {
+    margin-left: 16px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: #94A8B0;
+    font-weight: 500;
+  }
+  .wizard-shot .url-bar .seg { color: var(--ink-deep); }
+  .wizard-shot .shot-inner {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+  }
+  .wizard-shot img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+
+  /* Preferences shot — narrow portrait */
+  .pref-shot {
+    position: relative;
+    border-radius: 12px;
+    border: 1px solid var(--border-soft);
+    background: white;
+    overflow: hidden;
+    box-shadow:
+      0 30px 60px -20px rgba(10, 61, 79, 0.18),
+      0 14px 30px -14px rgba(10, 61, 79, 0.10),
+      0 1px 2px rgba(10, 61, 79, 0.04);
+    height: 360px;
+  }
+  .pref-shot img {
+    width: 100%;
+    display: block;
+  }
+  .pref-shot .fade-bottom {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 60px;
+    background: linear-gradient(180deg, transparent 0%, rgba(255, 255, 255, 0.95) 80%, white 100%);
+    pointer-events: none;
+  }
+
+  /* Caption strips below each screenshot */
+  .cap {
+    margin-top: 10px;
+    font-size: 11.5px;
+    line-height: 1.4;
+    color: var(--ink-muted);
+  }
+
+  /* Depth pillars column — what's underneath: tenant, security, source */
+  .pillars {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    height: 100%;
+  }
+  .pillar {
+    background: white;
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+    padding: 14px 16px;
+    position: relative;
+    box-shadow: 0 8px 20px -14px rgba(10, 61, 79, 0.12);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .pillar.dark {
+    background: var(--ink-deep);
+    border-color: var(--ink-deep);
+  }
+  .pillar .row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .pillar .ic {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--teal-50);
+    color: var(--teal-700);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .pillar.dark .ic {
+    background: rgba(18, 178, 205, 0.18);
+    color: var(--teal);
+  }
+  .pillar .ic svg { width: 17px; height: 17px; }
+  .pillar h4 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 14px;
+    color: var(--ink-deep);
+    letter-spacing: -0.015em;
+    line-height: 1.2;
+  }
+  .pillar.dark h4 { color: white; }
+  .pillar p {
+    font-size: 11.5px;
+    line-height: 1.4;
+    color: var(--ink-muted);
+    margin-top: 6px;
+  }
+  .pillar.dark p { color: rgba(255, 255, 255, 0.75); }
+
+  .pillar .meta {
+    margin-top: 8px;
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    font-weight: 600;
+    color: var(--teal-700);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+  .pillar.dark .meta { color: var(--teal); }
+</style>
+</head>
+<body>
+<div class="canvas">
+  <div class="bg-grid"></div>
+  <div class="dotted-ring ring-1"></div>
+  <div class="dotted-ring ring-2"></div>
+
+  <div class="frame">
+    <div class="head">
+      <div class="eyebrow">From setup to settings</div>
+      <h2>Easy to install. <span class="accent">Hard to outgrow.</span></h2>
+      <p class="lede">
+        Try the full experience in Demo Mode in minutes — no Azure setup required. Then fine-tune every detail when you're ready for production. Everything runs in your tenant, with no Workoho keys, ever.
+      </p>
+    </div>
+
+    <div class="body">
+      <!-- LEFT: screenshots -->
+      <div>
+        <div class="shots">
+          <!-- Setup wizard shot (step 1 — Install) -->
+          <div>
+            <div class="step-label">
+              <span class="num">1</span>
+              <span class="label-text">Install</span>
+              <span class="time">Minutes</span>
+            </div>
+            <div class="wizard-shot">
+              <div class="browser-bar">
+                <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+                <span class="url-bar"><span class="seg">contoso.sharepoint.com</span>/sites/entrance</span>
+              </div>
+              <div class="shot-inner">
+                <img src="assets/my-sponsors-setup-wizard.jpg" alt="Setup wizard: choose between Azure API or Demo Mode">
+              </div>
+            </div>
+            <p class="cap">Demo Mode runs in your tenant with mock data — no Azure setup needed. Switch to the live API any time.</p>
+          </div>
+
+          <!-- Preferences shot (step 2 — Configure) -->
+          <div>
+            <div class="step-label">
+              <span class="num">2</span>
+              <span class="label-text">Configure</span>
+            </div>
+            <div class="pref-shot">
+              <img src="assets/my-sponsor-preferences.jpg" alt="Web part settings panel">
+              <div class="fade-bottom"></div>
+            </div>
+            <p class="cap">Visible sponsors, eligibility filters, contact fields, presence display — all toggleable per page.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: depth pillars (what's underneath) -->
+      <div class="pillars">
+        <div class="pillar dark">
+          <div class="row">
+            <span class="ic">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13M9 12h6M9 16h6"/></svg>
+            </span>
+            <h4>Runs entirely in your tenant</h4>
+          </div>
+          <p>SPFx web part + your own Azure Function. Sponsor data never leaves Microsoft 365 or Azure.</p>
+          <div class="meta">M365 · Azure · self-hosted</div>
+        </div>
+
+        <div class="pillar">
+          <div class="row">
+            <span class="ic">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.4 9.5 8 11 4.6-1.5 8-6 8-11V5l-8-3z"/><path d="m9 12 2 2 4-4"/></svg>
+            </span>
+            <h4>Zero-trust by design</h4>
+          </div>
+          <p>Guests never hold directory permissions. The Azure Function is the only Graph consumer.</p>
+        </div>
+
+        <div class="pillar">
+          <div class="row">
+            <span class="ic">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h3M19 12h3M12 2v3M12 19v3"/><circle cx="12" cy="12" r="4"/><line x1="3" y1="3" x2="21" y2="21"/></svg>
+            </span>
+            <h4>No phone-home, ever</h4>
+          </div>
+          <p>No runtime telemetry, no analytics, no callbacks. Workoho receives zero data.</p>
+        </div>
+
+        <div class="pillar">
+          <div class="row">
+            <span class="ic">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            </span>
+            <h4>Source-available</h4>
+          </div>
+          <p>Inspect, fork, audit — free for noncompeting use under PolyForm Shield 1.0.0.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="maker">
+    <span class="label">Made by</span>
+    <img class="workoho-mark" src="assets/workoho-logo.svg" alt="Workoho">
+  </div>
+  <div class="slide-mark">
+    <span class="num">05</span>
+    <span class="sep"></span>
+    <span>Setup &amp; settings</span>
+  </div>
+</div>
+</body>
+</html>

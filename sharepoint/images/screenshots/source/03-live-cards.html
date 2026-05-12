@@ -86,6 +86,14 @@
   .desktop .dot:nth-child(1) { background: #F47174; }
   .desktop .dot:nth-child(2) { background: #F9C04D; }
   .desktop .dot:nth-child(3) { background: #57C18A; }
+  .desktop .url-bar {
+    margin-left: 14px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: #94A8B0;
+    font-weight: 500;
+  }
+  .desktop .url-bar .seg { color: var(--ink-deep); }
   .desktop .shot-wrap {
     width: 100%;
     height: calc(100% - 26px);
@@ -267,6 +275,7 @@
         <div class="desktop">
           <div class="browser-bar">
             <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+            <span class="url-bar"><span class="seg">contoso.sharepoint.com</span>/sites/entrance</span>
           </div>
           <div class="shot-wrap">
             <img src="assets/my-sponsors-card-example.jpg" alt="">

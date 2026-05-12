@@ -101,17 +101,14 @@
   .browser-bar .dot:nth-child(1) { background: #F47174; }
   .browser-bar .dot:nth-child(2) { background: #F9C04D; }
   .browser-bar .dot:nth-child(3) { background: #57C18A; }
-  .browser-bar .url {
-    margin-left: auto;
+  .browser-bar .url-bar {
+    margin-left: 16px;
     font-family: var(--font-mono);
-    font-size: 10px;
-    color: var(--ink-soft);
+    font-size: 11px;
+    color: #94A8B0;
     font-weight: 500;
-    background: rgba(255,255,255,0.7);
-    padding: 3px 12px;
-    border-radius: 999px;
-    border: 1px solid var(--border-soft);
   }
+  .browser-bar .url-bar .seg { color: var(--ink-deep); }
   .device img {
     width: 100%;
     display: block;
@@ -273,7 +270,7 @@
       <div class="device">
         <div class="browser-bar">
           <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-          <span class="url">contoso.sharepoint.com / guest-landing</span>
+          <span class="url-bar"><span class="seg">contoso.sharepoint.com</span>/sites/entrance</span>
         </div>
         <img src="assets/my-sponsors-card-example.jpg" alt="">
       </div>

@@ -2,24 +2,43 @@
 
 Source files for:
 
-- 5-graphic AppSource carousel set (1366×768 JPG)
+- 5-graphic AppSource carousel set (1366×768 JPG) — every graphic includes
+  at least one real product screenshot (Microsoft AppSource reviewer requirement)
 - Open Graph social card (1200×630 JPG) for the website
 
 ## What's in here
 
 ```txt
 marketplace/
-├── 01-hero.html              ← AppSource: "Let your guests know who to call."
-├── 02-the-gap.html           ← AppSource: "Your sponsor exists in Microsoft Entra…"
-├── 03-live-cards.html        ← AppSource: "Real photos. Real titles. Real reach."
-├── 04-honest-teams.html      ← AppSource: "Honest about what's ready — and what isn't."
-├── 05-trust-stack.html       ← AppSource: "Built to stay in your tenant."
-├── og-social-card.html       ← Open Graph card for website meta tags (1200×630)
-├── base.css                  ← shared design tokens (colors, fonts, motifs)
-├── render.py                 ← Playwright/Chromium renderer (auto-detects canvas size)
-├── assets/                   ← screenshots, logos used in the graphics
-└── renders/                  ← output JPGs (created when you run render.py)
+├── 01-hero.html                  ← "Let your guests know who to call."
+├── 02-where-guests-land.html     ← "Where your guests land."
+├── 03-live-cards.html            ← "Real photos. Real titles. Real reach."
+├── 04-honest-teams.html          ← "Honest about what's ready — and what isn't."
+├── 05-easy-to-install.html       ← "Easy to install. Hard to outgrow."
+├── og-social-card.html           ← Open Graph card for website meta tags (1200×630)
+├── base.css                      ← shared design tokens (colors, fonts, motifs)
+├── render.py                     ← Playwright/Chromium renderer (auto-detects canvas size)
+├── assets/                       ← screenshots, logos used in the graphics
+└── renders/                      ← output JPGs (created when you run render.py)
 ```
+
+## Carousel narrative
+
+1. **Hero** → product overview + value prop
+   - Uses screenshot: `my-sponsors-card-example.jpg` (desktop sponsor card popup)
+2. **Where guests land** → location/integration — sponsor cards on the SharePoint landing page B2B guests visit first
+   - Uses screenshot: `entrance-landingpage-example.jpg` (full M365 landing page)
+   - Spotlight box highlights the "My Sponsors" section added by the web part
+3. **Live Cards** → detail features (live data from Microsoft Graph)
+   - Uses screenshots: `my-sponsors-card-example.jpg` + `my-sponsors-card-example-mobile.jpg`
+4. **Honest Teams Status** → unique differentiator (no broken buttons)
+   - Uses screenshot: `my-sponsors-noteams-example.jpg` (Teams onboarding warning)
+5. **Easy to install. Hard to outgrow.** → deployment story + architectural depth
+   - Uses screenshots: `my-sponsors-setup-wizard.jpg` (Demo Mode setup) + `my-sponsor-preferences.jpg` (granular settings)
+   - Trust pillars (right column) cover what isn't visible in screenshots: tenant boundary, zero-trust, no telemetry, source-available
+
+The OG card condenses the whole story into one frame: hero headline + sponsor
+card visual + the 3 strongest trust badges + URL.
 
 ## How the graphics are built
 
@@ -47,6 +66,24 @@ is missing, it falls back to **1366×768** (AppSource carousel format).
 The 5 carousel files don't need this tag — they use the default. The OG card
 sets it to **1200×630**.
 
+## Available screenshots in `assets/`
+
+| File | Use case | Aspect |
+|------|----------|--------|
+| `entrance-landingpage-example.jpg` | Full M365 landing page with sponsors at bottom | 16:10 landscape |
+| `my-sponsors-card-example.jpg` | Desktop sponsor card popup with contact details | landscape |
+| `my-sponsors-card-example-mobile.jpg` | Mobile sponsor card with map | portrait |
+| `my-sponsors-noteams-example.jpg` | "Teams not set up yet" warning state | landscape |
+| `my-sponsor-preferences.jpg` | Web part settings/admin panel | very tall portrait (0.35) |
+| `my-sponsors-setup-wizard.jpg` | Setup wizard with Demo Mode option | landscape (1.24) |
+| `my-sponsors-editor-preview.jpg` | SharePoint editor view with expanded card | near-square (1.15) |
+| `logo.svg` | Full Guest Sponsor Info logo (icon + wordmark) | 5.5:1 |
+| `favicon.svg` | Just the brand icon (teal square with sponsors) | 1:1 |
+| `workoho-logo.svg` | Workoho wordmark for "Made by" maker mark | wide |
+
+`my-sponsors-editor-preview.jpg` is currently unused but available if you want
+a screenshot showing the SharePoint editor experience.
+
 ## Editing
 
 ### Change copy / headlines / labels
@@ -70,16 +107,28 @@ All graphics will pick up the change automatically.
 ### Replace a screenshot
 
 Drop a new image into `assets/` and update the corresponding
-`<img src="assets/...">` reference in the HTML file. The screenshots
-currently used:
+`<img src="assets/...">` reference in the HTML file. If you change a
+screenshot's aspect ratio, you may need to adjust the explicit `height:`
+on the containing element (e.g. `.pref-shot`, `.wizard-shot`, `.desktop`)
+so the new image fits cleanly.
 
-- `my-sponsors-card-example.jpg` — desktop sponsor card popup
-  (graphics 1, 3, OG card)
-- `my-sponsors-card-example-mobile.jpg` — mobile sponsor card (graphic 3)
-- `my-sponsors-noteams-example.jpg` — "Teams not set up yet" warning (graphic 4)
-- `entrance-landingpage-example.jpg` — full M365 landing page (reference, unused)
-- `workoho-logo.svg` — maker mark in footer of every graphic
-- `logo.svg` / `favicon.svg` — Guest Sponsor Info brand mark
+### Adjust a spotlight position
+
+Some graphics (e.g. graphic 2) use absolute-positioned spotlight boxes to
+highlight a region inside a screenshot. The position is set as percentage
+of the screenshot's container:
+
+```css
+.spotlight-box {
+  left: 51%;   /* horizontal start, as % of browser frame width */
+  top: 71%;    /* vertical start, as % of browser frame height */
+  width: 46%;  /* width, as % */
+  height: 26%; /* height, as % */
+}
+```
+
+If you swap the screenshot, you'll need to update these percentages to match
+the new image.
 
 ### Add a new graphic at a different size
 
@@ -128,8 +177,8 @@ PIL:
 from PIL import Image
 
 # AppSource carousel — 1366x768
-for f in ['01-hero.jpg', '02-the-gap.jpg', '03-live-cards.jpg',
-          '04-honest-teams.jpg', '05-trust-stack.jpg']:
+for f in ['01-hero.jpg', '02-where-guests-land.jpg', '03-live-cards.jpg',
+          '04-honest-teams.jpg', '05-easy-to-install.jpg']:
     Image.open(f'renders/{f}').resize((1366, 768), Image.LANCZOS).save(
         f'final/{f}', 'JPEG', quality=92, optimize=True, progressive=True)
 
@@ -179,17 +228,3 @@ WhatsApp, Slack/Teams unfurls, and most other platforms in one go.
 - `.maker` — "Made by Workoho" mark
 - `.slide-mark` — slide number + name (carousel only, OG card has no slide mark)
 - `.eyebrow` — uppercase teal label with leading dash, above carousel headlines
-
-## Carousel narrative (AppSource)
-
-1. **Hero** → product overview + value prop
-2. **The Gap** → problem framing (what guests can't see today)
-3. **Live Cards** → core capability (live data from Microsoft Graph)
-4. **Honest Teams Status** → unique differentiator (no broken buttons)
-5. **Trust Stack** → architectural credibility (privacy, source-available)
-
-This sequence is tuned for AppSource's left-to-right carousel — graphic 1
-serves as the dominant header thumbnail.
-
-The OG card condenses the whole story into one frame: hero headline + sponsor
-card visual + the 3 strongest trust badges + URL.

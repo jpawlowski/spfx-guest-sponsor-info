@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>Guest Sponsor Info — Where your guests land</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="base.css">
+  <style>
+    .canvas {
+      background:
+        radial-gradient(circle at 8% 20%, rgba(18, 178, 205, 0.10), transparent 45%),
+        radial-gradient(circle at 95% 95%, rgba(10, 61, 79, 0.08), transparent 50%),
+        linear-gradient(180deg, #FFFFFF 0%, #F4F9FB 100%);
+    }
+
+    .ring-1 {
+      width: 420px;
+      height: 420px;
+      right: -180px;
+      top: -200px;
+      opacity: 0.40;
+    }
+
+    .ring-2 {
+      width: 240px;
+      height: 240px;
+      left: -100px;
+      bottom: -120px;
+      opacity: 0.30;
+      border-color: rgba(10, 61, 79, 0.30);
+    }
+
+    .frame {
+      position: relative;
+      height: 100%;
+      padding: 52px 70px 80px 70px;
+      z-index: 3;
+      display: grid;
+      grid-template-columns: 430px 1fr;
+      gap: 44px;
+      align-items: center;
+    }
+
+    /* LEFT — copy column */
+    .copy {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .eyebrow {
+      margin-bottom: 16px;
+      font-size: 12px;
+    }
+
+    h2 {
+      font-size: 64px;
+      font-weight: 800;
+      line-height: 1.02;
+      letter-spacing: -0.028em;
+      margin-bottom: 22px;
+    }
+
+    h2 .accent {
+      color: var(--teal);
+    }
+
+    .lede {
+      font-size: 17px;
+      line-height: 1.5;
+      margin-bottom: 28px;
+      max-width: 420px;
+    }
+
+    /* Feature list */
+    .features {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 26px;
+    }
+
+    .feat {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .feat .check {
+      flex-shrink: 0;
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      background: var(--teal);
+      color: white;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 1px;
+    }
+
+    .feat .check svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .feat .text {
+      flex: 1;
+    }
+
+    .feat .text strong {
+      display: block;
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 15px;
+      color: var(--ink-deep);
+      line-height: 1.25;
+      margin-bottom: 2px;
+      letter-spacing: -0.01em;
+    }
+
+    .feat .text span {
+      font-size: 13px;
+      color: var(--ink-muted);
+      line-height: 1.4;
+    }
+
+    /* Tech stack pills */
+    .stack {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .stack .tech {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--ink-deep);
+      letter-spacing: -0.005em;
+    }
+
+    .stack .tech svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    /* RIGHT — screenshot column */
+    .visual {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .browser {
+      position: relative;
+      width: 100%;
+      max-width: 640px;
+      overflow: visible;
+    }
+
+    .browser-shell {
+      border-radius: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border-soft);
+      overflow: hidden;
+      box-shadow:
+        0 50px 100px -28px rgba(10, 61, 79, 0.30),
+        0 18px 36px -14px rgba(10, 61, 79, 0.15),
+        0 1px 2px rgba(10, 61, 79, 0.04);
+    }
+
+    .browser .bar {
+      height: 30px;
+      background: linear-gradient(180deg, #F3F7F9, #EAF1F4);
+      border-bottom: 1px solid var(--border-soft);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 14px;
+    }
+
+    .browser .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .browser .dot:nth-child(1) {
+      background: #F47174;
+    }
+
+    .browser .dot:nth-child(2) {
+      background: #F9C04D;
+    }
+
+    .browser .dot:nth-child(3) {
+      background: #57C18A;
+    }
+
+    .browser .url-bar {
+      margin-left: 16px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: #94A8B0;
+      font-weight: 500;
+    }
+
+    .browser .url-bar .seg {
+      color: var(--ink-deep);
+    }
+
+    .browser img {
+      width: 100%;
+      display: block;
+    }
+
+    /* Spotlight on the "My Sponsors" section */
+    .spotlight-box {
+      position: absolute;
+      left: 51%;
+      top: 71%;
+      width: 46%;
+      height: 30%;
+      border: 2.5px solid var(--teal);
+      border-radius: 8px;
+      box-shadow:
+        0 0 0 4px rgba(18, 178, 205, 0.18),
+        0 14px 28px -12px rgba(18, 178, 205, 0.40);
+      pointer-events: none;
+      z-index: 4;
+    }
+
+    /* Small tag attached to top of the spotlight box */
+    .spotlight-tag {
+      position: absolute;
+      top: -13px;
+      left: 14px;
+      background: var(--teal);
+      color: white;
+      padding: 4px 9px 4px 7px;
+      border-radius: 5px;
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 10.5px;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      box-shadow: 0 4px 10px -2px rgba(18, 178, 205, 0.40);
+    }
+
+    .spotlight-tag svg {
+      width: 10px;
+      height: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="canvas">
+    <div class="bg-grid"></div>
+    <div class="dotted-ring ring-1"></div>
+    <div class="dotted-ring ring-2"></div>
+
+    <div class="frame">
+      <!-- LEFT: copy -->
+      <div class="copy">
+        <div class="eyebrow">On the SharePoint landing page</div>
+
+        <h2>Where your guests <span class="accent">land.</span></h2>
+
+        <p class="lede">
+          A "My Sponsors" section integrated directly into your SharePoint landing page —
+          exactly where Microsoft Entra B2B guests arrive after accepting their invitation.
+        </p>
+
+        <div class="features">
+          <div class="feat">
+            <span class="check">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"
+                stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </span>
+            <span class="text">
+              <strong>Drops in as a SharePoint web part</strong>
+              <span>Place anywhere on the page, configure inline, ready in minutes</span>
+            </span>
+          </div>
+          <div class="feat">
+            <span class="check">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"
+                stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </span>
+            <span class="text">
+              <strong>Sourced live from Microsoft Graph</strong>
+              <span>Sponsor assignments, photos, titles &amp; presence — always current</span>
+            </span>
+          </div>
+          <div class="feat">
+            <span class="check">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"
+                stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </span>
+            <span class="text">
+              <strong>One click reveals the full sponsor card</strong>
+              <span>Photo, title, contact, location, backup sponsors — all in context</span>
+            </span>
+          </div>
+        </div>
+
+        <div class="stack">
+          <span class="tech">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <circle cx="12" cy="8" r="4" />
+              <path d="M4 22c0-4 4-7 8-7s8 3 8 7" />
+            </svg>
+            Microsoft Entra B2B
+          </span>
+          <span class="tech">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="14" rx="2" />
+              <path d="M3 9h18" />
+            </svg>
+            SharePoint Online
+          </span>
+          <span class="tech">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20" />
+            </svg>
+            Microsoft Graph
+          </span>
+        </div>
+      </div>
+
+      <!-- RIGHT: screenshot -->
+      <div class="visual">
+        <div class="browser">
+          <div class="browser-shell">
+            <div class="bar">
+              <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+              <span class="url-bar"><span class="seg">contoso.sharepoint.com</span>/sites/entrance</span>
+            </div>
+            <img src="assets/entrance-landingpage-example.jpg"
+              alt="SharePoint guest landing page with My Sponsors section">
+          </div>
+
+          <span class="spotlight-box">
+            <span class="spotlight-tag">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"
+                stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              Added by web part
+            </span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="maker">
+      <span class="label">Made by</span>
+      <img class="workoho-mark" src="assets/workoho-logo.svg" alt="Workoho">
+    </div>
+    <div class="slide-mark">
+      <span class="num">02</span>
+      <span class="sep"></span>
+      <span>Where guests land</span>
+    </div>
+  </div>
+</body>
+
+</html>
