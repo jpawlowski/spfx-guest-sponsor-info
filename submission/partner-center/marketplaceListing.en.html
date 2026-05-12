@@ -1,12 +1,14 @@
 <p><strong>Guest Sponsor Info for Microsoft Entra B2B</strong> is a SharePoint Online web part for organizations that
-  use a dedicated guest landing page in their resource tenant. On that landing page, SharePoint can provide the
+  use a dedicated guest landing page in their resource tenant, meaning the Microsoft 365 tenant that invited guests
+  access. On that landing page, SharePoint can provide the
   surrounding orientation with welcome text, curated links, tenant-pinned Microsoft 365 entry points, and self-service
   account actions. Guest Sponsor Info provides the missing human context: it answers <strong>who can help me
     here?</strong> by showing the sponsor or backup sponsor assigned to the signed-in guest account and giving guests a
   clear contact path from day one.</p>
 
 <p>This solution is intended for organizations that manage Microsoft Entra B2B guest onboarding through a dedicated
-  identity and access management process and operate a SharePoint Online landing page for external users in the resource
+  identity and access management process and operate a SharePoint Online landing page for external users in that
+  resource
   tenant. The primary end users are the guest users themselves, such as partners, suppliers, customers, and project
   guests. The web part helps those guests understand who their internal sponsor is, how to contact that person, and
   where to start in the tenant.</p>
@@ -34,27 +36,52 @@
     access lifecycle workflows. It displays and uses sponsor data that already exists in your Microsoft 365 tenant.</li>
 </ul>
 
-<p><strong>Requirements and conditions</strong></p>
+<p><strong>Requirements</strong></p>
+
+<p><strong>Requirements for the web part</strong></p>
 <ul>
-  <li>Requires SharePoint Online, Microsoft Entra B2B guest accounts, and one or more sponsors already assigned to those
-    guest accounts.</li>
-  <li>Production use requires the companion <strong>Guest Sponsor API</strong>, deployed in your Azure subscription as
-    an Azure Function.</li>
-  <li>The web part itself does not request Microsoft Graph permissions. Graph data is read server-side by the Azure
-    Function by using its managed identity.</li>
-  <li>The landing page site must already allow guest access.</li>
-  <li>For SharePoint Online guest access, administrators must ensure that guest users can load the web part assets. In
-    typical marketplace-based tenant deployments, the recommended approach is to enable the Office 365 Public CDN for
-    the Tenant App Catalog assets.</li>
-  <li>Live Microsoft Teams presence requires the optional Microsoft Graph permission <strong>Presence.Read.All</strong>
-    on the Azure Function.</li>
+  <li>Requires SharePoint Online and a guest-accessible landing page in the resource tenant that guests access.</li>
+  <li>Page editors always get a realistic preview in SharePoint edit mode, even without guest sign-in or live sponsor
+    data.</li>
+  <li>The web part can also be tested on the published page in its built-in demo mode. The first-run setup wizard
+    proposes this option by default and turns it on when selected, so sample sponsors can be shown on the live page
+    without the Guest Sponsor API. After that initial setup, public demo mode can still be turned off or on again in
+    the web part settings.</li>
+  <li>The app is delivered through the tenant App Catalog, but it must be added manually to the specific SharePoint
+    site where you want to use it. It is not deployed automatically across the entire tenant. This usually fits the
+    intended use on selected guest landing page sites.</li>
+  <li>For guest-facing use, administrators must also ensure that guest users can load the web part files. In typical
+    marketplace-based deployments, the recommended approach is to enable the Office 365 Public CDN for the app files
+    stored in the Tenant App Catalog. If that is not suitable for your environment, the setup guide below describes
+    alternative rollout options.</li>
+  <li>On published pages, the web part is shown only to guest users by default. Internal users in that same resource
+    tenant do not see it, by design, because the web part is intended to show sponsor contacts for guest accounts
+    rather than manager information for employees. Public demo mode is a separate optional testing setting.</li>
+</ul>
+
+<p><strong>Additional requirements for live sponsor data in production</strong></p>
+<ul>
+  <li>Showing real sponsor data in production requires Microsoft Entra B2B guest accounts with one or more sponsors
+    already assigned, plus the separately provided, source-available <strong>Guest Sponsor API</strong>, which runs as
+    an Azure Function in your Azure subscription.</li>
+  <li>The recommended production path is the built-in deployment wizard PowerShell script, which provides a guided,
+    text-based deployment flow.
+    The simplest option is a single PowerShell command in Azure Cloud Shell, so no local installation is required.
+    Local setup on Windows, macOS, and Linux is also supported.</li>
+  <li>Deploying the Guest Sponsor API requires an Azure subscription and administrator permissions in Azure and
+    Microsoft Entra. For the initial deployment, the Azure requirement is Owner permissions at subscription scope.
+    On the Microsoft Entra side, typical setups require Cloud Application Administrator plus Privileged Role
+    Administrator.</li>
+  <li>The web part itself does not request Microsoft Graph permissions. Graph data is read server-side through the
+    Guest Sponsor API using its managed identity.</li>
+  <li>Live Microsoft Teams presence is optional and requires an additional Microsoft Graph permission on the Guest
+    Sponsor API. Without it, sponsor cards are still shown, but without presence indicators.</li>
   <li>Microsoft Teams chat and call links require the guest to already be added to at least one Microsoft Team in the
-    host tenant. If Microsoft Teams is not yet available for that guest, the solution shows a clear notice instead of a
-    broken action.</li>
-  <li>Inline map preview requires an Azure Maps key. Without that key, the solution can still show an external map link.
-  </li>
-  <li>On published pages, the web part is shown only to guest users. In edit mode, page editors see a realistic preview
-    even if they are not guest users.</li>
+    resource tenant. If Microsoft Teams is not yet available for that guest, the solution shows a clear notice instead
+    of a broken action.</li>
+  <li>Inline map preview requires an Azure Maps key. In the default Guest Sponsor API deployment path, an Azure Maps
+    account is created for you, and you only need to copy its key into the web part settings. Without a key, the
+    solution can still show an external map link.</li>
 </ul>
 
 <p><strong>Get started, help, and contact</strong></p>
