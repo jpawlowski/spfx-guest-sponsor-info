@@ -1,0 +1,75 @@
+<p><strong>Guest Sponsor Info for Microsoft Entra B2B</strong> is a SharePoint Online web part for organizations that
+  use a dedicated guest landing page in their resource tenant. On that landing page, SharePoint can provide the
+  surrounding orientation with welcome text, curated links, tenant-pinned Microsoft 365 entry points, and self-service
+  account actions. Guest Sponsor Info provides the missing human context: it answers <strong>who can help me
+    here?</strong> by showing the sponsor or backup sponsor assigned to the signed-in guest account and giving guests a
+  clear contact path from day one.</p>
+
+<p>This solution is intended for organizations that manage Microsoft Entra B2B guest onboarding through a dedicated
+  identity and access management process and operate a SharePoint Online landing page for external users in the resource
+  tenant. The primary end users are the guest users themselves, such as partners, suppliers, customers, and project
+  guests. The web part helps those guests understand who their internal sponsor is, how to contact that person, and
+  where to start in the tenant.</p>
+
+<ul>
+  <li>Shows assigned sponsors as configurable cards with profile photo or initials fallback, display name, and job
+    title.</li>
+  <li>Opens a rich contact panel with email, work phone, mobile, office address, manager details, and optional map
+    support.</li>
+  <li>Can show live <strong>Microsoft Teams presence</strong> and provides direct links for <strong>Microsoft
+      Teams</strong> chat and audio call, plus email.</li>
+  <li>Supports full, compact, and automatic layouts for different SharePoint page zones.</li>
+  <li>Supports multiple sponsors, fallback sponsors, and filtering of unavailable accounts so guests keep seeing a
+    meaningful contact path.</li>
+  <li>Includes preview mode for page authors and is available in 17 languages.</li>
+</ul>
+
+<p><strong>What this solution does and does not include</strong></p>
+<ul>
+  <li>This solution is the sponsor-visibility component of a SharePoint guest landing page. The surrounding landing-page
+    elements, such as welcome text, SharePoint Quick Links, tenant-pinned Microsoft 365 entry points, account
+    self-service links, news, and audience-targeted page content, are configured separately with standard SharePoint
+    features.</li>
+  <li>The solution does not create guest accounts, assign sponsors, add guests to Microsoft Teams, or run external
+    access lifecycle workflows. It displays and uses sponsor data that already exists in your Microsoft 365 tenant.</li>
+</ul>
+
+<p><strong>Requirements and conditions</strong></p>
+<ul>
+  <li>Requires SharePoint Online, Microsoft Entra B2B guest accounts, and one or more sponsors already assigned to those
+    guest accounts.</li>
+  <li>Production use requires the companion <strong>Guest Sponsor API</strong>, deployed in your Azure subscription as
+    an Azure Function.</li>
+  <li>The web part itself does not request Microsoft Graph permissions. Graph data is read server-side by the Azure
+    Function by using its managed identity.</li>
+  <li>The landing page site must already allow guest access.</li>
+  <li>For SharePoint Online guest access, administrators must ensure that guest users can load the web part assets. In
+    typical marketplace-based tenant deployments, the recommended approach is to enable the Office 365 Public CDN for
+    the Tenant App Catalog assets.</li>
+  <li>Live Microsoft Teams presence requires the optional Microsoft Graph permission <strong>Presence.Read.All</strong>
+    on the Azure Function.</li>
+  <li>Microsoft Teams chat and call links require the guest to already be added to at least one Microsoft Team in the
+    host tenant. If Microsoft Teams is not yet available for that guest, the solution shows a clear notice instead of a
+    broken action.</li>
+  <li>Inline map preview requires an Azure Maps key. Without that key, the solution can still show an external map link.
+  </li>
+  <li>On published pages, the web part is shown only to guest users. In edit mode, page editors see a realistic preview
+    even if they are not guest users.</li>
+</ul>
+
+<p><strong>Get started, help, and contact</strong></p>
+<p>New to the solution? Start with the setup guide. Need rollout help or have questions? Use the help or contact links
+  below.</p>
+<p>
+  Get started: <a
+    href="https://guest-sponsor-info.workoho.cloud/en/setup/">https://guest-sponsor-info.workoho.cloud/en/setup/</a><br>
+  Landing Page Ideas: <a
+    href="https://guest-sponsor-info.workoho.cloud/en/landing-page-ideas/">https://guest-sponsor-info.workoho.cloud/en/landing-page-ideas/</a><br>
+  Help / Support: <a
+    href="https://guest-sponsor-info.workoho.cloud/en/support/">https://guest-sponsor-info.workoho.cloud/en/support/</a><br>
+  Contact us: <a href="https://workoho.com/kontakt/">https://workoho.com/kontakt/</a><br>
+  Privacy: <a
+    href="https://guest-sponsor-info.workoho.cloud/en/privacy/">https://guest-sponsor-info.workoho.cloud/en/privacy/</a><br>
+  Terms: <a
+    href="https://guest-sponsor-info.workoho.cloud/en/terms/">https://guest-sponsor-info.workoho.cloud/en/terms/</a>
+</p>
