@@ -35,6 +35,16 @@ Guest Sponsor Info setup has three phases:
 > through Phases 1 and 2 before (or alongside) running the wizard, then
 > complete Phase 3 inside it.
 
+<figure class="doc-screenshot">
+  <img src="{{ '/assets/images/my-sponsors-setup-wizard.jpg' | relative_url }}"
+    alt="Setup Wizard step showing the choice between Guest Sponsor API and Demo Mode."
+    class="doc-screenshot__img" data-zoomable>
+  <figcaption class="doc-screenshot__caption">
+    The built-in Setup Wizard lets page editors start directly with the
+    Guest Sponsor API or explore the web part in Demo Mode first.
+  </figcaption>
+</figure>
+
 ### Before you begin
 
 This guide assumes a dedicated **SharePoint landing page** as the first
@@ -446,6 +456,24 @@ or downstream links. The landing page works best when it first answers the two
 questions MyApps and Teams usually do not answer on their own: who the guest's
 sponsors are, and how they can reach them right now.
 
+In edit mode, the web part can already render realistic mock sponsors so you
+can validate placement, spacing, and expanded card content before the Azure
+side is fully connected. If you enable public demo mode in the property pane,
+the live page can also show simulated sponsors for regular visitors,
+including internal users and guests, so the web part can be tested without
+staying in edit mode or using a guest account.
+
+<figure class="doc-screenshot">
+  <img src="{{ '/assets/images/my-sponsors-editor-preview.jpg' | relative_url }}"
+    alt="SharePoint edit mode showing the web part with mock sponsors and an expanded sponsor card."
+    class="doc-screenshot__img" data-zoomable>
+  <figcaption class="doc-screenshot__caption">
+    Editor Preview Mode makes it possible to place the web part, inspect the
+    card layout, and review contact details before any guest signs in.
+    Public demo mode can then expose simulated sponsors on the live page.
+  </figcaption>
+</figure>
+
 ### Connect the web part to the API
 
 If the **Setup Wizard** is still pending, it opens automatically in edit mode.
@@ -462,6 +490,25 @@ select **Guest Sponsor API** in the wizard or enter the values directly in the
 The wizard validates the format of both values before saving. If the wizard no
 longer opens automatically, fill in the same values in the **Guest Sponsor API**
 group of the property pane.
+
+### Adjust what guests can see
+
+Beyond the API connection, the property pane includes many more options than
+this screenshot shows. The visible sections illustrate how admins can tune
+sponsor eligibility, notifications, display, and contact details, and enable
+public demo mode on the live page to match the tenant's data quality and
+decide how much visitors should see on the landing page.
+
+<figure class="doc-screenshot doc-screenshot--narrow">
+  <img src="{{ '/assets/images/my-sponsor-preferences.jpg' | relative_url }}"
+    alt="Web part property pane showing the visible Settings,
+    Sponsor Eligibility, Guest Notifications, Display, and Contact sections."
+    class="doc-screenshot__img" data-zoomable>
+  <figcaption class="doc-screenshot__caption">
+    This example view shows part of the property pane, including the public
+    demo mode toggle, sponsor filtering, and guest-facing contact settings.
+  </figcaption>
+</figure>
 
 ### Run the Guest Accessibility check
 

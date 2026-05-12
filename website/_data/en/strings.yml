@@ -107,6 +107,20 @@ features_page:
       - Inline map preview via Azure Maps
       - Manager name, title, and department
       - Every field individually toggleable by admins
+  editor_preview:
+    title: Editor Preview Mode
+    description: >-
+      SharePoint page editors can place and refine the web part before the
+      Azure side is connected or any guest signs in. In edit mode, the web
+      part renders realistic mock sponsors so spacing, expanded cards, and
+      surrounding page composition can be reviewed safely. The same settings
+      can also enable public demo mode on the live page so internal users and
+      guests can try the web part without edit mode or a guest account.
+    highlights:
+      - Mock sponsor cards directly in SharePoint edit mode
+      - Optional public demo mode on the live page for all visitors
+      - Expanded card preview with contact and manager sections
+      - No Graph calls and no guest account required
   onboarding:
     title: Teams Onboarding Status
     description: >-
@@ -175,12 +189,6 @@ features_page:
         permissions. EasyAuth validates each request before it reaches the
         function, and the Managed Identity handles all Graph calls on their
         behalf.
-    editor:
-      title: Editor Preview Mode
-      description: >-
-        Page editors see realistic demo cards with mock data — no Graph
-        calls and no guest account required. Design the landing page before
-        any guests are invited.
     resilience:
       title: Built-in Resilience
       description: >-
@@ -190,9 +198,10 @@ features_page:
     permissions:
       title: Try Before You Commit
       description: >-
-        Demo Mode lets you place the web part on a page and see it working
-        with realistic mock sponsor cards before you set up any Azure
-        infrastructure. No API, no guests, no commitment required.
+        Demo Mode can expose realistic mock sponsor cards on the live page
+        before you set up any Azure infrastructure. Test with internal users,
+        guests, or other stakeholders first — no API, no guest account, no
+        commitment required.
     guest_only:
       title: Silent for Internal Users
       description: >-

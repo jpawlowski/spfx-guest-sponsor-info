@@ -8,6 +8,8 @@ layout: default
 {%- assign screenshot_caption = 'Echte Sponsor-Detailansicht mit Kontakt- und Manager-Kontext.' -%}
 {%- assign contact_screenshot_alt = 'Mobiler Screenshot der Sponsorenkarte mit Kontaktdetails und Karte.' -%}
 {%- assign contact_screenshot_caption = 'Kontaktdetails und Karte in der mobilen Ansicht.' -%}
+{%- assign editor_screenshot_alt = 'Screenshot des Web Parts im SharePoint-Bearbeitungsmodus mit Demo-Sponsoren und
+geöffneter Sponsorkarte.' -%}
 {%- assign onboarding_screenshot_alt = 'Screenshot des Guest Sponsor Info Web Parts mit Warnhinweis, dass Microsoft
 Teams für den Gast noch nicht eingerichtet ist.' -%}
 {%- assign onboarding_screenshot_caption = 'Echter Warnhinweis, wenn Teams im Zielmandanten für den Gast noch nicht
@@ -17,6 +19,8 @@ bereit ist.' -%}
 {%- assign screenshot_caption = 'Actual sponsor detail view with contact and manager context.' -%}
 {%- assign contact_screenshot_alt = 'Mobile screenshot of the sponsor card showing contact details and a map.' -%}
 {%- assign contact_screenshot_caption = 'Contact details and map in the mobile view.' -%}
+{%- assign editor_screenshot_alt = 'Screenshot of the web part in SharePoint edit mode with mock sponsors and an
+expanded sponsor card.' -%}
 {%- assign onboarding_screenshot_alt = 'Screenshot of the Guest Sponsor Info web part showing that Microsoft Teams is
 not set up yet for the guest.' -%}
 {%- assign onboarding_screenshot_caption = 'Actual warning state when Teams is not ready yet for the guest in the
@@ -47,14 +51,29 @@ resource tenant.' -%}
             <div class="fp-row fp-row--reverse">
                 <div class="fp-media">
                     <img src="{{ '/assets/images/my-sponsors-card-example-mobile.jpg' | relative_url }}"
-                        alt="{{ contact_screenshot_alt }}" class="fp-shot" width="1320" height="2159"
-                        data-zoomable>
+                        alt="{{ contact_screenshot_alt }}" class="fp-shot" width="1320" height="2159" data-zoomable>
                 </div>
                 <div class="fp-text">
                     <h2 id="contact-panel">{{ f.contact_panel.title }}</h2>
                     <p>{{ f.contact_panel.description }}</p>
                     <ul class="fp-highlights">
                         {%- for item in f.contact_panel.highlights %}
+                        <li>{{ item }}</li>
+                        {%- endfor %}
+                    </ul>
+                </div>
+            </div>
+
+            <div class="fp-row">
+                <div class="fp-media fp-media--wide">
+                    <img src="{{ '/assets/images/my-sponsors-editor-preview.jpg' | relative_url }}"
+                        alt="{{ editor_screenshot_alt }}" class="fp-shot" width="1757" height="1530" data-zoomable>
+                </div>
+                <div class="fp-text">
+                    <h2 id="editor-preview">{{ f.editor_preview.title }}</h2>
+                    <p>{{ f.editor_preview.description }}</p>
+                    <ul class="fp-highlights">
+                        {%- for item in f.editor_preview.highlights %}
                         <li>{{ item }}</li>
                         {%- endfor %}
                     </ul>
@@ -89,8 +108,7 @@ resource tenant.' -%}
             <div class="fp-row">
                 <div class="fp-media fp-media--wide">
                     <img src="{{ '/assets/images/my-sponsors-noteams-example.jpg' | relative_url }}"
-                        alt="{{ onboarding_screenshot_alt }}" class="fp-shot" width="1100" height="650"
-                        data-zoomable>
+                        alt="{{ onboarding_screenshot_alt }}" class="fp-shot" width="1100" height="650" data-zoomable>
                 </div>
                 <div class="fp-text">
                     <h2 id="onboarding">{{ f.onboarding.title }}</h2>
@@ -139,10 +157,6 @@ resource tenant.' -%}
             <div class="fp-extra-card">
                 <h3>{{ f.more.api.title }}</h3>
                 <p>{{ f.more.api.description }}</p>
-            </div>
-            <div class="fp-extra-card">
-                <h3>{{ f.more.editor.title }}</h3>
-                <p>{{ f.more.editor.description }}</p>
             </div>
             <div class="fp-extra-card">
                 <h3>{{ f.more.resilience.title }}</h3>

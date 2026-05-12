@@ -114,6 +114,22 @@ features_page:
       - Inline-Kartenvorschau über Azure Maps
       - Name, Titel und Abteilung des Vorgesetzten
       - Jedes Feld einzeln durch Admins ein-/ausschaltbar
+  editor_preview:
+    title: Vorschaumodus für Editoren
+    description: >-
+      SharePoint-Seitenbearbeiter können das Web Part platzieren und
+      verfeinern, bevor die Azure-Seite verbunden ist oder sich echte Gäste
+      anmelden. Im Bearbeitungsmodus rendert das Web Part realistische
+      Demo-Sponsoren, damit Abstände, geöffnete Karten und das Zusammenspiel
+      mit dem restlichen Seitenlayout sicher geprüft werden können. Über
+      dieselben Einstellungen lässt sich zusätzlich der öffentliche Demo-Modus
+      auf der Live-Seite aktivieren, damit interne Benutzer und Gäste das Web
+      Part ohne Bearbeitungsmodus und ohne Gastkonto ausprobieren können.
+    highlights:
+      - Demo-Sponsoren direkt im SharePoint-Bearbeitungsmodus
+      - Optionaler öffentlicher Demo-Modus auf der Live-Seite für alle Besucher
+      - Geöffnete Kartenansicht mit Kontakt- und Manager-Bereich
+      - Keine Graph-Aufrufe und kein Gastkonto erforderlich
   onboarding:
     title: Teams-Onboarding-Status
     description: >-
@@ -189,12 +205,6 @@ features_page:
         aber keinerlei Verzeichnisberechtigungen. EasyAuth prüft jede
         Anfrage vor der Function, und die Managed Identity übernimmt alle
         Graph-Aufrufe.
-    editor:
-      title: Vorschaumodus für Editoren
-      description: >-
-        Seitenbearbeiter sehen realistische Demo-Karten mit Beispieldaten
-        — keine Graph-Aufrufe und kein Gastkonto erforderlich. Gestalten
-        Sie das Layout, bevor Gäste eingeladen wurden.
     resilience:
       title: Eingebaute Resilienz
       description: >-
@@ -205,10 +215,10 @@ features_page:
     permissions:
       title: Testen ohne Verpflichtung
       description: >-
-        Der Demo-Modus zeigt das Web Part mit realistischen
-        Beispiel-Sponsorkarten — ganz ohne Azure-Infrastruktur. Kein API,
-        kein Gast, kein Setup erforderlich. Ideal zum Ausprobieren vor dem
-        eigentlichen Rollout.
+        Der Demo-Modus kann auf der Live-Seite realistische
+        Beispiel-Sponsorkarten zeigen, noch bevor Azure-Infrastruktur
+        eingerichtet ist. Erst intern, mit Gästen oder anderen Beteiligten
+        testen — ganz ohne API, Gastkonto oder Verpflichtung.
     guest_only:
       title: Unsichtbar für interne Benutzer
       description: >-

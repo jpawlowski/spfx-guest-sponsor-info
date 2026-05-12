@@ -547,6 +547,38 @@ img[data-zoomable] {
   outline-offset: 2px;
 }
 
+/* Screenshot blocks inside long-form doc pages */
+.doc-screenshot {
+  max-width: min(100%, 42rem);
+  margin: 2rem 0;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.doc-screenshot--narrow {
+  max-width: min(100%, 26rem);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.doc-screenshot__img {
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+}
+
+.doc-screenshot__caption {
+  margin-top: 0.5rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+  text-align: center;
+}
+
 /* Screenshot pair (desktop + mobile side by side, used in doc pages) */
 .screenshot-pair {
   display: flex;

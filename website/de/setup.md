@@ -36,6 +36,16 @@ Das Setup von Guest Sponsor Info hat drei Phasen:
 > oder parallel zum Ausführen des Assistenten, und schließen Sie Phase 3
 > dann direkt im Assistenten ab.
 
+<figure class="doc-screenshot">
+  <img src="{{ '/assets/images/my-sponsors-setup-wizard.jpg' | relative_url }}"
+    alt="Schritt im Setup-Assistenten mit der Auswahl zwischen Guest Sponsor API und Demo-Modus."
+    class="doc-screenshot__img" data-zoomable>
+  <figcaption class="doc-screenshot__caption">
+    Der integrierte Setup-Assistent lässt Seitenbearbeiter direkt mit der
+    Guest Sponsor API starten oder das Web Part zunächst im Demo-Modus testen.
+  </figcaption>
+</figure>
+
 ### Bevor Sie beginnen
 
 Diese Anleitung geht von einer dedizierten **SharePoint-Landingpage** als
@@ -470,6 +480,26 @@ nachgelagerten Links. Die Landingpage funktioniert am besten, wenn sie zuerst
 die zwei Fragen beantwortet, die MyApps und Teams allein meist nicht klären:
 wer die Sponsoren des Gasts sind und wie er sie sofort erreichen kann.
 
+Im Bearbeitungsmodus kann das Web Part bereits realistische Demo-Sponsoren
+anzeigen. So lassen sich Platzierung, Abstände und geöffnete Karten prüfen,
+bevor die Azure-Seite vollständig verbunden ist. Wenn Sie im
+Eigenschaftenbereich zusätzlich den öffentlichen Demo-Modus aktivieren,
+zeigt die Live-Seite simulierte Sponsoren auch für normale Besucher,
+einschließlich interner Benutzer und Gäste. So lässt sich das Web Part ohne
+Bearbeitungsmodus und ohne Gastkonto ausprobieren.
+
+<figure class="doc-screenshot">
+  <img src="{{ '/assets/images/my-sponsors-editor-preview.jpg' | relative_url }}"
+    alt="SharePoint-Bearbeitungsmodus mit dem Web Part, Demo-Sponsoren und geöffneter Sponsorkarte."
+    class="doc-screenshot__img" data-zoomable>
+  <figcaption class="doc-screenshot__caption">
+    Der Vorschaumodus für Editoren hilft dabei, das Web Part auf der Seite zu
+    platzieren und die Kartenansicht zu prüfen, bevor sich echte Gäste anmelden.
+    Der öffentliche Demo-Modus kann danach simulierte Sponsoren auf der
+    Live-Seite sichtbar machen.
+  </figcaption>
+</figure>
+
 ### Web Part mit der API verbinden
 
 Solange der **Setup-Assistent** noch nicht abgeschlossen wurde, öffnet er sich
@@ -487,6 +517,27 @@ direkt in der Eigenschaftsgruppe **Guest Sponsor API** ein:
 Der Assistent prüft das Format beider Werte vor dem Speichern. Falls er sich
 nicht mehr automatisch öffnet, tragen Sie dieselben Werte direkt in der
 Eigenschaftsgruppe **Guest Sponsor API** im Eigenschaftenbereich ein.
+
+### Festlegen, was Gäste sehen sollen
+
+Zusätzlich zur API-Verbindung umfasst der Eigenschaftenbereich deutlich mehr
+Optionen, als auf diesem Screenshot sichtbar sind. Die eingeblendeten Bereiche
+zeigen exemplarisch, wie Admins Sponsor-Eignung, Benachrichtigungen, Anzeige
+und Kontaktdetails an die Datenqualität im Tenant anpassen und den
+öffentlichen Demo-Modus auf der Live-Seite aktivieren können. So lässt sich
+steuern, wie viel Besucher auf der Landingpage sehen.
+
+<figure class="doc-screenshot doc-screenshot--narrow">
+  <img src="{{ '/assets/images/my-sponsor-preferences.jpg' | relative_url }}"
+    alt="Eigenschaftenbereich des Web Parts mit den sichtbaren Bereichen
+    Settings, Sponsor Eligibility, Guest Notifications, Display und Contact."
+    class="doc-screenshot__img" data-zoomable>
+  <figcaption class="doc-screenshot__caption">
+    Diese Beispielansicht zeigt nur einen Ausschnitt des Eigenschaftenbereichs,
+    unter anderem mit Schalter für den öffentlichen Demo-Modus,
+    Sponsor-Filtern und gastsichtigen Kontaktdetails.
+  </figcaption>
+</figure>
 
 ### Gastzugänglichkeit prüfen
 
