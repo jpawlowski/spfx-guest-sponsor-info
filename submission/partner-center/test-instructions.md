@@ -1,8 +1,8 @@
 # Test Instructions — Guest Sponsor Info (Microsoft Marketplace / Partner Center)
 
-> **Version these instructions apply to:** 1.2.2\
-> **Solution package version:** 1.2.2.0\
-> **Last updated:** 2026-05-06
+> **Version these instructions apply to:** 1.2.3\
+> **Solution package version:** 1.2.3.0\
+> **Last updated:** 2026-05-13
 
 ---
 
@@ -15,8 +15,17 @@ SharePoint landing page.
 The live page behavior is intentionally simple:
 
 - Guest users see their sponsor cards.
-- Internal users see nothing in view mode while public demo mode is off.
+- **Internal (member) users see nothing in view mode when public demo mode is
+   off.** This is by design: a tenant member is not a guest and has no Entra
+   sponsors assigned. The web part has nothing to display, so it renders
+   nothing. A blank web part area for a non-guest account is correct behavior,
+   not a defect.
 - Page authors see a live preview with mock sponsor cards in edit mode.
+
+The **public demo mode** option exists so that page authors and admins can
+verify the full visual layout without needing an actual guest account or a
+fully configured Azure Function. It is intentionally off in production so
+real guests see real data and internal users see nothing.
 
 ---
 
@@ -152,8 +161,10 @@ Expected result:
 Expected result:
 
 - Because public demo mode is off, the web part does **not** render for this
-   internal user.
+   internal user. **This blank state is correct and intentional.**
 - No sponsor cards, placeholder, or error message are shown.
+- The tenant member account has no Entra B2B sponsors — the web part correctly
+   renders nothing rather than showing an error or placeholder.
 
 ### 3. Edit Mode Preview And Property Pane
 
@@ -212,6 +223,29 @@ Expected result:
 - Toggle **Show manager** off and on.
 - Expected result: the manager section disappears and reappears.
 
+**Sponsor Eligibility**
+
+- Open the **Sponsor Eligibility** group (collapsed by default).
+- Note the **Sponsor must be** dropdown (default: **Teams licensed**) and the
+   **Require user mailbox type** checkbox.
+- Change **Sponsor must be** from **Teams licensed** to **Licensed (any active
+   license)** and back to **Teams licensed**.
+- Expected result: the dropdown updates. The edit-mode mock preview does not
+   change — this is correct. The license filter applies to the real Azure
+   Function API call, not to mock data. Its effect is validated indirectly by
+   step 1: all sponsor cards that appeared there satisfy the Teams license
+   requirement.
+
+**Guest Sponsor API**
+
+- Open the **Guest Sponsor API** group (collapsed by default).
+- Note the **Base URL** and **Application (client) ID** fields.
+- Expected result: both fields are pre-filled with the values for the supplied
+   test environment. Do **not** change these values.
+- The successful loading of real sponsor cards in step 1 (Real Guest Experience)
+   is the proof that this configuration is correct and the API is reachable.
+   No further action is needed here.
+
 ---
 
 ## Public Demo Mode Check
@@ -227,7 +261,16 @@ Expected result:
    page.
 - This validates the public demo mode behavior for internal users.
 
-1. Turn public demo mode off again after the check.
+1. In edit mode, open the property pane, disable **Enable public demo mode
+   for internal users**, and save or publish the page.
+
+Expected result after turning off demo mode:
+
+- The page returns to view mode and the web part area is **blank** for the
+   Internal Editor account. **This is correct and expected.** Turning off demo
+   mode restores the normal behavior described in step 2: tenant members are
+   not guests, have no sponsors, and the web part correctly renders nothing.
+   This blank state is not a bug.
 
 ---
 
