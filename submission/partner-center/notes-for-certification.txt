@@ -2,6 +2,12 @@ Use the supplied environment and accounts below.
 For the full step-by-step procedure, see the attached detailed test
 instructions document.
 
+Important behavior note: this web part is intended for guest users.
+For the Internal Editor account in normal view mode, the web part is expected
+to render nothing when public demo mode is off. This blank state is correct
+and not a defect; the Internal Editor account is for edit-mode preview,
+property-pane validation, and the new-instance setup wizard.
+
 Before each sign-in flow, close all existing InPrivate/Incognito windows so the
 next test starts with a clean session.
 
@@ -21,7 +27,7 @@ Requested checks
 1. Primary check: sign in as the External Guest account at the SharePoint site
    verify the real guest experience.
 2. Secondary check: sign in as the Internal Editor account and verify that the
-   web part is hidden in view mode, then open Edit mode and verify the preview
-   and representative property-pane settings.
+   web part is hidden in view mode. A blank area is expected. Then open Edit
+   mode and verify the preview and representative property-pane settings.
 3. Additional check: on a new page, add a new instance of the already deployed
    web part and complete the setup wizard in Explore in Demo Mode.
