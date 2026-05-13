@@ -252,43 +252,132 @@ prepare_direct_azd_entra_inputs() {
   fi
 }
 
-# ── 0a. Check Azure RBAC permission ─────────────────────────────────────────
-# Contributor (or Owner) on the subscription is needed to register resource
-# providers and to deploy Bicep resources.  The check is informational — a
-# missing role does not abort the script, but it surfaces the gap early so
-# the operator can activate a PIM role or request access before the actual
-# deployment runs.
+# ── 0a. Check Azure RBAC permissions ────────────────────────────────────────
+# Deployments need two Azure permission buckets:
+# - resource deployment rights (Contributor or Owner)
+# - role-assignment rights because functionapp.bicep deploys storage RBAC
+# The check is informational — a missing role does not abort the script, but it
+# surfaces the gap early so the operator can activate PIM or request access
+# before the actual deployment runs.
+get_relevant_azure_roles_for_scope() {
+  local scope="$1"
+  local assignee_object_id="$2"
+
+  az role assignment list \
+    --scope "${scope}" \
+    --assignee "${assignee_object_id}" \
+    --include-inherited \
+    --query "[?contains(['Owner','Contributor','User Access Administrator','Role Based Access Control Administrator'], roleDefinitionName)].roleDefinitionName" \
+    -o tsv 2>/dev/null || true
+}
+
+has_any_azure_role() {
+  local role_names="$1"
+  shift
+
+  local candidate_role=''
+  for candidate_role in "$@"; do
+    if printf '%s\n' "${role_names}" | grep -Fxq -- "${candidate_role}"; then
+      return 0
+    fi
+  done
+
+  return 1
+}
+
 echo ''
-echo 'Checking Azure role assignment...'
+echo 'Checking Azure RBAC permissions...'
 # Use the env var set by azd (from the .env file) with fallback to parsing azd env.
 SUBSCRIPTION_ID="${AZURE_SUBSCRIPTION_ID:-$(azd env get-values 2>/dev/null | grep '^AZURE_SUBSCRIPTION_ID=' | cut -d'=' -f2 | tr -d '"' || true)}"
+RESOURCE_GROUP_NAME="$(get_azd_env_value 'AZURE_RESOURCE_GROUP')"
 if [[ -n "${SUBSCRIPTION_ID:-}" ]]; then
   USER_ID="$(az ad signed-in-user show --query id -o tsv 2>/dev/null || true)"
+  RESOURCE_GROUP_SCOPE=''
+  RESOURCE_GROUP_EXISTS='false'
+  if [[ -n "${RESOURCE_GROUP_NAME:-}" ]]; then
+    RESOURCE_GROUP_SCOPE="/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RESOURCE_GROUP_NAME}"
+    RESOURCE_GROUP_EXISTS="$(az group exists --name "${RESOURCE_GROUP_NAME}" -o tsv 2>/dev/null || true)"
+    if [[ -z "${RESOURCE_GROUP_EXISTS}" ]]; then
+      RESOURCE_GROUP_EXISTS='false'
+    fi
+  fi
+
   if [[ -n "${USER_ID:-}" ]]; then
-    RBAC_ROLES="$(az role assignment list \
-      --scope "/subscriptions/${SUBSCRIPTION_ID}" \
-      --assignee "${USER_ID}" \
-      --include-inherited \
-      --query "[?contains(['Owner','Contributor'], roleDefinitionName)].roleDefinitionName" \
-      -o tsv 2>/dev/null || true)"
-    if [[ -n "${RBAC_ROLES:-}" ]]; then
-      # Collapse newlines to a comma-separated list for display.
-      RBAC_LIST="$(echo "${RBAC_ROLES}" | sort -u | tr '\n' ',' | sed 's/,$//' | sed 's/,/, /g')"
-      echo "  ✓ Azure RBAC: ${RBAC_LIST} on subscription."
+    SUBSCRIPTION_ROLES="$(get_relevant_azure_roles_for_scope "/subscriptions/${SUBSCRIPTION_ID}" "${USER_ID}")"
+    RESOURCE_GROUP_ROLES=''
+    if [[ "${RESOURCE_GROUP_EXISTS}" == 'true' && -n "${RESOURCE_GROUP_SCOPE}" ]]; then
+      RESOURCE_GROUP_ROLES="$(get_relevant_azure_roles_for_scope "${RESOURCE_GROUP_SCOPE}" "${USER_ID}")"
+    fi
+
+    ALL_RELEVANT_ROLES="$(printf '%s\n%s\n' "${SUBSCRIPTION_ROLES}" "${RESOURCE_GROUP_ROLES}" | awk 'NF && !seen[$0]++')"
+
+    HAS_SUBSCRIPTION_DEPLOYMENT_ROLE='false'
+    if has_any_azure_role "${SUBSCRIPTION_ROLES}" 'Owner' 'Contributor'; then
+      HAS_SUBSCRIPTION_DEPLOYMENT_ROLE='true'
+    fi
+
+    HAS_DEPLOYMENT_ROLE='false'
+    if has_any_azure_role "${ALL_RELEVANT_ROLES}" 'Owner' 'Contributor'; then
+      HAS_DEPLOYMENT_ROLE='true'
+    fi
+
+    HAS_SUBSCRIPTION_ROLE_ASSIGNMENT_ROLE='false'
+    if has_any_azure_role "${SUBSCRIPTION_ROLES}" 'Owner' 'User Access Administrator' 'Role Based Access Control Administrator'; then
+      HAS_SUBSCRIPTION_ROLE_ASSIGNMENT_ROLE='true'
+    fi
+
+    HAS_ROLE_ASSIGNMENT_ROLE='false'
+    if has_any_azure_role "${ALL_RELEVANT_ROLES}" 'Owner' 'User Access Administrator' 'Role Based Access Control Administrator'; then
+      HAS_ROLE_ASSIGNMENT_ROLE='true'
+    fi
+
+    if [[ "${HAS_DEPLOYMENT_ROLE}" == 'true' ]]; then
+      if [[ "${HAS_SUBSCRIPTION_DEPLOYMENT_ROLE}" == 'true' ]]; then
+        echo '  ✓ Azure deployment role: Contributor/Owner visible on the subscription.'
+      else
+        echo '  ✓ Azure deployment role: Contributor/Owner visible on the target resource group.'
+        echo '    Routine deployments usually work with this scope.'
+        echo '    If provider registration is still needed, this run can still require'
+        echo '    Contributor or Owner on the subscription.'
+      fi
+    elif [[ "${RESOURCE_GROUP_EXISTS}" == 'true' ]]; then
+      echo '  ! Azure deployment role missing: Contributor or Owner on the target resource group.'
+      echo '    Subscription inheritance also satisfies this requirement.'
     else
-      echo '  ! Azure RBAC: no Contributor or Owner role found on this subscription.'
-      echo '    Both can be needed for first-time provider auto-registration and Bicep deployment.'
-      echo '    Contact your subscription owner to request Contributor access or activate'
-      echo '    an eligible role via Azure PIM before re-running azd provision.'
+      echo '  ! Azure deployment role missing: Contributor or Owner on the subscription.'
+      echo '    This run still needs subscription scope for provider registration or'
+      echo '    initial resource-group creation.'
+    fi
+
+    if [[ "${HAS_ROLE_ASSIGNMENT_ROLE}" == 'true' ]]; then
+      if [[ "${HAS_SUBSCRIPTION_ROLE_ASSIGNMENT_ROLE}" == 'true' ]]; then
+        echo '  ✓ Azure role-assignment role: Owner/User Access Administrator/Role Based Access Control Administrator visible on the subscription.'
+      else
+        echo '  ✓ Azure role-assignment role: Owner/User Access Administrator/Role Based Access Control Administrator visible on the target resource group.'
+        echo '    This scope is sufficient for the storage role assignments in routine deployments.'
+      fi
+    elif [[ "${RESOURCE_GROUP_EXISTS}" == 'true' ]]; then
+      echo '  ! Azure role-assignment role missing: Owner, User Access Administrator, or Role Based Access Control Administrator on the target resource group.'
+      echo '    Subscription inheritance also satisfies this requirement.'
+    else
+      echo '  ! Azure role-assignment role missing: Owner, User Access Administrator, or Role Based Access Control Administrator on the subscription.'
+      echo '    This run still needs subscription scope for the initial deployment path.'
+    fi
+
+    if [[ "${HAS_DEPLOYMENT_ROLE}" != 'true' || "${HAS_ROLE_ASSIGNMENT_ROLE}" != 'true' ]]; then
       echo '    Azure PIM: https://portal.azure.com/#view/Microsoft_Azure_PIMCommon/ActivationMenuBlade/~/azurerbac'
     fi
   else
     echo '  ! Azure RBAC: could not identify the signed-in user — skipping check.'
-    echo '    Required: Contributor or Owner on the subscription.'
+    echo '    Required for deployment: Contributor or Owner.'
+    echo '    Required for role assignments: Owner, User Access Administrator, or'
+    echo '    Role Based Access Control Administrator.'
   fi
 else
   echo '  ! Azure RBAC: AZURE_SUBSCRIPTION_ID not yet set — skipping role check.'
-  echo '    Required: Contributor or Owner on the subscription.'
+  echo '    Required for deployment: Contributor or Owner.'
+  echo '    Required for role assignments: Owner, User Access Administrator, or'
+  echo '    Role Based Access Control Administrator.'
 fi
 echo ''
 
@@ -380,6 +469,19 @@ for provider in "${REQUIRED_PROVIDERS[@]}"; do
 done
 
 if [[ ${#MISSING_PROVIDERS[@]} -gt 0 ]]; then
+  if [[ "${RESOURCE_GROUP_EXISTS:-false}" == 'true' ]]; then
+    # The RBAC check above may have indicated that resource-group scope is
+    # sufficient for routine deployments, but unregistered providers require
+    # Microsoft.Resources/subscriptions/providers/register/action, which is
+    # only available at subscription scope. Warn before the attempt so the
+    # operator can activate a PIM role and re-run rather than waiting for a
+    # cryptic ARM deployment failure.
+    echo '  Note: unregistered providers detected. Provider registration requires'
+    echo '    subscription-scoped Contributor or Owner even though the resource'
+    echo '    group already exists. If your deployment role covers only the resource'
+    echo '    group, the step below will fail. Activate a PIM role at subscription'
+    echo '    scope if needed, then re-run.'
+  fi
   echo 'Registering missing Azure resource providers...'
   for provider in "${MISSING_PROVIDERS[@]}"; do
     echo "  -> az provider register --namespace ${provider} --wait"

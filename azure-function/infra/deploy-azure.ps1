@@ -2361,9 +2361,12 @@ function Test-DeploymentPrerequisite {
       @()
     }
     $allAzureRoles = @($subscriptionRoles + $resourceGroupRoles | Select-Object -Unique)
-    $hasSubscriptionContributor = ($subscriptionRoles | Where-Object { $_ -in @('Owner', 'Contributor') }).Count -gt 0
-    $hasContributor = ($allAzureRoles | Where-Object { $_ -in @('Owner', 'Contributor') }).Count -gt 0
-    $hasRoleAssignment = ($allAzureRoles | Where-Object { $_ -in @('Owner', 'User Access Administrator') }).Count -gt 0
+    $deploymentRoleNames = @('Owner', 'Contributor')
+    $roleAssignmentRoleNames = @('Owner', 'User Access Administrator', 'Role Based Access Control Administrator')
+    $roleAssignmentRoleLabel = 'Owner/User Access Administrator/Role Based Access Control Administrator'
+    $hasSubscriptionContributor = ($subscriptionRoles | Where-Object { $_ -in $deploymentRoleNames }).Count -gt 0
+    $hasContributor = ($allAzureRoles | Where-Object { $_ -in $deploymentRoleNames }).Count -gt 0
+    $hasRoleAssignment = ($allAzureRoles | Where-Object { $_ -in $roleAssignmentRoleNames }).Count -gt 0
 
     if ($hasContributor) {
       if ($hasSubscriptionContributor) {
@@ -2372,14 +2375,14 @@ function Test-DeploymentPrerequisite {
       else {
         Write-Host "  $_chk Azure deployment role: Contributor/Owner visible on the target resource group." -ForegroundColor Green
         Write-Host '       Later deployments usually work with this scope.' -ForegroundColor DarkGray
-        Write-Host '       The first deployment can still need Contributor or Owner on the subscription' -ForegroundColor DarkGray
+        Write-Host '       A bootstrap run can still need Contributor or Owner on the subscription' -ForegroundColor DarkGray
         Write-Host '       for provider registration.' -ForegroundColor DarkGray
       }
     }
     else {
       if (-not $resourceGroupExists) {
         Write-Host "  $_wrn Azure deployment role missing: Contributor or Owner at subscription scope." -ForegroundColor Yellow
-        $missing.Add("Azure Contributor or Owner on $subscriptionScope for the first deployment (provider registration and initial resource group creation)")
+        $missing.Add("Azure Contributor or Owner on $subscriptionScope when this run still needs provider registration or initial resource group creation")
       }
       else {
         Write-Host "  $_wrn Azure deployment role missing: Contributor or Owner." -ForegroundColor Yellow
@@ -2388,16 +2391,16 @@ function Test-DeploymentPrerequisite {
     }
 
     if ($hasRoleAssignment) {
-      Write-Host "  $_chk Azure role assignment permission: Owner/User Access Administrator visible." -ForegroundColor Green
+      Write-Host "  $_chk Azure role assignment permission: $roleAssignmentRoleLabel visible." -ForegroundColor Green
     }
     else {
       if (-not $resourceGroupExists) {
-        Write-Host "  $_wrn Azure role assignment permission missing: Owner or User Access Administrator at subscription scope." -ForegroundColor Yellow
-        $missing.Add("Azure Owner or User Access Administrator on $subscriptionScope for the first deployment (or inherited from a higher scope)")
+        Write-Host "  $_wrn Azure role assignment permission missing: Owner, User Access Administrator, or Role Based Access Control Administrator at subscription scope." -ForegroundColor Yellow
+        $missing.Add("Azure Owner, User Access Administrator, or Role Based Access Control Administrator on $subscriptionScope when this run still needs initial resource group creation (or inherited from a higher scope)")
       }
       else {
-        Write-Host "  $_wrn Azure role assignment permission missing: Owner or User Access Administrator." -ForegroundColor Yellow
-        $missing.Add("Azure Owner or User Access Administrator on $resourceGroupScope (or inherited from the subscription)")
+        Write-Host "  $_wrn Azure role assignment permission missing: Owner, User Access Administrator, or Role Based Access Control Administrator." -ForegroundColor Yellow
+        $missing.Add("Azure Owner, User Access Administrator, or Role Based Access Control Administrator on $resourceGroupScope (or inherited from the subscription)")
       }
     }
 
@@ -3100,9 +3103,10 @@ try {
 
     # ── Required role guidance ────────────────────────────────────────────────
     Write-Hint @(
-      'Recommended Azure RBAC scope for the first deployment: subscription level.'
+      'Recommended Azure RBAC scope for a bootstrap run: subscription level.'
       '  Contributor covers provider registration and, if desired, initial resource group creation.'
-      '  Owner or User Access Administrator is also needed for role assignments.'
+      '  Owner, User Access Administrator, or Role Based Access Control Administrator is also needed'
+      '  for role assignments.'
       'Later deployments usually work with target-resource-group scope once the providers are'
       '  already registered and the resource group exists.'
       ''

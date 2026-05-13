@@ -266,57 +266,142 @@ function Initialize-DirectAzdEntraContext {
 
 $envValues = Get-AzdEnvSnapshot
 
-# ── 0a. Check Azure RBAC permission ─────────────────────────────────────────
-# Contributor (or Owner) on the subscription is needed to register resource
-# providers and to deploy Bicep resources.  The check is informational — a
-# missing role does not abort the script, but it surfaces the gap early so
-# the operator can activate a PIM role or request access before the actual
-# deployment runs.
+# ── 0a. Check Azure RBAC permissions ────────────────────────────────────────
+# Deployments need two Azure permission buckets:
+# - resource deployment rights (Contributor or Owner)
+# - role-assignment rights because functionapp.bicep deploys storage RBAC
+# The check is informational — a missing role does not abort the script, but it
+# surfaces the gap early so the operator can activate PIM or request access
+# before the actual deployment runs.
+function Get-RelevantAzureRoleNamesForScope {
+  param(
+    [Parameter(Mandatory)][string]$Scope,
+    [Parameter(Mandatory)][string]$AssigneeObjectId
+  )
+
+  $_roleNamesRaw = az role assignment list `
+    --scope $Scope `
+    --assignee $AssigneeObjectId `
+    --include-inherited `
+    --query "[?contains(['Owner','Contributor','User Access Administrator','Role Based Access Control Administrator'], roleDefinitionName)].roleDefinitionName" `
+    -o tsv 2>$null
+
+  if ($LASTEXITCODE -ne 0 -or -not $_roleNamesRaw) {
+    return @()
+  }
+
+  return @($_roleNamesRaw -split "`n" | Where-Object { $_ } | Select-Object -Unique)
+}
+
+function Test-HasAnyAzureRoleName {
+  param(
+    [Parameter(Mandatory)][string[]]$RoleNames,
+    [Parameter(Mandatory)][string[]]$AcceptedRoleNames
+  )
+
+  return ($RoleNames | Where-Object { $_ -in $AcceptedRoleNames }).Count -gt 0
+}
+
 Write-Host ''
-Write-Host 'Checking Azure role assignment...'
+Write-Host 'Checking Azure RBAC permissions...'
 $_subIdMatch = ($envValues | Select-String '^AZURE_SUBSCRIPTION_ID="?([^"]+)"?').Matches
 $_subId = if ($_subIdMatch -and $_subIdMatch.Count -gt 0) { $_subIdMatch[0].Groups[1].Value } else { $null }
 if ($_subId) {
   try {
     $_userId = az ad signed-in-user show --query id -o tsv 2>$null
     if ($LASTEXITCODE -eq 0 -and $_userId) {
-      $_rbacRaw = az role assignment list `
-        --scope "/subscriptions/$_subId" `
-        --assignee "$_userId" `
-        --include-inherited `
-        --query "[?contains(['Owner','Contributor'], roleDefinitionName)].roleDefinitionName" `
-        -o tsv 2>$null
-      if ($LASTEXITCODE -eq 0) {
-        $_rbacList = @($_rbacRaw -split "`n" | Where-Object { $_ } | Select-Object -Unique)
-        if ($_rbacList.Count -gt 0) {
-          Write-Host "  + Azure RBAC: $($_rbacList -join ', ') on subscription."
+      $_resourceGroupName = Get-AzdEnvValue -Name 'AZURE_RESOURCE_GROUP'
+      $_resourceGroupScope = $null
+      $_resourceGroupExists = $false
+      if ($_resourceGroupName) {
+        $_resourceGroupScope = "/subscriptions/$_subId/resourceGroups/$_resourceGroupName"
+        try {
+          $_resourceGroupExists = ((az group exists --name $_resourceGroupName -o tsv 2>$null).Trim() -eq 'true')
         }
-        else {
-          Write-Host '  ! Azure RBAC: no Contributor or Owner role found on this subscription.'
-          Write-Host '    Both can be needed for first-time provider auto-registration and Bicep deployment.'
-          Write-Host '    Contact your subscription owner to request Contributor access or activate'
-          Write-Host '    an eligible role via Azure PIM before re-running azd provision.'
-          Write-Host '    Azure PIM: https://portal.azure.com/#view/Microsoft_Azure_PIMCommon/ActivationMenuBlade/~/azurerbac'
+        catch {
+          $_resourceGroupExists = $false
         }
       }
+
+      $_subscriptionRoles = @(Get-RelevantAzureRoleNamesForScope -Scope "/subscriptions/$_subId" -AssigneeObjectId $_userId)
+      $_resourceGroupRoles = if ($_resourceGroupExists -and $_resourceGroupScope) {
+        @(Get-RelevantAzureRoleNamesForScope -Scope $_resourceGroupScope -AssigneeObjectId $_userId)
+      }
       else {
-        Write-Host '  ! Azure RBAC: role listing failed — continuing anyway.'
-        Write-Host '    Required: Contributor or Owner on the subscription.'
+        @()
+      }
+      $_allRelevantRoles = @($_subscriptionRoles + $_resourceGroupRoles | Select-Object -Unique)
+
+      $_deploymentRoleNames = @('Owner', 'Contributor')
+      $_roleAssignmentRoleNames = @('Owner', 'User Access Administrator', 'Role Based Access Control Administrator')
+
+      $_hasSubscriptionDeploymentRole = Test-HasAnyAzureRoleName -RoleNames $_subscriptionRoles -AcceptedRoleNames $_deploymentRoleNames
+      $_hasDeploymentRole = Test-HasAnyAzureRoleName -RoleNames $_allRelevantRoles -AcceptedRoleNames $_deploymentRoleNames
+      $_hasSubscriptionRoleAssignmentRole = Test-HasAnyAzureRoleName -RoleNames $_subscriptionRoles -AcceptedRoleNames $_roleAssignmentRoleNames
+      $_hasRoleAssignmentRole = Test-HasAnyAzureRoleName -RoleNames $_allRelevantRoles -AcceptedRoleNames $_roleAssignmentRoleNames
+
+      if ($_hasDeploymentRole) {
+        if ($_hasSubscriptionDeploymentRole) {
+          Write-Host '  + Azure deployment role: Contributor/Owner visible on the subscription.'
+        }
+        else {
+          Write-Host '  + Azure deployment role: Contributor/Owner visible on the target resource group.'
+          Write-Host '    Routine deployments usually work with this scope.'
+          Write-Host '    If provider registration is still needed, this run can still require'
+          Write-Host '    Contributor or Owner on the subscription.'
+        }
+      }
+      elseif ($_resourceGroupExists) {
+        Write-Host '  ! Azure deployment role missing: Contributor or Owner on the target resource group.'
+        Write-Host '    Subscription inheritance also satisfies this requirement.'
+      }
+      else {
+        Write-Host '  ! Azure deployment role missing: Contributor or Owner on the subscription.'
+        Write-Host '    This run still needs subscription scope for provider registration or'
+        Write-Host '    initial resource-group creation.'
+      }
+
+      if ($_hasRoleAssignmentRole) {
+        if ($_hasSubscriptionRoleAssignmentRole) {
+          Write-Host '  + Azure role-assignment role: Owner/User Access Administrator/Role Based Access Control Administrator visible on the subscription.'
+        }
+        else {
+          Write-Host '  + Azure role-assignment role: Owner/User Access Administrator/Role Based Access Control Administrator visible on the target resource group.'
+          Write-Host '    This scope is sufficient for the storage role assignments in routine deployments.'
+        }
+      }
+      elseif ($_resourceGroupExists) {
+        Write-Host '  ! Azure role-assignment role missing: Owner, User Access Administrator, or Role Based Access Control Administrator on the target resource group.'
+        Write-Host '    Subscription inheritance also satisfies this requirement.'
+      }
+      else {
+        Write-Host '  ! Azure role-assignment role missing: Owner, User Access Administrator, or Role Based Access Control Administrator on the subscription.'
+        Write-Host '    This run still needs subscription scope for the initial deployment path.'
+      }
+
+      if (-not $_hasDeploymentRole -or -not $_hasRoleAssignmentRole) {
+        Write-Host '    Azure PIM: https://portal.azure.com/#view/Microsoft_Azure_PIMCommon/ActivationMenuBlade/~/azurerbac'
       }
     }
     else {
       Write-Host '  ! Azure RBAC: could not identify the signed-in user — skipping check.'
-      Write-Host '    Required: Contributor or Owner on the subscription.'
+      Write-Host '    Required for deployment: Contributor or Owner.'
+      Write-Host '    Required for role assignments: Owner, User Access Administrator, or'
+      Write-Host '    Role Based Access Control Administrator.'
     }
   }
   catch {
     Write-Host '  ! Azure RBAC: check encountered an error — continuing anyway.'
-    Write-Host '    Required: Contributor or Owner on the subscription.'
+    Write-Host '    Required for deployment: Contributor or Owner.'
+    Write-Host '    Required for role assignments: Owner, User Access Administrator, or'
+    Write-Host '    Role Based Access Control Administrator.'
   }
 }
 else {
   Write-Host '  ! Azure RBAC: AZURE_SUBSCRIPTION_ID not yet set — skipping role check.'
-  Write-Host '    Required: Contributor or Owner on the subscription.'
+  Write-Host '    Required for deployment: Contributor or Owner.'
+  Write-Host '    Required for role assignments: Owner, User Access Administrator, or'
+  Write-Host '    Role Based Access Control Administrator.'
 }
 Write-Host ''
 
@@ -414,6 +499,19 @@ foreach ($provider in $requiredProviders) {
 }
 
 if ($missingProviders.Count -gt 0) {
+  if ($null -ne $_resourceGroupExists -and $_resourceGroupExists) {
+    # The RBAC check above may have indicated that resource-group scope is
+    # sufficient for routine deployments, but unregistered providers require
+    # Microsoft.Resources/subscriptions/providers/register/action, which is
+    # only available at subscription scope. Warn before the attempt so the
+    # operator can activate a PIM role and re-run rather than waiting for a
+    # cryptic ARM deployment failure.
+    Write-Host '  Note: unregistered providers detected. Provider registration requires'
+    Write-Host '    subscription-scoped Contributor or Owner even though the resource'
+    Write-Host '    group already exists. If your deployment role covers only the resource'
+    Write-Host '    group, the step below will fail. Activate a PIM role at subscription'
+    Write-Host '    scope if needed, then re-run.'
+  }
   Write-Host 'Registering missing Azure resource providers...'
   foreach ($provider in $missingProviders) {
     Write-Host "  -> az provider register --namespace $provider --wait"
