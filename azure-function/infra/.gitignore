@@ -1,0 +1,7 @@
+# ARM template JSON outputs compiled from Bicep by the VS Code Bicep extension
+# or `az bicep build`. azd uses `provider: bicep` and compiles at runtime;
+# these files are redundant build artifacts.
+# Exceptions: bicepconfig.json and main.parameters.json are intentionally tracked.
+*.json
+!bicepconfig.json
+!main.parameters.json
