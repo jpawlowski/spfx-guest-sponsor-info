@@ -49,8 +49,7 @@ begins with a clean sign-in session.
 
 Guest sign-in:
 
-- Open
-   `https://[HOST-TENANT].sharepoint.com/sites/gsi-demo`.
+- Open `https://[HOST-TENANT].sharepoint.com/sites/gsi-demo`.
 - At the Microsoft sign-in page, sign in with the **guest user's home-tenant
    account** listed in the next section.
 - Inside the host tenant, SharePoint resolves this user to the invited guest
@@ -104,67 +103,61 @@ Run the checks in this order.
 
 1. Close all existing InPrivate / Incognito windows.
 2. Open a new InPrivate / Incognito window.
-3. Navigate to
-   `https://[HOST-TENANT].sharepoint.com/sites/gsi-demo`.
+3. Navigate to `https://[HOST-TENANT].sharepoint.com/sites/gsi-demo`.
 4. At the Microsoft sign-in page, sign in with the **External Guest** account
    listed above.
 
-Expected result:
+   **Expected result:**
+   - The page loads without any additional setup.
+   - No configuration dialog appears on the live page.
+   - The web part renders sponsor cards for the signed-in guest.
+   - At least two sponsor cards are visible.
+   - One sponsor should show a real photo.
+   - One sponsor should fall back to initials because no profile photo is
+     present.
+   - Sponsor name and job title are visible.
+   - The layout may appear as full or compact depending on available page
+     width. Either is acceptable.
 
-- The page loads without any additional setup.
-- No configuration dialog appears on the live page.
-- The web part renders sponsor cards for the signed-in guest.
-- At least two sponsor cards are visible.
-- One sponsor should show a real photo.
-- One sponsor should fall back to initials because no profile photo is present.
-- Sponsor name and job title are visible.
-- The layout may appear as full or compact depending on available page width.
-   Either is acceptable.
+5. Open the first sponsor card by hovering over it or by tabbing to it.
 
-1. Open the first sponsor card by hovering over it or by tabbing to it.
+   **Expected result:**
+   - A contact surface opens for that sponsor.
+   - Email is shown together with a copy button.
+   - If configured on the supplied site, business phone, work location,
+     address or map link, manager information, and presence are visible.
 
-Expected result:
+6. Click the copy button next to the email address.
 
-- A contact surface opens for that sponsor.
-- Email is shown together with a copy button.
-- If configured on the supplied site, business phone, work location, address or
-   map link, manager information, and presence are visible.
+   **Expected result:**
+   - Temporary copied feedback appears.
 
-1. Click the copy button next to the email address.
+7. Click **Chat**.
 
-Expected result:
+   **Expected result:**
+   - Microsoft Teams desktop or Teams on the web opens, or the browser offers
+     the Teams deep link according to local system settings.
 
-- Temporary copied feedback appears.
+8. If a map link is visible, click it.
 
-1. Click **Chat**.
-
-Expected result:
-
-- Microsoft Teams desktop or Teams on the web opens, or the browser offers the
-   Teams deep link according to local system settings.
-
-1. If a map link is visible, click it.
-
-Expected result:
-
-- The selected map provider opens in the browser or operating-system map app.
+   **Expected result:**
+   - The selected map provider opens in the browser or operating-system map
+     app.
 
 ### 2. Non-Guest View Mode
 
 1. Close all existing InPrivate / Incognito windows.
 2. Open a new InPrivate / Incognito window.
-3. Navigate to
-   `https://[HOST-TENANT].sharepoint.com/sites/gsi-demo`.
+3. Navigate to `https://[HOST-TENANT].sharepoint.com/sites/gsi-demo`.
 4. At the Microsoft sign-in page, sign in with the **Internal Editor** account.
 5. Make sure the page is in normal **view mode**.
 
-Expected result:
-
-- Because public demo mode is off, the web part does **not** render for this
-   internal user. **This blank state is correct and intentional.**
-- No sponsor cards, placeholder, or error message are shown.
-- The tenant member account has no Entra B2B sponsors — the web part correctly
-   renders nothing rather than showing an error or placeholder.
+   **Expected result:**
+   - Because public demo mode is off, the web part does **not** render for
+     this internal user. **This blank state is correct and intentional.**
+   - No sponsor cards, placeholder, or error message are shown.
+   - The tenant member account has no Entra B2B sponsors — the web part
+     correctly renders nothing rather than showing an error or placeholder.
 
 ### 3. Edit Mode Preview And Property Pane
 
@@ -173,78 +166,68 @@ This is a short check.
 1. Stay signed in as the **Internal Editor** account.
 2. Open the page in **Edit** mode.
 
-Expected result:
+   **Expected result:**
+   - The web part immediately shows a **live preview with mock sponsor cards**.
+   - This is the current intended authoring experience.
+   - The preview is available even though the signed-in user is not a guest.
 
-- The web part immediately shows a **live preview with mock sponsor cards**.
-- This is the current intended authoring experience.
-- The preview is available even though the signed-in user is not a guest.
+3. Select the web part and open its property pane.
 
-1. Select the web part and open its property pane.
+   **Expected result:**
+   - The property pane opens successfully.
+   - It contains, at minimum, these groups:
+     **Settings**, **Sponsor Eligibility**, **Guest Notifications**,
+     **Display**, **Contact**, **Organization**, and **Guest Sponsor API**.
 
-Expected result:
+4. Verify one representative change in each core area below.
 
-- The property pane opens successfully.
-- It contains, at minimum, these groups:
-   **Settings**, **Sponsor Eligibility**, **Guest Notifications**,
-   **Display**, **Contact**, **Organization**, and **Guest Sponsor API**.
+    - **Settings**
+       - Change **Visible sponsors** from `2` to `1` and back.
+          Expected result: the preview updates to show the new number of visible
+          cards.
+       - Change **Simulate guest notification** to **No sponsors found**.
+          Expected result: the preview shows the corresponding informational
+          banner.
+       - Change **Simulate guest notification** to **Sponsor not available** or
+          **Update available**.
+          Expected result: the preview banner changes accordingly.
 
-1. Verify one representative change in each core area below.
+    - **Display**
+       - Change **Card layout** from **Automatic** to **Compact** and back.
+          Expected result: the preview layout changes immediately.
+       - Toggle **Show presence status** off and on.
+          Expected result: the presence indicator disappears and reappears.
 
-**Settings**
+    - **Contact**
+       - Toggle **Show business phone numbers** off and on.
+          Expected result: the phone field disappears and reappears in the
+          preview.
+       - Toggle **Show work location** off and on.
+          Expected result: the work location field disappears and reappears.
 
-- Change **Visible sponsors** from `2` to `1` and back.
-- Expected result: the preview updates to show the new number of visible cards.
+    - **Organization**
+       - Toggle **Show manager** off and on.
+          Expected result: the manager section disappears and reappears.
 
-- Change **Simulate guest notification** to **No sponsors found**.
-- Expected result: the preview shows the corresponding informational banner.
+    - **Sponsor Eligibility**
+       - Open the **Sponsor Eligibility** group (collapsed by default).
+       - Note the **Sponsor must be** dropdown (default: **Teams licensed**) and
+          the **Require user mailbox type** checkbox.
+       - Change **Sponsor must be** from **Teams licensed** to **Licensed (any
+          active license)** and back to **Teams licensed**.
+          Expected result: the dropdown updates. The edit-mode mock preview does
+          not change. This is correct because the license filter applies only to
+          the real Azure Function API call, not to mock data. Step 1 already
+          confirms that the returned sponsors satisfy the Teams license
+          requirement.
 
-- Change **Simulate guest notification** to **Sponsor not available** or
-   **Update available**.
-- Expected result: the preview banner changes accordingly.
-
-**Display**
-
-- Change **Card layout** from **Automatic** to **Compact** and back.
-- Expected result: the preview layout changes immediately.
-
-- Toggle **Show presence status** off and on.
-- Expected result: the presence indicator disappears and reappears.
-
-**Contact**
-
-- Toggle **Show business phone numbers** off and on.
-- Expected result: the phone field disappears and reappears in the preview.
-
-- Toggle **Show work location** off and on.
-- Expected result: the work location field disappears and reappears.
-
-**Organization**
-
-- Toggle **Show manager** off and on.
-- Expected result: the manager section disappears and reappears.
-
-**Sponsor Eligibility**
-
-- Open the **Sponsor Eligibility** group (collapsed by default).
-- Note the **Sponsor must be** dropdown (default: **Teams licensed**) and the
-   **Require user mailbox type** checkbox.
-- Change **Sponsor must be** from **Teams licensed** to **Licensed (any active
-   license)** and back to **Teams licensed**.
-- Expected result: the dropdown updates. The edit-mode mock preview does not
-   change — this is correct. The license filter applies to the real Azure
-   Function API call, not to mock data. Its effect is validated indirectly by
-   step 1: all sponsor cards that appeared there satisfy the Teams license
-   requirement.
-
-**Guest Sponsor API**
-
-- Open the **Guest Sponsor API** group (collapsed by default).
-- Note the **Base URL** and **Application (client) ID** fields.
-- Expected result: both fields are pre-filled with the values for the supplied
-   test environment. Do **not** change these values.
-- The successful loading of real sponsor cards in step 1 (Real Guest Experience)
-   is the proof that this configuration is correct and the API is reachable.
-   No further action is needed here.
+    - **Guest Sponsor API**
+       - Open the **Guest Sponsor API** group (collapsed by default).
+       - Note the **Base URL** and **Application (client) ID** fields.
+       - Expected result: both fields are pre-filled with the values for the
+          supplied test environment. Do **not** change these values.
+       - Step 1 already confirms that this configuration is correct and the API
+          is reachable. No further action is needed here.
 
 ---
 
@@ -255,22 +238,20 @@ Expected result:
 3. Under **Settings**, enable **Enable public demo mode for internal users**.
 4. Save or publish the page and return to view mode.
 
-Expected result:
+   **Expected result:**
+   - The internal host-tenant user now sees simulated sponsor cards on the live
+     page.
+   - This validates the public demo mode behavior for internal users.
 
-- The internal host-tenant user now sees simulated sponsor cards on the live
-   page.
-- This validates the public demo mode behavior for internal users.
-
-1. In edit mode, open the property pane, disable **Enable public demo mode
+5. In edit mode, open the property pane, disable **Enable public demo mode
    for internal users**, and save or publish the page.
 
-Expected result after turning off demo mode:
-
-- The page returns to view mode and the web part area is **blank** for the
-   Internal Editor account. **This is correct and expected.** Turning off demo
-   mode restores the normal behavior described in step 2: tenant members are
-   not guests, have no sponsors, and the web part correctly renders nothing.
-   This blank state is not a bug.
+   **Expected result after turning off demo mode:**
+   - The page returns to view mode and the web part area is **blank** for the
+     Internal Editor account. **This is correct and expected.** Turning off
+     demo mode restores the normal behavior described in step 2: tenant members
+     are not guests, have no sponsors, and the web part correctly renders
+     nothing. This blank state is not a bug.
 
 ---
 
@@ -283,12 +264,11 @@ Expected result after turning off demo mode:
 4. In the setup wizard, choose **Explore in Demo Mode**.
 5. Complete the wizard and save the page.
 
-Expected result:
-
-- The web part can be added to the page.
-- A newly added instance opens its first-run setup experience in edit mode.
-- The wizard accepts the demo mode selection and completes successfully.
-- The saved page shows simulated sponsor cards in view mode.
+   **Expected result:**
+   - The web part can be added to the page.
+   - A newly added instance opens its first-run setup experience in edit mode.
+   - The wizard accepts the demo mode selection and completes successfully.
+   - The saved page shows simulated sponsor cards in view mode.
 
 ---
 
