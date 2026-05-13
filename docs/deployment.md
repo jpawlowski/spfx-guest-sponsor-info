@@ -21,7 +21,7 @@ operator flow still has three phases:
 | Phase | What you finish | Typical role |
 |---|---|---|
 | 1 - SharePoint | Install the web part package, make the bundle reachable for guests, and confirm landing-page access | SharePoint Administrator |
-| 2 - Guest Sponsor API | Run the Azure plus Entra two-stage deployment for the Function App, EasyAuth App Registration, and Graph permissions | Azure `Contributor` + `Owner` (or `User Access Administrator`) + required Entra roles |
+| 2 - Guest Sponsor API | Run the Azure plus Entra two-stage deployment for the Function App, EasyAuth App Registration, and Graph permissions | Azure `Owner`, or Azure `Contributor` + an access-management role (`User Access Administrator` or `Role Based Access Control Administrator`), plus required Entra roles |
 | 3 - Web part configuration | Paste the API URL and Client ID into the landing-page web part and verify the live connection | Site Owner |
 
 If you only need one specific area, jump to the matching section below. If you
@@ -592,18 +592,34 @@ This section is ordered by execution sequence. Items marked **Alternative** or
 
 | Scope | Required role |
 |---|---|
-| Subscription (recommended for the first deployment) | **Contributor** — for one-time resource provider registration and optional initial resource group creation |
-| Resource group (later deployments, once the providers are registered and the resource group exists) | **Contributor** |
-| Resource group (or inherited from the subscription) | **Owner** (or User Access Administrator) — for Managed Identity role assignments |
+| Subscription (only when this run still needs provider registration or resource-group creation) | **Owner** for a single-role path, or **Contributor** + an access-management role (**User Access Administrator** or **Role Based Access Control Administrator**) for a split least-privilege path |
+| Resource group (normal steady-state path, including first deployment into a pre-created resource group after the providers are already registered) | **Owner** for a single-role path, or **Contributor** + an access-management role (**User Access Administrator** or **Role Based Access Control Administrator**) |
 | Entra ID | **Cloud Application Administrator** — to create and configure the App Registration |
 | Entra ID | **Privileged Role Administrator** — to assign Graph app roles to the Managed Identity |
 
-> For the **first deployment**, prefer Azure rights inherited from the
-> **subscription**. Resource provider registration is a subscription-wide
-> one-time operation, and the wizard can also create the resource group for
-> convenience. After the providers are registered and the resource group
-> already exists, later deployments usually work with resource-group-scoped
-> Azure roles alone.
+> The important distinction is not "first deployment" versus "update", but
+> whether this run still includes **subscription-scoped bootstrap actions**.
+> If the deployment still needs to register providers or create the resource
+> group, use Azure rights inherited from the **subscription**: either
+> subscription-scoped **Owner** alone, or subscription-scoped
+> **Contributor** + an access-management role (**User Access Administrator**
+> or **Role Based Access Control Administrator**). Contributor covers
+> provider registration and optional resource-group creation, while the
+> access-management role covers the storage-account role assignments.
+>
+> Once the providers are registered and the resource group already exists,
+> the normal path is resource-group-scoped **Owner** alone or
+> resource-group-scoped **Contributor** + an access-management role
+> (**User Access Administrator** or **Role Based Access Control
+> Administrator**).
+> That narrower scope is sufficient both for routine updates and for a
+> first rollout into a pre-created resource group.
+> **Contributor** alone isn't sufficient because the template always deploys
+> `Microsoft.Authorization/roleAssignments` for the Function App's Managed
+> Identity on the Storage Account, and ARM incremental deployments re-evaluate
+> resources that remain in the template. If a later update first enables a
+> previously unregistered provider, that run again needs subscription-scoped
+> **Contributor** (or **Owner**) for the provider registration step.
 >
 > **Global Administrator** replaces both Entra requirements with a single role.
 > The Azure roles still need to be granted separately and cannot be substituted
@@ -837,11 +853,13 @@ path for the deployment step.
 **Prerequisites (Azure Cloud Shell or standard machine):**
 
 - PowerShell 7+
-- Azure Contributor on the subscription for the first deployment; later
-  resource-group-scoped Contributor is usually sufficient once the providers
-  are registered and the resource group exists
-- Azure Owner (or User Access Administrator) on the target resource group, or
-  inherited from the subscription
+- Azure Owner on the subscription for a single-role bootstrap run, or Azure
+  Contributor + an access-management role (User Access Administrator or Role
+  Based Access Control Administrator) on the subscription when this run still
+  needs provider registration or resource-group creation. Otherwise, the
+  normal path is resource-group-scoped Owner alone or resource-group-scoped
+  Contributor plus an access-management role once the providers are
+  registered and the resource group exists.
 - Entra **Cloud Application Administrator** (for the Entra bootstrap to create the App Registration)
 
 #### Step A — Run the deployment with role assignments deferred
@@ -860,11 +878,13 @@ keeps the Privileged Role Administrator action separate, so each admin can
 decide whether to use `setup-graph-permissions.ps1` on the PAW or the lower-
 level Graph Explorer fallback below.
 
-**Required Azure roles:** For the first deployment, prefer Contributor on the
-subscription plus Owner or User Access Administrator inherited from the
-subscription or present on the target resource group. Later deployments usually
-work with resource-group-scoped Azure roles once the providers are already
-registered and the resource group exists.
+**Required Azure roles:** Use subscription-scoped Owner if this run still has
+to register providers or create the resource group and one Azure role should
+cover everything, or use subscription-scoped Contributor plus an access-
+management role (User Access Administrator or Role Based Access Control
+Administrator) as the split least-privilege pair. Once those bootstrap
+actions are already done, the normal path is resource-group-scoped Owner
+alone or resource-group-scoped Contributor plus an access-management role.
 **Required Entra roles:** Cloud Application Administrator (Entra bootstrap creates App Registration)
 
 #### Step B — On the PAW: assign Graph permissions

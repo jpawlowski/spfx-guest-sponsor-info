@@ -235,14 +235,30 @@ under the stack lifecycle, while direct portal deletes are not blocked by an
 additional deny assignment. The resource group is detached on stack
 delete so existing RG-scoped access assignments can stay in place.
 
-> RBAC propagation can take 1–2 min after deploy. Wait and retry if errors appear
-> immediately. For the **first deployment**, Azure **Contributor** on the
-> **subscription** is recommended because provider registration is subscription-
-> wide and the wizard can also create the resource group for convenience.
-> Azure **Owner** (or **User Access Administrator**) is still needed on the
-> target resource group or inherited from the subscription for role
-> assignments. Once the providers are registered and the resource group exists,
-> later deployments usually work with resource-group-scoped Azure roles alone.
+> RBAC propagation can take 1–2 min after deploy. Wait and retry if errors
+> appear immediately. For Azure RBAC, the important distinction is not first
+> deployment versus update, but whether the run still includes
+> subscription-scoped bootstrap actions. If provider registration or
+> resource-group creation is still needed, use subscription-scoped **Owner**
+> alone or subscription-scoped **Contributor** plus an access-management role
+> (**User Access Administrator** or **Role Based Access Control
+> Administrator**): Contributor covers provider registration and optional
+> resource-group creation, while the access-management role covers the
+> storage-account role assignments.
+>
+> Once the providers are registered and the resource group exists, the normal
+> path is resource-group-scoped **Owner** alone or resource-group-scoped
+> **Contributor** plus an access-management role (**User Access
+> Administrator** or **Role Based Access Control Administrator**). That
+> narrower scope is sufficient both for routine updates and for a first
+> rollout into a pre-created resource group.
+> **Contributor** alone isn't sufficient because the `functionapp.bicep`
+> module always deploys `Microsoft.Authorization/roleAssignments` on the
+> Storage Account, and ARM incremental redeployments re-evaluate resources that
+> stay in the template. If a later update first enables a provider that wasn't
+> registered before, that run again needs subscription-scoped **Contributor**
+> or **Owner**.
+>
 > Entra permissions are split: **Cloud Application Administrator** for the App
 > Registration and **Privileged Role Administrator** for Graph app-role
 > assignment. See [deployment.md](deployment.md) for the operator-facing

@@ -103,23 +103,32 @@ flowchart LR
 |---|---|---|---|
 | 1 | SharePoint Admin | Enables Site Collection App Catalog on the landing page site and uploads `.sppkg` | **SharePoint Administrator** (+ **Site Collection Admin** on the landing page site) |
 | 2 | SharePoint Admin | Verifies guest Visitor access on the landing page site. If you rely on the *Everyone* group pattern for B2B guests, explicitly enable `ShowEveryoneClaim` first; otherwise keep the site's existing reliable guest-access model. | **SharePoint Administrator** |
-| 3 | Deployment Operator | Runs `install.ps1` / `deploy-azure.ps1`. The deployment automation first prepares the EasyAuth App Registration via the separate Entra bootstrap, then provisions Azure resources, Storage role assignments, and the Function App. | Azure **Contributor** + **Owner** (or **User Access Administrator**) for the deployment scope¹ + Entra **Cloud Application Administrator** |
+| 3 | Deployment Operator | Runs `install.ps1` / `deploy-azure.ps1`. The deployment automation first prepares the EasyAuth App Registration via the separate Entra bootstrap, then provisions Azure resources, Storage role assignments, and the Function App. | Azure **Owner**, or Azure **Contributor** + an access-management role (**User Access Administrator** or **Role Based Access Control Administrator**)¹ + Entra **Cloud Application Administrator** |
 | 4 | Entra Admin | Completes the Graph permission assignment step after the Managed Identity exists. In the default wizard path this continues automatically after Azure provisioning; in PAW / split-duty setups it is run separately via `setup-graph-permissions.ps1`. | **Privileged Role Administrator** |
 
 In smaller deployments, the same person can perform Steps 3 and 4 by
 activating both the Azure and Entra roles temporarily. In PAW or split-duty
 setups, treat Step 4 as a separate Entra-admin action.
 
-¹ For the **first deployment**, recommend Azure **Contributor** at
-subscription scope because provider registration is a subscription-wide
-operation and the wizard can create the resource group for convenience. After
-the providers are registered and the resource group exists, later deployments
-usually work with resource-group-scoped **Contributor** plus **Owner** (or
-**User Access Administrator**) on that resource group. `Contributor` alone is
-not sufficient because the template creates
-`Microsoft.Authorization/roleAssignments` on the Storage Account. Cloud
-Application Administrator is required for the separate Entra bootstrap
-template to create and configure the App Registration.
+¹ The important distinction is not first deployment versus update, but
+whether the run still includes subscription-scoped bootstrap actions.
+If provider registration or resource-group creation is still needed, a single
+Azure role can be subscription-scoped **Owner**. The split least-privilege
+equivalent is subscription-scoped **Contributor** plus an access-management
+role (**User Access Administrator** or **Role Based
+Access Control Administrator**): Contributor covers provider registration and
+optional resource-group creation, while the access-management role covers the
+storage-account role assignments. Once the providers are registered and the
+resource group exists, the normal path is resource-group-scoped **Owner**
+alone or resource-group-scoped **Contributor** plus an access-management role
+(**User Access Administrator** or **Role Based Access Control Administrator**).
+`Contributor` alone is not sufficient because the template always redeploys
+`Microsoft.Authorization/roleAssignments` on the Storage Account, and ARM
+incremental deployments re-evaluate resources that remain in the template. If
+a later update first enables a previously unregistered provider, that run
+again needs subscription-scoped **Contributor** (or **Owner**) for provider
+registration. Cloud Application Administrator is required for the separate
+Entra bootstrap template to create and configure the App Registration.
 
 ² Granting application permissions (app roles) to a Managed Identity requires
 `AppRoleAssignment.ReadWrite.All`, which requires Privileged Role Administrator

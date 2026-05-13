@@ -21,7 +21,7 @@ Das Setup von Guest Sponsor Info hat drei Phasen:
 | Phase | Wo | Mindestrolle |
 |---|---|---|
 | 1 — SharePoint | SharePoint Admin Center + Landingpage-Site | SharePoint-Administrator |
-| 2 — Guest Sponsor API | [Azure Cloud Shell](https://shell.azure.com/) (empfohlen) oder lokale PowerShell/Shell | Azure-Mitwirkender + Besitzer oder Benutzerzugriffsadministrator + Entra-Rollen via PIM. Für das erste Deployment wird Subscription-Scope empfohlen. |
+| 2 — Guest Sponsor API | [Azure Cloud Shell](https://shell.azure.com/) (empfohlen) oder lokale PowerShell/Shell | Azure-Besitzer oder Azure-Mitwirkender + eine Zugriffsverwaltungsrolle (Benutzerzugriffsadministrator oder Role Based Access Control Administrator), plus Entra-Rollen via PIM. Ressourcengruppen-Scope ist der Normalfall; Subscription-Scope wird nur benötigt, wenn dieser Lauf noch Provider registrieren oder die Ressourcengruppe anlegen muss. |
 | 3 — Web Part | SharePoint-Landingpage (Bearbeitungsmodus) | Websitebesitzer |
 
 > [!NOTE]
@@ -431,20 +431,38 @@ aktiv sind.
 
 | Bereich | Erforderliche Rolle |
 |---|---|
-| Subscription (für das erste Deployment empfohlen) | **Mitwirkender** — für die einmalige Registrierung von Resource Providern und bei Bedarf die erste Anlage der Ressourcengruppe |
-| Ressourcengruppe (für spätere Deployments, sobald die Provider registriert sind und die Ressourcengruppe existiert) | **Mitwirkender** |
-| Ressourcengruppe (oder von der Subscription geerbt) | **Besitzer** (oder Benutzerzugriffsadministrator) — für Managed Identity-Rollenzuweisungen |
+| Subscription (nur wenn dieser Lauf noch Provider registrieren oder die Ressourcengruppe anlegen muss) | **Besitzer** für einen Ein-Rollen-Pfad oder **Mitwirkender** + eine Zugriffsverwaltungsrolle (**Benutzerzugriffsadministrator** oder **Role Based Access Control Administrator**) für einen aufgeteilten Least-Privilege-Pfad |
+| Ressourcengruppe (normaler Regelbetrieb, einschließlich erstem Deployment in eine bereits vorhandene Ressourcengruppe, nachdem die Provider schon registriert sind) | **Besitzer** für einen Ein-Rollen-Pfad oder **Mitwirkender** + eine Zugriffsverwaltungsrolle (**Benutzerzugriffsadministrator** oder **Role Based Access Control Administrator**) |
 | Entra ID | **Cloud-Anwendungsadministrator** — zum Erstellen und Konfigurieren der App-Registrierung |
 | Entra ID | **Administrator für privilegierte Rollen** — zum Zuweisen von Graph-App-Rollen an die Managed Identity |
 
 > [!TIP]
-> Für das **erste Deployment** sollten die Azure-Rechte möglichst von der
-> **Subscription** geerbt werden. Die Registrierung von Resource Providern ist
-> eine einmalige Operation auf Subscription-Ebene, und der Assistent kann die
-> Ressourcengruppe außerdem der Bequemlichkeit halber selbst anlegen. Sobald
-> die Provider registriert sind und die Ressourcengruppe bereits existiert,
-> reichen für spätere Deployments meist Azure-Rollen nur auf der
-> Ressourcengruppen-Ebene.
+> Der entscheidende Unterschied ist nicht „erstes Deployment“ versus
+> „Update“, sondern ob dieser Lauf noch **Bootstrap-Aktionen auf
+> Subscription-Ebene** enthält. Wenn noch Provider registriert oder die
+> Ressourcengruppe angelegt werden müssen, verwenden Sie Azure-Rechte auf der
+> **Subscription**: entweder **Besitzer** allein oder
+> **Mitwirkender** + eine Zugriffsverwaltungsrolle
+> (**Benutzerzugriffsadministrator** oder **Role Based Access Control
+> Administrator**). Mitwirkender deckt die Provider-Registrierung und bei
+> Bedarf die Anlage der Ressourcengruppe ab, die Zugriffsverwaltungsrolle
+> deckt die Rollenzuweisungen auf dem Storage Account ab.
+>
+> Sobald die Provider registriert sind und die Ressourcengruppe bereits
+> existiert, ist der Normalfall **Besitzer** allein auf
+> Ressourcengruppen-Ebene oder **Mitwirkender** + eine
+> Zugriffsverwaltungsrolle (**Benutzerzugriffsadministrator** oder
+> **Role Based Access Control Administrator**) auf
+> Ressourcengruppen-Ebene. Dieser
+> engere Scope reicht sowohl für normale Updates als auch für ein erstes
+> Deployment in eine bereits vorbereitete Ressourcengruppe.
+> **Mitwirkender** allein reicht nicht, weil das Deployment-Template die
+> `Microsoft.Authorization/roleAssignments` für die Managed Identity der
+> Function App weiterhin im Sollzustand hält und ARM bei inkrementellen
+> Deployments Ressourcen, die im Template verbleiben, erneut auswertet. Wenn
+> ein späteres Update erstmals einen bisher nicht registrierten Provider
+> aktiviert, braucht genau dieser Lauf wieder Subscription-weiten
+> **Mitwirkender** (oder **Besitzer**) für die Provider-Registrierung.
 >
 > **PIM-Hinweis:** Wenn Ihre Organisation
 > [Privileged Identity Management (PIM)](https://learn.microsoft.com/entra/id-governance/privileged-identity-management/pim-configure)

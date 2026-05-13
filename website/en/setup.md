@@ -21,7 +21,7 @@ Guest Sponsor Info setup has three phases:
 | Phase | Where | Minimum role required |
 |---|---|---|
 | 1 — SharePoint | SharePoint Admin Center + landing page site | SharePoint Administrator |
-| 2 — Guest Sponsor API | [Azure Cloud Shell](https://shell.azure.com/) (recommended) or local PowerShell/shell | Azure Contributor + Owner or User Access Administrator + Entra roles via PIM. For the first deployment, prefer subscription scope. |
+| 2 — Guest Sponsor API | [Azure Cloud Shell](https://shell.azure.com/) (recommended) or local PowerShell/shell | Azure Owner, or Azure Contributor + an access-management role (User Access Administrator or Role Based Access Control Administrator), plus Entra roles via PIM. Resource-group scope is the normal path; use subscription scope only when this run still needs provider registration or resource-group creation. |
 | 3 — Web part | SharePoint landing page (edit mode) | Site Owner |
 
 > [!NOTE]
@@ -410,19 +410,35 @@ when your Entra roles are active.
 
 | Scope | Required role |
 |---|---|
-| Subscription (recommended for the first deployment) | **Contributor** — for one-time resource provider registration and optional initial resource group creation |
-| Resource group (later deployments, once the providers are registered and the resource group exists) | **Contributor** |
-| Resource group (or inherited from the subscription) | **Owner** (or User Access Administrator) — for Managed Identity role assignments |
+| Subscription (only when this run still needs provider registration or resource-group creation) | **Owner** for a single-role path, or **Contributor** + an access-management role (**User Access Administrator** or **Role Based Access Control Administrator**) for a split least-privilege path |
+| Resource group (normal steady-state path, including first deployment into a pre-created resource group after the providers are already registered) | **Owner** for a single-role path, or **Contributor** + an access-management role (**User Access Administrator** or **Role Based Access Control Administrator**) |
 | Entra ID | **Cloud Application Administrator** — to create and configure the App Registration |
 | Entra ID | **Privileged Role Administrator** — to assign Graph app roles to the Managed Identity |
 
 > [!TIP]
-> For the **first deployment**, prefer Azure rights inherited from the
-> **subscription**. Resource provider registration is a subscription-wide
-> one-time operation, and the wizard can also create the resource group for
-> convenience. After the providers are registered and the resource group
-> already exists, later deployments usually work with resource-group-scoped
-> Azure roles alone.
+> The important distinction is not "first deployment" versus "update", but
+> whether this run still includes **subscription-scoped bootstrap actions**.
+> If the deployment still needs to register providers or create the resource
+> group, use Azure rights inherited from the **subscription**: either
+> subscription-scoped **Owner** alone, or subscription-scoped
+> **Contributor** + an access-management role (**User Access Administrator**
+> or **Role Based Access Control Administrator**). Contributor covers
+> provider registration and optional resource-group creation, while the
+> access-management role covers the storage-account role assignments.
+>
+> Once the providers are registered and the resource group already exists,
+> the normal path is resource-group-scoped **Owner** alone or
+> resource-group-scoped **Contributor** + an access-management role
+> (**User Access Administrator** or **Role Based Access Control
+> Administrator**).
+> That narrower scope is sufficient both for routine updates and for a
+> first rollout into a pre-created resource group.
+> **Contributor** alone isn't sufficient because the deployment template keeps
+> `Microsoft.Authorization/roleAssignments` for the Function App's Managed
+> Identity in the desired state, and ARM incremental deployments re-evaluate
+> resources that remain in the template. If a later update first enables a
+> previously unregistered provider, that run again needs subscription-scoped
+> **Contributor** (or **Owner**) for provider registration.
 >
 > **PIM tip:** If your organisation uses
 > [Privileged Identity Management (PIM)](https://learn.microsoft.com/entra/id-governance/privileged-identity-management/pim-configure),
