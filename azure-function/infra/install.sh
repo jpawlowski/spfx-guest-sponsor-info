@@ -14,7 +14,7 @@
 set -euo pipefail
 
 # scripts/set-version.sh stamps this fallback URL to the exact release tag.
-INSTALL_PS1_URL="${GSI_INSTALL_PS1_URL:-https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/v1.2.2/azure-function/infra/install.ps1}"
+INSTALL_PS1_URL="${GSI_INSTALL_PS1_URL:-https://raw.githubusercontent.com/workoho/spfx-guest-sponsor-info/v1.2.3/azure-function/infra/install.ps1}"
 TMP_DIR=''
 
 cleanup() {
