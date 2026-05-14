@@ -210,7 +210,7 @@ Collaboration.
       Buchen Sie eine Demo mit Workoho und sehen Sie, wie EasyLife in diesem Szenario Governance und Lifecycle abbildet.
     </p>
     <a href="https://wkho.io/easylife365-demo?utm_source=guest-sponsor-info&amp;utm_medium=website&amp;utm_content=easylife-why-de"
-      target="_blank" rel="noopener" class="easylife-cta">Book a Demo</a>
+      target="_blank" rel="noopener" class="easylife-cta">Demo buchen</a>
   </div>
 </div>
 

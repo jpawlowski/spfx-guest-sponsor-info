@@ -439,7 +439,7 @@ Landingpage-Erlebnis und Governance-Modell gegenseitig stützen sollen.
       Redirects und Sponsor-Zuordnung rund um die Landingpage verbindet.
     </p>
     <a href="https://wkho.io/easylife365-demo?utm_source=guest-sponsor-info&amp;utm_medium=website&amp;utm_content=easylife-landingpage-ideas-de"
-      target="_blank" rel="noopener" class="easylife-cta">Book a Demo</a>
+      target="_blank" rel="noopener" class="easylife-cta">Demo buchen</a>
   </div>
 </div>
 

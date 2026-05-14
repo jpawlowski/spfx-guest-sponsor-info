@@ -101,7 +101,7 @@ nachbauen. In der Praxis ist das meist teurer als eine EasyLife-Lizenz.
       die Landingpage bringt und Governance stabil hält.
     </p>
     <a href="https://wkho.io/easylife365-demo?utm_source=guest-sponsor-info&amp;utm_medium=website&amp;utm_content=easylife-setup-de"
-      target="_blank" rel="noopener" class="easylife-cta">Book a Demo</a>
+      target="_blank" rel="noopener" class="easylife-cta">Demo buchen</a>
   </div>
 </div>
 
