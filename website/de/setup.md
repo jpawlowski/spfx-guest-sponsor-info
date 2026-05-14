@@ -21,7 +21,7 @@ Das Setup von Guest Sponsor Info hat drei Phasen:
 | Phase | Wo | Mindestrolle |
 |---|---|---|
 | 1 — SharePoint | SharePoint Admin Center + Landingpage-Site | SharePoint-Administrator |
-| 2 — Guest Sponsor API | [Azure Cloud Shell](https://shell.azure.com/) (empfohlen) oder lokale PowerShell/Shell | Azure-Besitzer oder Azure-Mitwirkender + eine Zugriffsverwaltungsrolle (Benutzerzugriffsadministrator oder Role Based Access Control Administrator), plus Entra-Rollen via PIM. Ressourcengruppen-Scope ist der Normalfall; Subscription-Scope wird nur benötigt, wenn dieser Lauf noch Provider registrieren oder die Ressourcengruppe anlegen muss. |
+| 2 — Guest Sponsor API | [Azure Cloud Shell](https://shell.azure.com/) (empfohlen) oder lokale PowerShell/Shell | Azure-Besitzer oder Azure-Mitwirkender + eine Zugriffsverwaltungsrolle (Benutzerzugriffsadministrator oder Role Based Access Control Administrator), plus Microsoft Entra-Rollen via PIM. Ressourcengruppen-Scope ist der Normalfall; Subscription-Scope wird nur benötigt, wenn dieser Lauf noch Provider registrieren oder die Ressourcengruppe anlegen muss. |
 | 3 — Web Part | SharePoint-Landingpage (Bearbeitungsmodus) | Websitebesitzer |
 
 > [!NOTE]
@@ -53,7 +53,7 @@ erstem verlässlichen Ziel für Gastbenutzer aus. Wenn Ihr Einladungsprozess
 oder Ihr Governance-Werkzeug eine
 eigene Redirect-URL unterstützt, sollte diese auf diese Seite zeigen statt auf
 ein generisches My-Apps-Ziel. My Apps ist für App-Start gedacht, nicht für
-Sponsor-Sichtbarkeit, und ein mandantenbezogener Teams-Deeplink hilft erst
+Sponsor-Sichtbarkeit, und ein mandantenbezogener Microsoft Teams-Deeplink hilft erst
 dann, wenn der Gast bereits mindestens einem Team in Ihrem Mandanten
 hinzugefügt wurde.
 
@@ -65,7 +65,47 @@ vermischen, landet der Gast leicht beim falschen Ansprechpartner.
 
 [Vollständige Erklärung zu Sponsor vs. Einladender]({{ '/de/sponsor-vs-inviter/' | relative_url }}).
 
-Für Microsoft-Graph-Berechtigungen und Laufzeit-Datenverarbeitung siehe
+Wenn Sie für Gastkonten noch gar keine Governance- und Lifecycle-Schicht
+haben, sollten Sie diese zuerst lösen. Das Web Part entfaltet seinen Nutzen
+erst dann richtig, wenn Gäste zuverlässig auf Ihrer Landingpage ankommen und
+die Sponsor-Zuordnung dauerhaft aktuell bleibt.
+
+Im standardmäßigen indirekten Einladungsfluss haben Sie in der Regel keinen
+Einfluss darauf, wohin Gäste nach dem Annehmen der Einladung weitergeleitet
+werden. Dadurch landen sie oft in My Apps statt auf Ihrer Landingpage. Damit
+die Weiterleitung zuverlässig auf die Landingpage zeigt, brauchen Sie einen
+Prozess auf Basis von Microsoft Graph-Einladungen oder ein Governance-Werkzeug,
+das genau darauf aufsetzt. EasyLife 365 Collaboration tut genau das. Man kann
+so etwas grundsätzlich auch selbst bauen, müsste dann aber zusätzlich die
+eigentlichen Governance-, Sponsor-Zuordnungs- und Lifecycle-Funktionen
+nachbauen. In der Praxis ist das meist teurer als eine EasyLife-Lizenz.
+
+<div class="doc-easylife-box">
+  <div class="easylife-card easylife-card--doc">
+    <a href="{{ site.author_url }}?utm_source=guest-sponsor-info&amp;utm_medium=website&amp;utm_content=easylife-doc-workoho-setup-de"
+      target="_blank" rel="noopener" class="easylife-doc-workoho-link no-external-icon">
+      <img src="{{ '/assets/images/workoho-logo.svg' | relative_url }}" alt="Workoho"
+        class="easylife-doc-workoho-logo" width="110" height="27">
+    </a>
+    <p class="easylife-doc-partner-note">
+      Workoho, das Team hinter Guest Sponsor Info, ist EasyLife 365
+      <span class="easylife-tier easylife-tier--inline">Platinum Partner</span>.
+    </p>
+    <a href="https://easylife365.cloud/products/collaboration/?utm_source=guest-sponsor-info&amp;utm_medium=website&amp;utm_content=easylife-setup-logo-de"
+      target="_blank" rel="noopener" class="easylife-doc-easylife-link no-external-icon">
+      <img src="{{ '/assets/images/easylife365-logo.svg' | relative_url }}" alt="EasyLife 365 Collaboration"
+        class="easylife-logo" width="240" height="33">
+    </a>
+    <p class="easylife-doc-copy">
+      Buchen Sie eine Demo mit Workoho und sehen Sie, wie EasyLife Gäste auf
+      die Landingpage bringt und Governance stabil hält.
+    </p>
+    <a href="https://wkho.io/easylife365-demo?utm_source=guest-sponsor-info&amp;utm_medium=website&amp;utm_content=easylife-setup-de"
+      target="_blank" rel="noopener" class="easylife-cta">Book a Demo</a>
+  </div>
+</div>
+
+Für Microsoft Graph-Berechtigungen und Laufzeit-Datenverarbeitung siehe
 [Datenschutz](/de/privacy/). Für Azure-Nutzungszuordnung und Opt-out siehe
 [Telemetrie](/de/telemetry/). Wenn Sie statt eines Self-Service-Rollouts
 direkte Unterstützung brauchen, siehe [Support](/de/support/).
@@ -84,7 +124,7 @@ SharePoint-Gastzugriffspunkt sein.
   einer Kollaborationssite.
 - Platzieren Sie das Web Part weit oben auf der Seite, damit Sponsor,
   Ersatz-Sponsor und Kontaktkontext sofort sichtbar sind.
-- Behandeln Sie Teams-Links als nachgelagerten Schritt von dieser Seite aus,
+- Behandeln Sie Links zu Microsoft Teams als nachgelagerten Schritt von dieser Seite aus,
   nicht als einziges erstes Ziel.
 
 ### Festlegen, wo die Landingpage liegen soll

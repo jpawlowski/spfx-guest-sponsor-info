@@ -396,14 +396,31 @@ selected template, while richer guest metadata remains separate on the guest
 object in an app-owned **directory extension**. That avoids conflicts in the
 customer tenant and can be removed cleanly later if needed.
 
-<div class="doc-cta-box">
-  <div>
-    <p class="doc-cta-title">Use the landing page as a whole system</p>
-    <p class="doc-cta-sub">Sponsor visibility, guest self-service, and tenant-pinned entry links work best together.</p>
-  </div>
-  <div class="doc-cta-actions">
-    <a href="{{ '/en/sponsor-vs-inviter/' | relative_url }}" class="btn btn-outline">Sponsor vs Inviter</a>
-    <a href="{{ '/en/setup/' | relative_url }}" class="btn btn-teal">Setup Guide</a>
+That makes EasyLife 365 Collaboration a natural companion when the landing
+page experience and the governance model should reinforce each other.
+
+<div class="doc-easylife-box">
+  <div class="easylife-card easylife-card--doc">
+    <a href="{{ site.author_url }}?utm_source=guest-sponsor-info&amp;utm_medium=website&amp;utm_content=easylife-doc-workoho-ideas-en"
+      target="_blank" rel="noopener" class="easylife-doc-workoho-link no-external-icon">
+      <img src="{{ '/assets/images/workoho-logo.svg' | relative_url }}" alt="Workoho"
+        class="easylife-doc-workoho-logo" width="110" height="27">
+    </a>
+    <p class="easylife-doc-partner-note">
+      Workoho, the team behind Guest Sponsor Info, is an EasyLife 365
+      <span class="easylife-tier easylife-tier--inline">Platinum Partner</span>.
+    </p>
+    <a href="https://easylife365.cloud/products/collaboration/?utm_source=guest-sponsor-info&amp;utm_medium=website&amp;utm_content=easylife-landingpage-ideas-logo-en"
+      target="_blank" rel="noopener" class="easylife-doc-easylife-link no-external-icon">
+      <img src="{{ '/assets/images/easylife365-logo.svg' | relative_url }}" alt="EasyLife 365 Collaboration"
+        class="easylife-logo" width="240" height="33">
+    </a>
+    <p class="easylife-doc-copy">
+      Book a demo with Workoho to see how EasyLife connects governance,
+      redirects, and sponsor ownership around the landing page.
+    </p>
+    <a href="https://wkho.io/easylife365-demo?utm_source=guest-sponsor-info&amp;utm_medium=website&amp;utm_content=easylife-landingpage-ideas-en"
+      target="_blank" rel="noopener" class="easylife-cta">Book a Demo</a>
   </div>
 </div>
 

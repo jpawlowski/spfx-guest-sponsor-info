@@ -2,7 +2,7 @@ meta:
   description: >-
     Guest Sponsor Info — a free SharePoint Framework web part for
     Microsoft Entra B2B guest users that shows sponsors, backup sponsors,
-    live contact cards, Teams presence, and 17 languages.
+    live contact cards, presence in Microsoft Teams, and 17 languages.
 
 nav:
   why: Why?
@@ -47,15 +47,15 @@ features:
       and backup sponsors — with profile photos, job titles, email,
       phone, and office address.
   presence:
-    title: Real-Time Teams Presence
+    title: Real-Time Presence in Microsoft Teams
     description: >-
       See whether a sponsor is Available, Busy, In a Meeting, or Away,
       with coloured status indicators that update automatically.
   teams:
-    title: Teams Chat & Call
+    title: Microsoft Teams Chat & Call
     description: >-
-      One-click deep links for a Teams chat or call with the sponsor.
-      If Teams isn't provisioned for the guest yet, the web part shows an
+      One-click deep links for a Microsoft Teams chat or call with the sponsor.
+      If Microsoft Teams isn't provisioned for the guest yet, the web part shows an
       honest status instead of a button that looks ready but is not.
   privacy:
     title: Privacy-First Architecture
@@ -65,9 +65,9 @@ features:
       phone-home stream. The Azure Function proxy ensures guests never
       hold directory permissions.
   onboarding:
-    title: Teams Onboarding Status
+    title: Microsoft Teams Onboarding Status
     description: >-
-      Guests often accept the invitation but still can't use Teams until
+      Guests often accept the invitation but still can't use Microsoft Teams until
       they've been added to a Team. The web part detects this and shows a
       clear explanation instead of leaving them with broken buttons.
   delegation:
@@ -100,7 +100,7 @@ features_page:
       Hovering or tabbing to a card opens a contact panel with the details
       a guest actually needs — email, work phone, mobile, office location,
       and full address. Each field has a one-click copy button. The panel
-      can also show the sponsor's manager for extra orientation when Teams
+      can also show the sponsor's manager for extra orientation when Microsoft Teams
       is not yet available.
     highlights:
       - One-click copy for email, phone, and mobile
@@ -120,17 +120,17 @@ features_page:
       - Mock sponsor cards directly in SharePoint edit mode
       - Optional public demo mode on the live page for all visitors
       - Expanded card preview with contact and manager sections
-      - No Graph calls and no guest account required
+      - No Microsoft Graph calls and no guest account required
   onboarding:
-    title: Teams Onboarding Status
+    title: Microsoft Teams Onboarding Status
     description: >-
-      A guest account can exist in Entra before it has been added to any
-      Team. In real onboarding flows, that leaves guests on a SharePoint
+      A guest account can exist in Microsoft Entra before it has been added
+      to any Microsoft Teams team. In real onboarding flows, that leaves guests on a SharePoint
       landing page with contact actions that look ready but are not. The
       web part detects this, shows a clear explanation, and disables chat
       and call buttons until Teams access is confirmed.
   presence:
-    title: Real-Time Teams Presence
+    title: Real-Time Presence in Microsoft Teams
     description: >-
       Coloured presence indicators show whether a sponsor is reachable
       right now. Updates automatically with intelligent polling.
@@ -144,10 +144,10 @@ features_page:
       - Focusing
       - Offline
   teams:
-    title: Teams Chat & Call Integration
+    title: Microsoft Teams Chat & Call Integration
     description: >-
-      One-click deep links let guests start a Teams chat or call directly
-      from the sponsor card. If Teams is not provisioned yet, the web part
+      One-click deep links let guests start a Microsoft Teams chat or call directly
+      from the sponsor card. If Microsoft Teams is not provisioned yet, the web part
       shows an explanation instead of a broken link.
   privacy:
     title: Privacy-First Architecture
@@ -187,7 +187,7 @@ features_page:
       description: >-
         Guests authenticate with their own identity but never hold directory
         permissions. EasyAuth validates each request before it reaches the
-        function, and the Managed Identity handles all Graph calls on their
+        function, and the Managed Identity handles all Microsoft Graph calls on their
         behalf.
     resilience:
       title: Built-in Resilience
@@ -224,7 +224,7 @@ made_by:
   cta: Work with us
   partner_tier: Platinum Partner
   partner_tagline: >-
-    EasyLife 365 automates lifecycle management for Teams, SharePoint
+    EasyLife 365 automates lifecycle management for Microsoft Teams, SharePoint
     sites, Viva Engage, and other Microsoft 365 workspaces, including
     guest onboarding and sponsor assignments.
   partner_cta: Book a Demo

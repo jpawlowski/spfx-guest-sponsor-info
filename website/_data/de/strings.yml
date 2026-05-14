@@ -2,7 +2,7 @@ meta:
   description: >-
     Guest Sponsor Info — ein kostenloses SharePoint Framework Web Part
     für Microsoft Entra B2B-Gastbenutzer, das Sponsoren,
-    Ersatz-Sponsoren, Live-Kontaktkarten, Teams-Präsenz und 17 Sprachen
+    Ersatz-Sponsoren, Live-Kontaktkarten, Präsenz in Microsoft Teams und 17 Sprachen
     auf eine SharePoint-Seite bringt.
 
 nav:
@@ -49,29 +49,29 @@ features:
       Ersatz-Sponsoren endlich sehen — mit Profilfoto, Jobtitel, E-Mail,
       Telefon und Büroadresse.
   presence:
-    title: Echtzeit-Teams-Präsenz
+    title: Echtzeit-Präsenz in Microsoft Teams
     description: >-
       Sehen Sie, ob ein Sponsor verfügbar, beschäftigt, in einer
       Besprechung oder abwesend ist, mit farbigen Statusanzeigen, die
       sich automatisch aktualisieren.
   teams:
-    title: Teams-Chat & -Anruf
+    title: Chat & Anruf in Microsoft Teams
     description: >-
-      Ein-Klick-Deeplinks für Teams-Chat oder -Anruf mit dem Sponsor.
-      Wenn Teams für den Gast noch nicht bereitgestellt wurde, zeigt das
+      Ein-Klick-Deeplinks für einen Chat oder Anruf in Microsoft Teams mit dem Sponsor.
+      Wenn Microsoft Teams für den Gast noch nicht bereitgestellt wurde, zeigt das
       Web Part eine ehrliche Statusmeldung statt eines Buttons, der
       bereit aussieht, es aber nicht ist.
   privacy:
     title: Privacy-First-Architektur
     description: >-
-      Sponsor- und Gastdaten bleiben in Ihrer Microsoft-365- und
+      Sponsor- und Gastdaten bleiben in Ihrer Microsoft 365- und
       Azure-Umgebung. Workoho erhält keine Laufzeitdaten, Analytics oder
       Phone-Home-Datenströme. Der Azure Function Proxy stellt sicher,
       dass Gäste keinerlei Verzeichnisberechtigungen benötigen.
   onboarding:
-    title: Teams-Onboarding-Status
+    title: Microsoft Teams-Onboarding-Status
     description: >-
-      Gäste nehmen die Einladung oft an, können Teams aber erst nutzen,
+      Gäste nehmen die Einladung oft an, können Microsoft Teams aber erst nutzen,
       wenn sie einem Team hinzugefügt wurden. Das Web Part erkennt das
       und zeigt eine klare Erklärung statt funktionsloser Buttons.
   delegation:
@@ -108,7 +108,7 @@ features_page:
       E-Mail, Telefon, Mobilnummer, Bürostandort und vollständige
       Adresse. Jedes Feld hat einen Kopieren-Button. Optional zeigt das
       Panel auch den Vorgesetzten des Sponsors und gibt so zusätzliche
-      Orientierung, wenn Teams noch nicht verfügbar ist.
+      Orientierung, wenn Microsoft Teams noch nicht verfügbar ist.
     highlights:
       - Ein-Klick-Kopieren für E-Mail, Telefon und Mobil
       - Inline-Kartenvorschau über Azure Maps
@@ -129,11 +129,11 @@ features_page:
       - Demo-Sponsoren direkt im SharePoint-Bearbeitungsmodus
       - Optionaler öffentlicher Demo-Modus auf der Live-Seite für alle Besucher
       - Geöffnete Kartenansicht mit Kontakt- und Manager-Bereich
-      - Keine Graph-Aufrufe und kein Gastkonto erforderlich
+      - Keine Microsoft Graph-Aufrufe und kein Gastkonto erforderlich
   onboarding:
-    title: Teams-Onboarding-Status
+    title: Microsoft Teams-Onboarding-Status
     description: >-
-      Ein Gastkonto kann in Entra existieren, bevor es einem Team
+      Ein Gastkonto kann in Microsoft Entra existieren, bevor es einem Microsoft Teams-Team
       hinzugefügt wurde. In realen Gäste-Onboarding-Prozessen führt das
       oft dazu, dass Gäste auf einer SharePoint-Landingpage
       Kontaktaktionen sehen, die bereit aussehen, aber noch nicht nutzbar
@@ -141,7 +141,7 @@ features_page:
       deaktiviert Chat- und Anruf-Buttons, bis der Teams-Zugang bestätigt
       ist.
   presence:
-    title: Echtzeit-Teams-Präsenz
+    title: Echtzeit-Präsenz in Microsoft Teams
     description: >-
       Farbige Präsenz-Indikatoren zeigen, ob ein Sponsor gerade
       erreichbar ist. Automatische Aktualisierung mit intelligentem
@@ -156,16 +156,16 @@ features_page:
       - Fokussiert
       - Offline
   teams:
-    title: Teams-Chat & -Anruf-Integration
+    title: Chat & Anruf in Microsoft Teams
     description: >-
       Ein-Klick-Deeplinks ermöglichen es Gästen, direkt aus der
-      Sponsor-Karte einen Teams-Chat oder -Anruf zu starten. Wenn Teams
+      Sponsor-Karte einen Chat oder Anruf in Microsoft Teams zu starten. Wenn Microsoft Teams
       für einen Gast noch nicht bereitgestellt wurde, zeigt das Web Part
       stattdessen eine hilfreiche Erklärung an.
   privacy:
     title: Privacy-First-Architektur
     description: >-
-      Sponsor- und Gastdaten bleiben innerhalb Ihrer Microsoft-365- und
+      Sponsor- und Gastdaten bleiben innerhalb Ihrer Microsoft 365- und
       Azure-Umgebung. Die Lösung sendet keine Laufzeitdaten an Workoho,
       benötigt kein Workoho-betriebenes Backend und hält den
       Verzeichniszugriff vollständig in Ihrem Tenant. Der Azure Function
@@ -204,7 +204,7 @@ features_page:
         Gäste authentifizieren sich mit ihrer eigenen Identität, erhalten
         aber keinerlei Verzeichnisberechtigungen. EasyAuth prüft jede
         Anfrage vor der Function, und die Managed Identity übernimmt alle
-        Graph-Aufrufe.
+        Microsoft Graph-Aufrufe.
     resilience:
       title: Eingebaute Resilienz
       description: >-
@@ -245,7 +245,7 @@ made_by:
     SharePoint-Websites, Viva Engage und weitere Microsoft 365
     Arbeitsumgebungen, einschließlich Gäste-Onboarding und
     Sponsor-Verwaltung.
-  partner_cta: Demo buchen
+  partner_cta: Book a Demo
 
 problem:
   title: Ein Gast hat Ihre Einladung angenommen. Und jetzt?

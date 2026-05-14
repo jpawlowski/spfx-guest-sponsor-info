@@ -8,6 +8,9 @@
   --color-teal: #12b2cd;
   --color-teal-light: #e0f7fb;
   --color-teal-dark: #0e8fa5;
+  --color-easylife: #884479;
+  --color-easylife-light: #f7edf4;
+  --color-easylife-border: rgba(136, 68, 121, 0.28);
   --color-dark: #0a3d4f;
   --color-dark-light: #0f5266;
   --color-white: #ffffff;
@@ -867,7 +870,8 @@ img[data-zoomable] {
   padding: 1.75rem 2rem;
   background: var(--color-white);
   border-radius: var(--radius);
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  border: 2px solid var(--color-easylife);
+  box-shadow: 0 10px 24px rgba(136, 68, 121, 0.08);
   text-align: center;
 }
 
@@ -891,24 +895,38 @@ img[data-zoomable] {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--color-teal-dark);
-  background: var(--color-teal-light);
+  color: var(--color-easylife);
+  background: var(--color-easylife-light);
   padding: 0.25rem 0.75rem;
   border-radius: 100px;
 }
 
 .easylife-cta {
-  display: inline-block;
-  margin-top: 0.25rem;
-  font-size: 0.95rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.15rem;
+  padding: 0.34rem 0.72rem;
+  font-size: 0.85rem;
   font-weight: 600;
-  color: var(--color-teal);
+  line-height: 1.2;
+  color: var(--color-white);
+  background: var(--color-teal);
+  border: 1px solid var(--color-teal);
+  border-radius: 100px;
   text-decoration: none;
-  transition: color var(--transition);
+  transition:
+    color var(--transition),
+    background-color var(--transition),
+    border-color var(--transition);
 }
 
-.easylife-cta:hover {
-  color: var(--color-dark);
+.easylife-cta:hover,
+.easylife-cta:focus {
+  color: var(--color-white);
+  background: var(--color-teal-dark);
+  border-color: var(--color-teal-dark);
+  text-decoration: none;
 }
 
 /* ============================================================
@@ -2030,6 +2048,86 @@ img[data-zoomable] {
   gap: 0.75rem;
   flex-shrink: 0;
   flex-wrap: wrap;
+}
+
+/* Branded EasyLife box embedded in doc content */
+.doc-easylife-box {
+  width: min(100%, 360px);
+  margin: 1.75rem 0 2rem;
+}
+
+.doc-easylife-box .easylife-card {
+  width: 100%;
+}
+
+.doc-easylife-box .easylife-card--doc {
+  gap: 0.45rem;
+  padding: 1rem 1.125rem;
+}
+
+.easylife-doc-workoho-link,
+.easylife-doc-easylife-link {
+  display: inline-flex;
+}
+
+.easylife-doc-easylife-link {
+  margin-top: 0.35rem;
+}
+
+.easylife-doc-workoho-logo {
+  height: 22px;
+  width: auto;
+}
+
+.doc-easylife-box .easylife-doc-workoho-logo,
+.doc-easylife-box .easylife-logo,
+.made-by-workoho-logo,
+.made-by-easylife .easylife-logo {
+  border-radius: 0;
+}
+
+.doc-easylife-box .easylife-logo {
+  height: 28px;
+}
+
+.doc-content p.easylife-doc-partner-note {
+  margin: 0;
+  font-size: 0.76rem;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--color-text);
+}
+
+.doc-easylife-box .easylife-tier--inline {
+  margin: 0 0.2rem;
+  padding: 0.16rem 0.5rem;
+  font-size: 0.62rem;
+  line-height: 1;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.doc-content p.easylife-doc-copy {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--color-text-muted);
+}
+
+.doc-easylife-box .easylife-cta {
+  margin-top: 0.05rem;
+  padding: 0.3rem 0.62rem;
+  font-size: 0.78rem;
+}
+
+.doc-easylife-box .easylife-cta,
+.doc-easylife-box .easylife-cta:hover,
+.doc-easylife-box .easylife-cta:focus,
+.doc-easylife-box .easylife-cta:active {
+  color: var(--color-white);
+  text-decoration: none;
 }
 
 /* External link marker for all links leaving this site */

@@ -21,7 +21,7 @@ Guest Sponsor Info setup has three phases:
 | Phase | Where | Minimum role required |
 |---|---|---|
 | 1 — SharePoint | SharePoint Admin Center + landing page site | SharePoint Administrator |
-| 2 — Guest Sponsor API | [Azure Cloud Shell](https://shell.azure.com/) (recommended) or local PowerShell/shell | Azure Owner, or Azure Contributor + an access-management role (User Access Administrator or Role Based Access Control Administrator), plus Entra roles via PIM. Resource-group scope is the normal path; use subscription scope only when this run still needs provider registration or resource-group creation. |
+| 2 — Guest Sponsor API | [Azure Cloud Shell](https://shell.azure.com/) (recommended) or local PowerShell/shell | Azure Owner, or Azure Contributor + an access-management role (User Access Administrator or Role Based Access Control Administrator), plus Microsoft Entra roles via PIM. Resource-group scope is the normal path; use subscription scope only when this run still needs provider registration or resource-group creation. |
 | 3 — Web part | SharePoint landing page (edit mode) | Site Owner |
 
 > [!NOTE]
@@ -51,7 +51,7 @@ This guide assumes a dedicated **SharePoint landing page** as the first
 reliable destination for guest users. If your invitation
 process or governance tooling supports a custom redirect URL, point it to that
 page instead of a generic My Apps destination. My Apps is designed for app
-launch, not for sponsor visibility, and a tenant-scoped Teams deep link only
+launch, not for sponsor visibility, and a tenant-scoped Microsoft Teams deep link only
 helps after the guest has already been added to at least one team in your
 tenant.
 
@@ -62,6 +62,44 @@ emails, or admin instructions mix those roles, guests may still contact the
 wrong person.
 
 [Read the sponsor vs inviter explanation]({{ '/en/sponsor-vs-inviter/' | relative_url }}).
+
+If you do not already have governance and lifecycle management for guest
+accounts, solve that layer first. This web part is most valuable once guests
+reliably reach the landing page you prepared and once sponsor assignments stay
+current over time.
+
+In the default indirect invitation path, you usually do not control where the
+guest lands after invitation redemption, so they often end up in My Apps
+instead of on your landing page. To steer guests there reliably, you need a
+process based on Microsoft Graph invitations or governance tooling built on top
+of that. EasyLife 365 Collaboration does exactly that. You can build this
+yourself, but then you also need to recreate the actual governance, sponsor
+assignment, and lifecycle capabilities around it. In practice, that is usually
+more expensive than licensing EasyLife.
+
+<div class="doc-easylife-box">
+  <div class="easylife-card easylife-card--doc">
+    <a href="{{ site.author_url }}?utm_source=guest-sponsor-info&amp;utm_medium=website&amp;utm_content=easylife-doc-workoho-setup-en"
+      target="_blank" rel="noopener" class="easylife-doc-workoho-link no-external-icon">
+      <img src="{{ '/assets/images/workoho-logo.svg' | relative_url }}" alt="Workoho"
+        class="easylife-doc-workoho-logo" width="110" height="27">
+    </a>
+    <p class="easylife-doc-partner-note">
+      Workoho, the team behind Guest Sponsor Info, is an EasyLife 365
+      <span class="easylife-tier easylife-tier--inline">Platinum Partner</span>.
+    </p>
+    <a href="https://easylife365.cloud/products/collaboration/?utm_source=guest-sponsor-info&amp;utm_medium=website&amp;utm_content=easylife-setup-logo-en"
+      target="_blank" rel="noopener" class="easylife-doc-easylife-link no-external-icon">
+      <img src="{{ '/assets/images/easylife365-logo.svg' | relative_url }}" alt="EasyLife 365 Collaboration"
+        class="easylife-logo" width="240" height="33">
+    </a>
+    <p class="easylife-doc-copy">
+      Book a demo with Workoho to see how EasyLife brings guests to the landing page and keeps governance aligned.
+    </p>
+    <a href="https://wkho.io/easylife365-demo?utm_source=guest-sponsor-info&amp;utm_medium=website&amp;utm_content=easylife-setup-en"
+      target="_blank" rel="noopener" class="easylife-cta">Book a Demo</a>
+  </div>
+</div>
 
 For Microsoft Graph permissions and runtime data handling, see the
 [Privacy Policy](/en/privacy/). For Azure deployment attribution and opt-out,
@@ -80,7 +118,7 @@ first reliable SharePoint destination after invitation redemption.
 - Use a dedicated landing page, not a generic collaboration site home page.
 - Put the web part high on the page so sponsor, backup sponsor, and contact
   context are visible immediately.
-- Treat Teams links as a follow-up step from that page, not as the only first
+- Treat Microsoft Teams links as a follow-up step from that page, not as the only first
   destination.
 
 ### Decide where the landing page should live

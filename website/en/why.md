@@ -5,15 +5,16 @@ title: Why This Web Part Exists
 permalink: /en/why/
 description: >-
   Understand the guest onboarding and sponsor visibility gap this web part
-  closes on a SharePoint guest landing page — why a guest can exist in Entra
-  before Teams is ready, and how the web part responds.
+  closes on a SharePoint guest landing page — why a guest can exist in
+  Microsoft Entra before Microsoft Teams is ready, and how the web part
+  responds.
 lead: >-
-  When a guest accepts an invitation, they may exist in Entra but still have
-  no built-in way to see their sponsors, backup sponsors, or contact options.
-  This web part turns a SharePoint guest landing page into a trustworthy first
-  destination for guest onboarding, makes sponsor visibility real, and treats
-  Teams availability honestly instead of exposing contact actions that are not
-  ready yet.
+  When a guest accepts an invitation, they may exist in Microsoft Entra but
+  still have no built-in way to see their sponsors, backup sponsors, or
+  contact options. This web part turns a SharePoint guest landing page into a
+  trustworthy first destination for guest onboarding, makes sponsor
+  visibility real, and treats availability in Microsoft Teams honestly instead
+  of exposing contact actions that are not ready yet.
 mermaid: true
 ---
 
@@ -28,7 +29,7 @@ The sponsor relationship may already exist in Entra, but it remains invisible
 to the guest. There is no built-in SharePoint experience that shows them who
 their sponsors are, let alone how to contact them.
 
-Whether Teams works for this guest depends on one central fact: has this guest
+Whether Microsoft Teams works for this guest depends on one central fact: has this guest
 already been added to at least one Teams team in your tenant, or not?
 
 That creates a communication gap: the organisation may already know who is
@@ -42,7 +43,7 @@ point the guest somewhere better, one common landing point is My Apps
 — a portal built for application discovery and launch, not for explaining who
 is responsible for the guest or what to do next.
 
-Technically, a tenant-scoped Teams deep link is not hard to generate. Graph API
+Technically, a tenant-scoped Microsoft Teams deep link is not hard to generate. Microsoft Graph API
 invitation flows can set a custom redirect URL, and governance tools often can
 too. But a Teams link only helps once Teams guest functionality is actually
 available for that account. If no team membership exists yet, the guest may
@@ -61,7 +62,7 @@ are not the same record.
 
 The inviter is whoever triggered the invitation email or workflow. The sponsor
 is the person or group recorded in Microsoft Entra's Sponsors field for that
-guest relationship. In standard Entra invitation flows, the inviter becomes the
+guest relationship. In standard Microsoft Entra invitation flows, the inviter becomes the
 default sponsor unless someone else is specified; SharePoint sharing
 invitations to brand-new external users are a documented exception. Guests
 usually see the inviter first because that name appears in the mail trail. For
@@ -75,7 +76,7 @@ repeats the inviter name, the sponsor relationship is still invisible.
 
 ## Two Paths, Two Outcomes {#two-paths}
 
-### Directly added to a Teams team
+### Directly added to a Microsoft Teams team
 
 An employee adds an external contact directly to a team, and Microsoft sends
 the invitation behind the scenes. Once the guest accepts and that first team
@@ -84,7 +85,7 @@ tenant.
 
 **The guest is not just in Entra. They also have a real Teams entry point.**
 
-### Via a governance process or the Entra Admin Center
+### Via a governance process or the Microsoft Entra admin center
 
 A lifecycle governance platform, a script, or an Entra admin workflow creates
 the guest account formally. The account exists in Entra, but no Teams team has
@@ -115,7 +116,7 @@ the guest's actual questions:
 | Who are my backup sponsors? | Not visible to the guest |
 | How do I reach them? | Not visible to the guest |
 | Is there manager context that helps me orient myself? | Not visible to the guest |
-| Is Teams already ready for contact? | Not visible to the guest |
+| Is Microsoft Teams already ready for contact? | Not visible to the guest |
 | If a custom contact action exists | It may look ready even though Teams guest functionality is not ready yet |
 
 > There is no built-in explanation telling the guest whether the action is
@@ -164,6 +165,39 @@ A guest whose Teams access is still being provisioned can reach their sponsor
 by email and knows that Teams is on its way. Even after Teams is working, the
 web part still adds value: Teams guest access does not surface Entra sponsor
 metadata on its own.
+
+This page is deliberately about the guest-facing last mile. Guest Sponsor Info
+can only show what an upstream process has already decided: who the sponsor
+is, whether backup sponsors exist, and whether the guest is actually brought to
+the landing page instead of My Apps. It does not replace the governance layer
+behind invitations, redirects, sponsor ownership, and lifecycle changes. If
+you need that upstream layer as well, you either build it yourself on top of
+Microsoft Graph invitations and automation, or you use a product such as
+EasyLife 365 Collaboration.
+
+<div class="doc-easylife-box">
+  <div class="easylife-card easylife-card--doc">
+    <a href="{{ site.author_url }}?utm_source=guest-sponsor-info&amp;utm_medium=website&amp;utm_content=easylife-doc-workoho-why-en"
+      target="_blank" rel="noopener" class="easylife-doc-workoho-link no-external-icon">
+      <img src="{{ '/assets/images/workoho-logo.svg' | relative_url }}" alt="Workoho"
+        class="easylife-doc-workoho-logo" width="110" height="27">
+    </a>
+    <p class="easylife-doc-partner-note">
+      Workoho, the team behind Guest Sponsor Info, is an EasyLife 365
+      <span class="easylife-tier easylife-tier--inline">Platinum Partner</span>.
+    </p>
+    <a href="https://easylife365.cloud/products/collaboration/?utm_source=guest-sponsor-info&amp;utm_medium=website&amp;utm_content=easylife-why-logo-en"
+      target="_blank" rel="noopener" class="easylife-doc-easylife-link no-external-icon">
+      <img src="{{ '/assets/images/easylife365-logo.svg' | relative_url }}" alt="EasyLife 365 Collaboration"
+        class="easylife-logo" width="240" height="33">
+    </a>
+    <p class="easylife-doc-copy">
+      Book a demo with Workoho to see how EasyLife handles guest governance and lifecycle here.
+    </p>
+    <a href="https://wkho.io/easylife365-demo?utm_source=guest-sponsor-info&amp;utm_medium=website&amp;utm_content=easylife-why-en"
+      target="_blank" rel="noopener" class="easylife-cta">Book a Demo</a>
+  </div>
+</div>
 
 <div class="doc-cta-box">
   <div>

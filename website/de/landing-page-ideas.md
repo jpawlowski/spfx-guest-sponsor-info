@@ -6,11 +6,11 @@ permalink: /de/landing-page-ideas/
 description: >-
   Zusätzliche Ideen für eine SharePoint-Gast-Landingpage in Microsoft Entra
   B2B — besonders Quick-Links-Bereiche, tenant-fixierte
-  Microsoft-365-Deeplinks und unterstützende Links rund um
+  Microsoft 365-Deeplinks und unterstützende Links rund um
   Sponsor-Sichtbarkeit.
 lead: >-
   Ein praktischer Begleiter für Administratoren, die ihre
-  SharePoint-Gast-Landingpage für Microsoft-Entra-B2B-Gäste-Onboarding
+  SharePoint-Gast-Landingpage für Microsoft Entra B2B-Gäste-Onboarding
   hilfreicher machen wollen. Diese Ideen ergänzen das Guest Sponsor Info Web
   Part; hilfreich sind sie, Voraussetzung für das Produkt aber nicht.
 ---
@@ -24,7 +24,7 @@ enthalten kann.
 
 Wichtig ist die Rollenverteilung: **Guest Sponsor Info löst die Sponsor-
 Sichtbarkeit**. Die umgebenden Landingpage-Elemente lösen Orientierung,
-SharePoint-Gastzugriff, Microsoft-365-Einstiegspunkte und Self-Service. Erst
+SharePoint-Gastzugriff, Microsoft 365-Einstiegspunkte und Self-Service. Erst
 zusammen wird aus einer generischen Ankunftsseite ein sinnvoller Einstieg für
 B2B-Gäste.
 
@@ -41,7 +41,7 @@ und `<tenant-domain>`. Ersetzen Sie diese durch Ihre eigenen Werte.
 
 ## Ein Gutes Standardmuster
 
-Für viele Microsoft-Entra-B2B-Tenants reichen bereits zwei
+Für viele Microsoft Entra B2B-Tenants reichen bereits zwei
 Quick-Links-Web-Parts für eine praxistaugliche SharePoint-Gast-Landingpage:
 
 - Ein Bereich für **Microsoft 365**-Einstiegspunkte im richtigen Tenant.
@@ -147,7 +147,7 @@ Dieser Bereich gibt Gästen stabile Einstiegspunkte in den Ressourcen-Tenant.
 Wo eine Microsoft-URL `tenantId` unterstützt, sollten Sie sie verwenden. Bei
 SharePoint legt der Tenant-Hostname den Tenant-Kontext bereits selbst fest.
 
-Gerade im Microsoft-Entra-B2B-Gäste-Onboarding ist das wichtiger, als es erst
+Gerade im Microsoft Entra B2B-Gäste-Onboarding ist das wichtiger, als es erst
 einmal klingt. Gäste wissen oft, dass sie eingeladen wurden, aber nicht,
 welcher tenant-spezifische Zielort ihr verlässlicher Startpunkt sein soll.
 
@@ -303,7 +303,7 @@ Prüflogik gilt trotzdem für beide Arten von Links.
 
 - Verwenden Sie `tenantId` überall dort, wo der Zieldienst es unterstützt.
 - Nutzen Sie für SharePoint eine tenant-eigene URL statt einer generischen
-  Microsoft-365-Startseite.
+  Microsoft 365-Startseite.
 - Bevorzugen Sie Übersichtsseiten und Navigationshubs gegenüber Links, die nur
   nach bestehender Team-Mitgliedschaft funktionieren.
 - Testen Sie jeden wichtigen Link, während Sie gleichzeitig im Home Tenant und
@@ -399,7 +399,7 @@ auch außerhalb der Seite:
 
 Für diesen Anwendungsfall ist in der Praxis meist eine **statische Gruppe pro
 Gasttyp** die robusteste Grundlage. SharePoint-Audience-Targeting unterstützt
-zwar auch Microsoft-Entra-Gruppen mit dynamischer Mitgliedschaft, aber das
+zwar auch Microsoft Entra-Gruppen mit dynamischer Mitgliedschaft, aber das
 hilft nur dann, wenn der Kontotyp in einem Attribut liegt, das dynamische
 Regeln überhaupt auswerten können.
 
@@ -415,15 +415,31 @@ automatisch mit gesetzt werden, während weitergehende Gast-Metadaten separat in
 einer app-eigenen **Directory Extension** am Gastobjekt liegen. Das vermeidet
 Konflikte im Kundentenant und lässt sich bei Bedarf sauber wieder entfernen.
 
-<div class="doc-cta-box">
-  <div>
-    <p class="doc-cta-title">Die Landingpage als Gesamtsystem denken</p>
-    <p class="doc-cta-sub">Sponsor-Sichtbarkeit, Gast-Self-Service und
-      tenant-fixierte Einstiegspunkte funktionieren zusammen am besten.</p>
-  </div>
-  <div class="doc-cta-actions">
-    <a href="{{ '/de/sponsor-vs-inviter/' | relative_url }}" class="btn btn-outline">Sponsor vs. Einladender</a>
-    <a href="{{ '/de/setup/' | relative_url }}" class="btn btn-teal">Setup-Anleitung</a>
+Damit ist EasyLife 365 Collaboration eine naheliegende Ergänzung, wenn sich
+Landingpage-Erlebnis und Governance-Modell gegenseitig stützen sollen.
+
+<div class="doc-easylife-box">
+  <div class="easylife-card easylife-card--doc">
+    <a href="{{ site.author_url }}?utm_source=guest-sponsor-info&amp;utm_medium=website&amp;utm_content=easylife-doc-workoho-ideas-de"
+      target="_blank" rel="noopener" class="easylife-doc-workoho-link no-external-icon">
+      <img src="{{ '/assets/images/workoho-logo.svg' | relative_url }}" alt="Workoho"
+        class="easylife-doc-workoho-logo" width="110" height="27">
+    </a>
+    <p class="easylife-doc-partner-note">
+      Workoho, das Team hinter Guest Sponsor Info, ist EasyLife 365
+      <span class="easylife-tier easylife-tier--inline">Platinum Partner</span>.
+    </p>
+    <a href="https://easylife365.cloud/products/collaboration/?utm_source=guest-sponsor-info&amp;utm_medium=website&amp;utm_content=easylife-landingpage-ideas-logo-de"
+      target="_blank" rel="noopener" class="easylife-doc-easylife-link no-external-icon">
+      <img src="{{ '/assets/images/easylife365-logo.svg' | relative_url }}" alt="EasyLife 365 Collaboration"
+        class="easylife-logo" width="240" height="33">
+    </a>
+    <p class="easylife-doc-copy">
+      Buchen Sie eine Demo mit Workoho und sehen Sie, wie EasyLife Governance,
+      Redirects und Sponsor-Zuordnung rund um die Landingpage verbindet.
+    </p>
+    <a href="https://wkho.io/easylife365-demo?utm_source=guest-sponsor-info&amp;utm_medium=website&amp;utm_content=easylife-landingpage-ideas-de"
+      target="_blank" rel="noopener" class="easylife-cta">Book a Demo</a>
   </div>
 </div>
 
