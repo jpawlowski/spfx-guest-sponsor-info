@@ -36,7 +36,7 @@ Dieser Mechanismus heißt
 und hilft Workoho zu verstehen, wie die Lösung genutzt wird, um die
 Weiterentwicklung zu rechtfertigen.
 
-Wenn Sie stattdessen nach Microsoft-Graph-Berechtigungen,
+Wenn Sie stattdessen nach Microsoft Graph-Berechtigungen,
 Laufzeit-Datenverarbeitung oder Tenant-Grenzen suchen, lesen Sie den
 [Datenschutz](/de/privacy/).
 

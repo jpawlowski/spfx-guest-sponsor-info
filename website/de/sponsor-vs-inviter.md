@@ -69,7 +69,7 @@ Wenn Ihre SharePoint-Gast-Landingpage nur den Namen aus der Einladungs-Mail
 wiederholt, bleibt das eigentliche Onboarding-Problem ungelöst.
 
 Der Gast weiß dann immer noch nicht, wer heute für seinen Zugriff zuständig
-ist, wer bei Ausfall des primären Sponsors einspringt oder ob Teams für den
+ist, wer bei Ausfall des primären Sponsors einspringt oder ob Microsoft Teams für den
 Gastzugriff bereits bereitsteht.
 
 Sponsor-Sichtbarkeit löst damit ein dauerhaftes Problem, nicht nur die Frage,
@@ -83,7 +83,7 @@ kann das Web Part zeigen:
 - die dem Gast in Microsoft Entra zugewiesenen Sponsor-Kontakte
 - Ersatz-Sponsoren, wenn mehrere zuständige Kontakte existieren
 - Manager-Kontext und Kontaktdetails
-- einen ehrlichen Teams-Onboarding-Status, wenn Chat oder Anruf noch nicht
+- einen ehrlichen Microsoft Teams-Onboarding-Status, wenn Chat oder Anruf noch nicht
   bereit sind
 
 So entsteht eine verlässliche Kontaktfläche während des Gäste-Onboardings und
@@ -92,8 +92,8 @@ auch danach.
 ## Wenn Sponsor und Einladender identisch sind
 
 Es gibt einfache Einladungsprozesse, in denen dieselbe Person sowohl die
-Einladung auslöst als auch dauerhaft Sponsor bleibt. In standardmäßigen Entra-
-Einladungsflüssen ist das sogar der Standard, sofern kein anderer Sponsor
+Einladung auslöst als auch dauerhaft Sponsor bleibt. In standardmäßigen Microsoft
+Entra-Einladungsflüssen ist das sogar der Standard, sofern kein anderer Sponsor
 angegeben wird. SharePoint-Freigabeeinladungen an neue externe Benutzer sind
 eine dokumentierte Ausnahme: Dort müssen Sponsoren gegebenenfalls manuell
 ergänzt werden.

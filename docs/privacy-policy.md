@@ -33,7 +33,7 @@ The Solution involves three distinct parties:
 
 From a data-protection perspective, the guest user is in a special position:
 they belong to a third-party organisation and have no direct contractual
-relationship with Workoho. Their personal data (UPN, Entra object ID) is
+relationship with Workoho. Their personal data (UPN, Microsoft Entra object ID) is
 processed solely to render the sponsor contact cards that your organisation
 has assigned to them. Workoho has no access to this data. The organisation
 that deploys the Solution acts as the data controller; Workoho provides the
@@ -58,10 +58,10 @@ data is stored beyond the current browser session or function invocation.
 | Sponsor email address | Guest Sponsor API for Microsoft Entra B2B | Render mailto link on the card | No |
 | Sponsor phone numbers (business, mobile) | Guest Sponsor API for Microsoft Entra B2B | Render click-to-call links on the card | No |
 | Sponsor office location, city, country, address | Guest Sponsor API for Microsoft Entra B2B | Render address and map hint on the card | No |
-| Sponsor Teams presence (availability, activity) | Guest Sponsor API for Microsoft Entra B2B | Show presence indicator on the card | No — polled periodically, held in browser memory |
+| Sponsor presence in Microsoft Teams (availability, activity) | Guest Sponsor API for Microsoft Entra B2B | Show presence indicator on the card | No — polled periodically, held in browser memory |
 | Short-lived presence token (`X-Presence-Token`) containing caller OID, allowed sponsor or manager IDs, and expiry | Guest Sponsor API for Microsoft Entra B2B | Authorize follow-up presence and manager photo requests without a server-side session | No — held in browser memory only |
 | Sponsor's manager: display name, job title, department, photo | Guest Sponsor API for Microsoft Entra B2B | Render manager context on the card | No |
-| Guest's own Teams provisioning status | Azure Function (via Microsoft Graph) | Enable/disable Teams chat and call buttons | No |
+| Guest's own Microsoft Teams provisioning status | Azure Function (via Microsoft Graph) | Enable/disable Teams chat and call buttons | No |
 
 ### Guest Sponsor API for Microsoft Entra B2B (Azure Function, runs in your Azure subscription)
 
@@ -75,8 +75,8 @@ HTTP request:
 | Sponsor profile fields (same set as above) | Microsoft Graph application call | Construct the JSON response | No — not persisted |
 | Sponsor account status (`accountEnabled`, `isResourceAccount`, `assignedPlans`) | Microsoft Graph | Filter out disabled and resource accounts (Teams Room devices, Common Area Phones, etc.) | No |
 | Sponsor mailbox settings (`mailboxSettings.userPurpose`) | Microsoft Graph | Filter out shared, room, and equipment mailboxes (requires `MailboxSettings.Read`) | No |
-| Guest's joined Teams (`joinedTeams`) | Microsoft Graph | Determine Teams provisioning status | No |
-| Guest's own Teams presence | Microsoft Graph | Used as fallback Teams provisioning signal | No |
+| Guest's joined teams in Microsoft Teams (`joinedTeams`) | Microsoft Graph | Determine Microsoft Teams provisioning status | No |
+| Guest's own presence in Microsoft Teams | Microsoft Graph | Used as fallback Microsoft Teams provisioning signal | No |
 | Short-lived presence token (`X-Presence-Token`) from the client request | HTTP request header | Re-authorize presence and photo follow-up calls without server-side session state | No — verified statelessly, not persisted |
 | Redacted IP address (last octet masked for IPv4 / last 64 bits for IPv6) | HTTP request | Anonymous rate-limiting; partial security logging | Application Insights in **your** subscription — not accessible by Workoho |
 | Redacted caller OID (first 8 and last 4 hex chars only) | Derived from EasyAuth OID | Structured logging / audit traces | Application Insights in **your** subscription |
@@ -108,9 +108,9 @@ own consent.
 | Permission | Purpose | Required? |
 |-|-|-|
 | `User.Read.All` | Read sponsor profiles, sponsor list (`/users/{id}/sponsors`), and `accountEnabled` status to filter disabled accounts | **Required** — assigned by the setup script. The function also accepts `User.ReadBasic.All` or `Directory.Read.All` as minimal alternatives (lose `accountEnabled` filtering); these require manual assignment. |
-| `Presence.Read.All` | Read real-time Teams presence status for sponsors and detect guest Teams provisioning | Optional — presence indicators disabled without it |
+| `Presence.Read.All` | Read real-time Microsoft Teams presence status for sponsors and detect guest Microsoft Teams provisioning | Optional — presence indicators disabled without it |
 | `MailboxSettings.Read` | Read `mailboxSettings.userPurpose` to filter shared mailboxes, room accounts, and equipment accounts from the sponsor list | Optional — filter is skipped without it |
-| `TeamMember.Read.All` | Read the guest's joined Teams to determine whether their Teams account has been provisioned | Optional — Teams chat/call buttons default to enabled without it |
+| `TeamMember.Read.All` | Read the guest's joined teams to determine whether their Microsoft Teams account has been provisioned | Optional — Teams chat/call buttons default to enabled without it |
 
 By default, the `setup-graph-permissions.ps1` script grants **all four
 permissions** (one required, three optional). A tenant administrator may choose

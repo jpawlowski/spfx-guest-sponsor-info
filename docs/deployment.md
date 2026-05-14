@@ -21,7 +21,7 @@ operator flow still has three phases:
 | Phase | What you finish | Typical role |
 |---|---|---|
 | 1 - SharePoint | Install the web part package, make the bundle reachable for guests, and confirm landing-page access | SharePoint Administrator |
-| 2 - Guest Sponsor API | Run the Azure plus Entra two-stage deployment for the Function App, EasyAuth App Registration, and Graph permissions | Azure `Owner`, or Azure `Contributor` + an access-management role (`User Access Administrator` or `Role Based Access Control Administrator`), plus required Entra roles |
+| 2 - Guest Sponsor API | Run the Azure plus Microsoft Entra two-stage deployment for the Function App, EasyAuth App Registration, and Graph permissions | Azure `Owner`, or Azure `Contributor` + an access-management role (`User Access Administrator` or `Role Based Access Control Administrator`), plus required Microsoft Entra roles |
 | 3 - Web part configuration | Paste the API URL and Client ID into the landing-page web part and verify the live connection | Site Owner |
 
 If you only need one specific area, jump to the matching section below. If you
@@ -55,7 +55,7 @@ are doing a first-time rollout end to end, complete the phases in that order.
 For **Tenant App Catalog** and **Site Collection App Catalog** deployments,
 verify the downloaded `.sppkg` before upload.
 
-If you use **AppSource**, this step is not required because the package is
+If you use **Microsoft AppSource**, this step is not required because the package is
 delivered through the Microsoft marketplace channel.
 
 > **Minimum:** verify SHA256 against `checksums.txt`.
@@ -113,7 +113,7 @@ on unintended sites.
 
 The web part requests no Microsoft Graph permissions of its own — the
 **SharePoint Admin Center → Advanced → API access** queue will remain empty.
-All Graph data is fetched server-side by the companion Azure Function using
+All Microsoft Graph data is fetched server-side by the companion Azure Function using
 its Managed Identity.
 
 ---
@@ -126,7 +126,7 @@ its Managed Identity.
 instead.
 
 Use this option when you want a tenant-wide package source without relying on
-AppSource.
+Microsoft AppSource.
 
 <details>
 <summary>Expand Tenant App Catalog instructions</summary>

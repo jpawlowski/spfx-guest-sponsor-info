@@ -14,7 +14,7 @@ lead: >-
   Signale heute verfügbar sind.
 intro_badges:
   - Azure-Deployment im Kundentenant
-  - Keine Graph-Berechtigungen im SPFx-Paket
+  - Keine Microsoft Graph-Berechtigungen im SPFx-Paket
   - Öffentliche Security- und Privacy-Dokumentation
 intro_actions:
   - label: Vollständige Sicherheitsbewertung lesen
@@ -87,7 +87,7 @@ eine fundierte Bewertung statt generischer Hersteller-Aussagen.
 Die stärksten aktuellen Vertrauenssignale sind:
 
 - transparente Architektur- und Sicherheitsdokumentation
-- kundenkontrolliertes Deployment in die Microsoft-365- und Azure-Umgebung des
+- kundenkontrolliertes Deployment in die Microsoft 365- und Azure-Umgebung des
   Kunden
 - Responsible-Disclosure-Kanäle für Schwachstellen
 - eine klare Trennung zwischen clientseitigem Web Part, Azure Function und der
@@ -105,11 +105,11 @@ zusätzlich die Auffindbarkeit und die interne Beschaffungsabstimmung erleichter
 
 Wenn Sie die Lösung intern bewerten, sind meist folgende Fragen relevant:
 
-- Welche Microsoft-Graph-Berechtigungen werden benötigt, und wo liegen sie?
+- Welche Microsoft Graph-Berechtigungen werden benötigt, und wo liegen sie?
 - Welche Azure-Ressourcen existieren, und wer administriert sie?
 - Wie werden Anfragen authentifiziert und auf den angemeldeten Gast begrenzt?
 - Wohin gehen Logs und Telemetrie?
-- Welche Teile sind optional, etwa Teams-Presence oder Azure Maps?
+- Welche Teile sind optional, etwa Präsenz in Microsoft Teams oder Azure Maps?
 
 Diese Antworten sind öffentlich dokumentiert und können vor dem Deployment
 geprüft werden.

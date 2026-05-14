@@ -284,7 +284,7 @@ and Microsoft Graph. It can be developed and tested locally.
 ### Quick start
 
 ```bash
-az login                       # authenticate for Graph API access
+az login                       # authenticate for Microsoft Graph API access
 ./scripts/dev-function.sh      # build + start on http://localhost:7071
 ```
 
@@ -293,7 +293,7 @@ On first run the script copies `local.settings.json.example` to
 
 | Variable | Value |
 |---|---|
-| `TENANT_ID` | Your Entra tenant ID (GUID) |
+| `TENANT_ID` | Your Microsoft Entra tenant ID (GUID) |
 | `ALLOWED_AUDIENCE` | Client ID (GUID) of the Function's App Registration |
 | `CORS_ALLOWED_ORIGIN` | `https://<tenant>.sharepoint.com` |
 
@@ -319,7 +319,7 @@ The function uses `DefaultAzureCredential` which resolves to:
 ### Mock mode (no Azure credentials needed)
 
 Set `MOCK_MODE=true` in `azure-function/local.settings.json` to return
-demo sponsor and presence data without any Graph API calls. This is useful
+demo sponsor and presence data without any Microsoft Graph API calls. This is useful
 for:
 
 - Testing HTTP routing, CORS, rate limiting, and error handling
@@ -330,7 +330,7 @@ Mock mode is blocked in production (`NODE_ENV=production`).
 
 ### Connecting the web part to the local function
 
-To test the full web part → function → Graph pipeline locally:
+To test the full web part → function → Microsoft Graph pipeline locally:
 
 1. Start the function: `./scripts/dev-function.sh`
 2. Start the web part: `./scripts/dev-webpart.sh`

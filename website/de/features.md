@@ -6,7 +6,8 @@ permalink: /de/features/
 description: >-
   Alle Features des Guest Sponsor Info Web Parts für Microsoft Entra
   B2B-Gäste-Onboarding — Live-Sponsor-Karten, Sponsor-Sichtbarkeit auf der
-  SharePoint-Gast-Landingpage, Teams-Präsenz, Onboarding-Status und mehr.
+  SharePoint-Gast-Landingpage, Präsenz in Microsoft Teams,
+  Onboarding-Status und mehr.
 ---
 
 Die vollständige Funktionsdokumentation, Architektur-Entscheidungen und

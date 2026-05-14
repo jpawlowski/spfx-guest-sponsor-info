@@ -66,7 +66,7 @@ The guest still does not know:
 
 - who is responsible for their access now
 - who to contact if the primary sponsor is unavailable
-- whether Teams guest access is ready yet
+- whether Microsoft Teams guest access is ready yet
 - whether the person from the invitation mail is even the right person anymore
 
 Sponsor visibility solves a more durable problem than simply reminding someone
@@ -80,7 +80,7 @@ page it can show:
 - the guest's assigned sponsor contacts from Microsoft Entra
 - backup sponsors when multiple responsible contacts exist
 - manager context and contact details
-- honest Teams onboarding status when chat or call actions are not ready yet
+- honest Microsoft Teams onboarding status when chat or call actions are not ready yet
 
 That gives the guest a stable support surface during guest onboarding and after
 it.
@@ -88,7 +88,7 @@ it.
 ## When Sponsor and Inviter Are the Same
 
 There are simple invitation flows where the same employee both invites the
-guest and remains the ongoing sponsor. In standard Entra invitation flows,
+guest and remains the ongoing sponsor. In standard Microsoft Entra invitation flows,
 that is also the default unless another sponsor is specified. SharePoint
 sharing invitations to brand-new external users are a documented exception:
 sponsors may need to be added manually there.

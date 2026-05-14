@@ -13,7 +13,7 @@ For a visual system overview see [architecture-diagram.md](architecture-diagram.
 When employees from partner organisations land on your SharePoint tenant as
 B2B guests, they often have no idea who their internal sponsor is or how to
 reach them. There is no out-of-the-box SharePoint component that surfaces this
-information, and even if you knew the Graph API existed, calling `/me/sponsors`
+information, and even if you knew the Microsoft Graph API existed, calling `/me/sponsors`
 from a delegated context requires the guest to hold an Entra directory role —
 completely impractical to assign at scale.
 
@@ -103,9 +103,9 @@ the presence indicator is omitted and nothing breaks — no error, no empty spac
 
 ---
 
-## Teams integration details
+## Microsoft Teams integration details
 
-The Chat and Call buttons in the contact panel generate Teams deep links with
+The Chat and Call buttons in the contact panel generate Microsoft Teams deep links with
 the `tenantId` query parameter set to the host tenant's Entra ID, so clicking
 them opens the correct guest context even when the guest is signed into their
 own home tenant in the Teams client.
@@ -118,7 +118,7 @@ detects this condition (via the Guest Sponsor API) and reacts gracefully:
 
 - The Chat and Call buttons are **disabled** with explanatory tooltips
 - An **informational banner** appears below the sponsor grid, guiding the guest
-  to ask their sponsor to add them to a Team
+  to ask their sponsor to add them to a Microsoft Teams team
 
 No error message, no broken buttons — just a clear, actionable explanation.
 
@@ -126,7 +126,7 @@ No error message, no broken buttons — just a clear, actionable explanation.
 
 ## The Guest Sponsor API — the part that makes it actually work
 
-The central architectural challenge is that the Graph `/me/sponsors` relationship
+The central architectural challenge is that the Microsoft Graph `/me/sponsors` relationship
 requires the calling user to hold an Entra directory role. Assigning roles to
 guests at scale is not viable:
 
@@ -143,7 +143,7 @@ Azure Function, it:
    (no secret in the client, no custom auth header handling)
 2. Reads the caller's Object ID exclusively from the EasyAuth-validated principal
    claims — callers cannot query other users' sponsors by manipulating a parameter
-3. Calls Graph with its own **Managed Identity** (application permissions, no
+3. Calls Microsoft Graph with its own **Managed Identity** (application permissions, no
    stored secrets, RBAC-based key access)
 4. Returns only the sponsor data for the authenticated caller
 
@@ -170,7 +170,7 @@ sponsors, and a blank space is cleaner than a visible but empty widget.
 
 ### Preview mode for page editors
 
-Page authors see **realistic sample cards** in edit mode — no Graph calls, no
+Page authors see **realistic sample cards** in edit mode — no Microsoft Graph calls, no
 live photos, no network traffic. The mock cards show a plausible sponsor name,
 title, department, and initials avatar, giving editors an accurate picture of
 how the web part will look for real guests without requiring anyone to sign in
@@ -180,7 +180,7 @@ the real sponsor data takes over seamlessly.
 Guest detection uses two signals in combination:
 
 - `isExternalGuestUser` from `pageContext.user` (primary — derived from the
-  Entra token, synchronous, always available)
+  Microsoft Entra token, synchronous, always available)
 - `#EXT#` in the login name UPN (fallback — covers the edge case where the
   SharePoint user profile is not yet provisioned on a guest's very first visit)
 
@@ -188,7 +188,7 @@ Guest detection uses two signals in combination:
 
 ## Sponsor priority and automatic delegation
 
-When a guest has multiple sponsors, the order in which they are stored in Entra
+When a guest has multiple sponsors, the order in which they are stored in Microsoft Entra
 matters. Directory governance tools that manage sponsor assignments — such as
 [EasyLife 365 Collaboration](https://easylife365.cloud/products/collaboration/) — store sponsors in
 explicit priority order:

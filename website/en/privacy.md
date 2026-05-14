@@ -13,7 +13,7 @@ lead: >-
   Graph permissions are used, and why no runtime data is sent to Workoho.
 intro_badges:
   - Data stays in your tenant
-  - Graph via Azure Function
+  - Microsoft Graph via Azure Function
   - Application Insights optional
 intro_actions:
   - label: See telemetry details
@@ -39,7 +39,7 @@ see the [Setup Guide](/en/setup/).
 - **No data sent to Workoho or third parties** — the web part and Azure
   Function operate entirely within your tenant.
 - **Browser memory only** — the web part holds sponsor data (name, title,
-  email, phone, Teams presence) in browser memory during the page session.
+  email, phone, Microsoft Teams presence) in browser memory during the page session.
   Nothing is persisted to disk or sent elsewhere.
 - **Azure Function is stateless** — each request is processed and discarded.
   No sponsor or guest data is stored.
@@ -54,9 +54,9 @@ All Microsoft Graph permissions are held exclusively by the
 | Scope | Required? | Purpose |
 |-------|-----------|---------|
 | [`User.Read.All`](https://learn.microsoft.com/en-us/graph/permissions-reference#userreadall) | Required | Read sponsor profiles and filter disabled accounts |
-| [`Presence.Read.All`](https://learn.microsoft.com/en-us/graph/permissions-reference#presencereadall) | Optional | Teams presence indicators |
+| [`Presence.Read.All`](https://learn.microsoft.com/en-us/graph/permissions-reference#presencereadall) | Optional | Microsoft Teams presence indicators |
 | [`MailboxSettings.Read`](https://learn.microsoft.com/en-us/graph/permissions-reference#mailboxsettingsread) | Optional | Filter shared/room/equipment mailboxes |
-| [`TeamMember.Read.All`](https://learn.microsoft.com/en-us/graph/permissions-reference#teammemberreadall) | Optional | Detect guest Teams account provisioning |
+| [`TeamMember.Read.All`](https://learn.microsoft.com/en-us/graph/permissions-reference#teammemberreadall) | Optional | Detect guest Microsoft Teams account provisioning |
 
 ## Full Policy
 

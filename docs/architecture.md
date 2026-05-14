@@ -9,7 +9,7 @@ For a visual system overview see [architecture-diagram.md](architecture-diagram.
 ## SPFx Lifecycle and Non-Blocking Initialization
 
 `onInit()` resolves immediately after `super.onInit()` and icon registration.
-Graph and AAD HTTP client acquisition runs in the background via `_acquireClientsInBackground()`.
+Microsoft Graph and AAD HTTP client acquisition runs in the background via `_acquireClientsInBackground()`.
 
 **Why:** SPFx awaits the `onInit()` Promise before rendering any web part on the page.
 Blocking here with `getClient()` calls would delay the entire page layout, not just this
@@ -32,7 +32,7 @@ client in step 2.
 
 Combined check: `isGuest = isExternalGuestUser || loginName.includes('#EXT#')`.
 
-`isExternalGuestUser` is the primary signal (from the Entra token, synchronous, no Graph
+`isExternalGuestUser` is the primary signal (from the Microsoft Entra token, synchronous, no Microsoft Graph
 call). The `#EXT#` fallback covers edge cases where the flag is not yet populated.
 
 **Known limitation:** On a guest's very first visit, `loginName` can be empty because
@@ -45,10 +45,10 @@ unaffected.
 
 ```text
 [Guest Browser]
-      │  ① acquires Bearer token from Entra ID
+  │  ① acquires Bearer token from Microsoft Entra ID
       │     (scoped to the EasyAuth App Registration)
       ▼
-[Entra ID]
+[Microsoft Entra ID]
       │  returns signed token (identifies the guest)
       ▼
 [Guest Browser]
@@ -60,7 +60,7 @@ unaffected.
   - Valid token → injects caller OID as X-MS-CLIENT-PRINCIPAL-ID
       ▼
 [Azure Function – business logic]
-  - Calls Graph via Managed Identity (app permissions)
+  - Calls Microsoft Graph via Managed Identity (app permissions)
   - Returns { activeSponsors, unavailableCount }
       │
 [Guest Browser – SPFx Web Part]
@@ -75,19 +75,19 @@ unaffected.
   - Function returns presence status only — sponsor list is never re-fetched
 ```
 
-No Entra directory role needed for the guest. The Azure Function is the only party that
+No Microsoft Entra directory role needed for the guest. The Azure Function is the only party that
 holds `User.Read.All`; the guest never sees that permission.
 
-## Graph Permissions
+## Microsoft Graph Permissions
 
 ### Function (application, via Managed Identity)
 
 | Permission | Purpose |
 |---|---|
 | `User.Read.All` | `/users/{oid}/sponsors`, `$batch` profile checks, `accountEnabled` |
-| `Presence.Read.All` | **Optional.** `/communications/getPresencesByUserId`. Requires Teams licensing. Skipped when absent — sponsors render without presence indicator. |
+| `Presence.Read.All` | **Optional.** `/communications/getPresencesByUserId`. Requires Microsoft Teams licensing. Skipped when absent — sponsors render without presence indicator. |
 | `MailboxSettings.Read` | **Optional.** Filter shared/room/equipment mailboxes. Skipped when absent. |
-| `TeamMember.Read.All` | **Optional.** Detect whether the guest has a Teams account via `/users/{id}/joinedTeams`. Skipped when absent — Teams chat/call buttons default to enabled. |
+| `TeamMember.Read.All` | **Optional.** Detect whether the guest has a Microsoft Teams account via `/users/{id}/joinedTeams`. Skipped when absent — Teams chat/call buttons default to enabled. |
 
 ## Profile Photos
 
@@ -99,7 +99,7 @@ a base64 data URL. Failed photo requests fall back to initials silently.
 
 ## Presence Display
 
-Both `availability` and `activity` are read from Graph. Display labels follow
+Both `availability` and `activity` are read from Microsoft Graph. Display labels follow
 [Microsoft's documented combination table](https://learn.microsoft.com/graph/cloud-communications-manage-presence-state):
 `activity` takes priority when it differs from `availability` (e.g. `Busy`/`InAMeeting` → "In a meeting").
 All documented tokens are resolved via localised strings; undocumented tokens fall back to a
@@ -110,7 +110,7 @@ base `availability` label plus a localised suffix (e.g. "Available, out of offic
 If no base availability is set, it falls back to the standalone "Out of office" string.
 The dot colour uses the OOF magenta (`#B4009E`) regardless of the base availability.
 
-**Focusing colour.** `Focusing` uses Teams purple (`#6264A7`), not the generic DND red.
+**Focusing colour.** `Focusing` uses Microsoft Teams purple (`#6264A7`), not the generic DND red.
 This matches the colour Teams displays for focus sessions.
 
 Presence is polled with adaptive intervals: 30 s when a sponsor card is actively hovered,
@@ -120,7 +120,7 @@ Presence is polled with adaptive intervals: 30 s when a sponsor card is actively
 
 ### Why the proxy exists
 
-`/me/sponsors` requires the calling user to hold an Entra directory role. Assigning roles
+`/me/sponsors` requires the calling user to hold a Microsoft Entra directory role. Assigning roles
 to guests at scale is impractical (role-assignable groups have no dynamic membership,
 automation requires `RoleManagement.ReadWrite.Directory`, and the sponsor-read permission
 is not self-scoped — GDPR concern). The function sidesteps all of this.

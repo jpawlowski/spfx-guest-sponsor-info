@@ -49,7 +49,7 @@ Vor dem Eröffnen eines Issues empfehlen wir:
 - [Setup-Anleitung](/de/setup/)
   für häufige Konfigurationsschritte zu prüfen
 - [Datenschutz](/de/privacy/)
-  und [Telemetrie](/de/telemetry/) zu prüfen, wenn es um Microsoft-Graph-
+  und [Telemetrie](/de/telemetry/) zu prüfen, wenn es um Microsoft Graph-
   Berechtigungen, Datenverarbeitung oder Azure-Nutzungszuordnung geht
 - [Bestehende Issues](https://github.com/workoho/spfx-guest-sponsor-info/issues)
   nach bekannten Problemen und Workarounds zu durchsuchen

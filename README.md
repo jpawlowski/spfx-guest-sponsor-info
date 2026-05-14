@@ -32,7 +32,7 @@ details. The layout matches the built-in SharePoint People web part.
 | SharePoint Online | Modern team or communication site |
 | Microsoft Entra | Guest accounts with one or more sponsors assigned |
 | Azure subscription | Required to host the included Guest Sponsor API (Azure Function) |
-| Azure Function Graph permissions | `User.Read.All` granted to the Function's Managed Identity; optional: `Presence.Read.All` · `MailboxSettings.Read` · `TeamMember.Read.All` |
+| Azure Function permissions for Microsoft Graph | `User.Read.All` granted to the Function's Managed Identity; optional: `Presence.Read.All` · `MailboxSettings.Read` · `TeamMember.Read.All` |
 
 ## Features
 
@@ -143,7 +143,7 @@ PowerShell prerequisites for the commands below:
   because `Install-PSResource` isn't available out of the box.
 - **PnP path:** use **PowerShell 7+** even on Windows, install
   [PnP PowerShell](https://pnp.github.io/powershell/) once, and
-  [register your own Entra app](https://pnp.github.io/powershell/articles/registerapplication.html)
+  [register your own app in Microsoft Entra](https://pnp.github.io/powershell/articles/registerapplication.html)
   because `Connect-PnPOnline -Interactive` requires a client ID.
 
 ```powershell
@@ -204,23 +204,23 @@ Groups → [Site] Visitors → New → Add Users → Everyone**.
 > **Pitfall:** The similarly named *Everyone except external users* group
 > explicitly **excludes** B2B guests — do not use it here.
 
-**Alternative — static Entra security group:** If your organisation uses an
+**Alternative — static Microsoft Entra security group:** If your organisation uses an
 automated guest invitation workflow (not implicit Teams/SharePoint invitations),
 a static security group populated at invitation time is a viable alternative.
-Entra ID immediately reflects the new membership; SharePoint then resolves it
-within seconds to a few minutes. Dynamic groups are slower because Entra must
+Microsoft Entra ID immediately reflects the new membership; SharePoint then resolves it
+within seconds to a few minutes. Dynamic groups are slower because Microsoft Entra ID must
 first re-evaluate its membership rule (up to 24 hours) before SharePoint sees
 the change. The *Everyone* group remains preferred because its
 `c:0(.s|true` claim is evaluated entirely within SharePoint's own
-authentication layer — no Entra group membership resolution required at all.
+authentication layer — no Microsoft Entra group membership resolution required at all.
 See the [deployment guide](docs/deployment.md#verify-guest-access-to-the-landing-page-site)
 for full details, including an EasyLife 365 Collaboration tip for automated
 guest lifecycle scenarios.
 
 ### 4. Deploy the Guest Sponsor API
 
-The Graph `/me/sponsors` API requires a directory role — impractical for
-guests at scale. The included **Guest Sponsor API** calls Graph with application
+The Microsoft Graph `/me/sponsors` API requires a directory role — impractical for
+guests at scale. The included **Guest Sponsor API** calls Microsoft Graph with application
 permissions instead (powered by a custom Azure Function).
 
 Run the following command in PowerShell 7+ to deploy everything in one step:
@@ -254,14 +254,14 @@ In Azure Cloud Shell, `auto` reuses the current Cloud Shell login first. Use
 `-AzureLoginMode browser` or `-AzureLoginMode device-code` when a fresh Azure
 CLI login should not rely on automatic environment detection.
 
-The wizard prepares the Entra App Registration, deploys the Azure-only hosting
+The wizard prepares the Microsoft Entra app registration, deploys the Azure-only hosting
 stack, and then assigns Microsoft Graph permissions automatically. No local
 repository clone is required.
 
 In the web part property pane, open the **Guest Sponsor API** section and enter
 the **Guest Sponsor API Base URL** and the **Guest Sponsor API Client ID
 (App Registration)**. The Client ID comes from the App Registration named
-**"Guest Sponsor Info - SharePoint Web Part Auth"** in your Entra tenant.
+**"Guest Sponsor Info - SharePoint Web Part Auth"** in your Microsoft Entra tenant.
 
 > Full deployment details (Flex Consumption, Azure Maps,
 > updating, security assessment, legacy options without the Guest Sponsor API):
@@ -274,7 +274,7 @@ Edit a modern page → add the *Guest Sponsor Info* web part.
 ## Security At A Glance
 
 - Microsoft Graph application permissions stay server-side on the Azure
-  Function's Managed Identity. The web part itself has no Graph permissions.
+  Function's Managed Identity. The web part itself has no Microsoft Graph permissions.
 - Azure App Service EasyAuth blocks unauthenticated requests before function
   code runs. In production, the function also validates tenant, audience, and
   the expected SharePoint client application.
@@ -303,7 +303,7 @@ Edit a modern page → add the *Guest Sponsor Info* web part.
 To develop the Azure Function locally:
 
 ```bash
-az login                       # authenticate for Graph API access
+az login                       # authenticate for Microsoft Graph API access
 ./scripts/dev-function.sh      # build + start on http://localhost:7071
 ```
 

@@ -14,7 +14,7 @@ lead: >-
   assurance signals are available today.
 intro_badges:
   - Customer-controlled Azure deployment
-  - No Graph permissions in the SPFx package
+  - No Microsoft Graph permissions in the SPFx package
   - Public security and privacy documentation
 intro_actions:
   - label: Read the full security assessment
@@ -107,7 +107,7 @@ questions are usually:
 - Which Azure resources exist, and who administers them?
 - How are requests authenticated and scoped to the signed-in guest?
 - Where do logs and telemetry go?
-- Which parts are optional, such as Teams presence or Azure Maps?
+- Which parts are optional, such as presence in Microsoft Teams or Azure Maps?
 
 These answers are documented publicly and can be reviewed before deployment.
 

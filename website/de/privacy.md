@@ -7,14 +7,14 @@ permalink: /de/privacy/
 description: >-
   Datenschutzrichtlinie für das Guest Sponsor Info SharePoint Web Part und die
   Guest Sponsor API für Microsoft Entra B2B — wie Daten verarbeitet werden,
-  welche Microsoft-Graph-Berechtigungen verwendet werden und wo Daten bleiben.
+  welche Microsoft Graph-Berechtigungen verwendet werden und wo Daten bleiben.
 lead: >-
   Verständlicher Überblick darüber, was in Ihrem Tenant bleibt, welche
-  Microsoft-Graph-Berechtigungen genutzt werden und warum keine
+  Microsoft Graph-Berechtigungen genutzt werden und warum keine
   Laufzeitdaten an Workoho fließen.
 intro_badges:
   - Daten bleiben im Tenant
-  - Graph nur über Azure Function
+  - Microsoft Graph nur über Azure Function
   - Application Insights optional
 intro_actions:
   - label: Telemetrie ansehen
@@ -41,7 +41,7 @@ Bereitstellung lesen Sie die [Setup-Anleitung](/de/setup/).
 - **Keine Daten an Workoho oder Dritte** — Web Part und Azure Function
   arbeiten vollständig innerhalb Ihres Tenants.
 - **Nur Browser-Speicher** — das Web Part hält Sponsor-Daten (Name, Titel,
-  E-Mail, Telefon, Teams-Präsenz) nur während der Seitensitzung im
+  E-Mail, Telefon, Präsenz in Microsoft Teams) nur während der Seitensitzung im
   Browser-Speicher. Nichts wird auf der Festplatte gespeichert oder
   anderweitig versendet.
 - **Azure Function ist zustandslos** — jede Anfrage wird verarbeitet und
@@ -57,9 +57,9 @@ Alle Microsoft Graph-Berechtigungen liegen ausschließlich bei der
 | Berechtigung | Erforderlich? | Zweck |
 |---|---|---|
 | [`User.Read.All`](https://learn.microsoft.com/en-us/graph/permissions-reference#userreadall) | Erforderlich | Sponsor-Profile lesen und deaktivierte Konten filtern |
-| [`Presence.Read.All`](https://learn.microsoft.com/en-us/graph/permissions-reference#presencereadall) | Optional | Teams-Präsenz-Indikatoren |
+| [`Presence.Read.All`](https://learn.microsoft.com/en-us/graph/permissions-reference#presencereadall) | Optional | Präsenz-Indikatoren in Microsoft Teams |
 | [`MailboxSettings.Read`](https://learn.microsoft.com/en-us/graph/permissions-reference#mailboxsettingsread) | Optional | Freigegebene Postfächer/Raum-/Gerätekonten filtern |
-| [`TeamMember.Read.All`](https://learn.microsoft.com/en-us/graph/permissions-reference#teammemberreadall) | Optional | Teams-Konto-Provisionierung von Gästen erkennen |
+| [`TeamMember.Read.All`](https://learn.microsoft.com/en-us/graph/permissions-reference#teammemberreadall) | Optional | Die Bereitstellung von Microsoft Teams-Konten für Gäste erkennen |
 
 ## Vollständige Richtlinie
 
