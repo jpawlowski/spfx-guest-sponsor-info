@@ -13,6 +13,11 @@ updates:
     commit-message:
       prefix: "chore"
       include: "scope"
+    # Keep Dependabot focused on dependencies we declare explicitly. Security
+    # advisories buried in the SPFx build rig are only actionable during a
+    # coordinated SPFx upgrade and otherwise create noisy PRs.
+    allow:
+      - dependency-type: direct
     # Group all tooling updates into a single PR to reduce noise.
     groups:
       tooling:
