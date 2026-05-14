@@ -843,18 +843,8 @@ img[data-zoomable] {
   max-width: 480px;
 }
 
-.made-by-cta {
-  display: inline-block;
+.made-by-cta-row {
   margin-top: 1rem;
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--color-teal);
-  text-decoration: none;
-  transition: color var(--transition);
-}
-
-.made-by-cta:hover {
-  color: var(--color-dark);
 }
 
 .made-by-easylife {
@@ -911,7 +901,7 @@ img[data-zoomable] {
   font-weight: 600;
   line-height: 1.2;
   color: var(--color-white);
-  background: var(--color-teal);
+  background-color: var(--color-teal);
   border: 1px solid var(--color-teal);
   border-radius: 100px;
   text-decoration: none;
@@ -924,7 +914,7 @@ img[data-zoomable] {
 .easylife-cta:hover,
 .easylife-cta:focus {
   color: var(--color-white);
-  background: var(--color-teal-dark);
+  background-color: var(--color-teal-dark);
   border-color: var(--color-teal-dark);
   text-decoration: none;
 }
